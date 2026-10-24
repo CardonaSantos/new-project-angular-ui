@@ -1,59 +1,33 @@
-# GastroCoreUi
+# Gastro Core UI — Angular 22
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.3.
+Frontend independiente para Gastro Core (NestJS), con arquitectura feature-first y Angular nativo primero.
 
-## Development server
+## Requisitos
 
-To start a local development server, run:
+Node 24.15+ (rama 24; CI usa 24.22.0), npm 11.
 
-```bash
-ng serve
+```powershell
+npm ci
+npm run build
+npm run lint
+npm test -- --watch=false
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+La pantalla inicial es un laboratorio visual: Formly + Angular Material, tema, densidad y confirmación. **No envía payloads al backend ni representa pantallas productivas.**
 
-## Code scaffolding
+## Librerías ya declaradas en package.json y package-lock
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Angular Material, CDK, Aria (22.2.3 exactos); Formly 10; Zod; TanStack Angular Table; Lucide Angular; Embla; Maskito; Socket.IO Client; ngx-echarts 22 / ECharts; Decimal.js; Tailwind 4; angular-eslint; Prettier y Vitest.
 
-```bash
-ng generate component component-name
-```
+**Conectadas en esta fase:** Angular Router, HttpClient, providers de Formly Material, tema M3 y Tailwind, confirmación y snackbar de Material, preferencias de apariencia y registro de endpoints. **Pendientes de integración por feature:** sockets reales, gráficos, tablas, carruseles, máscaras e iconos. Tener un paquete instalado no equivale a haber implementado la integración de negocio.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+OpenAPI TypeScript y Playwright no figuran en el lock actual. No se incluyen automáticamente para evitar romper npm ci sin un lockfile nuevo. Se incorporarán conjuntamente con su lockfile y pruebas.
 
-```bash
-ng generate --help
-```
+## Arquitectura y decisiones
 
-## Building
+Consultar [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Formularios de creación/edición en **páginas**; diálogos solo para confirmación. UI de negocio por rutas lazy. Prefijo API del servidor: /api (no /v1). Seguridad siempre validada en NestJS.
 
-To build the project run:
+## Railway
 
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+El repositorio tiene Dockerfile + Caddyfile para servir la SPA con fallback de rutas. Configure la URL/API, CORS o proxy antes de conectarla a un backend real. No ejecutar ng serve en producción.

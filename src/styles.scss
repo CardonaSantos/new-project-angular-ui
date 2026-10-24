@@ -1,35 +1,39 @@
 @use '@angular/material' as mat;
 
-/*
- * GASTRO CORE UI
- * Angular Material 22 - Material Design 3
- *
- * Configuración global del tema.
- * En el futuro centralizaremos colores,
- * tipografía y densidad en Design Tokens.
- */
+:root {
+  color-scheme: light dark;
+  --gc-radius: 0.875rem;
+  --gc-gap: 1rem;
+  --gc-font-scale: 1;
 
-html {
-  height: 100%;
-  color-scheme: light;
-
-  @include mat.theme(
-    (
-      color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
-      ),
-      typography: Roboto,
-      density: 0,
-    )
-  );
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
 }
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; }
+:root[data-density='compact'] { --gc-gap: 0.6rem; }
 
+html { min-height: 100%; }
 body {
+  min-height: 100vh;
   margin: 0;
-  min-height: 100%;
-
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
+  font-family: Roboto, Arial, sans-serif;
+  font-size: calc(1rem * var(--gc-font-scale));
+}
+*, *::before, *::after { box-sizing: border-box; }
+:focus-visible { outline: 2px solid var(--mat-sys-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

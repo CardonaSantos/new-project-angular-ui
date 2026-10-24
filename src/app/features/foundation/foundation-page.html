@@ -1,0 +1,54 @@
+<div class="shell">
+  <aside class="sidebar" aria-label="Navegación principal">
+    <strong>Gastro Core UI</strong>
+    <p>Angular 22 · Foundation</p>
+    <nav aria-label="Módulos"><a href="/" aria-current="page">Inicio / Design System</a></nav>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <nav aria-label="Ruta de navegación"><a href="/">Inicio</a> / <span aria-current="page">Foundation</span></nav>
+      <label>Tema
+        <select #themeSelect [value]="appearance.theme()" (change)="setTheme(themeSelect.value)">
+          <option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option>
+        </select>
+      </label>
+    </header>
+    <div class="content">
+      <p class="eyebrow">GASTRO CORE / FOUNDATION</p>
+      <h1>Base Angular verificada</h1>
+      <p>Angular Material, Formly, Router y Tailwind. Este laboratorio no crea registros reales.</p>
+      <div class="grid">
+        <mat-card appearance="outlined">
+          <mat-card-header><mat-card-title>Formulario dinámico</mat-card-title></mat-card-header>
+          <mat-card-content>
+            <form [formGroup]="form" (ngSubmit)="validateExample()">
+              <formly-form [form]="form" [fields]="fields" [model]="model" />
+              <button type="submit" mat-flat-button>Validar ejemplo</button>
+            </form>
+          </mat-card-content>
+        </mat-card>
+        <mat-card appearance="outlined">
+          <mat-card-header><mat-card-title>Patrones UI / UX</mat-card-title></mat-card-header>
+          <mat-card-content>
+            <p>Formularios en páginas; diálogos solo para confirmar.</p>
+            <div class="actions">
+              <button type="button" mat-flat-button (click)="confirmExample()">Diálogo de confirmación</button>
+              <button type="button" mat-stroked-button (click)="appearance.density.set(appearance.density() === 'compact' ? 'comfortable' : 'compact')">
+                Densidad: {{ appearance.density() }}
+              </button>
+            </div>
+            <div class="actions">
+              <button mat-button type="button" (click)="appearance.fontScale.set(1)">100%</button>
+              <button mat-button type="button" (click)="appearance.fontScale.set(1.125)">112%</button>
+              <button mat-button type="button" (click)="appearance.fontScale.set(1.25)">125%</button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <section class="summary">
+        <h2>Extensiones instaladas</h2>
+        <p>TanStack Table, Embla, Lucide, Maskito, ECharts, Socket.IO, Zod y Decimal.js se integrarán en las features que los necesiten, sin aumentar el bundle inicial.</p>
+      </section>
+    </div>
+  </main>
+</div>
