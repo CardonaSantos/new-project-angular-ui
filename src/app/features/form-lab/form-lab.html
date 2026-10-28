@@ -29,7 +29,7 @@
     <section class="gc-surface" aria-labelledby="upload-title">
       <h2 id="upload-title">3. Adjuntos y vista previa</h2>
       <p class="gc-muted">El navegador verifica cantidad, tamaño y tipo. El servidor deberá volver a validar.</p>
-      <gc-file-upload label="Imágenes del artículo (demo)"
+      <gc-file-upload inputId="gc-demo-upload" label="Imágenes del artículo (demo)"
         [maxFiles]="3" [maxSizeMb]="2" (filesSelected)="onFiles($event)" />
       <p class="gc-muted">Archivos aceptados: {{ selectedFiles().length }}</p>
     </section>

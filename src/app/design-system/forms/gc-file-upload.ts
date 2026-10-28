@@ -12,6 +12,7 @@ export interface GcFilePreview {
   styleUrl: './gc-file-upload.scss',
 })
 export class GcFileUpload implements OnDestroy {
+  readonly inputId = input.required<string>();
   readonly label = input('Adjuntar imágenes');
   readonly maxFiles = input(3);
   readonly maxSizeMb = input(2);

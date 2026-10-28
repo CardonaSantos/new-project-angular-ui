@@ -1,10 +1,10 @@
 <section class="gc-upload">
-  <label class="gc-upload-label" for="gc-file-demo">{{ label() }}</label>
-  <input id="gc-file-demo" type="file" multiple
-    accept="image/png,image/jpeg,image/webp"
+  <label class="gc-upload-label" [for]="inputId()">{{ label() }}</label>
+  <input [id]="inputId()" type="file" multiple
+    [accept]="acceptedMime().join(',')"
     (change)="onFiles($event)"
-    aria-describedby="gc-file-help" />
-  <small id="gc-file-help">Máximo {{ maxFiles() }} archivos · {{ maxSizeMb() }} MB cada uno. Se validan localmente.</small>
+    [attr.aria-describedby]="inputId() + '-help'" />
+  <small [id]="inputId() + '-help'">Máximo {{ maxFiles() }} archivos · {{ maxSizeMb() }} MB cada uno. Se validan localmente.</small>
   @if (errors().length) {
     <ul role="alert" class="errors">
       @for (message of errors(); track message) { <li>{{ message }}</li> }

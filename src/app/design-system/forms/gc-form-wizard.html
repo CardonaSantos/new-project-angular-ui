@@ -1,4 +1,5 @@
 <section class="gc-wizard" aria-label="Formulario guiado">
+  <p class="gc-wizard-progress" aria-live="polite">Paso {{ index() + 1 }} de {{ count() + 1 }}</p>
   <ol class="gc-steps" aria-label="Pasos del formulario">
     @for (step of steps(); track step.id; let position = $index) {
       <li [class.active]="position === index()" [class.done]="position < index()">

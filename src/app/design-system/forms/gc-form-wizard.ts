@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { FormlyFieldConfig, FormlyForm } from '@ngx-formly/core';
 import { z } from 'zod';
@@ -24,6 +24,7 @@ export interface GcWizardStep {
 })
 export class GcFormWizard implements OnInit {
   private readonly confirmation = inject(ConfirmDialogService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   readonly steps = input.required<readonly GcWizardStep[]>();
   readonly model = input.required<Record<string, unknown>>();
   readonly schema = input<z.ZodType | null>(null);
@@ -60,6 +61,7 @@ export class GcFormWizard implements OnInit {
     if (this.form.invalid) {
       const labels = Object.fromEntries(this.reviewFields().map((field) => [field.key, field.label]));
       this.issues.set(gcFieldMessages(this.form, labels));
+      this.focusInvalidField();
       return;
     }
     this.issues.set([]);
@@ -70,6 +72,15 @@ export class GcFormWizard implements OnInit {
     const step = this.steps().findIndex((candidate) =>
       candidate.fields.some((field) => String(field.key) === issue.field));
     if (step >= 0 && step !== this.index()) this.index.set(step);
+    this.focusInvalidField();
+  }
+
+  private focusInvalidField(): void {
+    setTimeout(() => {
+      const host = this.host.nativeElement;
+      const invalid = host.querySelector<HTMLElement>('input.ng-invalid, select.ng-invalid, textarea.ng-invalid');
+      (invalid ?? host.querySelector<HTMLElement>('input, select, textarea'))?.focus();
+    }, 0);
   }
 
   async finish(): Promise<void> {
