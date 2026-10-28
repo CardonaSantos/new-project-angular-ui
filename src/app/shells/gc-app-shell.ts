@@ -32,6 +32,7 @@ export class GcAppShell {
     ...(this.auth.has('settings.manage') ?
       [{ label: 'Área con permisos (demo)', path: '/lab/secure', initials: 'PR', exact: true }] : []),
     { label: 'Formularios guiados', path: '/lab/forms', initials: 'FM', exact: true },
+    { label: 'Controles y medios', path: '/lab/components', initials: 'CM', exact: true },
     { label: 'Formulario protegido contra salida', path: '/lab/draft', initials: 'FR', exact: true },
   ]);
 

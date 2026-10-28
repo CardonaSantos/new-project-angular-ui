@@ -18,7 +18,10 @@ export class ConfirmDialogService {
   async confirm(options: ConfirmDialogOptions): Promise<boolean> {
     const ref = this.dialog.open<ConfirmDialog, ConfirmDialogOptions, boolean>(ConfirmDialog, {
       data: options,
-      width: 'min(420px, calc(100vw - 2rem))',
+      width: '420px',
+      maxWidth: 'calc(100vw - 2rem)',
+      maxHeight: 'calc(100dvh - 2rem)',
+      panelClass: 'gc-confirm-dialog-panel',
       ariaLabel: options.title,
       autoFocus: 'first-tabbable',
       restoreFocus: true,

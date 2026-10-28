@@ -39,3 +39,7 @@ Rutas **/lab/behaviors**, **/lab/draft**, **/lab/secure** para probar sin NestJS
 ## Form Engine & Advanced UX (fase local)
 
 Laboratorio en `/lab/forms` con wizard Formly, validaciones Zod cruzadas, revisión previa a confirmar, resumen de errores, Maskito y previsualización local de archivos, sin envío al servidor. Ver [docs/FORM-ENGINE.md](docs/FORM-ENGINE.md).
+
+## Diseño reutilizable — Hardening y controles
+
+Laboratorio local en `/lab/components` para revisar cards, grids, controles tipados, select múltiple, lectura de códigos por teclado, campos decimales y gestor de medios incremental. Se utilizan las variables del tema Cappuccino. No realiza peticiones al backend. Consulta [docs/COMPONENTS.md](docs/COMPONENTS.md).

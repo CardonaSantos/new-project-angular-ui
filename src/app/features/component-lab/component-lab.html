@@ -1,0 +1,49 @@
+<gc-page-container width="wide">
+  <div class="gc-stack gc-page-enter">
+    <gc-page-header eyebrow="DESIGN SYSTEM / UI HARDENING"
+      title="Laboratorio de componentes"
+      description="Prueba espaciados, inputs, selects, código de barras, decimales y gestor local de imágenes en distintos tamaños de pantalla.">
+      <div gcPageActions>
+        <a gcButton routerLink="/lab/forms" variant="outline">Formularios guiados</a>
+      </div>
+    </gc-page-header>
+
+    <gc-form-grid [columns]="2">
+      <gc-card title="Inputs y controles" description="Reactive Forms, etiquetas y estados reutilizables.">
+        <div class="gc-stack">
+          <gc-text-input inputId="demo-product-name" label="Nombre del producto"
+            [control]="name" placeholder="Cappuccino" hint="Campo requerido; prueba salir sin escribir." />
+          <gc-textarea inputId="demo-product-notes" label="Notas del artículo"
+            [control]="notes" placeholder="Observaciones opcionales" />
+          <gc-select inputId="demo-product-category" label="Categoría"
+            [control]="category" [options]="categories" />
+          <gc-multi-select inputId="demo-product-tags" label="Etiquetas"
+            [control]="tags" [options]="tagOptions" hint="Selecciona y quita etiquetas; usa el teclado." />
+        </div>
+        <div gcCardFooter>
+          <p class="muted">Selección: {{ tags.value.join(', ') || '—' }}</p>
+        </div>
+      </gc-card>
+
+      <gc-card title="Lectura y cantidades" description="Compatibilidad con lectores que emulan teclado.">
+        <div class="gc-stack">
+          <gc-barcode-input inputId="demo-product-barcode" [control]="barcode"
+            (scan)="readCode($event.code)" />
+          <p class="muted">Último código leído: <strong>{{ lastScan() }}</strong></p>
+          <gc-decimal-input inputId="demo-product-cost" label="Precio local (ejemplo)"
+            [control]="cost" prefix="Q" [scale]="2" min="0"
+            hint="Valor decimal exacto, expresado como texto." />
+          <gc-decimal-input inputId="demo-product-quantity" label="Cantidad (ejemplo)"
+            [control]="quantity" [scale]="3" min="0" hint="Hasta tres decimales." />
+        </div>
+      </gc-card>
+    </gc-form-grid>
+
+    <gc-card title="Gestor de imágenes" description="Selección incremental, duplicados, orden, principal y eliminación individual.">
+      <gc-media-manager inputId="demo-media-manager" label="Imágenes del artículo"
+        [maxFiles]="6" [maxSizeMb]="3" (selectionChange)="receiveMedia($event)" />
+      <p class="muted">Archivos locales: {{ mediaCount() }} · Principal: {{ mainMedia() }}.</p>
+      <p class="muted">No se suben ni almacenan imágenes. El servidor validará nuevamente cuando exista la API.</p>
+    </gc-card>
+  </div>
+</gc-page-container>

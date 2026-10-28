@@ -21,6 +21,7 @@ describe('GcProfileMenu', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(trigger.menuOpen).toBe(true);
+    expect(overlay.getContainerElement().querySelector('.gc-profile-panel')).not.toBeNull();
 
     const backdrop = overlay.getContainerElement().querySelector<HTMLElement>('.cdk-overlay-backdrop');
     expect(backdrop).not.toBeNull();

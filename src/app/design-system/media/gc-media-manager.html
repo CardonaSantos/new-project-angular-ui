@@ -1,0 +1,36 @@
+<section class="gc-media" aria-label="Gestor local de imágenes">
+  <label class="title" [for]="inputId()">{{ label() }}</label>
+  <input [id]="inputId()" type="file" multiple [accept]="allowedMime().join(',')"
+    (change)="addFiles($event)" />
+  <small>Hasta {{ maxFiles() }} imágenes, {{ maxSizeMb() }} MB cada una. Sin carga al servidor.</small>
+  @if (errors().length) {
+    <ul class="errors" role="alert">
+      @for (error of errors(); track $index) { <li>{{ error }}</li> }
+    </ul>
+  }
+  @if (items().length) {
+    <ol class="media-list" aria-label="Imágenes seleccionadas">
+      @for (item of items(); track item.id; let index = $index) {
+        <li class="media-item">
+          <img [src]="item.url" [alt]="'Vista previa de ' + item.file.name" loading="lazy" />
+          <p class="file-name">{{ item.file.name }}</p>
+          @if (primaryId() === item.id) {
+            <span class="primary">Principal</span>
+          } @else {
+            <button type="button" class="mark" (click)="setPrimary(item.id)">
+              Hacer principal
+            </button>
+          }
+          <div class="media-actions">
+            <button type="button" [disabled]="index === 0" (click)="move(item.id, -1)"
+              [attr.aria-label]="'Mover ' + item.file.name + ' a la izquierda'">←</button>
+            <button type="button" [disabled]="index === items().length - 1" (click)="move(item.id, 1)"
+              [attr.aria-label]="'Mover ' + item.file.name + ' a la derecha'">→</button>
+            <button type="button" (click)="remove(item.id)"
+              [attr.aria-label]="'Eliminar ' + item.file.name">Quitar</button>
+          </div>
+        </li>
+      }
+    </ol>
+  }
+</section>
