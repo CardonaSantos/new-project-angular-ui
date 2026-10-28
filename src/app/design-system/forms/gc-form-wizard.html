@@ -1,0 +1,32 @@
+<section class="gc-wizard" aria-label="Formulario guiado">
+  <ol class="gc-steps" aria-label="Pasos del formulario">
+    @for (step of steps(); track step.id; let position = $index) {
+      <li [class.active]="position === index()" [class.done]="position < index()">
+        <span class="gc-step-marker" aria-hidden="true">{{ position + 1 }}</span>
+        <span>{{ step.title }}</span>
+      </li>
+    }
+    <li [class.active]="reviewing()">
+      <span class="gc-step-marker" aria-hidden="true">{{ count() + 1 }}</span>
+      <span>Revisión</span>
+    </li>
+  </ol>
+
+  <div class="gc-wizard-content">
+    @if (!reviewing()) {
+      <h3>{{ steps()[index()].title }}</h3>
+      @if (steps()[index()].description) {
+        <p class="gc-muted">{{ steps()[index()].description }}</p>
+      }
+      <formly-form [form]="form" [fields]="currentFields()" [model]="model()" />
+    } @else {
+      <h3>Comprobar información</h3>
+      <p class="gc-muted">Regresa a cualquier paso anterior si necesitas corregir los datos.</p>
+      <gc-form-review [fields]="reviewFields()" [model]="model()" />
+    }
+
+    <gc-form-error-summary [issues]="issues()" (issueSelected)="selectIssue($event)" />
+    <gc-form-actions [index]="index()" [count]="count()" [busy]="busy()"
+      (previous)="previous()" (advance)="advance()" (finish)="finish()" />
+  </div>
+</section>

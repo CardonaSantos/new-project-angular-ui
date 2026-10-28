@@ -1,0 +1,21 @@
+<section class="gc-upload">
+  <label class="gc-upload-label" for="gc-file-demo">{{ label() }}</label>
+  <input id="gc-file-demo" type="file" multiple
+    accept="image/png,image/jpeg,image/webp"
+    (change)="onFiles($event)"
+    aria-describedby="gc-file-help" />
+  <small id="gc-file-help">Máximo {{ maxFiles() }} archivos · {{ maxSizeMb() }} MB cada uno. Se validan localmente.</small>
+  @if (errors().length) {
+    <ul role="alert" class="errors">
+      @for (message of errors(); track message) { <li>{{ message }}</li> }
+    </ul>
+  }
+  @if (previews().length) {
+    <div class="previews" aria-label="Vista previa de archivos">
+      @for (preview of previews(); track preview.url) {
+        <figure><img [src]="preview.url" [alt]="'Vista previa de ' + preview.name" /><figcaption>{{ preview.name }}</figcaption></figure>
+      }
+    </div>
+    <button class="clear" type="button" (click)="clear()">Quitar archivos</button>
+  }
+</section>

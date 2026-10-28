@@ -1,0 +1,12 @@
+@if (issues().length) {
+  <section class="gc-error-summary" role="alert" aria-label="Errores del formulario">
+    <strong>Revisa los siguientes campos ({{ issues().length }})</strong>
+    <ul>
+      @for (issue of issues(); track issue.field + issue.message) {
+        <li>
+          <button type="button" (click)="issueSelected.emit(issue)">{{ issue.message }}</button>
+        </li>
+      }
+    </ul>
+  </section>
+}

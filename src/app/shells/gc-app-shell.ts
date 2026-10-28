@@ -31,6 +31,7 @@ export class GcAppShell {
     { label: 'UI / UX Lab', path: '/lab/behaviors', initials: 'UX', exact: true },
     ...(this.auth.has('settings.manage') ?
       [{ label: 'Área con permisos (demo)', path: '/lab/secure', initials: 'PR', exact: true }] : []),
+    { label: 'Formularios guiados', path: '/lab/forms', initials: 'FM', exact: true },
     { label: 'Formulario protegido contra salida', path: '/lab/draft', initials: 'FR', exact: true },
   ]);
 
