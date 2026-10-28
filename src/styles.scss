@@ -1,10 +1,31 @@
 @use '@angular/material' as mat;
 
 :root {
-  color-scheme: light dark;
-  --gc-radius: 0.875rem;
-  --gc-gap: 1rem;
+  /* Fallback tokens before Angular bootstraps the runtime theme manager. */
+  color-scheme: light;
+  --gc-primary: #604535;
+  --gc-on-primary: #fff;
+  --gc-primary-container: #ead9c4;
+  --gc-on-primary-container: #332317;
+  --gc-surface: #faf7f2;
+  --gc-surface-container: #f0e8dc;
+  --gc-surface-container-low: #f6f0e8;
+  --gc-on-surface: #302820;
+  --gc-on-surface-variant: #5f5348;
+  --gc-outline: #85766a;
+  --gc-outline-variant: #d7c9ba;
+  --gc-success: #246747;
+  --gc-on-success: #fff;
+  --gc-warning: #8b5300;
+  --gc-on-warning: #fff;
+  --gc-error: #a52d32;
+  --gc-on-error: #fff;
   --gc-font-scale: 1;
+  --gc-radius: 14px;
+  --gc-space: 1rem;
+  --gc-control-height: 2.75rem;
+  --gc-shell-width: 16rem;
+  --gc-transition: 160ms ease;
 
   @include mat.theme((
     color: (
@@ -15,25 +36,66 @@
     density: 0,
   ));
 }
-:root[data-theme='light'] { color-scheme: light; }
-:root[data-theme='dark'] { color-scheme: dark; }
-:root[data-density='compact'] { --gc-gap: 0.6rem; }
 
-html { min-height: 100%; }
+:root[data-gc-density='compact'] {
+  --gc-space: 0.625rem;
+  --gc-control-height: 2.5rem;
+}
+
+html { min-height: 100%; font-size: calc(100% * var(--gc-font-scale)); }
 body {
   min-height: 100vh;
   margin: 0;
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
+  background-color: var(--gc-surface);
+  color: var(--gc-on-surface);
   font-family: Roboto, Arial, sans-serif;
-  font-size: calc(1rem * var(--gc-font-scale));
+  font-size: 1rem;
 }
 *, *::before, *::after { box-sizing: border-box; }
-:focus-visible { outline: 2px solid var(--mat-sys-primary); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; }
+a { color: var(--gc-primary); }
+:focus-visible { outline: 3px solid var(--gc-primary); outline-offset: 3px; }
+::selection { background: var(--gc-primary-container); color: var(--gc-on-primary-container); }
+
+.gc-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-height: var(--gc-control-height);
+  padding: .5rem 1rem;
+  border: 1px solid transparent;
+  border-radius: calc(var(--gc-radius) * .65);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  transition: filter var(--gc-transition), background-color var(--gc-transition);
+  background: var(--gc-primary);
+  color: var(--gc-on-primary);
+}
+.gc-button:not(:disabled):hover { filter: brightness(.94); }
+.gc-button:disabled { opacity: .5; cursor: not-allowed; }
+.gc-button--secondary { background: var(--gc-primary-container); color: var(--gc-on-primary-container); }
+.gc-button--outline { background: transparent; border-color: var(--gc-outline); color: var(--gc-on-surface); }
+.gc-button--danger { background: var(--gc-error); color: var(--gc-on-error); }
+.gc-button--sm { min-height: 2.25rem; padding: .3rem .75rem; font-size: .875rem; }
+.gc-button--lg { min-height: 3rem; padding: .65rem 1.25rem; }
+.gc-button--block { width: 100%; }
+.gc-surface {
+  background: var(--gc-surface-container-low);
+  border: 1px solid var(--gc-outline-variant);
+  border-radius: var(--gc-radius);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+.gc-muted { color: var(--gc-on-surface-variant); }
+.gc-stack { display: grid; gap: var(--gc-space); }
+@media (pointer: coarse) {
+  .gc-button, .gc-button--sm { min-height: 44px; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
+    scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }

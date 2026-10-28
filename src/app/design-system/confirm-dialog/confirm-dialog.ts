@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatButtonModule } from '@angular/material/button';
+import { GcButtonDirective } from '../components/button/gc-button.directive';
+import type { ConfirmDialogOptions } from './confirm-dialog.service';
 
 @Component({
-  selector: 'app-confirm-dialog',
-  imports: [MatDialogModule, MatButtonModule],
+  selector: 'gc-confirm-dialog',
+  imports: [MatDialogModule, GcButtonDirective],
   templateUrl: './confirm-dialog.html',
 })
 export class ConfirmDialog {
-  readonly data = inject<{ title: string; message: string }>(MAT_DIALOG_DATA);
+  readonly data = inject<ConfirmDialogOptions>(MAT_DIALOG_DATA);
 }

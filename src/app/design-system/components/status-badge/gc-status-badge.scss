@@ -1,0 +1,9 @@
+:host { display: inline-flex; }
+.gc-badge {
+  display:inline-flex; padding:.3rem .7rem; border-radius:100px;
+  border:1px solid var(--gc-outline-variant); color:var(--gc-on-surface);
+  font-size:.8rem; font-weight:600;
+}
+.gc-badge--success { border-color:var(--gc-success); color:var(--gc-success); }
+.gc-badge--warning { border-color:var(--gc-warning); color:var(--gc-warning); }
+.gc-badge--danger { border-color:var(--gc-error); color:var(--gc-error); }

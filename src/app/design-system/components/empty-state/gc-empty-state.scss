@@ -1,0 +1,4 @@
+.empty { padding:clamp(1.25rem,4vw,3rem); text-align:center; border:1px dashed var(--gc-outline); border-radius:var(--gc-radius); background:var(--gc-surface-container-low); }
+.circle { display:grid; place-items:center; width:3rem; height:3rem; margin:0 auto .7rem; background:var(--gc-primary-container); color:var(--gc-on-primary-container); border-radius:100%; font-weight:700; }
+h3 { margin:0 0 .5rem; font-size:1.1rem; }
+p { margin:0 0 1rem; color:var(--gc-on-surface-variant); }
