@@ -1,5 +1,5 @@
 <div class="shell" [class.menu-open]="menuOpen()">
-  <aside class="sidebar" aria-label="Navegación de ejemplo">
+  <aside id="navigation-help" class="sidebar" aria-label="Navegación de ejemplo">
     <div class="brand"><span class="brand-mark" aria-hidden="true">GC</span> Gastro Core</div>
     <p class="gc-muted">Design System · Angular 22</p>
     <nav aria-label="Secciones del playground">
@@ -18,7 +18,7 @@
         </button>
         <nav aria-label="Ruta de navegación"><a routerLink="/">Inicio</a> <span aria-hidden="true">/</span> <strong>Design System</strong></nav>
       </div>
-      <gc-status-badge label="Cappuccino Foundation" tone="success" />
+      <gc-status-badge [label]="theme.preset() === 'cappuccino' ? 'Cappuccino Foundation' : 'Ocean Foundation'" tone="success" />
     </header>
 
     <div class="content gc-stack">
