@@ -1,0 +1,4 @@
+:host { display:block; }
+.loading-toggle { display:flex; align-items:center; gap:.55rem; font-size:.875rem; color:var(--gc-on-surface-variant); }
+.loading-toggle input { width:1.1rem; height:1.1rem; accent-color:var(--gc-primary); }
+.fine-print { margin:0; font-size:.8rem; line-height:1.5; }

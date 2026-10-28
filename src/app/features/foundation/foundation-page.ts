@@ -1,6 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { FormlyFieldConfig, FormlyForm } from '@ngx-formly/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -21,7 +20,6 @@ import { gcTextField, gcSelectField } from '../../design-system/forms/formly-fie
 @Component({
   selector: 'gc-foundation-page',
   imports: [
-    RouterLink,
     ReactiveFormsModule,
     FormlyForm,
     MatCardModule,
@@ -38,7 +36,6 @@ export class FoundationPage {
   private readonly snackBar = inject(MatSnackBar);
   protected readonly theme = inject(ThemeManagerService);
   protected readonly presets = Object.values(THEME_PRESETS);
-  protected readonly menuOpen = signal(false);
 
   protected readonly form = new FormGroup({});
   protected readonly model: Record<string, unknown> = { nombre: '', categoria: 'BEBIDA' };
