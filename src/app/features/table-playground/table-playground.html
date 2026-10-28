@@ -27,7 +27,7 @@
       <gc-data-table [columns]="columns" [rows]="displayed()" [loading]="loading()"
         [sort]="sort()" (sortChange)="setSort($event)" />
       <gc-pagination [index]="page()" [size]="size()" [total]="filtered().length"
-        (change)="setPage($event)" />
+        (pageChange)="setPage($event)" />
       <p class="gc-muted fine-print">
         Los datos se filtran en memoria solamente en este laboratorio. En módulos reales, la feature
         enviará filtros, ordenación y página al backend; los componentes no realizan llamadas HTTP.

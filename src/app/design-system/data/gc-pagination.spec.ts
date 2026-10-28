@@ -11,7 +11,7 @@ describe('GcPagination', () => {
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('6–10 de 17');
     const emitted: GcPageChange[] = [];
-    fixture.componentInstance.change.subscribe((event) => emitted.push(event));
+    fixture.componentInstance.pageChange.subscribe((event) => emitted.push(event));
     const next = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button[aria-label="Página siguiente"]');
     next?.click();
     expect(emitted).toEqual([{ index: 2, size: 5 }]);

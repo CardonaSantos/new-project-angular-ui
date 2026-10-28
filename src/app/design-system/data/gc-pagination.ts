@@ -42,7 +42,7 @@ export class GcPagination {
   readonly index = input(0);
   readonly size = input(10);
   readonly total = input(0);
-  readonly change = output<GcPageChange>();
+  readonly pageChange = output<GcPageChange>();
   protected readonly sizes = [5, 10, 25, 50];
   readonly pageCount = computed(() => Math.max(1, Math.ceil(this.total() / Math.max(1, this.size()))));
   readonly currentPage = computed(() => Math.min(this.pageCount(), this.index() + 1));
@@ -50,12 +50,12 @@ export class GcPagination {
   readonly lastRecord = computed(() => Math.min(this.total(), (this.index() + 1) * this.size()));
 
   protected previous(): void {
-    if (this.index() > 0) this.change.emit({ index: this.index() - 1, size: this.size() });
+    if (this.index() > 0) this.pageChange.emit({ index: this.index() - 1, size: this.size() });
   }
   protected next(): void {
-    if (this.index() < this.pageCount() - 1) this.change.emit({ index: this.index() + 1, size: this.size() });
+    if (this.index() < this.pageCount() - 1) this.pageChange.emit({ index: this.index() + 1, size: this.size() });
   }
   protected changeSize(size: number): void {
-    if (this.sizes.includes(size)) this.change.emit({ index: 0, size });
+    if (this.sizes.includes(size)) this.pageChange.emit({ index: 0, size });
   }
 }
