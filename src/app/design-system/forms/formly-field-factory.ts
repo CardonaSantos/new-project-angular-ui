@@ -7,7 +7,7 @@ export function gcTextField(key: string, label: string, required = false): Forml
 export function gcSelectField(
   key: string,
   label: string,
-  options: ReadonlyArray<{ label: string; value: string }>,
+  options: readonly { label: string; value: string }[],
   required = false,
 ): FormlyFieldConfig {
   return { key, type: 'select', props: { label, required, options: [...options] } };
