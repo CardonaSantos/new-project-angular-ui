@@ -1,0 +1,3 @@
+:host { display:block; min-width:0; }
+.gc-stack { display:grid; gap:var(--gc-space-4,1rem); }
+.muted { margin:.25rem 0; font-size:.85rem; color:var(--gc-on-surface-variant); line-height:1.5; overflow-wrap:anywhere; }

@@ -15,10 +15,10 @@ export interface GcPageChange {
         @else { {{ firstRecord() }}–{{ lastRecord() }} de {{ total() }} registros }
       </p>
       <div class="gc-controls">
-        <label for="gc-page-size">Filas</label>
-        <select id="gc-page-size" [value]="size()" (change)="changeSize(+$any($event.target).value)">
+        <label>Filas
+        <select [value]="size()" (change)="changeSize(+$any($event.target).value)">
           @for (option of sizes; track option) { <option [value]="option">{{ option }}</option> }
-        </select>
+        </select></label>
         <button type="button" [disabled]="index() <= 0"
           aria-label="Página anterior" (click)="previous()">Anterior</button>
         <span>Página {{ currentPage() }} de {{ pageCount() }}</span>

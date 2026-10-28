@@ -29,6 +29,13 @@
   --gc-motion-fast: 140ms;
   --gc-motion-panel: 200ms;
   --gc-table-cell-padding: .85rem;
+  --gc-space-1: .25rem;
+  --gc-space-2: .5rem;
+  --gc-space-3: .75rem;
+  --gc-space-4: 1rem;
+  --gc-space-6: 1.5rem;
+  --gc-space-8: 2rem;
+  --gc-card-padding: clamp(1rem, 2.5vw, 1.5rem);
 
   @include mat.theme((
     color: (
@@ -90,7 +97,7 @@ a { color: var(--gc-primary); }
   background: var(--gc-surface-container-low);
   border: 1px solid var(--gc-outline-variant);
   border-radius: var(--gc-radius);
-  padding: clamp(1rem, 2.5vw, 1.5rem);
+  padding: var(--gc-card-padding);
 }
 .gc-muted { color: var(--gc-on-surface-variant); }
 .gc-stack { display: grid; gap: var(--gc-space); }
@@ -132,4 +139,46 @@ a { color: var(--gc-primary); }
   border: 1px solid var(--gc-outline-variant);
   border-radius: var(--gc-radius);
   max-width: min(20rem, calc(100vw - 2rem));
+}
+
+
+/* Material overlays are rendered in CDK overlay roots outside component CSS. */
+.gc-profile-panel.mat-mdc-menu-panel {
+  min-width: min(16rem, calc(100vw - 2rem));
+}
+.gc-profile-panel .gc-profile-info > strong,
+.gc-profile-panel .gc-profile-info > small,
+.gc-profile-panel .gc-profile-info > span {
+  display: block;
+  line-height: 1.45;
+  white-space: normal;
+}
+.gc-profile-panel .mat-mdc-menu-item {
+  min-height: 44px;
+}
+.gc-confirm-dialog-panel .mat-mdc-dialog-container .mdc-dialog__surface {
+  background: var(--gc-surface);
+  color: var(--gc-on-surface);
+  border-radius: var(--gc-radius);
+  box-shadow: 0 14px 45px rgb(0 0 0 / 17%);
+}
+.gc-confirm-dialog-panel .mat-mdc-dialog-title {
+  padding: var(--gc-space-6) var(--gc-space-6) var(--gc-space-2);
+  margin: 0;
+  color: var(--gc-on-surface);
+  overflow-wrap: anywhere;
+}
+.gc-confirm-dialog-panel .mat-mdc-dialog-content {
+  padding: 0 var(--gc-space-6) var(--gc-space-4);
+  color: var(--gc-on-surface-variant);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.gc-confirm-dialog-panel .mat-mdc-dialog-actions {
+  padding: var(--gc-space-2) var(--gc-space-6) var(--gc-space-6);
+  gap: var(--gc-space-2);
+  flex-wrap: wrap;
+}
+@media (max-width: 440px) {
+  .gc-confirm-dialog-panel .mat-mdc-dialog-actions button { flex: 1 1 auto; }
 }

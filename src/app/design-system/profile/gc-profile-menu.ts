@@ -25,7 +25,7 @@ import { ConfirmDialogService } from '../confirm-dialog/confirm-dialog.service';
     </button>
 
     <mat-menu #profileMenu="matMenu" xPosition="before"
-      [hasBackdrop]="true" panelClass="gc-profile-panel">
+      [hasBackdrop]="true" class="gc-profile-panel">
       <div class="gc-profile-info" role="presentation">
         <strong>{{ auth.identity()?.name ?? 'Sin sesión activa' }}</strong>
         <small>{{ auth.identity()?.email ?? 'Modo local' }}</small>

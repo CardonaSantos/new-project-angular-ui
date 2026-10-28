@@ -50,6 +50,12 @@ export const routes: Routes = [
               import('./features/form-lab/form-lab').then((m) => m.GcFormLab),
           },
           {
+            path: 'components', title: 'Controles y medios — Gastro Core',
+            data: { breadcrumb: 'Componentes' },
+            loadComponent: () =>
+              import('./features/component-lab/component-lab').then((m) => m.GcComponentLab),
+          },
+          {
             path: 'secure', title: 'Área protegida — Gastro Core',
             data: { breadcrumb: 'Permisos', permission: 'settings.manage' },
             canActivate: [gcAuthGuard, gcPermissionGuard],
