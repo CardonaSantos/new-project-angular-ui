@@ -12,7 +12,7 @@ import Decimal from 'decimal.js';
       @if (prefix()) { <span class="prefix">{{ prefix() }}</span> }
       <input [id]="inputId()" type="text" inputmode="decimal"
         [formControl]="control()" [placeholder]="placeholder()"
-        (blur)="normalize()" [attr.aria-invalid]="error() !== null"
+        (blur)="normalize()" (input)="error.set(null)" [attr.aria-invalid]="error() !== null"
         [attr.aria-describedby]="hint() ? inputId() + '-hint' : null" />
     </div>
     @if (hint()) { <small [id]="inputId() + '-hint'">{{ hint() }}</small> }
@@ -45,30 +45,38 @@ export class GcDecimalInput {
 
   protected normalize(): void {
     const raw = this.control().value.trim().replace(',', '.');
-    if (!raw) { this.error.set(null); return; }
+    if (!raw) { this.setDecimalError(null); return; }
     const places = Math.max(0, Math.min(6, this.scale()));
     if (!/^-?\d+(\.\d+)?$/.test(raw)) {
-      this.error.set('Introduce un número decimal válido.');
+      this.setDecimalError('Introduce un número decimal válido.');
       return;
     }
     try {
       const number = new Decimal(raw);
       if (number.decimalPlaces() > places) {
-        this.error.set('Se permiten como máximo ' + places + ' decimales.');
+        this.setDecimalError('Se permiten como máximo ' + places + ' decimales.');
         return;
       }
       if (this.min() !== null && number.lessThan(new Decimal(this.min()!))) {
-        this.error.set('El valor no puede ser menor que ' + this.min() + '.');
+        this.setDecimalError('El valor no puede ser menor que ' + this.min() + '.');
         return;
       }
       if (this.max() !== null && number.greaterThan(new Decimal(this.max()!))) {
-        this.error.set('El valor no puede superar ' + this.max() + '.');
+        this.setDecimalError('El valor no puede superar ' + this.max() + '.');
         return;
       }
-      this.error.set(null);
       this.control().setValue(number.toFixed(places));
+      this.setDecimalError(null);
     } catch {
-      this.error.set('Introduce un número decimal válido.');
+      this.setDecimalError('Introduce un número decimal válido.');
     }
+  }
+  private setDecimalError(message: string | null): void {
+    const control = this.control();
+    const errors = { ...(control.errors ?? {}) };
+    if (message) errors['gcDecimal'] = message;
+    else delete errors['gcDecimal'];
+    control.setErrors(Object.keys(errors).length ? errors : null);
+    this.error.set(message);
   }
 }
