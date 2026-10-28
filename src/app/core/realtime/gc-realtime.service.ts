@@ -1,5 +1,4 @@
 import { Injectable, OnDestroy, signal } from '@angular/core';
-import { io, Socket } from 'socket.io-client';
 
 export type GcConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 export type GcEventHandler<T> = (payload: T) => void;
@@ -17,8 +16,8 @@ export class GcRealtimeService implements OnDestroy {
   readonly status = signal<GcConnectionStatus>('disconnected');
   private transport: GcRealtimeTransport | null = null;
   private readonly subscriptions = new Set<() => void>();
-  private connected = (..._payload: unknown[]): void => this.status.set('connected');
-  private disconnected = (..._payload: unknown[]): void => this.status.set('disconnected');
+  private connected = (): void => this.status.set('connected');
+  private disconnected = (): void => this.status.set('disconnected');
 
   attach(transport: GcRealtimeTransport): void {
     this.disconnect();
@@ -30,8 +29,9 @@ export class GcRealtimeService implements OnDestroy {
   }
 
   /** Opt-in only: never open network sockets merely by injecting the service. */
-  connectSocketIo(url: string, auth?: Record<string, string>): void {
-    const socket: Socket = io(url, {
+  async connectSocketIo(url: string, auth?: Record<string, string>): Promise<void> {
+    const { io } = await import('socket.io-client');
+    const socket = io(url, {
       autoConnect: false,
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -41,7 +41,7 @@ export class GcRealtimeService implements OnDestroy {
   }
 
   listen<T>(event: string, handler: GcEventHandler<T>): () => void {
-    if (!this.transport) return () => {};
+    if (!this.transport) return () => undefined;
     const transport = this.transport;
     const wrapped = (...data: unknown[]): void => handler(data[0] as T);
     transport.on(event, wrapped);

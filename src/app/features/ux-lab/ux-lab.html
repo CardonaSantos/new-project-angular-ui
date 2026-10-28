@@ -82,8 +82,8 @@
           (retry)="loadDemo('ready')" />
       } @else if (pageState.status() === 'empty') {
         <p role="status">Sin registros.</p>
-      } @else if (pageState.data()) {
-        <ul>@for (record of pageState.data(); track record) { <li>{{ record }}</li> }</ul>
+      } @else if (pageState.data(); as records) {
+        <ul>@for (record of records; track record) { <li>{{ record }}</li> }</ul>
         @if (pageState.status() === 'refreshing') { <p role="status">Actualizando…</p> }
       }
     </section>

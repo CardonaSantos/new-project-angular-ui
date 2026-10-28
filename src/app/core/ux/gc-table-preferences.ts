@@ -14,6 +14,7 @@ export class GcTablePreferences {
 
   toggle(key: string): void {
     if (!this.source.includes(key)) return;
+    if (!this.hidden().includes(key) && this.visible().length <= 1) return;
     this.hidden.update((hidden) => hidden.includes(key) ? hidden.filter((item) => item !== key) : [...hidden, key]);
   }
 

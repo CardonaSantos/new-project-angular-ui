@@ -1,5 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 import { GcSidebar } from '../design-system/navigation/gc-sidebar';
 import { GcTopbar } from '../design-system/navigation/gc-topbar';
 import { GcProfileMenu } from '../design-system/profile/gc-profile-menu';
@@ -39,7 +41,7 @@ export class GcAppShell {
       this.auth.branchId();
       this.realtime.disconnect();
     });
-    this.router.events.subscribe(() => this.closeMobile());
+    this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd), takeUntilDestroyed()).subscribe(() => this.closeMobile());
   }
 
   protected closeMobile(): void { this.mobileOpen.set(false); }
