@@ -1,0 +1,41 @@
+<div class="gc-table-frame" [attr.aria-busy]="loading()">
+  @if (loading()) {
+    <gc-skeleton [lines]="5" label="Cargando registros" />
+  } @else if (rows().length === 0) {
+    <gc-empty-state title="Sin resultados" description="No se encontraron registros para los filtros seleccionados." />
+  } @else {
+    <div class="gc-table-scroll" tabindex="0" role="region" aria-label="Tabla de registros, desplazable horizontalmente">
+      <table>
+        <thead>
+          <tr>
+            @for (column of columns(); track column.key) {
+              <th scope="col" [class.numeric]="column.numeric">
+                @if (column.sortable) {
+                  <button type="button" class="gc-sort-button"
+                    [attr.aria-label]="'Ordenar ' + column.label + ', actualmente ' + sortLabel(column)"
+                    (click)="toggleSort(column)">
+                    {{ column.label }}
+                    <span aria-hidden="true">
+                      {{ sort()?.key === column.key && sort()?.direction === 'asc' ? '↑' : sort()?.key === column.key && sort()?.direction === 'desc' ? '↓' : '↕' }}
+                    </span>
+                  </button>
+                } @else {
+                  {{ column.label }}
+                }
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of table.getRowModel().rows; track row.id) {
+            <tr>
+              @for (cell of row.getAllCells(); track cell.id) {
+                <td [class.numeric]="columns()[$index].numeric">{{ cell.getValue() ?? '—' }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

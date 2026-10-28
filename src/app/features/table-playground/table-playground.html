@@ -1,0 +1,37 @@
+<div class="gc-page-enter gc-stack">
+  <gc-page-header
+    eyebrow="PATRONES / LISTADOS"
+    title="Tablas y filtros"
+    description="Tabla headless TanStack v9 con ordenación, filtros y paginación controlados por la pantalla. Datos locales de demostración.">
+    <div gcPageActions>
+      <button gcButton type="button" variant="outline" (click)="reset()">Restablecer</button>
+    </div>
+  </gc-page-header>
+
+  <section class="gc-surface" aria-label="Tabla de demostración">
+    <div class="gc-stack">
+      <gc-table-toolbar [query]="search()" searchLabel="Buscar por código, nombre o categoría"
+        (queryChange)="setSearch($event)">
+        <div gcToolbarActions>
+          <gc-filter-bar filterId="gc-category-filter" label="Categoría"
+            [options]="categories" [value]="category()" (valueChange)="setCategory($event)" />
+        </div>
+      </gc-table-toolbar>
+
+      <label class="loading-toggle">
+        <input type="checkbox" [checked]="loading()"
+          (change)="loading.set($any($event.target).checked)" />
+        Simular carga (skeleton)
+      </label>
+
+      <gc-data-table [columns]="columns" [rows]="displayed()" [loading]="loading()"
+        [sort]="sort()" (sortChange)="setSort($event)" />
+      <gc-pagination [index]="page()" [size]="size()" [total]="filtered().length"
+        (pageChange)="setPage($event)" />
+      <p class="gc-muted fine-print">
+        Los datos se filtran en memoria solamente en este laboratorio. En módulos reales, la feature
+        enviará filtros, ordenación y página al backend; los componentes no realizan llamadas HTTP.
+      </p>
+    </div>
+  </section>
+</div>

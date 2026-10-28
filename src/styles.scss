@@ -26,6 +26,9 @@
   --gc-control-height: 2.75rem;
   --gc-shell-width: 16rem;
   --gc-transition: 160ms ease;
+  --gc-motion-fast: 140ms;
+  --gc-motion-panel: 200ms;
+  --gc-table-cell-padding: .85rem;
 
   @include mat.theme((
     color: (
@@ -40,6 +43,7 @@
 :root[data-gc-density='compact'] {
   --gc-space: 0.625rem;
   --gc-control-height: 2.5rem;
+  --gc-table-cell-padding: .55rem;
 }
 
 html { min-height: 100%; font-size: calc(100% * var(--gc-font-scale)); }
@@ -69,11 +73,12 @@ a { color: var(--gc-primary); }
   cursor: pointer;
   font-weight: 600;
   text-decoration: none;
-  transition: filter var(--gc-transition), background-color var(--gc-transition);
+  transition: filter var(--gc-transition), background-color var(--gc-transition), transform var(--gc-motion-fast) ease;
   background: var(--gc-primary);
   color: var(--gc-on-primary);
 }
-.gc-button:not(:disabled):hover { filter: brightness(.94); }
+.gc-button:not(:disabled):hover { filter: brightness(.94); transform:translate3d(0,-1px,0); }
+.gc-button:not(:disabled):active { transform:translate3d(0,0,0); }
 .gc-button:disabled { opacity: .5; cursor: not-allowed; }
 .gc-button--secondary { background: var(--gc-primary-container); color: var(--gc-on-primary-container); }
 .gc-button--outline { background: transparent; border-color: var(--gc-outline); color: var(--gc-on-surface); }
@@ -91,6 +96,11 @@ a { color: var(--gc-primary); }
 .gc-stack { display: grid; gap: var(--gc-space); }
 @media (pointer: coarse) {
   .gc-button, .gc-button--sm { min-height: 44px; }
+}
+.gc-page-enter { animation: gc-page-in var(--gc-motion-panel) ease-out both; }
+@keyframes gc-page-in {
+  from { opacity:0; transform:translate3d(0,6px,0); }
+  to { opacity:1; transform:translate3d(0,0,0); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

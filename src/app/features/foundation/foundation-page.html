@@ -1,27 +1,4 @@
-<div class="shell" [class.menu-open]="menuOpen()">
-  <aside id="navigation-help" class="sidebar" aria-label="Navegación de ejemplo">
-    <div class="brand"><span class="brand-mark" aria-hidden="true">GC</span> Gastro Core</div>
-    <p class="gc-muted">Design System · Angular 22</p>
-    <nav aria-label="Secciones del playground">
-      <a routerLink="/" aria-current="page">Componentes y temas</a>
-    </nav>
-    <div class="sidebar-note gc-muted">Laboratorio local. Sin conexión al ERP ni almacenamiento persistente.</div>
-  </aside>
-
-  <main class="main">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="mobile-menu" gcButton variant="outline" type="button"
-          (click)="menuOpen.set(!menuOpen())"
-          [attr.aria-expanded]="menuOpen()" aria-controls="navigation-help">
-          {{ menuOpen() ? 'Cerrar menú' : 'Menú' }}
-        </button>
-        <nav aria-label="Ruta de navegación"><a routerLink="/">Inicio</a> <span aria-hidden="true">/</span> <strong>Design System</strong></nav>
-      </div>
-      <gc-status-badge [label]="theme.preset() === 'cappuccino' ? 'Cappuccino Foundation' : 'Ocean Foundation'" tone="success" />
-    </header>
-
-    <div class="content gc-stack">
+<div class="foundation-content gc-stack gc-page-enter">
       <gc-page-header
         eyebrow="GASTRO CORE / FOUNDATION"
         title="Design System"
@@ -143,5 +120,3 @@
       </section>
       <p class="footer-note gc-muted">Foundation local · Tema y componentes independientes del backend · WCAG 2.2 AA como objetivo.</p>
     </div>
-  </main>
-</div>
