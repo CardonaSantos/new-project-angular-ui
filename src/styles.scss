@@ -109,3 +109,27 @@ a { color: var(--gc-primary); }
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Overlay content lives outside the component tree: keep profile menu tokens global. */
+.gc-profile-panel .gc-profile-info {
+  display: grid;
+  gap: .35rem;
+  padding: .8rem 1rem;
+  min-width: 15rem;
+  max-width: min(19rem, calc(100vw - 2rem));
+  color: var(--gc-on-surface);
+  border-bottom: 1px solid var(--gc-outline-variant);
+}
+.gc-profile-panel .gc-profile-info small,
+.gc-profile-panel .gc-profile-info span {
+  font-size: .8rem;
+  color: var(--gc-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+.gc-profile-panel.mat-mdc-menu-panel {
+  background: var(--gc-surface);
+  border: 1px solid var(--gc-outline-variant);
+  border-radius: var(--gc-radius);
+  max-width: min(20rem, calc(100vw - 2rem));
+}

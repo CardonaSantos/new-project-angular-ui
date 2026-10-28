@@ -31,3 +31,7 @@ OpenAPI TypeScript y Playwright continúan pendientes de instalar con su lockfil
 
 Consultar docs/ARCHITECTURE.md y docs/DESIGN-SYSTEM.md.
 El despliegue usa Dockerfile/Caddyfile, no ng serve.
+
+## UI Core & Behaviors (fase local)
+
+Rutas **/lab/behaviors**, **/lab/draft**, **/lab/secure** para probar sin NestJS permisos simulados, branding, perfil, protección de cambios sin guardar, estados loading/error, notificaciones, atajos y realtime local. La página **/patterns/tables** conserva filtros/paginación en la URL. Ver [docs/UI-CORE.md](docs/UI-CORE.md).

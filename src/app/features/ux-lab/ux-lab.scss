@@ -1,0 +1,17 @@
+:host { display:block; }
+.ux-lab { max-width:1200px; margin-inline:auto; }
+.cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gc-space); align-items:start; }
+.cards .gc-surface { min-width:0; }
+h2 { margin:0 0 .5rem; font-size:1.125rem; }
+p { line-height:1.5; }
+.actions { display:flex; flex-wrap:wrap; gap:.55rem; margin:.8rem 0; }
+.field { display:grid; gap:.4rem; font-size:.875rem; font-weight:600; margin:.75rem 0; }
+.field input {
+  width:100%; min-height:var(--gc-control-height); padding:.55rem .75rem;
+  background:var(--gc-surface); color:var(--gc-on-surface);
+  border:1px solid var(--gc-outline); border-radius:calc(var(--gc-radius) * .7);
+}
+.privileged { display:grid; gap:.5rem; padding:.8rem; border:1px solid var(--gc-outline-variant); border-radius:var(--gc-radius); margin-top:.8rem; }
+.notice-box { border-left:4px solid var(--gc-warning); }
+ul { padding-left:1.4rem; }
+@media(max-width:900px) { .cards { grid-template-columns:1fr; } }

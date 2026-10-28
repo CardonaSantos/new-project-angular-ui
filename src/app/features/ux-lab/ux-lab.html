@@ -1,0 +1,115 @@
+<div class="gc-stack gc-page-enter ux-lab">
+  <gc-page-header eyebrow="UI CORE / COMPORTAMIENTOS"
+    title="UX Lab — Gastro Core"
+    description="Prueba los patrones comunes sin API, sin PostgreSQL y sin guardar preferencias." />
+
+  @if (gate) {
+    <section class="gc-surface notice-box" role="status">
+      @if (gate === 'denied') {
+        Acceso denegado por la simulación de permisos. Prueba con Gerencia.
+      } @else {
+        Esta ruta requiere una sesión de prueba. Elige un perfil.
+      }
+    </section>
+  }
+
+  <div class="cards">
+    <section class="gc-surface" aria-labelledby="lab-auth">
+      <h2 id="lab-auth">1. Sesión y permisos</h2>
+      <p class="gc-muted">Perfiles de ejemplo; los permisos definitivos vendrán de NestJS.</p>
+      <div class="actions">
+        <button gcButton type="button" (click)="login('manager')">Gerencia</button>
+        <button gcButton type="button" variant="secondary" (click)="login('cashier')">Caja</button>
+        <button gcButton type="button" variant="outline" (click)="login('viewer')">Consulta</button>
+        <button gcButton type="button" variant="outline" (click)="auth.logout()">Salir</button>
+      </div>
+      <p class="gc-muted">Estado: {{ auth.status() }} · Rol: {{ auth.identity()?.role ?? 'ninguno' }}</p>
+      <p>Permiso <code>orders.cancel</code>:
+        <gc-status-badge [label]="auth.has('orders.cancel') ? 'Permitido' : 'Restringido'"
+          [tone]="auth.has('orders.cancel') ? 'success' : 'warning'" />
+      </p>
+      <div *gcCan="'orders.cancel'" class="privileged">
+        <strong>Acción exclusiva visible para Gerencia</strong>
+        <button gcButton variant="danger" type="button" (click)="notifications.show('Acción demo, sin mutación.', 'info')">
+          Cancelar orden (demo)
+        </button>
+      </div>
+      <p><a routerLink="/lab/secure">Abrir ruta protegida (requiere settings.manage)</a></p>
+    </section>
+
+    <section class="gc-surface" aria-labelledby="lab-brand">
+      <h2 id="lab-brand">2. Marca y perfil</h2>
+      <p class="gc-muted">Actualiza el nombre/logo del sidebar. Prueba también el menú de perfil y sucursales en la topbar.</p>
+      <label class="field">Nombre de empresa
+        <input #company type="text" maxlength="60" [value]="companyInput()"
+          (input)="companyInput.set(company.value)" />
+      </label>
+      <div class="actions"><button gcButton type="button" (click)="setName(companyInput())">Aplicar nombre</button></div>
+      <label class="field">Ruta de logo (local o HTTPS)
+        <input #logo type="text" [value]="logoInput()" (input)="logoInput.set(logo.value)" />
+      </label>
+      <div class="actions">
+        <button gcButton type="button" variant="outline" (click)="setLogo(logoInput())">Aplicar logo</button>
+        <button gcButton type="button" variant="outline" (click)="branding.reset()">Restablecer marca</button>
+      </div>
+    </section>
+
+    <section class="gc-surface" aria-labelledby="lab-actions">
+      <h2 id="lab-actions">3. Acciones asíncronas</h2>
+      <p class="gc-muted">Un clic inicia la petición; se bloquea mientras termina, evitando envíos dobles.</p>
+      <div class="actions">
+        <button gcButton type="button" [disabled]="action.pending()" (click)="runAction()">
+          {{ action.pending() ? 'Procesando…' : 'Simular éxito' }}
+        </button>
+        <button gcButton type="button" variant="outline" [disabled]="action.pending()" (click)="runAction(true)">Simular error</button>
+        <button gcButton type="button" variant="secondary" (click)="notifications.show('Notificación de ejemplo', 'info')">Notificación</button>
+      </div>
+      <p class="gc-muted">Estado: {{ action.status() }}</p>
+    </section>
+
+    <section class="gc-surface" aria-labelledby="lab-page">
+      <h2 id="lab-page">4. Estados de página</h2>
+      <div class="actions">
+        <button gcButton type="button" size="sm" (click)="loadDemo('ready')">Cargar</button>
+        <button gcButton type="button" size="sm" variant="secondary" (click)="loadDemo('empty')">Vacío</button>
+        <button gcButton type="button" size="sm" variant="outline" (click)="loadDemo('error')">Error</button>
+      </div>
+      <p class="gc-muted">Estado: {{ pageState.status() }}</p>
+      @if (pageState.busy() && pageState.data() === null) {
+        <gc-skeleton [lines]="3" label="Cargando datos de ejemplo" />
+      } @else if (pageState.status() === 'error') {
+        <gc-error-state message="Error simulado; el botón permite reintentar."
+          (retry)="loadDemo('ready')" />
+      } @else if (pageState.status() === 'empty') {
+        <p role="status">Sin registros.</p>
+      } @else if (pageState.data(); as records) {
+        <ul>@for (record of records; track record) { <li>{{ record }}</li> }</ul>
+        @if (pageState.status() === 'refreshing') { <p role="status">Actualizando…</p> }
+      }
+    </section>
+
+    <section class="gc-surface" aria-labelledby="lab-realtime">
+      <h2 id="lab-realtime">5. Realtime simulado</h2>
+      <p class="gc-muted">Adaptador intercambiable con Socket.IO. No establece conexiones de red.</p>
+      <div class="actions">
+        <button gcButton type="button" (click)="connectDemo()">Conectar mock</button>
+        <button gcButton type="button" variant="secondary" [disabled]="realtime.status() !== 'connected'" (click)="pushDemoEvent()">Generar evento</button>
+        <button gcButton type="button" variant="outline" (click)="disconnectDemo()">Desconectar</button>
+      </div>
+      <p aria-live="polite">Conexión: {{ realtime.status() }}</p>
+      <ul>@for (event of socketEvents(); track $index) { <li>{{ event }}</li> }</ul>
+    </section>
+
+    <section class="gc-surface" aria-labelledby="lab-nav">
+      <h2 id="lab-nav">6. Navegación y atajos</h2>
+      <label class="field">Búsqueda rápida (Ctrl + K)
+        <input #shortcutInput type="search" placeholder="Presiona Ctrl + K fuera de los formularios…" />
+      </label>
+      <p class="gc-muted">El servicio ignora atajos mientras escribes en inputs, textarea o selects.</p>
+      <div class="actions">
+        <a gcButton routerLink="/lab/draft" variant="secondary">Probar cambios sin guardar</a>
+        <a gcButton routerLink="/patterns/tables" variant="outline">Tabla con filtros en URL</a>
+      </div>
+    </section>
+  </div>
+</div>

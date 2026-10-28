@@ -1,4 +1,8 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Subject, debounceTime } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { GcTableRouteState } from '../../core/navigation/gc-table-route-state';
+import { GcTablePreferences } from '../../core/ux/gc-table-preferences';
 import { GcPageHeader } from '../../design-system/components/page-header/gc-page-header';
 import { GcButtonDirective } from '../../design-system/components/button/gc-button.directive';
 import {
@@ -32,6 +36,7 @@ const SAMPLE_ROWS: readonly GcTableRow[] = [
 @Component({
   selector: 'gc-table-playground',
   imports: [GcPageHeader, GcButtonDirective, GcDataTable, GcTableToolbar, GcFilterBar, GcPagination],
+  providers: [GcTableRouteState],
   templateUrl: './table-playground.html',
   styleUrl: './table-playground.scss',
 })
@@ -49,12 +54,29 @@ export class TablePlayground {
     { label: 'Alimentos', value: 'Alimentos' },
     { label: 'Insumos', value: 'Insumos' },
   ];
-  protected readonly search = signal('');
-  protected readonly category = signal('');
-  protected readonly sort = signal<GcSort | null>(null);
-  protected readonly page = signal(0);
-  protected readonly size = signal(5);
+  protected readonly routeState = inject(GcTableRouteState);
+  protected readonly query = this.routeState.query;
+  protected readonly search = signal(this.query().search);
+  protected readonly category = computed(() => this.query().category);
+  protected readonly sort = computed<GcSort | null>(() => {
+    const query = this.query();
+    return query.sortKey && query.direction ? { key: query.sortKey, direction: query.direction } : null;
+  });
+  protected readonly page = computed(() => this.query().index);
+  protected readonly size = computed(() => this.query().size);
   protected readonly loading = signal(false);
+  protected readonly tablePreferences = new GcTablePreferences(this.columns.map((col) => col.key));
+  protected readonly visibleColumns = computed(() =>
+    this.tablePreferences.visible().map((key) => this.columns.find((col) => col.key === key)!),
+  );
+  private readonly searchChanges = new Subject<string>();
+
+  constructor() {
+    this.searchChanges.pipe(debounceTime(250), takeUntilDestroyed()).subscribe((search) => {
+      void this.routeState.patch({ search, index: 0 }, true);
+    });
+    effect(() => this.search.set(this.query().search));
+  }
 
   protected readonly filtered = computed(() => {
     const query = this.search().trim().toLocaleLowerCase('es');
@@ -86,25 +108,26 @@ export class TablePlayground {
 
   protected setSearch(query: string): void {
     this.search.set(query);
-    this.page.set(0);
+    this.searchChanges.next(query);
   }
   protected setCategory(category: string): void {
-    this.category.set(category);
-    this.page.set(0);
+    void this.routeState.patch({ category, index: 0 });
   }
   protected setSort(sort: GcSort): void {
-    this.sort.set(sort.direction ? sort : null);
-    this.page.set(0);
+    void this.routeState.patch({
+      sortKey: sort.direction ? sort.key : null,
+      direction: sort.direction,
+      index: 0,
+    });
   }
   protected setPage(event: GcPageChange): void {
-    this.page.set(event.index);
-    this.size.set(event.size);
+    void this.routeState.patch({ index: event.index, size: event.size });
   }
   protected reset(): void {
+    this.searchChanges.next('');
     this.search.set('');
-    this.category.set('');
-    this.sort.set(null);
-    this.page.set(0);
     this.loading.set(false);
+    this.tablePreferences.reset();
+    void this.routeState.reset();
   }
 }

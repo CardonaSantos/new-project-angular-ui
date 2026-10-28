@@ -24,12 +24,20 @@
         Simular carga (skeleton)
       </label>
 
-      <gc-data-table [columns]="columns" [rows]="displayed()" [loading]="loading()"
+      <div class="gc-column-config" aria-label="Preferencias de columnas">
+        <span>Columnas:</span>
+        @for (column of columns; track column.key) {
+          <label><input type="checkbox" [checked]="tablePreferences.visible().includes(column.key)"
+            (change)="tablePreferences.toggle(column.key)" /> {{ column.label }}</label>
+        }
+        <button type="button" (click)="tablePreferences.move('status', -1)">Mover estado a la izquierda</button>
+      </div>
+      <gc-data-table [columns]="visibleColumns()" [rows]="displayed()" [loading]="loading()"
         [sort]="sort()" (sortChange)="setSort($event)" />
       <gc-pagination [index]="page()" [size]="size()" [total]="filtered().length"
         (pageChange)="setPage($event)" />
       <p class="gc-muted fine-print">
-        Los datos se filtran en memoria solamente en este laboratorio. En módulos reales, la feature
+        Los parámetros de filtros y página se conservan en la URL al volver a esta ruta. Los datos se filtran en memoria solamente en este laboratorio. En módulos reales, la feature
         enviará filtros, ordenación y página al backend; los componentes no realizan llamadas HTTP.
       </p>
     </div>
