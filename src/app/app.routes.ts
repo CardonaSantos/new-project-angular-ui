@@ -43,6 +43,13 @@ export const routes: Routes = [
               import('./features/ux-lab/draft-demo').then((m) => m.GcDraftDemo),
           },
           {
+            path: 'forms', title: 'Form Engine — Gastro Core',
+            data: { breadcrumb: 'Formularios guiados' },
+            canDeactivate: [gcUnsavedChangesGuard],
+            loadComponent: () =>
+              import('./features/form-lab/form-lab').then((m) => m.GcFormLab),
+          },
+          {
             path: 'secure', title: 'Área protegida — Gastro Core',
             data: { breadcrumb: 'Permisos', permission: 'settings.manage' },
             canActivate: [gcAuthGuard, gcPermissionGuard],

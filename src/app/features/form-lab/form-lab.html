@@ -1,0 +1,49 @@
+<div class="gc-page-enter gc-stack form-lab">
+  <gc-page-header
+    eyebrow="FORM ENGINE / FASE LOCAL"
+    title="Laboratorio de formularios"
+    description="Asistente Formly, validaciones Zod, máscaras, archivos y errores de servidor simulados. Nada se guarda en la base de datos.">
+    <div gcPageActions>
+      <a gcButton variant="outline" routerLink="/lab/behaviors">Volver a UX Lab</a>
+    </div>
+  </gc-page-header>
+
+  <section class="gc-surface" aria-labelledby="form-wizard-title">
+    <h2 id="form-wizard-title">1. Formulario guiado</h2>
+    <p class="gc-muted">Prueba dejar campos requeridos vacíos, introducir un precio menor al costo y regresar a pasos anteriores.</p>
+    <gc-form-wizard [steps]="steps" [model]="model" [schema]="schema"
+      [reviewFields]="reviewFields" confirmationTitle="Confirmar artículo de demostración"
+      (completed)="completed($event)" />
+  </section>
+
+  <div class="two-column">
+    <section class="gc-surface" aria-labelledby="mask-title">
+      <h2 id="mask-title">2. Entrada con máscara</h2>
+      <p class="gc-muted">El teléfono permite únicamente hasta ocho dígitos. Ejemplo con Maskito, sin guardar datos.</p>
+      <gc-masked-input inputId="gc-demo-phone" label="Teléfono de Guatemala"
+        placeholder="12345678" [control]="phone" [options]="phoneMask"
+        hint="Introduce ocho dígitos, sin prefijo de país." />
+      <p class="gc-muted">Valor: {{ phone.value || '—' }}</p>
+    </section>
+
+    <section class="gc-surface" aria-labelledby="upload-title">
+      <h2 id="upload-title">3. Adjuntos y vista previa</h2>
+      <p class="gc-muted">El navegador verifica cantidad, tamaño y tipo. El servidor deberá volver a validar.</p>
+      <gc-file-upload inputId="gc-demo-upload" label="Imágenes del artículo (demo)"
+        [maxFiles]="3" [maxSizeMb]="2" (filesSelected)="onFiles($event)" />
+      <p class="gc-muted">Archivos aceptados: {{ selectedFiles().length }}</p>
+    </section>
+  </div>
+
+  <section class="gc-surface" aria-labelledby="server-title">
+    <h2 id="server-title">4. Errores de validación del servidor (simulados)</h2>
+    <p class="gc-muted">El adaptador recibe errores normalizados. No presupone un formato de NestJS.</p>
+    <div class="actions">
+      <button type="button" gcButton (click)="mockServerError()">Simular error de campo</button>
+      <button type="button" gcButton variant="outline" (click)="clearServerError()">Limpiar errores</button>
+    </div>
+    <gc-form-error-summary [issues]="serverIssues()" />
+  </section>
+
+  <p class="gc-muted caption">El guard de cambios sin guardar también protege esta página. Prueba salir después de editar un campo.</p>
+</div>

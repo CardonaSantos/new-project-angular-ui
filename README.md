@@ -35,3 +35,7 @@ El despliegue usa Dockerfile/Caddyfile, no ng serve.
 ## UI Core & Behaviors (fase local)
 
 Rutas **/lab/behaviors**, **/lab/draft**, **/lab/secure** para probar sin NestJS permisos simulados, branding, perfil, protección de cambios sin guardar, estados loading/error, notificaciones, atajos y realtime local. La página **/patterns/tables** conserva filtros/paginación en la URL. Ver [docs/UI-CORE.md](docs/UI-CORE.md).
+
+## Form Engine & Advanced UX (fase local)
+
+Laboratorio en `/lab/forms` con wizard Formly, validaciones Zod cruzadas, revisión previa a confirmar, resumen de errores, Maskito y previsualización local de archivos, sin envío al servidor. Ver [docs/FORM-ENGINE.md](docs/FORM-ENGINE.md).
