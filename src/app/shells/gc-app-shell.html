@@ -1,21 +1,26 @@
 <div class="gc-shell" [class.gc-shell-collapsed]="collapsed()" [class.gc-shell-mobile-open]="mobileOpen()">
-  <button
-    type="button" class="gc-backdrop"
+  <button type="button" class="gc-backdrop"
     aria-label="Cerrar menú de navegación"
     [attr.aria-hidden]="mobileOpen() ? null : 'true'"
     [attr.tabindex]="mobileOpen() ? 0 : -1"
     (click)="closeMobile()"></button>
   <div id="gc-primary-navigation" class="gc-navigation">
-    <gc-sidebar [items]="items" [collapsed]="collapsed()" [mobileOpen]="mobileOpen()"
+    <gc-sidebar [items]="items()" [collapsed]="collapsed()" [mobileOpen]="mobileOpen()"
+      [brandName]="branding.name()" [logoUrl]="branding.logoUrl()"
       (navigate)="closeMobile()" />
   </div>
   <div class="gc-workspace">
-    <gc-topbar
-      [collapsed]="collapsed()" [mobileOpen]="mobileOpen()"
+    <gc-topbar [collapsed]="collapsed()" [mobileOpen]="mobileOpen()"
       (collapseToggle)="collapsed.set(!collapsed())"
-      (mobileToggle)="mobileOpen.set(!mobileOpen())" />
+      (mobileToggle)="mobileOpen.set(!mobileOpen())">
+      <div gcTopbarActions class="gc-account-actions">
+        <gc-branch-switcher />
+        <gc-profile-menu />
+      </div>
+    </gc-topbar>
     <main id="gc-main-content" class="gc-content" tabindex="-1">
       <router-outlet />
     </main>
   </div>
+  <gc-notification-center />
 </div>
