@@ -33,3 +33,13 @@ El área /lab/behaviors permite cambiar a Gerencia, Caja o Consulta, alternar su
 
 ## Calidad
 Ejecutar npm ci, npm run lint, npm run build y npm test -- --watch=false. Sin aceptación de funcionalidad sin CI verde. Objetivo WCAG 2.2 AA y animación breve con prefers-reduced-motion.
+
+
+## Popovers, menús y confirmaciones
+
+- Menús de perfil y acciones contextuales son overlays anclados, no MatDialog.
+- Deben cerrarse al hacer clic fuera, con Escape, al elegir una opción y al navegar.
+- El menú de perfil usa Angular Material MatMenu y restaura el foco al disparador.
+- Formularios y edición usan rutas completas, nunca diálogos.
+- Las acciones destructivas/irreversibles y la salida con datos pendientes requieren confirmación; filtros, búsqueda y navegación ordinaria no.
+- No mantener overlays activos cuando el usuario cambie de página.
