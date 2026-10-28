@@ -42,3 +42,8 @@ Tema claro/oscuro/sistema vía color-scheme y CSS tokens, escala tipográfica y 
 ## Calidad
 
 Un módulo se considera integrado al terminar lint, build, pruebas y verificación de contratos. npm ci debe reproducir package-lock. GitHub Actions prueba la configuración en Node 24.22.0.
+
+
+## Fase 1 — Design System local
+
+Cappuccino predeterminado, tokens semánticos, Signals y componentes GC. Sin persistencia; consultar docs/DESIGN-SYSTEM.md.

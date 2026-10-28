@@ -1,0 +1,5 @@
+.page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+.eyebrow { color:var(--gc-primary); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin:0 0 .5rem; }
+h1 { font-size:clamp(1.5rem, 2.7vw, 2rem); line-height:1.2; margin:0; }
+.description { color:var(--gc-on-surface-variant); margin:.5rem 0 0; line-height:1.5; }
+.actions { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }

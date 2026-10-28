@@ -1,54 +1,147 @@
-<div class="shell">
-  <aside class="sidebar" aria-label="Navegación principal">
-    <strong>Gastro Core UI</strong>
-    <p>Angular 22 · Foundation</p>
-    <nav aria-label="Módulos"><a href="/" aria-current="page">Inicio / Design System</a></nav>
+<div class="shell" [class.menu-open]="menuOpen()">
+  <aside class="sidebar" aria-label="Navegación de ejemplo">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">GC</span> Gastro Core</div>
+    <p class="gc-muted">Design System · Angular 22</p>
+    <nav aria-label="Secciones del playground">
+      <a routerLink="/" aria-current="page">Componentes y temas</a>
+    </nav>
+    <div class="sidebar-note gc-muted">Laboratorio local. Sin conexión al ERP ni almacenamiento persistente.</div>
   </aside>
+
   <main class="main">
     <header class="topbar">
-      <nav aria-label="Ruta de navegación"><a href="/">Inicio</a> / <span aria-current="page">Foundation</span></nav>
-      <label>Tema
-        <select #themeSelect [value]="appearance.theme()" (change)="setTheme(themeSelect.value)">
-          <option value="system">Sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option>
-        </select>
-      </label>
-    </header>
-    <div class="content">
-      <p class="eyebrow">GASTRO CORE / FOUNDATION</p>
-      <h1>Base Angular verificada</h1>
-      <p>Angular Material, Formly, Router y Tailwind. Este laboratorio no crea registros reales.</p>
-      <div class="grid">
-        <mat-card appearance="outlined">
-          <mat-card-header><mat-card-title>Formulario dinámico</mat-card-title></mat-card-header>
-          <mat-card-content>
-            <form [formGroup]="form" (ngSubmit)="validateExample()">
-              <formly-form [form]="form" [fields]="fields" [model]="model" />
-              <button type="submit" mat-flat-button>Validar ejemplo</button>
-            </form>
-          </mat-card-content>
-        </mat-card>
-        <mat-card appearance="outlined">
-          <mat-card-header><mat-card-title>Patrones UI / UX</mat-card-title></mat-card-header>
-          <mat-card-content>
-            <p>Formularios en páginas; diálogos solo para confirmar.</p>
-            <div class="actions">
-              <button type="button" mat-flat-button (click)="confirmExample()">Diálogo de confirmación</button>
-              <button type="button" mat-stroked-button (click)="appearance.density.set(appearance.density() === 'compact' ? 'comfortable' : 'compact')">
-                Densidad: {{ appearance.density() }}
-              </button>
-            </div>
-            <div class="actions">
-              <button mat-button type="button" (click)="appearance.fontScale.set(1)">100%</button>
-              <button mat-button type="button" (click)="appearance.fontScale.set(1.125)">112%</button>
-              <button mat-button type="button" (click)="appearance.fontScale.set(1.25)">125%</button>
-            </div>
-          </mat-card-content>
-        </mat-card>
+      <div class="topbar-left">
+        <button class="mobile-menu" gcButton variant="outline" type="button"
+          (click)="menuOpen.set(!menuOpen())"
+          [attr.aria-expanded]="menuOpen()" aria-controls="navigation-help">
+          {{ menuOpen() ? 'Cerrar menú' : 'Menú' }}
+        </button>
+        <nav aria-label="Ruta de navegación"><a routerLink="/">Inicio</a> <span aria-hidden="true">/</span> <strong>Design System</strong></nav>
       </div>
-      <section class="summary">
-        <h2>Extensiones instaladas</h2>
-        <p>TanStack Table, Embla, Lucide, Maskito, ECharts, Socket.IO, Zod y Decimal.js se integrarán en las features que los necesiten, sin aumentar el bundle inicial.</p>
+      <gc-status-badge label="Cappuccino Foundation" tone="success" />
+    </header>
+
+    <div class="content gc-stack">
+      <gc-page-header
+        eyebrow="GASTRO CORE / FOUNDATION"
+        title="Design System"
+        description="Tema Cappuccino dinámico, componentes reutilizables y accesibilidad en desktop, tablet y móvil.">
+        <div gcPageActions>
+          <button gcButton variant="outline" type="button" (click)="theme.reset()">Restablecer apariencia</button>
+        </div>
+      </gc-page-header>
+
+      <div class="main-grid">
+        <section class="gc-surface editor" aria-labelledby="appearance-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="appearance-title">Personalizar apariencia</h2>
+              <p class="gc-muted">Los cambios se aplican a toda la interfaz sin recargar.</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="gc-preset">Paleta</label>
+            <select id="gc-preset" #preset [value]="theme.preset()" (change)="onPreset(preset.value)">
+              @for (item of presets; track item.id) {
+                <option [value]="item.id">{{ item.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="swatches" aria-label="Colores del tema activo">
+            <div class="swatch" [style.background]="theme.colors().primary"><span>Primario</span></div>
+            <div class="swatch" [style.background]="theme.colors().primaryContainer"><span>Suave</span></div>
+            <div class="swatch" [style.background]="theme.colors().surfaceContainer"><span>Superficie</span></div>
+            <div class="swatch" [style.background]="theme.colors().outline"><span>Borde</span></div>
+          </div>
+
+          <div class="field">
+            <label for="gc-mode">Apariencia</label>
+            <select id="gc-mode" #mode [value]="theme.mode()" (change)="onMode(mode.value)">
+              <option value="system">Sistema</option>
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="gc-density">Densidad</label>
+            <select id="gc-density" #density [value]="theme.density()"
+              (change)="theme.setDensity(density.value === 'compact' ? 'compact' : 'comfortable')">
+              <option value="comfortable">Cómoda</option>
+              <option value="compact">Compacta</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="gc-scale">Escala tipográfica: {{ (theme.fontScale() * 100).toFixed(0) }}%</label>
+            <input id="gc-scale" #scale type="range" min="1" max="1.25" step="0.125"
+              [value]="theme.fontScale()" (input)="onScale(scale.value)" />
+          </div>
+
+          <div class="field">
+            <label for="gc-radius">Radio: {{ theme.cornerRadius() }}px</label>
+            <input id="gc-radius" #radius type="range" min="4" max="24" step="1"
+              [value]="theme.cornerRadius()" (input)="onRadius(radius.value)" />
+          </div>
+
+          <div class="field">
+            <label for="gc-accent">Color primario personalizado</label>
+            <div class="accent-row">
+              <input id="gc-accent" type="color" #accent aria-label="Seleccionar color primario"
+                [value]="theme.customPrimary() ?? theme.colors().primary" (input)="onAccent(accent.value)" />
+              <span class="gc-muted">{{ theme.customPrimary() ?? theme.colors().primary }}</span>
+            </div>
+          </div>
+          <p class="hint gc-muted">Se conserva solo durante esta sesión; persistencia local o servidor será una fase posterior.</p>
+        </section>
+
+        <section class="gc-surface preview" aria-labelledby="preview-title">
+          <h2 id="preview-title">Componentes básicos</h2>
+          <p class="gc-muted">Variables compartidas entre nuestros componentes y Angular Material.</p>
+
+          <h3>Botones</h3>
+          <div class="actions">
+            <button gcButton>Principal</button>
+            <button gcButton variant="secondary">Secundario</button>
+            <button gcButton variant="outline">Contorno</button>
+            <button gcButton variant="danger">Eliminar</button>
+            <button gcButton disabled>Deshabilitado</button>
+          </div>
+
+          <h3>Estados</h3>
+          <div class="actions">
+            <gc-status-badge label="Disponible" tone="success" />
+            <gc-status-badge label="Pendiente" tone="warning" />
+            <gc-status-badge label="Cancelado" tone="danger" />
+            <gc-status-badge label="Borrador" />
+          </div>
+
+          <h3>Confirmaciones</h3>
+          <div class="actions">
+            <button gcButton variant="outline" type="button" (click)="confirmExample()">Abrir confirmación</button>
+          </div>
+
+          <h3>Estado vacío</h3>
+          <gc-empty-state title="Sin artículos todavía"
+            description="Este ejemplo ilustra el estado vacío para futuros listados del ERP.">
+            <button gcButton size="sm" type="button" disabled>Crear artículo (demo)</button>
+          </gc-empty-state>
+        </section>
+      </div>
+
+      <section class="gc-surface" aria-labelledby="form-title">
+        <h2 id="form-title">Formulario dinámico — Ngx Formly</h2>
+        <p class="gc-muted">Formulario en una página, con validación y campos condicionales. No se envían datos al servidor.</p>
+        <form [formGroup]="form" (ngSubmit)="validateForm()" class="demo-form">
+          <formly-form [form]="form" [fields]="fields" [model]="model" />
+          <div class="actions">
+            <button gcButton type="submit">Validar formulario</button>
+          </div>
+        </form>
       </section>
+      <p class="footer-note gc-muted">Foundation local · Tema y componentes independientes del backend · WCAG 2.2 AA como objetivo.</p>
     </div>
   </main>
 </div>
