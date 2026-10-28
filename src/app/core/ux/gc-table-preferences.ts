@@ -19,13 +19,15 @@ export class GcTablePreferences {
   }
 
   move(key: string, direction: -1 | 1): void {
-    this.order.update((old) => {
-      const next = [...old];
-      const from = next.indexOf(key);
-      const to = from + direction;
-      if (from === -1 || to < 0 || to >= next.length) return old;
-      next.splice(from, 1);
-      next.splice(to, 0, key);
+    const visible = this.visible();
+    const position = visible.indexOf(key);
+    const adjacent = visible[position + direction];
+    if (position < 0 || !adjacent) return;
+    this.order.update((previous) => {
+      const next = [...previous];
+      const first = next.indexOf(key);
+      const second = next.indexOf(adjacent);
+      [next[first], next[second]] = [next[second], next[first]];
       return next;
     });
   }
