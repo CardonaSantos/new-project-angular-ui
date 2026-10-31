@@ -26,7 +26,7 @@ import { GcButtonDirective } from '../../../design-system/components/button/gc-b
           <input id="gc-login-password" type="password" formControlName="password"
             autocomplete="current-password" />
           @if (error()) { <p role="alert" class="gc-error-text">{{ error() }}</p> }
-          <button gcButton type="submit" block [disabled]="loading()">
+          <button gcButton type="submit" [block]="true" [disabled]="loading()">
             {{ loading() ? 'Verificando…' : 'Iniciar sesión' }}
           </button>
         </form>

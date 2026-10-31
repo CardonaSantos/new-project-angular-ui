@@ -54,3 +54,13 @@ Cappuccino predeterminado, tokens semánticos, Signals y componentes GC. Sin per
 - `GcAppShell` utiliza todo el ancho disponible; para formularios o contenido de lectura añadir `.gc-page-narrow` dentro del contenido cuando corresponda.
 - `GcDataTable` acepta `column.format` para texto personalizado y plantillas opcionales con `GcTableCellDirective` para celdas con acciones/badges. Cada feature mantiene la paginación/ordenación del servidor.
 - Consultar `docs/SHARED-FOUNDATION.md` para API, fechas, pruebas y convenciones.
+
+## Fase HTTP, Auth y sucursales
+
+- Cliente nativo HttpClient con interceptores funcionales, limitados a URLs relativas `/api/`.
+- API_ENDPOINTS mantiene solo paths; operaciones GET/POST/PATCH viven en servicios `@Injectable` orientados a feature.
+- El refresh token del backend usa cookie HttpOnly y accessToken solo memoria; no inventar almacenamiento local.
+- Los guardias reales `gcSessionGuard`, `gcPasswordChangeGuard`, `gcRealPermissionGuard` son distintos de los guards de laboratorio UX.
+- La sucursal se selecciona desde una señal compartida; los módulos optan explícitamente al header con `gcBranchRequest()`.
+- Errores de API: `GcApiError` + notificación global, salvo cuando el formulario usa `GC_SILENT_ERROR` para feedback inline.
+- Consultar `docs/HTTP-SESSION-FOUNDATION.md` para proxy local, Railway Caddy y scripts de calidad.

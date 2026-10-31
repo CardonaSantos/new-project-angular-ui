@@ -23,7 +23,7 @@ import { GcNotificationService } from '../../../core/ux/gc-notification.service'
           <label for="confirm-password">Confirmar contraseña nueva</label>
           <input id="confirm-password" formControlName="confirmation" type="password" autocomplete="new-password" />
           @if (error()) { <p role="alert" class="gc-error-text">{{ error() }}</p> }
-          <button gcButton type="submit" block [disabled]="loading()">
+          <button gcButton type="submit" [block]="true" [disabled]="loading()">
             {{ loading() ? 'Guardando…' : 'Cambiar contraseña' }}
           </button>
         </form>
