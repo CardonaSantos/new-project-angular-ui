@@ -66,3 +66,7 @@ Los cambios de Auth UI parten del PR #8 (HTTP/Auth base), que depende del PR #7 
 - `UsersModule` del backend ofrece `GET/PATCH /api/users/me/profile` (apellidos, teléfono, idioma, zona horaria) y `PUT /api/users/me/avatar` (mediaId); el archivo se carga mediante `MediaModule`. Este flujo se hará en perfil personal / Users, no en la autenticación de sesión.
 - Solo `PATCH /api/users/:id` con permiso `users.update` permite editar `nombre` y `email`. Rol/permisos y gestión del personal quedan en Users/Staff.
 - Pruebas de aceptación Auth: login válido/inválido, F5 con sesión, renovación/expiración, cambio obligatorio y voluntario, contraseña actual errónea, logout, logout-all, teclado/Escape/foco del menú, resoluciones móvil/escritorio; selector de sucursales múltiples cuando haya datos de prueba.
+
+## Confirmaciones seguras
+
+`ConfirmDialog` es el componente global para confirmar acciones. Sus botones tienen separación mínima de 16 px y área interactiva de al menos 44 px; a anchos estrechos se colocan en filas separadas con 12 px de distancia. El botón para cancelar aparece primero y el de confirmar al final, para evitar pulsaciones equivocadas. Auth utiliza el mismo diálogo y señala el cierre de sesión como acción de precaución.

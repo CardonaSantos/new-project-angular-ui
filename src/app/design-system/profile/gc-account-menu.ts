@@ -78,7 +78,8 @@ export class GcAccountMenu {
       message: all
         ? 'Se cerrarán las sesiones abiertas en todos tus dispositivos.'
         : '¿Quieres cerrar tu sesión?',
-      confirmText: 'Cerrar sesión',
+      confirmText: all ? 'Cerrar todas' : 'Cerrar sesión',
+      danger: true,
     });
     if (!accepted) return;
     const result = await this.action.run(() => firstValueFrom(this.session.logout(all)));
