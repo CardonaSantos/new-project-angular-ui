@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { GcAsyncAction, type GcActionResult } from './gc-async-action';
-import type { ConfirmDialogOptions, ConfirmDialogService } from '../../design-system/confirm-dialog/confirm-dialog.service';
+import type { ConfirmDialogOptions } from '../../design-system/confirm-dialog/confirm-dialog.service';
 
 /** Confirm a persistent change and prevent duplicate dialogs or submissions. */
 export class GcConfirmedAction extends GcAsyncAction {
@@ -8,7 +8,7 @@ export class GcConfirmedAction extends GcAsyncAction {
   readonly busy = computed(() => this.confirming() || this.pending());
 
   async runConfirmed<T>(
-    dialog: ConfirmDialogService,
+    dialog: { confirm(options: ConfirmDialogOptions): Promise<boolean> },
     options: ConfirmDialogOptions,
     operation: () => Promise<T>,
   ): Promise<GcActionResult<T> | null> {

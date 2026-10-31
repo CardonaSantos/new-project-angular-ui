@@ -1,16 +1,15 @@
 import { vi } from 'vitest';
-import type { ConfirmDialogService } from '../../design-system/confirm-dialog/confirm-dialog.service';
+import type { ConfirmDialogOptions } from '../../design-system/confirm-dialog/confirm-dialog.service';
 import { GcConfirmedAction } from './gc-confirmed-action';
 
-const dialogs = (confirm: (value: { title: string }) => Promise<boolean>) =>
-  ({ confirm } as ConfirmDialogService);
+const dialogs = (confirm: (value: ConfirmDialogOptions) => Promise<boolean>) => ({ confirm });
 
 describe('GcConfirmedAction', () => {
   it('cancels without sending a write', async () => {
     const action = new GcConfirmedAction();
     const write = vi.fn(async () => 'saved');
     expect(await action.runConfirmed(dialogs(async () => false),
-      { title: 'Guardar' }, write)).toBeNull();
+      { title: 'Guardar', message: '¿Guardar los cambios?' }, write)).toBeNull();
     expect(write).not.toHaveBeenCalled();
     expect(action.busy()).toBe(false);
   });
@@ -18,7 +17,7 @@ describe('GcConfirmedAction', () => {
     const action = new GcConfirmedAction();
     const write = vi.fn(async () => 'saved');
     expect(await action.runConfirmed(dialogs(async () => true),
-      { title: 'Guardar' }, write)).toEqual({ ok: true, value: 'saved' });
+      { title: 'Guardar', message: '¿Guardar los cambios?' }, write)).toEqual({ ok: true, value: 'saved' });
     expect(write).toHaveBeenCalledTimes(1);
   });
   it('prevents multiple dialogs from rapid clicks', async () => {
@@ -27,8 +26,8 @@ describe('GcConfirmedAction', () => {
     const hold = new Promise<boolean>(resolve => { answer = resolve; });
     const confirm = vi.fn(() => hold);
     const write = vi.fn(async () => 'done');
-    const first = action.runConfirmed(dialogs(confirm), { title: 'Crear' }, write);
-    expect(await action.runConfirmed(dialogs(confirm), { title: 'Crear' }, write))
+    const first = action.runConfirmed(dialogs(confirm), { title: 'Crear', message: '¿Crear el registro?' }, write);
+    expect(await action.runConfirmed(dialogs(confirm), { title: 'Crear', message: '¿Crear el registro?' }, write))
       .toEqual({ ok: false, reason: 'busy' });
     expect(confirm).toHaveBeenCalledTimes(1);
     answer(true);
@@ -38,7 +37,7 @@ describe('GcConfirmedAction', () => {
   it('clears busy on write failure', async () => {
     const action = new GcConfirmedAction();
     const result = await action.runConfirmed(dialogs(async () => true),
-      { title: 'Guardar' }, async () => { throw Error('Conflict'); });
+      { title: 'Guardar', message: '¿Guardar los cambios?' }, async () => { throw Error('Conflict'); });
     expect(result?.ok).toBe(false);
     expect(action.busy()).toBe(false);
   });
