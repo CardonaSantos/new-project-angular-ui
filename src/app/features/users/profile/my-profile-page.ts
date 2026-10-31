@@ -54,7 +54,7 @@ import type {UserRecord} from '../data-access/users.models';
    </section>
    <section class="gc-u-card gc-u-page">
     <h2>Fotografía</h2>
-    <gc-file-upload inputId="my-avatar-upload" label="Seleccionar imagen" [maxFiles]="1" [maxSizeMb]="10"
+    <gc-file-upload inputId="my-avatar-upload" label="Seleccionar imagen" [maxFiles]="1" [maxSizeMb]="10" [cropSquare]="true" [acceptedMime]="avatarMime"
       (filesSelected)="selected.set($event.length?$event[0]:null);uploadedMediaId.set(null)"/>
     @if(photoError()){<p role="alert" class="gc-u-alert">{{photoError()}}</p>}
     <div class="gc-u-actions">
@@ -76,6 +76,7 @@ export class GcMyProfilePage implements OnInit {
  private readonly access=inject(UsersAccess);
  private readonly notices=inject(GcNotificationService);
  private readonly dialog=inject(ConfirmDialogService);
+ protected readonly avatarMime:readonly string[]=['image/jpeg','image/png'];
  protected readonly page=new GcPageState<UserRecord>();
  protected readonly saving=new GcConfirmedAction();
  protected readonly photo=new GcConfirmedAction();

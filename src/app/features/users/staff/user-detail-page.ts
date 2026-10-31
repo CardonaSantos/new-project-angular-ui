@@ -114,7 +114,7 @@ import {GcUsersNav} from '../users-nav';
       @else{<div class="gc-u-avatar" aria-label="Sin fotografía">{{user.profile.nombre.slice(0,1)}}</div>}
      </div>
      @if(access.isGlobalAdmin()){
-      <gc-file-upload inputId="user-photo" label="Seleccionar imagen" [maxFiles]="1" [maxSizeMb]="10"
+      <gc-file-upload inputId="user-photo" label="Seleccionar imagen" [maxFiles]="1" [maxSizeMb]="10" [cropSquare]="true" [acceptedMime]="avatarMime"
         (filesSelected)="photoFile.set($event.length?$event[0]:null);uploadedMediaId.set(null)"/>
       @if(photoError()){<p class="gc-u-alert" role="alert">{{photoError()}}</p>}
       <div class="gc-u-actions">
@@ -162,6 +162,7 @@ export class GcUserDetailPage implements OnInit {
  private readonly notices=inject(GcNotificationService);
  protected readonly id=this.route.snapshot.paramMap.get('id')??this.route.snapshot.parent?.paramMap.get('id')??'new';
  protected readonly isNew=this.id==='new';
+ protected readonly avatarMime:readonly string[]=['image/jpeg','image/png'];
  protected readonly page=new GcPageState<UserRecord>();
  protected readonly saveAction=new GcConfirmedAction();
  protected readonly statusAction=new GcConfirmedAction();
