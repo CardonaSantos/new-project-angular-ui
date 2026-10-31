@@ -12,6 +12,8 @@ describe('shared date formatting', () => {
 
   it('requires timezone information for instants', () => {
     expect(() => parseIsoInstant('2026-10-31T01:00:00')).toThrow();
+    expect(() => parseIsoInstant('2026-02-30T01:00:00Z')).toThrow();
+    expect(() => parseIsoInstant('2026-10-31T24:00:00Z')).toThrow();
     expect(parseIsoInstant('2026-10-31T01:00:00Z').toISOString()).toBe('2026-10-31T01:00:00.000Z');
   });
 

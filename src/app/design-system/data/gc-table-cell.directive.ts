@@ -1,5 +1,5 @@
 import { Directive, TemplateRef, inject, input } from '@angular/core';
-import { GcCellValue, GcTableColumn, GcTableRow } from './gc-data-table';
+import type { GcCellValue, GcTableColumn, GcTableRow } from './gc-data-table';
 
 /**
  * Optional rich cell template. The feature owns its actions, links and badges;

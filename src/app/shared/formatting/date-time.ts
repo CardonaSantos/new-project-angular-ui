@@ -29,6 +29,22 @@ export function formatCalendarDate(value: string, format = 'DD/MM/YYYY'): string
 /** An instant must include its UTC marker or explicit numeric offset. */
 export function parseIsoInstant(value: string): Dayjs {
   if (!ZONED_INSTANT.test(value)) throw new Error('El instante requiere zona UTC (Z) u offset explícito.');
+  // Day.js may normalize impossible calendar dates if not checked separately.
+  parseCalendarDate(value.slice(0, 10));
+  const hour = Number(value.slice(11, 13));
+  const minute = Number(value.slice(14, 16));
+  const second = Number(value.slice(17, 19));
+  if (hour > 23 || minute > 59 || second > 59) {
+    throw new Error('Hora del instante inválida.');
+  }
+  if (!value.endsWith('Z')) {
+    const offset = value.slice(-6);
+    const offsetHours = Number(offset.slice(1, 3));
+    const offsetMinutes = Number(offset.slice(4, 6));
+    if (offsetHours > 14 || offsetMinutes > 59 || (offsetHours === 14 && offsetMinutes > 0)) {
+      throw new Error('Offset horario inválido.');
+    }
+  }
   const parsed = dayjs(value);
   if (!parsed.isValid()) throw new Error('Instante ISO inválido.');
   return parsed.utc();

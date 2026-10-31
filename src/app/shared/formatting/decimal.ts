@@ -4,6 +4,8 @@ import Decimal from 'decimal.js';
  * Backend money and quantities are decimal strings. Never convert them through
  * JavaScript number, even for display: values can exceed Number.MAX_SAFE_INTEGER.
  */
+// Isolated arithmetic context: do not change Decimal.js defaults for other features.
+const ApiDecimal = Decimal.clone({ precision: 80, rounding: Decimal.ROUND_HALF_UP });
 const DECIMAL_INPUT = /^[+-]?(?:0|[1-9]\d*)(?:\.\d+)?$/;
 
 export function parseApiDecimal(value: string): Decimal {
@@ -11,7 +13,7 @@ export function parseApiDecimal(value: string): Decimal {
   if (!DECIMAL_INPUT.test(normalized)) {
     throw new Error('Se esperaba un número decimal válido sin separadores de miles.');
   }
-  return new Decimal(normalized);
+  return new ApiDecimal(normalized);
 }
 
 /** API-friendly canonical decimal string (no scientific notation). */
@@ -29,7 +31,7 @@ export function roundDecimal(value: string, scale: number): string {
 
 /** Decimal addition without binary floating-point arithmetic. */
 export function sumDecimals(values: readonly string[]): string {
-  return values.reduce<Decimal>((sum, value) => sum.plus(parseApiDecimal(value)), new Decimal(0)).toFixed();
+  return values.reduce<Decimal>((sum, value) => sum.plus(parseApiDecimal(value)), new ApiDecimal(0)).toFixed();
 }
 
 export interface DecimalDisplayOptions {

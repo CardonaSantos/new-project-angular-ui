@@ -11,6 +11,8 @@ describe('shared decimal formatting', () => {
 
   it('adds binary-floating-point edge cases exactly', () => {
     expect(sumDecimals(['0.10', '0.20'])).toBe('0.3');
+    expect(sumDecimals(['123456789012345678901234567890.10', '0.20']))
+      .toBe('123456789012345678901234567890.3');
     expect(roundDecimal(sumDecimals(['0.10', '0.20']), 2)).toBe('0.30');
   });
 
