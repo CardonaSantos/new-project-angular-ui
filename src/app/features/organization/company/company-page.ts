@@ -49,14 +49,12 @@ import { GcOrganizationNav } from '../organization-nav';
                 <input id="co-currency" formControlName="moneda" maxlength="3"
                   [attr.aria-invalid]="invalid('moneda')" />
                 @if (invalid('moneda')) { <small class="gc-org-error">Usa un código de tres letras.</small> }
-                <small>Ejemplo: GTQ</small>
               </div>
               <div class="gc-org-field">
                 <label for="co-zone">Zona horaria</label>
                 <input id="co-zone" formControlName="zonaHoraria" maxlength="64"
                   [attr.aria-invalid]="invalid('zonaHoraria')" />
                 @if (invalid('zonaHoraria')) { <small class="gc-org-error">Introduce una zona horaria.</small> }
-                <small>Ejemplo: America/Guatemala</small>
               </div>
               <div class="gc-org-field">
                 <label for="co-valuation">Valoración de inventario</label>

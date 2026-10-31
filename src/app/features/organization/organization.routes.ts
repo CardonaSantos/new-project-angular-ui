@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import type { Routes } from '@angular/router';
 import { GcBranchContext } from '../../core/organization/gc-branch-context';
 import { OrganizationAccess } from './data-access/organization-access';
+import { organizationLandingPath } from './data-access/organization-landing';
 import { gcSessionGuard } from '../../core/auth/gc-real.guards';
 import { gcUnsavedChangesGuard } from '../../core/ux/gc-unsaved-changes.guard';
 
@@ -15,10 +16,11 @@ export const ORGANIZATION_ROUTES: Routes = [
       if (!access.loaded()) {
         try { await access.load(); } catch { /* Branch routes may still be available. */ }
       }
-      if (access.canGlobal('organization.read')) return 'company';
-      if (branch.has('branches.read')) return 'branches';
-      if (branch.has('devices.read')) return 'devices';
-      return '/workspace';
+      return organizationLandingPath(
+        access.canGlobal('organization.read'),
+        branch.has('branches.read'),
+        branch.has('devices.read'),
+      );
     },
   },
   {
