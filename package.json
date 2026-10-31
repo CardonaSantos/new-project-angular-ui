@@ -28,6 +28,7 @@
     "@ngx-formly/core": "^10.0.1",
     "@ngx-formly/material": "^10.0.1",
     "@tanstack/angular-table": "^9.3.1",
+    "dayjs": "^1.11.23",
     "decimal.js": "^10.6.0",
     "echarts": "^6.1.0",
     "embla-carousel": "^8.6.0",

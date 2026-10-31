@@ -1,4 +1,6 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, contentChildren, input, output } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { GcTableCellDirective } from './gc-table-cell.directive';
 import { ColumnDef, injectTable, tableFeatures } from '@tanstack/angular-table';
 import { GcSkeleton } from '../feedback/gc-skeleton';
 import { GcEmptyState } from '../components/empty-state/gc-empty-state';
@@ -12,6 +14,8 @@ export interface GcTableColumn {
   label: string;
   sortable?: boolean;
   numeric?: boolean;
+  /** Optional presentation formatter; do not mutate the API value. */
+  format?: (value: GcCellValue, row: GcTableRow) => string;
 }
 
 export interface GcSort {
@@ -27,7 +31,7 @@ const features = tableFeatures({});
 
 @Component({
   selector: 'gc-data-table',
-  imports: [GcSkeleton, GcEmptyState],
+  imports: [GcSkeleton, GcEmptyState, NgTemplateOutlet],
   templateUrl: './gc-data-table.html',
   styleUrl: './gc-data-table.scss',
 })
@@ -37,6 +41,21 @@ export class GcDataTable {
   readonly loading = input(false);
   readonly sort = input<GcSort | null>(null);
   readonly sortChange = output<GcSort>();
+
+  private readonly cellTemplates = contentChildren(GcTableCellDirective);
+  protected readonly templatesByKey = computed(() =>
+    new Map(this.cellTemplates().map((cell) => [cell.gcTableCell(), cell.template])),
+  );
+  protected readonly columnsByKey = computed(() =>
+    new Map(this.columns().map((column) => [column.key, column])),
+  );
+
+  protected cellText(row: GcTableRow, key: string): string {
+    const value = row[key];
+    const format = this.columnsByKey().get(key)?.format;
+    if (format) return format(value, row);
+    return value === undefined || value === null || value === '' ? '—' : String(value);
+  }
 
   protected readonly tanstackColumns = computed<ColumnDef<typeof features, GcTableRow>[]>(() =>
     this.columns().map((column) => ({
