@@ -58,3 +58,11 @@ CI: `npm ci`, `npm run lint`, `npm run build`, `npm test -- --watch=false`.
 ## PRs y despliegue
 
 Los cambios de Auth UI parten del PR #8 (HTTP/Auth base), que depende del PR #7 (formatters y responsive). Fusionar por orden #7, #8 y este PR. El proyecto UI sigue siendo Angular/Caddy; **no** contiene todavía NestJS en el mismo contenedor. Ver `docs/HTTP-SESSION-FOUNDATION.md` para Caddy `API_UPSTREAM` y proxy local.
+
+## Validación visual y alcance de perfil (31-10-2026)
+
+- La página `/account/security` usa un ancho máximo y centrado horizontal; el formulario es reutilizable.
+- Menú de cuenta: nombre y correo en renglones separados, ancho fluido en pantallas estrechas, acciones accesibles.
+- `UsersModule` del backend ofrece `GET/PATCH /api/users/me/profile` (apellidos, teléfono, idioma, zona horaria) y `PUT /api/users/me/avatar` (mediaId); el archivo se carga mediante `MediaModule`. Este flujo se hará en perfil personal / Users, no en la autenticación de sesión.
+- Solo `PATCH /api/users/:id` con permiso `users.update` permite editar `nombre` y `email`. Rol/permisos y gestión del personal quedan en Users/Staff.
+- Pruebas de aceptación Auth: login válido/inválido, F5 con sesión, renovación/expiración, cambio obligatorio y voluntario, contraseña actual errónea, logout, logout-all, teclado/Escape/foco del menú, resoluciones móvil/escritorio; selector de sucursales múltiples cuando haya datos de prueba.

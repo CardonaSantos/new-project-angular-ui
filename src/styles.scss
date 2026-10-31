@@ -136,3 +136,49 @@ a { color: var(--gc-primary); }
 
 /* Opt-in page width for reading and forms. Business tables stay fluid. */
 .gc-page-narrow { width:min(100%, 72rem); margin-inline:auto; }
+
+/* The Material overlay is rendered outside the page component's styles. */
+.gc-account-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .3rem;
+  padding: 1rem 1rem .85rem;
+  border-bottom: 1px solid var(--gc-outline-variant);
+  width: 100%;
+  min-width: 0;
+  color: var(--gc-on-surface);
+}
+.gc-account-info-name {
+  display: block;
+  width: 100%;
+  font-size: .9rem;
+  font-weight: 650;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.gc-account-info-email {
+  display: block;
+  width: 100%;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: var(--gc-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+.gc-account-panel.mat-mdc-menu-panel {
+  width: min(19rem, calc(100vw - 1.5rem));
+  min-width: min(16rem, calc(100vw - 1.5rem));
+  max-width: calc(100vw - 1.5rem);
+  background: var(--gc-surface);
+  border: 1px solid var(--gc-outline-variant);
+  border-radius: var(--gc-radius);
+  overflow: hidden;
+}
+.gc-account-panel .mat-mdc-menu-content {
+  padding-top: 0;
+  padding-bottom: .35rem;
+}
+.gc-account-panel .mat-mdc-menu-item {
+  min-height: 44px;
+  color: var(--gc-on-surface);
+}

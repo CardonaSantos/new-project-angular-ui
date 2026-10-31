@@ -21,10 +21,10 @@ import { ConfirmDialogService } from '../confirm-dialog/confirm-dialog.service';
       <span class="gc-account-label">{{ session.user()?.nombre }}</span>
     </button>
     <mat-menu #menu="matMenu" xPosition="before" [hasBackdrop]="true"
-      panelClass="gc-profile-panel">
-      <div class="gc-profile-info" role="presentation">
-        <strong>{{ session.user()?.nombre }}</strong>
-        <small>{{ session.user()?.email }}</small>
+      class="gc-account-panel">
+      <div class="gc-account-info" aria-label="Cuenta actual">
+        <strong class="gc-account-info-name">{{ session.user()?.nombre }}</strong>
+        <span class="gc-account-info-email">{{ session.user()?.email }}</span>
       </div>
       <a mat-menu-item routerLink="/account/security">Cambiar contraseña</a>
       <button type="button" mat-menu-item [disabled]="action.pending()" (click)="logout(false)">
