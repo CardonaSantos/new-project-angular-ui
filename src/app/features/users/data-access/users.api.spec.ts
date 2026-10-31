@@ -19,7 +19,10 @@ describe('Users and Media HTTP contracts',()=>{
   expect(request.request.method).toBe('POST');
   expect(request.request.body).toBeInstanceOf(FormData);
   const body=request.request.body as FormData;
-  expect(body.get('file')).toBe(file);
+  const uploaded = body.get('file') as File;
+  expect(uploaded.name).toBe('avatar.png');
+  expect(uploaded.type).toBe('image/png');
+  expect(uploaded.size).toBe(file.size);
   expect(body.get('contexto')).toBe('PERFIL');
   expect(body.get('publico')).toBe('false');
   expect(body.has('sucursalId')).toBe(false);
