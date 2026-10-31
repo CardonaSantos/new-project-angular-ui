@@ -32,27 +32,32 @@ import { GcOrganizationNav } from '../organization-nav';
               <div class="gc-org-field">
                 <label for="co-name">Nombre comercial</label>
                 <input id="co-name" formControlName="nombreComercial" maxlength="150"
+                  placeholder="Ej. Café Central"
                   [attr.aria-invalid]="invalid('nombreComercial')"
                   [attr.aria-describedby]="invalid('nombreComercial') ? 'co-name-error' : null" />
                 @if (invalid('nombreComercial')) { <small id="co-name-error" class="gc-org-error">Introduce el nombre comercial.</small> }
               </div>
               <div class="gc-org-field">
                 <label for="co-legal">Razón social</label>
-                <input id="co-legal" formControlName="razonSocial" maxlength="180"/>
+                <input id="co-legal" formControlName="razonSocial" maxlength="180"
+                  placeholder="Ej. Café Central, S.A." />
               </div>
               <div class="gc-org-field">
                 <label for="co-nit">NIT</label>
-                <input id="co-nit" formControlName="nit" maxlength="40"/>
+                <input id="co-nit" formControlName="nit" maxlength="40"
+                  placeholder="Ej. 1234567-8" />
               </div>
               <div class="gc-org-field">
                 <label for="co-currency">Moneda base</label>
                 <input id="co-currency" formControlName="moneda" maxlength="3"
+                  placeholder="Ej. GTQ"
                   [attr.aria-invalid]="invalid('moneda')" />
                 @if (invalid('moneda')) { <small class="gc-org-error">Usa un código de tres letras.</small> }
               </div>
               <div class="gc-org-field">
                 <label for="co-zone">Zona horaria</label>
                 <input id="co-zone" formControlName="zonaHoraria" maxlength="64"
+                  placeholder="Ej. America/Guatemala" spellcheck="false"
                   [attr.aria-invalid]="invalid('zonaHoraria')" />
                 @if (invalid('zonaHoraria')) { <small class="gc-org-error">Introduce una zona horaria.</small> }
               </div>

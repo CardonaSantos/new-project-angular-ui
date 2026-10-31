@@ -21,6 +21,11 @@
   background:var(--gc-surface); color:var(--gc-on-surface);
   border-radius:calc(var(--gc-radius) * .65); padding:.55rem .75rem; }
 .gc-org-field textarea { resize:vertical; }
+/* Examples guide empty fields; labels and user-entered values remain distinct. */
+.gc-org-field input::placeholder, .gc-org-field textarea::placeholder {
+  color:var(--gc-on-surface-variant);
+  opacity:1;
+}
 .gc-org-field input[aria-invalid="true"] { border-color:var(--gc-error); }
 .gc-org-field small { font-size:.8rem; color:var(--gc-on-surface-variant); }
 .gc-org-field .gc-org-error { color:var(--gc-error); }

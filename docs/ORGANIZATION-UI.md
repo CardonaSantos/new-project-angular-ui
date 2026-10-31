@@ -63,3 +63,9 @@ No se alteran endpoints ni reglas de negocio del backend. No se han ejecutado pr
 - Sidebar: una sola entrada **Configuración** (`/organization`), que dirige a la primera sección permitida. Las pestañas Empresa / Sucursales / Dispositivos permanecen dentro del módulo.
 - Los formularios comparten ancho de título y pestañas, con dos columnas en escritorio y una en móvil; las tablas siguen creciendo según la pantalla.
 - Todas las acciones persistentes de Organization pasan por `GcConfirmedAction.runConfirmed()` y `ConfirmDialogService`, después de validar y antes de enviar POST/PATCH. Cancelar no ejecuta la petición. Se bloquea también el doble clic mientras está abierta la confirmación.
+
+## Textos de ayuda en campos sencillos
+
+- Los inputs vacíos de Empresa, Sucursales y Dispositivos usan ejemplos breves en `placeholder`; nunca se envían como valores reales.
+- La etiqueta visible se mantiene siempre, incluso si el campo está completo o se autocompleta. Los errores aparecen junto al campo, no dentro del placeholder.
+- Los selectores y la hora nativa utilizan sus propios controles; no se agregan ejemplos innecesarios. Formularios complejos (como recetas) se pueden implementar como formularios guiados por pasos.

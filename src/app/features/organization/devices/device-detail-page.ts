@@ -39,6 +39,7 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
             <div class="gc-org-field">
               <label for="dv-code">Código</label>
               <input id="dv-code" formControlName="codigo" maxlength="32"
+                placeholder="Ej. POS_CAJA_01" spellcheck="false"
                 [attr.aria-invalid]="form.controls.codigo.invalid && form.controls.codigo.touched" />
               @if (form.controls.codigo.touched && form.controls.codigo.invalid) {
                 <small class="gc-org-error">Usa entre 2 y 32 caracteres: letras, números, guion o guion bajo.</small>
@@ -47,6 +48,7 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
             <div class="gc-org-field">
               <label for="dv-name">Nombre</label>
               <input id="dv-name" formControlName="nombre" maxlength="120"
+                placeholder="Ej. Caja principal"
                 [attr.aria-invalid]="form.controls.nombre.invalid && form.controls.nombre.touched" />
               @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
                 <small class="gc-org-error">Introduce un nombre.</small>
@@ -102,6 +104,7 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
           <div class="gc-org-field">
             <label for="dv-reason">Motivo</label>
             <input id="dv-reason" maxlength="500" [value]="reason()"
+              placeholder="Ej. Equipo en mantenimiento"
               aria-describedby="dv-reason-help" (input)="reason.set($any($event.target).value)"/>
             <small id="dv-reason-help">Mínimo 3 caracteres.</small>
           </div>

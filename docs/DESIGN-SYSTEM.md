@@ -40,3 +40,7 @@ Solo se gestiona apariencia en memoria. Guardado en backend o navegador se dise�
 ## Confirmación de operaciones persistentes
 
 En operaciones importantes POST, PUT, PATCH y DELETE iniciadas por el usuario, validar primero, confirmar con `GcConfirmedAction.runConfirmed()` y enviar la petición solo después de su autorización. El diálogo compartido separa los botones y el helper evita confirmaciones o peticiones duplicadas. No confirmar GET, filtros, navegación ni refresh de sesión. No interceptar todas las escrituras genéricamente: el mensaje y riesgo son decisiones de cada feature.
+
+## Placeholders de formularios
+
+En formularios sencillos, mantener etiquetas visibles y usar `placeholder` solo como ejemplo útil (formato de código, dirección, moneda, zona horaria). No usarlo para sustituir la etiqueta, repetirla ni imponer un valor por defecto. Los ejemplos nunca pasan al payload; los errores y requisitos importantes se muestran fuera del campo. En formularios extensos utilizar el patrón guiado existente cuando aporte claridad.

@@ -40,6 +40,7 @@ import { GcOrganizationNav } from '../organization-nav';
             <div class="gc-org-field">
               <label for="br-code">Código</label>
               <input id="br-code" formControlName="codigo" maxlength="32"
+                placeholder="Ej. SUCURSAL_NORTE" spellcheck="false"
                 [attr.aria-invalid]="form.controls.codigo.invalid && form.controls.codigo.touched" />
               @if (form.controls.codigo.touched && form.controls.codigo.invalid) {
                 <small class="gc-org-error">Usa entre 2 y 32 caracteres: letras, números, guion o guion bajo.</small>
@@ -48,6 +49,7 @@ import { GcOrganizationNav } from '../organization-nav';
             <div class="gc-org-field">
               <label for="br-name">Nombre</label>
               <input id="br-name" formControlName="nombre" maxlength="120"
+                placeholder="Ej. Sucursal norte"
                 [attr.aria-invalid]="form.controls.nombre.invalid && form.controls.nombre.touched"
                 [attr.aria-describedby]="form.controls.nombre.invalid && form.controls.nombre.touched ? 'br-name-error' : null"/>
               @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
@@ -56,11 +58,13 @@ import { GcOrganizationNav } from '../organization-nav';
             </div>
             <div class="gc-org-field">
               <label for="br-phone">Teléfono</label>
-              <input id="br-phone" formControlName="telefono" maxlength="35"/>
+              <input id="br-phone" type="tel" formControlName="telefono" maxlength="35"
+                autocomplete="tel" placeholder="Ej. 5555 5555" />
             </div>
             <div class="gc-org-field">
               <label for="br-timezone">Zona horaria</label>
               <input id="br-timezone" formControlName="zonaHoraria" maxlength="64"
+                placeholder="Ej. America/Guatemala" spellcheck="false"
                 [attr.aria-invalid]="form.controls.zonaHoraria.invalid && form.controls.zonaHoraria.touched"/>
               @if (form.controls.zonaHoraria.invalid && form.controls.zonaHoraria.touched) {
                 <small class="gc-org-error">Introduce una zona horaria válida.</small>
@@ -68,7 +72,8 @@ import { GcOrganizationNav } from '../organization-nav';
             </div>
             <div class="gc-org-field">
               <label for="br-address">Dirección</label>
-              <textarea id="br-address" formControlName="direccion" maxlength="300" rows="2"></textarea>
+              <textarea id="br-address" formControlName="direccion" maxlength="300" rows="2"
+                placeholder="Ej. Zona 1, calle principal"></textarea>
             </div>
           </div>
           @if (saveError()) { <p class="gc-org-alert" role="alert">{{ saveError() }}</p> }
@@ -96,7 +101,8 @@ import { GcOrganizationNav } from '../organization-nav';
               </div>
               <div class="gc-org-field">
                 <label for="br-currency">Moneda</label>
-                <input id="br-currency" formControlName="moneda" maxlength="3" />
+                <input id="br-currency" formControlName="moneda" maxlength="3"
+                  placeholder="Ej. GTQ" />
                 @if (settings.controls.moneda.invalid && settings.controls.moneda.touched) {
                   <small class="gc-org-error">Usa un código de tres letras.</small>
                 }
@@ -138,7 +144,8 @@ import { GcOrganizationNav } from '../organization-nav';
           }
           <div class="gc-org-field">
             <label for="br-reason">Motivo</label>
-            <input id="br-reason" [value]="reason()" (input)="reason.set($any($event.target).value)"
+            <input id="br-reason" placeholder="Ej. Remodelación del local"
+              [value]="reason()" (input)="reason.set($any($event.target).value)"
               maxlength="500" aria-describedby="br-reason-help" />
             <small id="br-reason-help">Mínimo 3 caracteres.</small>
           </div>
