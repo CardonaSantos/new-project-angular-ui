@@ -47,3 +47,10 @@ Un módulo se considera integrado al terminar lint, build, pruebas y verificaci�
 ## Fase 1 — Design System local
 
 Cappuccino predeterminado, tokens semánticos, Signals y componentes GC. Sin persistencia; consultar docs/DESIGN-SYSTEM.md.
+
+## Infraestructura compartida antes de integrar módulos
+
+- `shared/formatting`: importaciones puras de `formatCurrency`, `parseApiDecimal`, `formatCalendarDate`, `formatInstant`. Nunca formatear una cadena para reenviarla directamente al DTO; el servidor recibe importes decimales sin separadores de miles.
+- `GcAppShell` utiliza todo el ancho disponible; para formularios o contenido de lectura añadir `.gc-page-narrow` dentro del contenido cuando corresponda.
+- `GcDataTable` acepta `column.format` para texto personalizado y plantillas opcionales con `GcTableCellDirective` para celdas con acciones/badges. Cada feature mantiene la paginación/ordenación del servidor.
+- Consultar `docs/SHARED-FOUNDATION.md` para API, fechas, pruebas y convenciones.

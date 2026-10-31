@@ -6,7 +6,14 @@
 .gc-shell-collapsed { grid-template-columns:4.5rem minmax(0,1fr); }
 .gc-navigation { min-width:0; }
 .gc-workspace { min-width:0; }
-.gc-content { padding:clamp(1rem,2.7vw,2.5rem); max-width:1500px; margin-inline:auto; }
+.gc-content {
+  width:100%;
+  min-width:0;
+  max-width:none;
+  padding:clamp(.75rem,2.3vw,2.5rem);
+}
+/* Optional narrow page wrapper for reading/forms; data tables stay fluid. */
+.gc-content :where(.gc-page-narrow) { width:min(100%, 72rem); margin-inline:auto; }
 .gc-account-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; }
 .gc-backdrop { display:none; }
 @media (max-width:820px) {
