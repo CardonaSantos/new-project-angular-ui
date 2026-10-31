@@ -8,6 +8,7 @@ export class OrganizationAccess {
   private readonly branchApi = inject(GcBranchesApi);
   private readonly context = inject(GcBranchContext);
   private readonly global = signal<readonly string[]>([]);
+  private generation = 0;
   readonly loaded = signal(false);
   readonly globalPermissions = computed(() => this.global());
   canGlobal(permission: string) { return this.loaded() && this.global().includes(permission); }
@@ -16,12 +17,19 @@ export class OrganizationAccess {
   }
 
   async load(): Promise<void> {
+    const generation = ++this.generation;
     this.loaded.set(false);
+    this.global.set([]);
     try {
       const response = await firstValueFrom(this.branchApi.capabilities(null));
-      this.global.set(response.permissions);
+      if (generation === this.generation) this.global.set(response.permissions);
     } finally {
-      this.loaded.set(true);
+      if (generation === this.generation) this.loaded.set(true);
     }
+  }
+  reset(): void {
+    this.generation++;
+    this.global.set([]);
+    this.loaded.set(false);
   }
 }

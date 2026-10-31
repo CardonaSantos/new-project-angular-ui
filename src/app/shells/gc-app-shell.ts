@@ -10,6 +10,8 @@ import { GcActiveBranchSwitcher } from '../design-system/profile/gc-active-branc
 import { GcAccountMenu } from '../design-system/profile/gc-account-menu';
 import { GcNavigationItem } from '../design-system/navigation/navigation.model';
 import { GcSessionService } from '../core/auth/gc-session.service';
+import { GcBranchContext } from '../core/organization/gc-branch-context';
+import { OrganizationAccess } from '../features/organization/data-access/organization-access';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
@@ -26,11 +28,21 @@ export class GcAppShell {
   protected readonly branding = inject(GcBrandingService);
   protected readonly session = inject(GcSessionService);
   private readonly auth = inject(GcAuthFacade);
+  protected readonly context = inject(GcBranchContext);
+  protected readonly orgAccess = inject(OrganizationAccess);
   private readonly realtime = inject(GcRealtimeService);
   private readonly router = inject(Router);
   protected readonly items = computed<readonly GcNavigationItem[]>(() =>
     this.session.authenticated()
-      ? [{ label: 'Inicio', path: '/workspace', initials: 'IN', exact: true }]
+      ? [
+        { label: 'Inicio', path: '/workspace', initials: 'IN', exact: true },
+        ...(this.orgAccess.canGlobal('organization.read')
+          ? [{ label: 'Empresa', path: '/organization/company', initials: 'EM', exact: true }] : []),
+        ...(this.context.has('branches.read')
+          ? [{ label: 'Sucursales', path: '/organization/branches', initials: 'SU', exact: false }] : []),
+        ...(this.context.has('devices.read')
+          ? [{ label: 'Dispositivos', path: '/organization/devices', initials: 'DI', exact: false }] : []),
+      ]
       : [
     { label: 'Design System', path: '/lab/design-system', initials: 'DS', exact: true },
     { label: 'Tablas y filtros', path: '/patterns/tables', initials: 'TB', exact: true },
@@ -42,6 +54,13 @@ export class GcAppShell {
   ]);
 
   constructor() {
+    effect(() => {
+      if (this.session.authenticated()) {
+        void this.orgAccess.load().catch(() => undefined);
+      } else {
+        this.orgAccess.reset();
+      }
+    });
     // Invalidate connections on identity/branch changes; rejoin rooms after real backend integration.
     effect(() => {
       this.auth.identity();

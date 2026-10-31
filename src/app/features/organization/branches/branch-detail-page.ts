@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { GcAsyncAction } from '../../../core/ux/gc-async-action';
 import { GcPageState } from '../../../core/ux/gc-page-state';
 import { GcBranchContext } from '../../../core/organization/gc-branch-context';
+import { GcBranchesApi } from '../../../core/organization/gc-branches.api';
 import { gcErrorMessage } from '../../../core/http/api-error';
 import { GcPageHeader } from '../../../design-system/components/page-header/gc-page-header';
 import { GcButtonDirective } from '../../../design-system/components/button/gc-button.directive';
@@ -139,6 +140,8 @@ export class GcBranchDetailPage implements OnInit {
   private readonly router = inject(Router);
   private readonly api = inject(BranchesApi);
   private readonly context = inject(GcBranchContext);
+  private readonly branchAuth = inject(GcBranchesApi);
+  private readonly targetPermissions = signal<readonly string[]>([]);
   private readonly access = inject(OrganizationAccess);
   private readonly notify = inject(GcNotificationService);
   private readonly dialogs = inject(ConfirmDialogService);
@@ -175,7 +178,7 @@ export class GcBranchDetailPage implements OnInit {
   }
   protected canManage(): boolean {
     return this.isNew ? this.access.canGlobal('branches.manage') :
-      this.context.has('branches.manage') && this.context.branchId() === this.id;
+      this.targetPermissions().includes('branches.manage');
   }
   protected readError(): string { return gcErrorMessage(this.branch.error()); }
   protected reload(): void { void this.load(); }
@@ -183,12 +186,17 @@ export class GcBranchDetailPage implements OnInit {
     await this.branch.load(() => firstValueFrom(this.api.get(this.id)));
     const item=this.branch.data();
     if (!item) return;
+    try {
+      const scope = await firstValueFrom(this.branchAuth.capabilities(this.id));
+      this.targetPermissions.set(scope.permissions);
+    } catch { this.targetPermissions.set([]); }
     this.form.reset({
       codigo:item.codigo,nombre:item.nombre,direccion:item.direccion??'',
       telefono:item.telefono??'',zonaHoraria:item.zonaHoraria,
     });
     this.form.controls.codigo.disable();
     if (!this.canManage()) this.form.disable();
+    else { this.form.enable(); this.form.controls.codigo.disable(); }
     this.configError.set(null);
     const results=await Promise.allSettled([
       firstValueFrom(this.api.config(this.id)),
