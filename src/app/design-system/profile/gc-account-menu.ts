@@ -82,9 +82,11 @@ export class GcAccountMenu {
     });
     if (!accepted) return;
     const result = await this.action.run(() => firstValueFrom(this.session.logout(all)));
-    if (!result.ok && result.reason === 'error') {
-      this.notifications.show('No se pudo confirmar el cierre en el servidor. ' +
-        gcErrorMessage(result.error), 'error');
+    if (!result.ok) {
+      if (result.reason === 'error') {
+        this.notifications.show(gcErrorMessage(result.error), 'error');
+      }
+      return;
     }
     await this.router.navigateByUrl('/login');
   }

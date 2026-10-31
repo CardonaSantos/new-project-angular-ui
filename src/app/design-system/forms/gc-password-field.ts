@@ -12,7 +12,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
         <input [id]="inputId()" [formControl]="control()"
           [type]="revealed() ? 'text' : 'password'"
           [autocomplete]="autocomplete()"
-          [attr.aria-invalid]="control().touched && control().invalid ? 'true' : null"
+          [attr.aria-invalid]="errorText() ? 'true' : null"
           [attr.aria-describedby]="errorText() ? inputId() + '-error' : null" />
         <button type="button" class="gc-password-toggle"
           [attr.aria-label]="revealed() ? 'Ocultar ' + label().toLowerCase() : 'Mostrar ' + label().toLowerCase()"
