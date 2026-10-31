@@ -2,6 +2,7 @@
 import {DatePipe} from '@angular/common';
 import {formatInstant} from '../../../../shared/formatting';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {UsersAccess} from '../data-access/users-access';
 import {Component,OnInit,inject,signal,computed} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
@@ -78,6 +79,8 @@ export class GcUserAuditPage implements OnInit {
  private readonly route=inject(ActivatedRoute);
  private readonly api=inject(UsersApi);
  private readonly branch=inject(GcBranchContext);
+ private readonly access=inject(UsersAccess);
+ private scope(){return this.access.canGlobal('users.read')?undefined:this.branch.branchId()??undefined}
  protected readonly id=this.route.snapshot.paramMap.get('id')??this.route.snapshot.parent?.paramMap.get('id')??'';
  protected readonly activity=new GcPageState<Page<ActivityItem>>();
  protected readonly audit=new GcPageState<Page<Audit>>();
@@ -108,17 +111,18 @@ export class GcUserAuditPage implements OnInit {
  private async loadActivity(){
   await this.activity.load(()=>firstValueFrom(this.api.activity(this.id,{
     from:this.from()||undefined,to:this.to()||undefined,kind:this.kind()||undefined,
+    sucursalId:this.scope(),
     page:this.activityIndex()+1,limit:10})));
  }
  private async loadOverview(){
   this.overviewError.set(null);
   try{this.overview.set(await firstValueFrom(this.api.overview(this.id,{
-    from:this.from()||undefined,to:this.to()||undefined})))}
+    from:this.from()||undefined,to:this.to()||undefined,sucursalId:this.scope()})))}
   catch(e){this.overviewError.set(gcErrorMessage(e))}
  }
  protected changeActivity(e:GcPageChange){this.activityIndex.set(e.index);void this.loadActivity()}
  protected changeAudit(e:GcPageChange){this.auditIndex.set(e.index);void this.loadAudit()}
  protected reloadAudit(){void this.loadAudit()}
  private async loadAudit(){await this.audit.load(()=>firstValueFrom(this.api.audit(this.id,{
-  page:this.auditIndex()+1,limit:10})))}
+  page:this.auditIndex()+1,limit:10,sucursalId:this.scope()})))}
 }
