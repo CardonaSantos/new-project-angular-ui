@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { GcAsyncAction } from '../../../core/ux/gc-async-action';
+import { GcConfirmedAction } from '../../../core/ux/gc-confirmed-action';
 import { GcPageState } from '../../../core/ux/gc-page-state';
 import { GcBranchContext } from '../../../core/organization/gc-branch-context';
 import { GcBranchesApi } from '../../../core/organization/gc-branches.api';
@@ -73,8 +73,8 @@ import { GcOrganizationNav } from '../organization-nav';
           </div>
           @if (saveError()) { <p class="gc-org-alert" role="alert">{{ saveError() }}</p> }
           <div class="gc-org-actions">
-            <button gcButton type="submit" [disabled]="!canManage() || !form.dirty || action.pending()">
-              {{ action.pending() ? 'Guardando…' : (isNew ? 'Crear sucursal' : 'Guardar cambios') }}
+            <button gcButton type="submit" [disabled]="!canManage() || !form.dirty || action.busy()">
+              {{ action.busy() ? 'Guardando…' : (isNew ? 'Crear sucursal' : 'Guardar cambios') }}
             </button>
             @if (!canManage()) { <span class="gc-org-muted">Solo lectura</span> }
           </div>
@@ -112,8 +112,8 @@ import { GcOrganizationNav } from '../organization-nav';
             </div>
             @if (configError()) { <p class="gc-org-alert" role="alert">{{ configError() }}</p> }
             <div class="gc-org-actions">
-              <button gcButton type="submit" [disabled]="!canManage() || !settings.dirty || configAction.pending()">
-                {{ configAction.pending() ? 'Guardando…' : 'Guardar configuración' }}
+              <button gcButton type="submit" [disabled]="!canManage() || !settings.dirty || configAction.busy()">
+                {{ configAction.busy() ? 'Guardando…' : 'Guardar configuración' }}
               </button>
             </div>
           </form>
@@ -145,7 +145,7 @@ import { GcOrganizationNav } from '../organization-nav';
           @if (statusError()) { <p class="gc-org-alert" role="alert">{{ statusError() }}</p> }
           <div class="gc-org-actions">
             <button type="button" gcButton [variant]="branch.data()?.activa ? 'danger' : 'secondary'"
-              [disabled]="!canManage() || statusAction.pending() || form.dirty || settings.dirty || reason().trim().length < 3"
+              [disabled]="!canManage() || statusAction.busy() || form.dirty || settings.dirty || reason().trim().length < 3"
               (click)="changeStatus()">
               {{ branch.data()?.activa ? 'Desactivar sucursal' : 'Activar sucursal' }}
             </button>
@@ -176,9 +176,9 @@ export class GcBranchDetailPage implements OnInit {
   protected readonly saveError = signal<string|null>(null);
   protected readonly configError = signal<string|null>(null);
   protected readonly statusError = signal<string|null>(null);
-  protected readonly action = new GcAsyncAction();
-  protected readonly configAction = new GcAsyncAction();
-  protected readonly statusAction = new GcAsyncAction();
+  protected readonly action = new GcConfirmedAction();
+  protected readonly configAction = new GcConfirmedAction();
+  protected readonly statusAction = new GcConfirmedAction();
   protected readonly form = new FormGroup({
     codigo:new FormControl('',{nonNullable:true,validators:[
       Validators.required,Validators.pattern(/^[A-Za-z][A-Za-z0-9_-]{1,31}$/)]}),
@@ -253,7 +253,7 @@ export class GcBranchDetailPage implements OnInit {
     ];
   }
   protected async save(): Promise<void> {
-    if (!this.canManage() || this.action.pending()) return;
+    if (!this.canManage() || this.action.busy()) return;
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     const value=this.form.getRawValue();
     this.saveError.set(null);
@@ -269,9 +269,15 @@ export class GcBranchDetailPage implements OnInit {
       if (dto.zonaHoraria!==undefined && dto.zonaHoraria!==original.zonaHoraria) changes.zonaHoraria=dto.zonaHoraria;
       if (!Object.keys(changes).length) { this.form.markAsPristine(); return; }
     }
-    const result=await this.action.run(()=>firstValueFrom(this.isNew
-      ? this.api.create(dto) : this.api.update(this.id,changes)));
-    if (!result.ok) { if(result.reason==='error')this.saveError.set(gcErrorMessage(result.error)); return; }
+    const result = await this.action.runConfirmed(this.dialogs, {
+      title: this.isNew ? 'Crear sucursal' : 'Guardar cambios de sucursal',
+      message: this.isNew
+        ? '¿Crear la sucursal «' + dto.nombre + '»?'
+        : '¿Guardar los cambios de esta sucursal?',
+      confirmText: this.isNew ? 'Crear sucursal' : 'Guardar cambios',
+    }, () => firstValueFrom(this.isNew
+      ? this.api.create(dto) : this.api.update(this.id, changes)));
+    if (!result || !result.ok) { if(result.reason==='error')this.saveError.set(gcErrorMessage(result.error)); return; }
     this.notify.show(this.isNew?'Sucursal creada.':'Sucursal actualizada.','success');
     if (this.isNew) {
       this.form.markAsPristine();
@@ -280,7 +286,7 @@ export class GcBranchDetailPage implements OnInit {
     await this.refreshAccess();
   }
   protected async saveConfig(): Promise<void> {
-    if (!this.canManage() || this.settings.invalid || this.configAction.pending()) {
+    if (!this.canManage() || this.settings.invalid || this.configAction.busy()) {
       this.settings.markAllAsTouched(); return;
     }
     const original=this.config(); if(!original) return;
@@ -292,31 +298,34 @@ export class GcBranchDetailPage implements OnInit {
     if (value.permiteStockNegativo!==original.permiteStockNegativo) changes.permiteStockNegativo=value.permiteStockNegativo;
     if (value.permiteOrdenesQR!==original.permiteOrdenesQR) changes.permiteOrdenesQR=value.permiteOrdenesQR;
     if (!Object.keys(changes).length) { this.settings.markAsPristine(); return; }
-    if (changes.horaCorteOperativo || changes.moneda) {
-      if (!await this.dialogs.confirm({title:'Confirmar configuración',
-        message:'La moneda o el corte operativo pueden afectar los registros existentes.',
-        confirmText:'Guardar configuración',danger:true})) return;
-    }
+    const sensitive = changes.horaCorteOperativo !== undefined ||
+      changes.moneda !== undefined || changes.permiteStockNegativo !== undefined;
     this.configError.set(null);
-    const result=await this.configAction.run(()=>firstValueFrom(this.api.updateConfig(this.id,changes)));
-    if (!result.ok) { if(result.reason==='error')this.configError.set(gcErrorMessage(result.error)); return; }
+    const result = await this.configAction.runConfirmed(this.dialogs, {
+      title: 'Guardar configuración',
+      message: sensitive
+        ? 'Estos ajustes pueden afectar las operaciones de la sucursal. ¿Deseas guardarlos?'
+        : '¿Guardar los ajustes de la sucursal?',
+      confirmText: 'Guardar configuración',
+      danger: sensitive,
+    }, () => firstValueFrom(this.api.updateConfig(this.id, changes)));
+    if (!result || !result.ok) { if(result.reason==='error')this.configError.set(gcErrorMessage(result.error)); return; }
     this.config.set(result.value);
     this.settings.markAsPristine();
     this.notify.show('Configuración guardada.','success');
   }
   protected async changeStatus(): Promise<void> {
-    if (!this.canManage() || this.statusAction.pending() || this.reason().trim().length<3) return;
+    if (!this.canManage() || this.statusAction.busy() || this.reason().trim().length<3) return;
     const current=this.branch.data();if(!current)return;
     const active=!current.activa;
-    const ok=await this.dialogs.confirm({
-      title:active?'Activar sucursal':'Desactivar sucursal',
-      message:active?'¿Quieres activar esta sucursal?':'¿Quieres desactivar esta sucursal?',
-      confirmText:active?'Activar':'Desactivar',danger:!active,
-    });
-    if (!ok) return;
     this.statusError.set(null);
-    const result=await this.statusAction.run(()=>firstValueFrom(this.api.status(this.id,active,this.reason().trim())));
-    if (!result.ok) {if(result.reason==='error')this.statusError.set(gcErrorMessage(result.error));return;}
+    const result = await this.statusAction.runConfirmed(this.dialogs, {
+      title: active ? 'Activar sucursal' : 'Desactivar sucursal',
+      message: active ? '¿Activar esta sucursal?' : '¿Desactivar esta sucursal?',
+      confirmText: active ? 'Activar' : 'Desactivar',
+      danger: !active,
+    }, () => firstValueFrom(this.api.status(this.id, active, this.reason().trim())));
+    if (!result || !result.ok) {if(result.reason==='error')this.statusError.set(gcErrorMessage(result.error));return;}
     this.reason.set('');
     this.notify.show(active?'Sucursal activada.':'Sucursal desactivada.','success');
     await this.load(); await this.refreshAccess();
@@ -326,7 +335,7 @@ export class GcBranchDetailPage implements OnInit {
     catch { /* The existing API toast explains failures; no silent authorization. */ }
   }
   hasUnsavedChanges():boolean {
-    return !this.action.pending() && !this.configAction.pending() &&
+    return !this.action.busy() && !this.configAction.busy() &&
       (this.form.dirty || this.settings.dirty);
   }
 }

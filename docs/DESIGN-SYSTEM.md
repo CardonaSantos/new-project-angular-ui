@@ -36,3 +36,7 @@ Solo se gestiona apariencia en memoria. Guardado en backend o navegador se dise�
     npm run lint
     npm run build
     npm test -- --watch=false
+
+## Confirmación de operaciones persistentes
+
+En operaciones importantes POST, PUT, PATCH y DELETE iniciadas por el usuario, validar primero, confirmar con `GcConfirmedAction.runConfirmed()` y enviar la petición solo después de su autorización. El diálogo compartido separa los botones y el helper evita confirmaciones o peticiones duplicadas. No confirmar GET, filtros, navegación ni refresh de sesión. No interceptar todas las escrituras genéricamente: el mensaje y riesgo son decisiones de cada feature.

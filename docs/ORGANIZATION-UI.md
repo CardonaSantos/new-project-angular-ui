@@ -57,3 +57,9 @@ npm start
 ```
 
 No se alteran endpoints ni reglas de negocio del backend. No se han ejecutado pruebas E2E con la base real dentro del CI.
+
+## Navegación y confirmaciones
+
+- Sidebar: una sola entrada **Configuración** (`/organization`), que dirige a la primera sección permitida. Las pestañas Empresa / Sucursales / Dispositivos permanecen dentro del módulo.
+- Los formularios comparten ancho de título y pestañas, con dos columnas en escritorio y una en móvil; las tablas siguen creciendo según la pantalla.
+- Todas las acciones persistentes de Organization pasan por `GcConfirmedAction.runConfirmed()` y `ConfirmDialogService`, después de validar y antes de enviar POST/PATCH. Cancelar no ejecuta la petición. Se bloquea también el doble clic mientras está abierta la confirmación.

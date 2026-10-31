@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { GcPageState } from '../../../core/ux/gc-page-state';
-import { GcAsyncAction } from '../../../core/ux/gc-async-action';
+import { GcConfirmedAction } from '../../../core/ux/gc-confirmed-action';
 import { GcNotificationService } from '../../../core/ux/gc-notification.service';
 import { gcErrorMessage } from '../../../core/http/api-error';
 import { GcPageHeader } from '../../../design-system/components/page-header/gc-page-header';
@@ -73,8 +73,8 @@ import { GcOrganizationNav } from '../organization-nav';
             @if (error()) { <p class="gc-org-alert" role="alert">{{ error() }}</p> }
             <div class="gc-org-actions">
               <button gcButton type="submit"
-                [disabled]="!access.canGlobal('organization.manage') || !form.dirty || action.pending()">
-                {{ action.pending() ? 'Guardando…' : 'Guardar cambios' }}
+                [disabled]="!access.canGlobal('organization.manage') || !form.dirty || action.busy()">
+                {{ action.busy() ? 'Guardando…' : 'Guardar cambios' }}
               </button>
               @if (!access.canGlobal('organization.manage')) {
                 <span class="gc-org-muted">Solo lectura</span>
@@ -93,7 +93,7 @@ export class GcCompanyPage implements OnInit {
   private readonly notifications = inject(GcNotificationService);
   private readonly dialogs = inject(ConfirmDialogService);
   protected readonly page = new GcPageState<Company>();
-  protected readonly action = new GcAsyncAction();
+  protected readonly action = new GcConfirmedAction();
   protected readonly error = signal<string | null>(null);
   protected readonly methods = signal<ValuationMethod[]>(['PROMEDIO_PONDERADO','FIFO']);
   protected readonly form = new FormGroup({
@@ -134,7 +134,7 @@ export class GcCompanyPage implements OnInit {
     }
   }
   protected async save(): Promise<void> {
-    if (!this.access.canGlobal('organization.manage') || this.action.pending()) return;
+    if (!this.access.canGlobal('organization.manage') || this.action.busy()) return;
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     const original = this.page.data(); if (!original) return;
     const values = this.form.getRawValue();
@@ -149,22 +149,23 @@ export class GcCompanyPage implements OnInit {
       }
     }
     if (!Object.keys(changes).length) { this.form.markAsPristine(); return; }
-    if (changes.moneda || changes.zonaHoraria || changes.metodoValoracion) {
-      const accepted = await this.dialogs.confirm({
-        title:'Confirmar cambios',
-        message:'Cambiar la moneda, la zona horaria o la valoración puede afectar las operaciones.',
-        confirmText:'Guardar cambios', danger:true,
-      });
-      if (!accepted) return;
-    }
+    const sensitive = changes.moneda !== undefined ||
+      changes.zonaHoraria !== undefined || changes.metodoValoracion !== undefined;
     this.error.set(null);
-    const result=await this.action.run(()=>firstValueFrom(this.api.update(changes)));
-    if (!result.ok) {
+    const result = await this.action.runConfirmed(this.dialogs, {
+      title: 'Guardar cambios de empresa',
+      message: sensitive
+        ? 'Estos cambios pueden afectar las operaciones existentes. ¿Deseas guardarlos?'
+        : '¿Guardar los cambios de empresa?',
+      confirmText: 'Guardar cambios',
+      danger: sensitive,
+    }, () => firstValueFrom(this.api.update(changes)));
+    if (!result || !result.ok) {
       if (result.reason==='error') this.error.set(gcErrorMessage(result.error));
       return;
     }
     this.notifications.show('Empresa actualizada.', 'success');
     await this.load();
   }
-  hasUnsavedChanges(): boolean { return this.form.enabled && this.form.dirty && !this.action.pending(); }
+  hasUnsavedChanges(): boolean { return this.form.enabled && this.form.dirty && !this.action.busy(); }
 }

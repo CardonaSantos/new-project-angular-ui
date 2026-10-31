@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { GcAsyncAction } from '../../../core/ux/gc-async-action';
+import { GcConfirmedAction } from '../../../core/ux/gc-confirmed-action';
 import { GcPageState } from '../../../core/ux/gc-page-state';
 import { GcBranchContext } from '../../../core/organization/gc-branch-context';
 import { GcBranchesApi } from '../../../core/organization/gc-branches.api';
@@ -84,8 +84,8 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
           </div>
           @if (error()) {<p class="gc-org-alert" role="alert">{{ error() }}</p>}
           <div class="gc-org-actions">
-            <button gcButton type="submit" [disabled]="!canManage() || !form.dirty || action.pending()">
-              {{ action.pending() ? 'Guardando…' : (isNew ? 'Registrar dispositivo' : 'Guardar cambios') }}
+            <button gcButton type="submit" [disabled]="!canManage() || !form.dirty || action.busy()">
+              {{ action.busy() ? 'Guardando…' : (isNew ? 'Registrar dispositivo' : 'Guardar cambios') }}
             </button>
             @if (!canManage()) { <span class="gc-org-muted">Solo lectura</span> }
           </div>
@@ -108,7 +108,7 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
           @if (statusError()) {<p class="gc-org-alert" role="alert">{{ statusError() }}</p>}
           <div class="gc-org-actions">
             <button type="button" gcButton [variant]="device.data()?.activo ? 'danger':'secondary'"
-              [disabled]="!canManage() || statusAction.pending() || form.dirty || reason().trim().length<3"
+              [disabled]="!canManage() || statusAction.busy() || form.dirty || reason().trim().length<3"
               (click)="changeStatus()">
               {{ device.data()?.activo ? 'Desactivar dispositivo' : 'Activar dispositivo' }}
             </button>
@@ -138,8 +138,8 @@ export class GcDeviceDetailPage implements OnInit {
   protected readonly error=signal<string|null>(null);
   protected readonly statusError=signal<string|null>(null);
   protected readonly reason=signal('');
-  protected readonly action=new GcAsyncAction();
-  protected readonly statusAction=new GcAsyncAction();
+  protected readonly action=new GcConfirmedAction();
+  protected readonly statusAction=new GcConfirmedAction();
   private readonly canEdit=signal(false);
   protected readonly form=new FormGroup({
     codigo:new FormControl('',{nonNullable:true,validators:[Validators.required,
@@ -200,7 +200,7 @@ export class GcDeviceDetailPage implements OnInit {
     await this.refreshStations();
   }
   protected async save():Promise<void> {
-    if(!this.canManage()||this.action.pending())return;
+    if(!this.canManage()||this.action.busy())return;
     if(this.form.invalid){this.form.markAllAsTouched();return;}
     const v=this.form.getRawValue();
     const dto:DeviceCreate={codigo:v.codigo.trim().toUpperCase(),nombre:v.nombre.trim(),
@@ -219,25 +219,33 @@ export class GcDeviceDetailPage implements OnInit {
         changes.estacionPreparacionId=dto.estacionPreparacionId;
       if(!Object.keys(changes).length){this.form.markAsPristine();return;}
     }
-    const result=await this.action.run(()=>firstValueFrom(this.isNew
-      ? this.api.create(dto) : this.api.update(this.id,changes)));
-    if(!result.ok){if(result.reason==='error')this.error.set(gcErrorMessage(result.error));return;}
+    const result = await this.action.runConfirmed(this.dialogs, {
+      title: this.isNew ? 'Registrar dispositivo' : 'Guardar cambios de dispositivo',
+      message: this.isNew
+        ? '¿Registrar el dispositivo «' + dto.nombre + '»?'
+        : '¿Guardar los cambios de este dispositivo?',
+      confirmText: this.isNew ? 'Registrar dispositivo' : 'Guardar cambios',
+    }, () => firstValueFrom(this.isNew
+      ? this.api.create(dto) : this.api.update(this.id, changes)));
+    if (!result || !result.ok) {if(result.reason==='error')this.error.set(gcErrorMessage(result.error));return;}
     this.notify.show(this.isNew?'Dispositivo registrado.':'Dispositivo actualizado.','success');
     if(this.isNew) { this.form.markAsPristine(); await this.router.navigate(['/organization/devices',result.value.id]);
     } else await this.load();
   }
   protected async changeStatus():Promise<void> {
-    if(!this.canManage()||this.statusAction.pending()||this.reason().trim().length<3)return;
+    if(!this.canManage()||this.statusAction.busy()||this.reason().trim().length<3)return;
     const current=this.device.data();if(!current)return;
     const next=!current.activo;
-    if(!await this.dialogs.confirm({title:next?'Activar dispositivo':'Desactivar dispositivo',
-      message:next?'¿Quieres activar el dispositivo?':'¿Quieres desactivar el dispositivo?',
-      confirmText:next?'Activar':'Desactivar',danger:!next}))return;
     this.statusError.set(null);
-    const result=await this.statusAction.run(()=>firstValueFrom(this.api.status(this.id,next,this.reason().trim())));
-    if(!result.ok){if(result.reason==='error')this.statusError.set(gcErrorMessage(result.error));return;}
+    const result = await this.statusAction.runConfirmed(this.dialogs, {
+      title: next ? 'Activar dispositivo' : 'Desactivar dispositivo',
+      message: next ? '¿Activar este dispositivo?' : '¿Desactivar este dispositivo?',
+      confirmText: next ? 'Activar' : 'Desactivar',
+      danger: !next,
+    }, () => firstValueFrom(this.api.status(this.id, next, this.reason().trim())));
+    if (!result || !result.ok) {if(result.reason==='error')this.statusError.set(gcErrorMessage(result.error));return;}
     this.reason.set('');this.notify.show(next?'Dispositivo activado.':'Dispositivo desactivado.','success');
     await this.load();
   }
-  hasUnsavedChanges():boolean {return this.form.dirty && !this.action.pending();}
+  hasUnsavedChanges():boolean {return this.form.dirty && !this.action.busy();}
 }
