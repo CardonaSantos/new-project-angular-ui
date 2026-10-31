@@ -1,20 +1,20 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { Router, RouterLink, RouterOutlet, NavigationEnd } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { GcSidebar } from '../design-system/navigation/gc-sidebar';
 import { GcTopbar } from '../design-system/navigation/gc-topbar';
 import { GcProfileMenu } from '../design-system/profile/gc-profile-menu';
 import { GcBranchSwitcher } from '../design-system/profile/gc-branch-switcher';
-import { GcNotificationCenter } from '../design-system/feedback/gc-notification-center';
 import { GcNavigationItem } from '../design-system/navigation/navigation.model';
+import { GcSessionService } from '../core/auth/gc-session.service';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
 
 @Component({
   selector: 'gc-app-shell',
-  imports: [RouterOutlet, GcSidebar, GcTopbar, GcProfileMenu, GcBranchSwitcher, GcNotificationCenter],
+  imports: [RouterOutlet, RouterLink, GcSidebar, GcTopbar, GcProfileMenu, GcBranchSwitcher ],
   templateUrl: './gc-app-shell.html',
   styleUrl: './gc-app-shell.scss',
 })
@@ -22,10 +22,12 @@ export class GcAppShell {
   protected readonly collapsed = signal(false);
   protected readonly mobileOpen = signal(false);
   protected readonly branding = inject(GcBrandingService);
+  protected readonly session = inject(GcSessionService);
   private readonly auth = inject(GcAuthFacade);
   private readonly realtime = inject(GcRealtimeService);
   private readonly router = inject(Router);
   protected readonly items = computed<readonly GcNavigationItem[]>(() => [
+    { label: 'Inicio (API real)', path: '/workspace', initials: 'GC', exact: true },
     { label: 'Design System', path: '/', initials: 'DS', exact: true },
     { label: 'Tablas y filtros', path: '/patterns/tables', initials: 'TB', exact: true },
     { label: 'UI / UX Lab', path: '/lab/behaviors', initials: 'UX', exact: true },

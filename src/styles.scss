@@ -133,3 +133,6 @@ a { color: var(--gc-primary); }
   border-radius: var(--gc-radius);
   max-width: min(20rem, calc(100vw - 2rem));
 }
+
+/* Opt-in page width for reading and forms. Business tables stay fluid. */
+.gc-page-narrow { width:min(100%, 72rem); margin-inline:auto; }

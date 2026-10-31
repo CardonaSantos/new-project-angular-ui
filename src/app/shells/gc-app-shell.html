@@ -14,13 +14,16 @@
       (collapseToggle)="collapsed.set(!collapsed())"
       (mobileToggle)="mobileOpen.set(!mobileOpen())">
       <div gcTopbarActions class="gc-account-actions">
-        <gc-branch-switcher />
-        <gc-profile-menu />
+        @if (session.authenticated()) {
+          <a routerLink="/workspace" class="gc-session-link">{{ session.user()?.nombre }}</a>
+        } @else {
+          <gc-branch-switcher />
+          <gc-profile-menu />
+        }
       </div>
     </gc-topbar>
     <main id="gc-main-content" class="gc-content" tabindex="-1">
       <router-outlet />
     </main>
   </div>
-  <gc-notification-center />
 </div>

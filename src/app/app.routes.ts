@@ -1,12 +1,28 @@
 import { Routes } from '@angular/router';
 import { gcAuthGuard, gcPermissionGuard } from './core/auth/gc-auth.guards';
+import { gcPasswordChangeGuard, gcSessionGuard } from './core/auth/gc-real.guards';
 import { gcUnsavedChangesGuard } from './core/ux/gc-unsaved-changes.guard';
 
 export const routes: Routes = [
   {
+    path: 'login', title: 'Iniciar sesión — Gastro Core',
+    loadComponent: () => import('./features/auth/login/gc-login-page').then(m => m.GcLoginPage),
+  },
+  {
+    path: 'change-password', title: 'Cambiar contraseña — Gastro Core',
+    canActivate: [gcPasswordChangeGuard],
+    loadComponent: () => import('./features/auth/change-password/gc-change-password-page').then(m => m.GcChangePasswordPage),
+  },
+  {
     path: '',
     loadComponent: () => import('./shells/gc-app-shell').then((m) => m.GcAppShell),
     children: [
+      {
+        path: 'workspace', title: 'Inicio — Gastro Core',
+        data: { breadcrumb: 'Inicio' },
+        canActivate: [gcSessionGuard],
+        loadComponent: () => import('./features/auth/workspace/gc-workspace-page').then(m => m.GcWorkspacePage),
+      },
       {
         path: '', pathMatch: 'full', title: 'Design System — Gastro Core UI',
         data: { breadcrumb: 'Design System' },

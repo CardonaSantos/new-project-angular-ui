@@ -1,6 +1,6 @@
 :host { display:block; min-width:0; }
-.gc-table-frame { border:1px solid var(--gc-outline-variant); border-radius:var(--gc-radius); overflow:hidden; }
-.gc-table-scroll { width:100%; overflow-x:auto; }
+.gc-table-frame { width:100%; min-width:0; border:1px solid var(--gc-outline-variant); border-radius:var(--gc-radius); overflow:hidden; }
+.gc-table-scroll { width:100%; min-width:0; max-width:100%; overflow-x:auto; overscroll-behavior-x:contain; }
 table { width:100%; border-collapse:collapse; min-width:580px; font-size:.9rem; }
 th,td { padding:var(--gc-table-cell-padding,.85rem) 1rem; text-align:left; border-bottom:1px solid var(--gc-outline-variant); white-space:nowrap; }
 th { background:var(--gc-surface-container); color:var(--gc-on-surface-variant); font-weight:650; }
