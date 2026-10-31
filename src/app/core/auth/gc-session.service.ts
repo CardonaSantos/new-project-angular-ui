@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { Observable, catchError, forkJoin, map, of, shareReplay, switchMap, tap, throwError, finalize } from 'rxjs';
 import { GcAuthApi } from './gc-auth.api';
 import { GcLoginCredentials, GcLoginResponse, GcUser, GcChangePassword } from './gc-auth.models';
@@ -13,6 +14,7 @@ export type GcSessionStatus = 'anonymous' | 'checking' | 'authenticated'
  */
 @Injectable({ providedIn: 'root' })
 export class GcSessionService {
+  private readonly router = inject(Router, { optional: true });
   private readonly api = inject(GcAuthApi);
   private readonly branch = inject(GcBranchContext);
   private token: string | null = null;
@@ -111,7 +113,13 @@ export class GcSessionService {
   expire(): void {
     const hadSession = this.token !== null || this.user() !== null;
     this.clear();
-    if (hadSession) this.status.set('expired');
+    if (hadSession) {
+      this.status.set('expired');
+      // A revoked session must not leave a protected page visible.
+      if (this.router && !this.router.url.startsWith('/login')) {
+        void this.router.navigateByUrl('/login');
+      }
+    }
   }
 
   clear(): void {
