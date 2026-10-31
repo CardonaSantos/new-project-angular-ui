@@ -1,5 +1,5 @@
 
-import {Component,inject,OnInit,signal} from '@angular/core';
+import {Component,inject,OnInit,signal,viewChild} from '@angular/core';
 import {FormControl,FormGroup,ReactiveFormsModule,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import {GcFileUpload} from '../../../design-system/forms/gc-file-upload';
@@ -74,6 +74,7 @@ export class GcMyProfilePage implements OnInit {
  private readonly api=inject(UsersApi);
  private readonly avatarStore=inject(GcCurrentAvatarStore);
  private readonly media=inject(MediaApi);
+ private readonly photoPicker=viewChild(GcFileUpload);
  private readonly branch=inject(GcBranchContext);
  private readonly access=inject(UsersAccess);
  private readonly notices=inject(GcNotificationService);
@@ -129,7 +130,7 @@ export class GcMyProfilePage implements OnInit {
     });
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.photoError.set(gcErrorMessage(r.error));return}
-  this.selected.set(null);this.uploadedMediaId.set(null);this.page.data.set(r.value);
+  this.photoPicker()?.reset();this.selected.set(null);this.uploadedMediaId.set(null);this.page.data.set(r.value);
   this.avatarStore.updateFrom(r.value);
   this.notices.show('Fotografía actualizada.','success');
  }
