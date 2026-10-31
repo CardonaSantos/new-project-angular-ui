@@ -26,7 +26,8 @@ describe('GcBranchContext', () => {
 
     branch.select('b1').subscribe();
     branch.select('b2').subscribe();
-    expect(branch.permissions()).toEqual([]);
+    expect(branch.loading()).toBe(true);
+    expect(branch.has('inventory.read')).toBe(false);
     (await nextRequest('/api/auth/capabilities?sucursalId=b2'))
       .flush({ sucursalId: 'b2', permissions: ['orders.read'] });
     mock.expectOne('/api/auth/capabilities?sucursalId=b1')
