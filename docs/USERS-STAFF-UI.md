@@ -10,7 +10,7 @@
 
 ## Fotografías
 - Componente preexistente: GcFileUpload (máximo una imagen, JPG/PNG/WebP, tamaño máximo UI de 10 MiB).
-- POST /api/media/upload con FormData: file (binario), contexto=PERFIL, publico=false. Para foto personal sin sucursalId.
+- POST /api/media/upload con FormData: file (binario), contexto=PERFIL, publico=false. Para foto personal se omite sucursalId cuando existe media.upload global; con permiso limitado a sucursal se envía sucursalId autorizado.
 - Solo al recibir media.id se envía PUT /api/users/me/avatar o /api/users/:id/avatar con {mediaId}.
 - El backend exige media confirmada, subidor correcto y permisos media.upload; no sustituir id por URL. La UI informa si la asociación falla.
 - URL del avatar proviene de GET /api/users/me/profile o /api/users/:id. Nunca inferir enlaces de DigitalOcean.
@@ -40,3 +40,5 @@
 10. Accesibilidad: tabulador, mensajes legibles, breadcrumbs, confirmaciones, 320px/375px/desktop y zoom 200%.
 
 No fusionar hasta CI y validación real con la base de desarrollo.
+- Si la carga a Media tuvo éxito pero falló la asociación del avatar, la UI mantiene temporalmente el mediaId para reintentar el PUT sin repetir la carga del archivo. Nunca declara éxito parcial.
+- Se bloquean cambios de roles o permisos mientras haya ediciones de formularios sin guardar. El rol reservado SUPER_ADMIN es de solo lectura en la UI y el backend impide modificarlo.
