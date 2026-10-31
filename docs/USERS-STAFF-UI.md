@@ -42,3 +42,13 @@
 No fusionar hasta CI y validación real con la base de desarrollo.
 - Si la carga a Media tuvo éxito pero falló la asociación del avatar, la UI mantiene temporalmente el mediaId para reintentar el PUT sin repetir la carga del archivo. Nunca declara éxito parcial.
 - Se bloquean cambios de roles o permisos mientras haya ediciones de formularios sin guardar. El rol reservado SUPER_ADMIN es de solo lectura en la UI y el backend impide modificarlo.
+
+## Convención de fotografías y avatar
+
+- Los formularios de perfil y personal emplean el mismo `GcFileUpload` con `acceptedMime=['image/jpeg','image/png']`, `maxFiles=1` y `cropSquare=true`. El input nativo declara `.jpg,.jpeg,.png` para orientar el diálogo de archivos. Se valida MIME y tamaño antes de editar; NestJS verifica el contenido real al subir.
+- El editor global `GcImageCropDialog` permite mover la imagen arrastrando o con flechas y ajustar el zoom. Genera un JPG/PNG cuadrado de 512 × 512 píxeles. Cancelar conserva la selección anterior y no envía ningún archivo.
+- Tras aplicar el recorte, la selección sigue siendo solo local. El botón `Actualizar fotografía` abre la confirmación habitual; únicamente aceptándola se envía `POST /api/media/upload` y luego `PUT /api/users/me/avatar` o `PUT /api/users/:id/avatar`.
+- `GcUserAvatar` muestra `profile.avatar.url` y cae a iniciales cuando no hay imagen o la URL privada falla. Está compartido por el topbar, mi perfil, detalle y tabla de usuarios.
+- El topbar obtiene `GET /api/users/me/profile` al autenticar o restaurar sesión y refresca la señal de avatar al editar la propia fotografía (también desde administración). `GcCurrentAvatarStore` es temporal: no persiste URLs privadas de 300 segundos en localStorage.
+- La tabla recibe `profile.avatar.url` en `GET /api/users`, y lo muestra a la izquierda del nombre. No hay un endpoint nuevo.
+- Verificaciones: selector JPG/PNG, impedir GIF/WebP/PDF, cancelar crop, guardar crop y confirmar, ver avatar en topbar y lista, sustituir y eliminar, F5 tras subida, URLs firmadas expiradas, accesibilidad de flechas/tabulación y recorte móvil.
