@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, switchMap, tap, throwError } from 'rxjs';
-import { GcBranch } from '../auth/gc-auth.models';
+import type { GcBranch } from '../auth/gc-auth.models';
 import { GcBranchesApi } from './gc-branches.api';
 
 /** The selected branch is a scope selector, not proof of authorization. */

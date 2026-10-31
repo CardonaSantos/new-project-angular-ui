@@ -37,6 +37,12 @@ export const gcBranchAccessSchema = z.object({
   })),
 });
 
+export const gcChangePasswordResultSchema = z.object({
+  ok: z.literal(true), reloginRequired: z.literal(true),
+});
+
+export const gcOkSchema = z.object({ ok: z.literal(true) });
+
 export type GcUser = z.infer<typeof gcUserSchema>;
 export type GcLoginResponse = z.infer<typeof gcLoginResponseSchema>;
 export type GcBranch = z.infer<typeof gcBranchAccessSchema>['data'][number];

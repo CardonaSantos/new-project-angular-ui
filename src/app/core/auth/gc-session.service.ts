@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, forkJoin, map, of, shareReplay, switchMap, tap, throwError, finalize } from 'rxjs';
 import { GcAuthApi } from './gc-auth.api';
-import { GcLoginCredentials, GcLoginResponse, GcUser, GcChangePassword } from './gc-auth.models';
+import type { GcLoginCredentials, GcLoginResponse, GcUser, GcChangePassword } from './gc-auth.models';
 import { GcBranchContext } from '../organization/gc-branch-context';
 
 export type GcSessionStatus = 'anonymous' | 'checking' | 'authenticated'
