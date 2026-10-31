@@ -96,15 +96,19 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
           <div class="gc-org-row"><h2>Estado</h2>
             <span class="gc-org-status">{{ device.data()?.activo ? 'Activo' : 'Inactivo' }}</span>
           </div>
+          @if (form.dirty) {
+            <p class="gc-org-muted">Guarda los cambios pendientes antes de modificar el estado.</p>
+          }
           <div class="gc-org-field">
             <label for="dv-reason">Motivo</label>
             <input id="dv-reason" maxlength="500" [value]="reason()"
-              (input)="reason.set($any($event.target).value)"/>
+              aria-describedby="dv-reason-help" (input)="reason.set($any($event.target).value)"/>
+            <small id="dv-reason-help">Mínimo 3 caracteres.</small>
           </div>
           @if (statusError()) {<p class="gc-org-alert" role="alert">{{ statusError() }}</p>}
           <div class="gc-org-actions">
             <button type="button" gcButton [variant]="device.data()?.activo ? 'danger':'secondary'"
-              [disabled]="!canManage() || statusAction.pending() || reason().trim().length<3"
+              [disabled]="!canManage() || statusAction.pending() || form.dirty || reason().trim().length<3"
               (click)="changeStatus()">
               {{ device.data()?.activo ? 'Desactivar dispositivo' : 'Activar dispositivo' }}
             </button>

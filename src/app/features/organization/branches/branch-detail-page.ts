@@ -48,9 +48,10 @@ import { GcOrganizationNav } from '../organization-nav';
             <div class="gc-org-field">
               <label for="br-name">Nombre</label>
               <input id="br-name" formControlName="nombre" maxlength="120"
-                [attr.aria-invalid]="form.controls.nombre.invalid && form.controls.nombre.touched"/>
+                [attr.aria-invalid]="form.controls.nombre.invalid && form.controls.nombre.touched"
+                [attr.aria-describedby]="form.controls.nombre.invalid && form.controls.nombre.touched ? 'br-name-error' : null"/>
               @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
-                <small class="gc-org-error">Introduce un nombre.</small>
+                <small id="br-name-error" class="gc-org-error">Introduce un nombre.</small>
               }
             </div>
             <div class="gc-org-field">
@@ -132,15 +133,19 @@ import { GcOrganizationNav } from '../organization-nav';
         <section class="gc-org-card gc-org-narrow">
           <h2>Estado de sucursal</h2>
           <p class="gc-org-muted">No se puede desactivar mientras tenga operaciones pendientes.</p>
+          @if (form.dirty || settings.dirty) {
+            <p class="gc-org-muted">Guarda los cambios pendientes antes de modificar el estado.</p>
+          }
           <div class="gc-org-field">
             <label for="br-reason">Motivo</label>
             <input id="br-reason" [value]="reason()" (input)="reason.set($any($event.target).value)"
-              maxlength="500" />
+              maxlength="500" aria-describedby="br-reason-help" />
+            <small id="br-reason-help">Mínimo 3 caracteres.</small>
           </div>
           @if (statusError()) { <p class="gc-org-alert" role="alert">{{ statusError() }}</p> }
           <div class="gc-org-actions">
             <button type="button" gcButton [variant]="branch.data()?.activa ? 'danger' : 'secondary'"
-              [disabled]="!canManage() || statusAction.pending() || reason().trim().length < 3"
+              [disabled]="!canManage() || statusAction.pending() || form.dirty || settings.dirty || reason().trim().length < 3"
               (click)="changeStatus()">
               {{ branch.data()?.activa ? 'Desactivar sucursal' : 'Activar sucursal' }}
             </button>

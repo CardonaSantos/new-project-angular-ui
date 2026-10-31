@@ -32,8 +32,9 @@ import { GcOrganizationNav } from '../organization-nav';
               <div class="gc-org-field">
                 <label for="co-name">Nombre comercial</label>
                 <input id="co-name" formControlName="nombreComercial" maxlength="150"
-                  [attr.aria-invalid]="invalid('nombreComercial')" />
-                @if (invalid('nombreComercial')) { <small class="gc-org-error">Introduce el nombre comercial.</small> }
+                  [attr.aria-invalid]="invalid('nombreComercial')"
+                  [attr.aria-describedby]="invalid('nombreComercial') ? 'co-name-error' : null" />
+                @if (invalid('nombreComercial')) { <small id="co-name-error" class="gc-org-error">Introduce el nombre comercial.</small> }
               </div>
               <div class="gc-org-field">
                 <label for="co-legal">Razón social</label>
