@@ -42,7 +42,7 @@ import type {Page,Session} from '../data-access/users.models';
    }
    @if(resetError()){<p class="gc-u-alert" role="alert">{{resetError()}}</p>}
    <div class="gc-u-actions">
-    <button type="button" gcButton [disabled]="reason().trim().length<3||reset.busy()||isSelf()"
+    <button type="button" gcButton [disabled]="reason().trim().length<3||reset.busy()||isSelf()||!!resetSecret()"
       (click)="resetPassword()">Restablecer contraseña</button>
    </div>
   </section>
@@ -94,7 +94,7 @@ export class GcUserSecurityPage implements OnInit {
  private async load(){await this.sessions.load(()=>firstValueFrom(this.api.sessions(this.id,this.index()+1,this.size())))}
  protected onPage(e:GcPageChange){this.index.set(e.index);this.size.set(e.size);void this.load()}
  protected async resetPassword(){
-  if(this.reason().trim().length<3||this.isSelf())return;
+  if(this.reason().trim().length<3||this.isSelf()||this.resetSecret())return;
   this.resetError.set(null);
   const r=await this.reset.runConfirmed(this.dialog,{title:'Restablecer contraseña',
    message:'Se revocarán las sesiones del usuario. ¿Continuar?',

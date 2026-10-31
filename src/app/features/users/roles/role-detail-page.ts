@@ -57,7 +57,7 @@ import {GcUsersNav} from '../users-nav';
      </div>
      @if(error()){<p class="gc-u-alert" role="alert">{{error()}}</p>}
      <div class="gc-u-actions"><button gcButton type="submit"
-       [disabled]="!access.canGlobal('roles.manage')||form.invalid||(!isNew&&!form.dirty)||action.busy()">
+       [disabled]="!access.canGlobal('roles.manage')||role.data()?.codigo==='SUPER_ADMIN'||form.invalid||(!isNew&&!form.dirty)||action.busy()">
        {{action.busy()?'Guardando…':isNew?'Crear rol':'Guardar cambios'}}</button></div>
     </form>
    </section>
@@ -70,7 +70,7 @@ import {GcUsersNav} from '../users-nav';
         @for(p of group.permissions;track p.codigo){
          <label class="gc-u-check">
           <input type="checkbox" [checked]="selected().includes(p.codigo)"
-           [disabled]="!access.canGlobal('roles.manage')" (change)="toggle(p.codigo,$any($event.target).checked)"/>
+           [disabled]="!access.canGlobal('roles.manage')||role.data()?.codigo==='SUPER_ADMIN'" (change)="toggle(p.codigo,$any($event.target).checked)"/>
           <span>{{p.nombre||p.codigo}}</span>
          </label>
         }
@@ -79,7 +79,7 @@ import {GcUsersNav} from '../users-nav';
      }
      @if(permissionError()){<p role="alert" class="gc-u-alert">{{permissionError()}}</p>}
      <div class="gc-u-actions"><button gcButton type="button"
-       [disabled]="!access.canGlobal('roles.manage')||!permissionDirty()||permissionAction.busy()"
+       [disabled]="!access.canGlobal('roles.manage')||role.data()?.codigo==='SUPER_ADMIN'||form.dirty||!permissionDirty()||permissionAction.busy()"
        (click)="savePermissions()">Guardar permisos</button></div>
     </section>
    }
@@ -156,7 +156,7 @@ export class GcRoleDetailPage implements OnInit {
   else{await this.load();this.notices.show('Rol actualizado.','success')}
  }
  protected async savePermissions(){
-  if(!this.permissionDirty())return;
+  if(!this.permissionDirty()||this.form.dirty||this.role.data()?.codigo==='SUPER_ADMIN')return;
   this.permissionError.set(null);
   const r=await this.permissionAction.runConfirmed(this.dialog,{
    title:'Actualizar permisos',

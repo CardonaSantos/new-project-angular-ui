@@ -79,7 +79,7 @@ import {GcUsersNav} from '../users-nav';
       <div class="gc-u-row">
        <span>{{a.rolNombre}} — {{a.sucursalNombre??'Global'}}</span>
        @if(access.canGlobal('users.roles.assign')&&user.id!==session.user()?.id){
-        <button type="button" gcButton variant="outline" [disabled]="assignmentAction.busy()"
+        <button type="button" gcButton variant="outline" [disabled]="assignmentAction.busy()||form.dirty"
          (click)="removeAssignment(a.rolId,a.sucursalId)">Quitar</button>
        }
       </div>
@@ -103,7 +103,7 @@ import {GcUsersNav} from '../users-nav';
       </div>
       @if(assignmentError()){<p class="gc-u-alert" role="alert">{{assignmentError()}}</p>}
       <div class="gc-u-actions"><button gcButton type="button"
-        [disabled]="!roleId()||(selectedRoleScope()==='SUCURSAL'&&!assignmentBranch())||assignmentAction.busy()"
+        [disabled]="!roleId()||(selectedRoleScope()==='SUCURSAL'&&!assignmentBranch())||assignmentAction.busy()||form.dirty"
         (click)="addAssignment()">Asignar rol</button></div>
      }
     </section>
@@ -118,9 +118,9 @@ import {GcUsersNav} from '../users-nav';
         (filesSelected)="photoFile.set($event.length?$event[0]:null)"/>
       @if(photoError()){<p class="gc-u-alert" role="alert">{{photoError()}}</p>}
       <div class="gc-u-actions">
-       <button gcButton type="button" [disabled]="!photoFile()||photoAction.busy()" (click)="savePhoto()">
+       <button gcButton type="button" [disabled]="!photoFile()||photoAction.busy()||form.dirty" (click)="savePhoto()">
         {{photoAction.busy()?'Subiendo…':'Actualizar fotografía'}}</button>
-       @if(user.profile.avatar.mediaId){<button gcButton variant="outline" type="button" [disabled]="photoAction.busy()"
+       @if(user.profile.avatar.mediaId){<button gcButton variant="outline" type="button" [disabled]="photoAction.busy()||form.dirty"
          (click)="removePhoto()">Quitar fotografía</button>}
       </div>
      }
@@ -249,6 +249,7 @@ export class GcUserDetailPage implements OnInit {
  }
  protected async addAssignment(){
   const id=this.roleId();if(!id||this.assignmentAction.busy())return;
+  if(this.form.dirty){this.assignmentError.set('Guarda los cambios del usuario antes de modificar sus roles.');return;}
   const scope=this.selectedRoleScope();
   const sucursalId=scope==='GLOBAL'?null:this.assignmentBranch();
   if(scope==='SUCURSAL'&&!sucursalId)return;
@@ -262,6 +263,7 @@ export class GcUserDetailPage implements OnInit {
  }
  protected async removeAssignment(roleId:string,branchId:string|null){
   const u=this.page.data();if(!u)return;
+  if(this.form.dirty){this.assignmentError.set('Guarda los cambios del usuario antes de modificar sus roles.');return;}
   const next=u.access.assignments.filter(a=>!(a.rolId===roleId&&a.sucursalId===branchId))
     .map(a=>({rolId:a.rolId,sucursalId:a.sucursalId}));
   this.assignmentError.set(null);
