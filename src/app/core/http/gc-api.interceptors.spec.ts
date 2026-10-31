@@ -124,6 +124,33 @@ describe('Gastro Core HTTP interceptors', () => {
     mock.expectNone('/api/auth/refresh');
   });
 
+  it('does not refresh on an incorrect current password', async () => {
+    await logIn();
+    let error: unknown;
+    session.changePassword({ oldPassword: 'bad', newPassword: 'differentlongpassword' })
+      .subscribe({ error: failure => { error = failure; } });
+    mock.expectOne('/api/auth/password').flush(
+      { message: 'Contraseña actual incorrecta' },
+      { status: 401, statusText: 'Unauthorized' },
+    );
+    expect((error as GcApiError).message).toBe('Contraseña actual incorrecta');
+    mock.expectNone('/api/auth/refresh');
+    expect(session.authenticated()).toBe(true);
+  });
+
+  it('keeps the session on a failed remote logout so it can be retried', async () => {
+    await logIn();
+    let error: unknown;
+    session.logout().subscribe({ error: failure => { error = failure; } });
+    mock.expectOne('/api/auth/logout').flush(
+      { message: 'Servicio no disponible' },
+      { status: 503, statusText: 'Service Unavailable' },
+    );
+    expect(error).toBeInstanceOf(GcApiError);
+    expect(session.authenticated()).toBe(true);
+    expect(session.accessToken()).toBe('access-v1');
+  });
+
   it('suppresses duplicate global toasts for inline form requests', () => {
     http.post('/api/auth/login', {}, {
       context: new HttpContext().set(GC_SILENT_ERROR, true),
