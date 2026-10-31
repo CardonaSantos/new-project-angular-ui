@@ -36,12 +36,9 @@ export class GcAppShell {
     this.session.authenticated()
       ? [
         { label: 'Inicio', path: '/workspace', initials: 'IN', exact: true },
-        ...(this.orgAccess.canGlobal('organization.read')
-          ? [{ label: 'Empresa', path: '/organization/company', initials: 'EM', exact: true }] : []),
-        ...(this.context.has('branches.read')
-          ? [{ label: 'Sucursales', path: '/organization/branches', initials: 'SU', exact: false }] : []),
-        ...(this.context.has('devices.read')
-          ? [{ label: 'Dispositivos', path: '/organization/devices', initials: 'DI', exact: false }] : []),
+        ...((this.orgAccess.canGlobal('organization.read') ||
+          this.context.has('branches.read') || this.context.has('devices.read'))
+          ? [{ label: 'Configuración', path: '/organization', initials: 'CF', exact: false }] : []),
       ]
       : [
     { label: 'Design System', path: '/lab/design-system', initials: 'DS', exact: true },

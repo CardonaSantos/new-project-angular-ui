@@ -22,7 +22,7 @@ import { GcOrganizationNav } from '../organization-nav';
   imports: [ReactiveFormsModule, RouterLink, GcPageHeader, GcButtonDirective,
     GcErrorState, GcOrganizationNav],
   template: `
-  <div class="gc-org-page">
+  <div class="gc-org-page gc-org-page--form">
     <gc-page-header [title]="isNew ? 'Nueva sucursal' : (branch.data()?.nombre ?? 'Sucursal')"/>
     <gc-organization-nav />
     <div><a routerLink="/organization/branches">Volver a sucursales</a></div>

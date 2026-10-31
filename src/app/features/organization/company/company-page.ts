@@ -18,7 +18,7 @@ import { GcOrganizationNav } from '../organization-nav';
   selector: 'gc-company-page',
   imports: [ReactiveFormsModule, GcPageHeader, GcButtonDirective, GcErrorState, GcOrganizationNav],
   template: `
-    <div class="gc-org-page">
+    <div class="gc-org-page gc-org-page--form">
       <gc-page-header title="Empresa" />
       <gc-organization-nav />
       @if (page.busy()) { <p class="gc-org-muted" role="status">Cargando empresa…</p> }

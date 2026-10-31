@@ -24,7 +24,7 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
   selector:'gc-device-detail-page',
   imports:[RouterLink,ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcErrorState,GcOrganizationNav],
   template:`
-  <div class="gc-org-page">
+  <div class="gc-org-page gc-org-page--form">
     <gc-page-header [title]="isNew ? 'Nuevo dispositivo' : (device.data()?.nombre ?? 'Dispositivo')"/>
     <gc-organization-nav />
     <div><a routerLink="/organization/devices">Volver a dispositivos</a></div>
