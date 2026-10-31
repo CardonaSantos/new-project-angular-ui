@@ -115,7 +115,7 @@ import {GcUsersNav} from '../users-nav';
      </div>
      @if(access.isGlobalAdmin()){
       <gc-file-upload inputId="user-photo" label="Seleccionar imagen" [maxFiles]="1" [maxSizeMb]="10"
-        (filesSelected)="photoFile.set($event.length?$event[0]:null)"/>
+        (filesSelected)="photoFile.set($event.length?$event[0]:null);uploadedMediaId.set(null)"/>
       @if(photoError()){<p class="gc-u-alert" role="alert">{{photoError()}}</p>}
       <div class="gc-u-actions">
        <button gcButton type="button" [disabled]="!photoFile()||photoAction.busy()||form.dirty" (click)="savePhoto()">
@@ -173,6 +173,7 @@ export class GcUserDetailPage implements OnInit {
  protected readonly selectedRoleScope=signal<'GLOBAL'|'SUCURSAL'>('SUCURSAL');
  protected readonly reason=signal('');
  protected readonly photoFile=signal<File|null>(null);
+ private readonly uploadedMediaId=signal<string|null>(null);
  protected readonly createdSecret=signal<string|null>(null);
  private readonly createdId=signal<string|null>(null);
  protected readonly saveError=signal<string|null>(null);
@@ -293,11 +294,14 @@ export class GcUserDetailPage implements OnInit {
   const r=await this.photoAction.runConfirmed(this.dialog,{
    title:'Actualizar fotografía',message:'¿Usar esta imagen para el usuario?',
    confirmText:'Actualizar'
-  },async()=>{const media=await firstValueFrom(this.media.upload(f));
-    return firstValueFrom(this.api.avatar(this.id,media.id))});
+  },async()=>{
+    const id=this.uploadedMediaId()??(await firstValueFrom(this.media.upload(f))).id;
+    this.uploadedMediaId.set(id);
+    return firstValueFrom(this.api.avatar(this.id,id));
+  });
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.photoError.set(gcErrorMessage(r.error));return}
-  this.photoFile.set(null);this.page.data.set(r.value);this.notices.show('Fotografía actualizada.','success');
+  this.photoFile.set(null);this.uploadedMediaId.set(null);this.page.data.set(r.value);this.notices.show('Fotografía actualizada.','success');
  }
  protected async removePhoto(){
   this.photoError.set(null);

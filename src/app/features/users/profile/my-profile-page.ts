@@ -11,6 +11,8 @@ import {GcConfirmedAction} from '../../../core/ux/gc-confirmed-action';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {gcErrorMessage} from '../../../core/http/api-error';
+import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {UsersAccess} from '../data-access/users-access';
 import {MediaApi,UsersApi} from '../data-access/users.api';
 import type {UserRecord} from '../data-access/users.models';
 @Component({
@@ -53,7 +55,7 @@ import type {UserRecord} from '../data-access/users.models';
    <section class="gc-u-card gc-u-page">
     <h2>Fotografía</h2>
     <gc-file-upload inputId="my-avatar-upload" label="Seleccionar imagen" [maxFiles]="1" [maxSizeMb]="10"
-      (filesSelected)="selected.set($event.length?$event[0]:null)"/>
+      (filesSelected)="selected.set($event.length?$event[0]:null);uploadedMediaId.set(null)"/>
     @if(photoError()){<p role="alert" class="gc-u-alert">{{photoError()}}</p>}
     <div class="gc-u-actions">
      <button gcButton type="button" [disabled]="!selected()||photo.busy()" (click)="savePhoto()">
@@ -70,12 +72,15 @@ import type {UserRecord} from '../data-access/users.models';
 export class GcMyProfilePage implements OnInit {
  private readonly api=inject(UsersApi);
  private readonly media=inject(MediaApi);
+ private readonly branch=inject(GcBranchContext);
+ private readonly access=inject(UsersAccess);
  private readonly notices=inject(GcNotificationService);
  private readonly dialog=inject(ConfirmDialogService);
  protected readonly page=new GcPageState<UserRecord>();
  protected readonly saving=new GcConfirmedAction();
  protected readonly photo=new GcConfirmedAction();
  protected readonly selected=signal<File|null>(null);
+ private readonly uploadedMediaId=signal<string|null>(null);
  protected readonly error=signal<string|null>(null);
  protected readonly photoError=signal<string|null>(null);
  protected readonly form=new FormGroup({
@@ -113,12 +118,15 @@ export class GcMyProfilePage implements OnInit {
   const r=await this.photo.runConfirmed(this.dialog,{title:'Actualizar fotografía',
     message:'¿Usar esta imagen como fotografía de perfil?',confirmText:'Actualizar'},
     async()=>{
-     const uploaded=await firstValueFrom(this.media.upload(file));
-     return firstValueFrom(this.api.avatarMe(uploaded.id));
+     const scopedBranch=this.access.canGlobal('media.upload')?undefined:
+       (this.branch.branchId()??undefined);
+     const mediaId=this.uploadedMediaId()??(await firstValueFrom(this.media.upload(file,'PERFIL',scopedBranch))).id;
+     this.uploadedMediaId.set(mediaId);
+     return firstValueFrom(this.api.avatarMe(mediaId));
     });
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.photoError.set(gcErrorMessage(r.error));return}
-  this.selected.set(null);this.page.data.set(r.value);
+  this.selected.set(null);this.uploadedMediaId.set(null);this.page.data.set(r.value);
   this.notices.show('Fotografía actualizada.','success');
  }
  protected async removePhoto(){
