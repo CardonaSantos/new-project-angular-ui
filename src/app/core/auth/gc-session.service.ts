@@ -117,7 +117,7 @@ export class GcSessionService {
       this.status.set('expired');
       // A revoked session must not leave a protected page visible.
       if (this.router && !this.router.url.startsWith('/login')) {
-        void this.router.navigateByUrl('/login');
+        void this.router.navigateByUrl('/login').catch(() => undefined);
       }
     }
   }
