@@ -61,3 +61,15 @@ export interface ReportSummary { [key:string]:unknown }
 export const ROLE_SCOPES:readonly {value:Scope;label:string}[]=[
   {value:'GLOBAL',label:'Global'}, {value:'SUCURSAL',label:'Por sucursal'}
 ];
+
+export interface StaffOverview {
+  desde:string;hasta:string;sucursalId:string|null;
+  ordenes:{total:number;cerradas:number;importeOrdenes:string};
+  cobros:{cantidad:number;importeCobrado:string};
+  caja:{turnos:number;abiertos:number};
+  delivery:{entregas:number;completadas:number};
+  inventario:{movimientos:number};
+}
+export interface ActivityItem {id:string;kind:'ORDEN'|'PAGO'|'CAJA'|'ENTREGA'|'INVENTARIO';
+  at:string;label:string;status:string|null;amount:string|null;sucursalId:string|null}
+export interface StaffReportRow {usuarioId:string;nombre:string;ordenes:number;cobros:number;importeCobrado:string}

@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import { API_ENDPOINTS } from '../../../core/http/api-endpoints';
 import { gcSilentRequest } from '../../../core/http/api-context';
 import type {
-  Assignment, Audit, CredentialsIssued, MediaAccess, MediaRecord,
+  Assignment, Audit, CredentialsIssued, MediaAccess, MediaRecord, ActivityItem, StaffOverview, StaffReportRow,
   MyProfileUpdate, Options, Page, PasswordReset, PermissionGroup,
   Role, RoleCreate, RoleUpdate, Session, UserCreate, UserOption, UserRecord, UserUpdate,
 } from './users.models';
@@ -59,13 +59,13 @@ export class UsersApi {
     return this.http.get<Page<Audit>>(this.e.audit(id),{params:query(p)});
   }
   overview(id:string,p:{from?:string;to?:string;sucursalId?:string}={}){
-    return this.http.get<Record<string,unknown>>(this.e.overview(id),{params:query(p)});
+    return this.http.get<StaffOverview>(this.e.overview(id),{params:query(p)});
   }
   activity(id:string,p:{from?:string;to?:string;sucursalId?:string;kind?:string;page?:number;limit?:number}={}){
-    return this.http.get<Page<Record<string,unknown>>>(this.e.activity(id),{params:query(p)});
+    return this.http.get<Page<ActivityItem>>(this.e.activity(id),{params:query(p)});
   }
   report(p:{from?:string;to?:string;sucursalId?:string;page?:number;limit?:number}={}){
-    return this.http.get<Record<string,unknown>>(this.e.reports,{params:query(p)});
+    return this.http.get<Page<StaffReportRow>>(this.e.reports,{params:query(p)});
   }
 }
 @Injectable({providedIn:'root'})
