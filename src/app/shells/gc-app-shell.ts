@@ -6,7 +6,6 @@ import { GcSidebar } from '../design-system/navigation/gc-sidebar';
 import { GcTopbar } from '../design-system/navigation/gc-topbar';
 import { GcProfileMenu } from '../design-system/profile/gc-profile-menu';
 import { GcBranchSwitcher } from '../design-system/profile/gc-branch-switcher';
-import { GcNotificationCenter } from '../design-system/feedback/gc-notification-center';
 import { GcNavigationItem } from '../design-system/navigation/navigation.model';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
@@ -14,7 +13,7 @@ import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
 
 @Component({
   selector: 'gc-app-shell',
-  imports: [RouterOutlet, GcSidebar, GcTopbar, GcProfileMenu, GcBranchSwitcher, GcNotificationCenter],
+  imports: [RouterOutlet, GcSidebar, GcTopbar, GcProfileMenu, GcBranchSwitcher ],
   templateUrl: './gc-app-shell.html',
   styleUrl: './gc-app-shell.scss',
 })
