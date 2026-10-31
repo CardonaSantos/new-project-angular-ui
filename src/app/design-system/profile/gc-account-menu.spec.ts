@@ -31,6 +31,7 @@ describe('GcAccountMenu', () => {
     await fixture.whenStable();
 
     const panel = overlay.getContainerElement();
+    expect(panel.querySelector('.gc-account-panel')).not.toBeNull();
     const name = panel.querySelector<HTMLElement>('.gc-account-info-name');
     const email = panel.querySelector<HTMLElement>('.gc-account-info-email');
     expect(name?.textContent?.trim()).toBe('Administradora de prueba');
