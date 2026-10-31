@@ -42,3 +42,5 @@
 .gc-u-reason {width:min(100%,34rem)}
 .gc-u-raw {white-space:pre-wrap;overflow-wrap:anywhere;max-height:18rem;overflow:auto;font-size:.8rem}
 @media(max-width:640px){.gc-u-grid{grid-template-columns:1fr}.gc-u-actions{align-items:stretch;flex-direction:column}.gc-u-actions button,.gc-u-actions a{width:100%}}
+
+.gc-u-avatar-cell{flex-wrap:nowrap;justify-content:flex-start;gap:.7rem;min-width:10rem;overflow-wrap:anywhere}

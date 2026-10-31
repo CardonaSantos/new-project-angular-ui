@@ -50,7 +50,7 @@ export class GcFileUpload implements OnDestroy {
    let accepted=[...result.accepted];
    if(this.cropSquare()){
     if(accepted.length!==1)throw new Error('Selecciona una sola fotografía.');
-    const dialog=this.dialog.open(GcImageCropDialog,{
+    const dialog=this.dialog.open<GcImageCropDialog,File,File>(GcImageCropDialog,{
       data:accepted[0],width:'min(94vw,440px)',maxWidth:'94vw',
       ariaLabel:'Recortar fotografía',autoFocus:'dialog',restoreFocus:true
     });

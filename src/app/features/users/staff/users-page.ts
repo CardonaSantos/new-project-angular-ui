@@ -49,7 +49,7 @@ import {GcUserAvatar} from '../../../design-system/profile/gc-user-avatar';
     <gc-data-table [rows]="rows()" [columns]="columns" [loading]="page.busy()">
      <ng-template gcTableCell="nombre" let-row>
       <div class="gc-u-avatar-row gc-u-avatar-cell">
-       <gc-user-avatar [url]="row['avatarUrl']" [name]="row['nombre']"/>
+       <gc-user-avatar [url]="avatarUrl(row['avatarUrl'])" [name]="avatarName(row['nombre'])"/>
        <span>{{row['nombre']}}</span>
       </div>
      </ng-template>
@@ -92,6 +92,12 @@ export class GcUsersPage implements OnInit {
   try{if(!this.access.loaded())await this.access.load()}catch{/* handled by page */}
   if(!this.access.canGlobal('users.read'))this.branchId.set(this.branch.branchId()??'');
   await this.load();
+ }
+ protected avatarUrl(value:GcTableRow[string]):string|null {
+  return typeof value==='string'?value:null;
+ }
+ protected avatarName(value:GcTableRow[string]):string {
+  return typeof value==='string'?value:'';
  }
  protected readError(){return gcErrorMessage(this.page.error())}
  protected reload(){void this.load()}
