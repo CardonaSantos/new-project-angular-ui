@@ -1,5 +1,6 @@
-import { ActivatedRouteSnapshot, UrlSegment } from '@angular/router';
-import { gcBuildBreadcrumbs } from './gc-breadcrumbs';
+import { ActivatedRouteSnapshot, UrlSegment, provideRouter } from '@angular/router';
+import { TestBed } from '@angular/core/testing';
+import { GcBreadcrumbs, gcBuildBreadcrumbs } from './gc-breadcrumbs';
 import { ORGANIZATION_ROUTES } from '../../features/organization/organization.routes';
 
 /** Construct the same componentless route tree Angular exposes after navigation. */
@@ -68,6 +69,34 @@ describe('GcBreadcrumbs', () => {
           route(['forms'], 'Formularios guiados'))))).map(x => x.title)).toEqual([
       'Inicio', 'Laboratorio UX', 'Formularios guiados',
     ]);
+  });
+
+
+  it('renders an ordered navigation trail with accessible current page and working parent links', async () => {
+    await TestBed.configureTestingModule({
+      imports: [GcBreadcrumbs],
+      providers: [provideRouter([])],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(GcBreadcrumbs);
+    fixture.componentInstance.crumbs.set([
+      { title: 'Inicio', link: '/workspace' },
+      { title: 'Dispositivos', link: '/organization/devices' },
+      { title: 'Nuevo dispositivo', link: '/organization/devices/new' },
+    ]);
+    fixture.detectChanges();
+
+    const nav = fixture.nativeElement.querySelector('nav') as HTMLElement;
+    expect(nav.getAttribute('aria-label')).toBe('Ruta de navegación');
+    expect(nav.querySelectorAll('ol > li').length).toBe(3);
+    const links = Array.from(nav.querySelectorAll('a')) as HTMLAnchorElement[];
+    expect(links.map(a => a.getAttribute('href'))).toEqual([
+      '/workspace', '/organization/devices',
+    ]);
+    const current = nav.querySelector('[aria-current="page"]') as HTMLElement;
+    expect(current.tagName).toBe('SPAN');
+    expect(current.textContent?.trim()).toBe('Nuevo dispositivo');
+    expect(current.querySelector('a')).toBeNull();
+    fixture.destroy();
   });
 
   it('keeps organization URLs and unsaved-changes guards unchanged', () => {
