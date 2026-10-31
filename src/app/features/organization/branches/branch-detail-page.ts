@@ -162,7 +162,7 @@ export class GcBranchDetailPage implements OnInit {
       Validators.required,Validators.pattern(/^[A-Za-z][A-Za-z0-9_-]{1,31}$/)]}),
     nombre:new FormControl('',{nonNullable:true,validators:Validators.required}),
     direccion:new FormControl(''),telefono:new FormControl(''),
-    zonaHoraria:new FormControl('America/Guatemala',{nonNullable:true}),
+    zonaHoraria:new FormControl('',{nonNullable:true}),
   });
   protected readonly settings = new FormGroup({
     horaCorteOperativo:new FormControl('04:00',{nonNullable:true,validators:Validators.pattern(/^(?:[01]\d|2[0-3]):[0-5]\d$/)}),
@@ -233,14 +233,14 @@ export class GcBranchDetailPage implements OnInit {
     this.saveError.set(null);
     const dto: BranchCreate={codigo:value.codigo.trim().toUpperCase(),nombre:value.nombre.trim(),
       direccion:value.direccion?.trim()??'',telefono:value.telefono?.trim()??'',
-      zonaHoraria:value.zonaHoraria.trim()};
+      ...(value.zonaHoraria.trim() ? {zonaHoraria:value.zonaHoraria.trim()} : {})};
     const original=this.branch.data();
     const changes:BranchUpdate={};
     if (original) {
       if (dto.nombre!==original.nombre) changes.nombre=dto.nombre;
       if (dto.direccion!==(original.direccion??'')) changes.direccion=dto.direccion;
       if (dto.telefono!==(original.telefono??'')) changes.telefono=dto.telefono;
-      if (dto.zonaHoraria!==original.zonaHoraria) changes.zonaHoraria=dto.zonaHoraria;
+      if (dto.zonaHoraria!==undefined && dto.zonaHoraria!==original.zonaHoraria) changes.zonaHoraria=dto.zonaHoraria;
       if (!Object.keys(changes).length) { this.form.markAsPristine(); return; }
     }
     const result=await this.action.run(()=>firstValueFrom(this.isNew
@@ -248,6 +248,7 @@ export class GcBranchDetailPage implements OnInit {
     if (!result.ok) { if(result.reason==='error')this.saveError.set(gcErrorMessage(result.error)); return; }
     this.notify.show(this.isNew?'Sucursal creada.':'Sucursal actualizada.','success');
     if (this.isNew) {
+      this.form.markAsPristine();
       await this.router.navigate(['/organization/branches',result.value.id]);
     } else await this.load();
     await this.refreshAccess();

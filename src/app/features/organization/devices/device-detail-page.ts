@@ -216,8 +216,8 @@ export class GcDeviceDetailPage implements OnInit {
       ? this.api.create(dto) : this.api.update(this.id,changes)));
     if(!result.ok){if(result.reason==='error')this.error.set(gcErrorMessage(result.error));return;}
     this.notify.show(this.isNew?'Dispositivo registrado.':'Dispositivo actualizado.','success');
-    if(this.isNew) await this.router.navigate(['/organization/devices',result.value.id]);
-    else await this.load();
+    if(this.isNew) { this.form.markAsPristine(); await this.router.navigate(['/organization/devices',result.value.id]);
+    } else await this.load();
   }
   protected async changeStatus():Promise<void> {
     if(!this.canManage()||this.statusAction.pending()||this.reason().trim().length<3)return;
