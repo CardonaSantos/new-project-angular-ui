@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { GcConfirmedAction } from '../../../core/ux/gc-confirmed-action';
@@ -19,13 +19,12 @@ import { GcOrganizationNav } from '../organization-nav';
 
 @Component({
   selector: 'gc-branch-detail-page',
-  imports: [ReactiveFormsModule, RouterLink, GcPageHeader, GcButtonDirective,
+  imports: [ReactiveFormsModule, GcPageHeader, GcButtonDirective,
     GcErrorState, GcOrganizationNav],
   template: `
   <div class="gc-org-page gc-org-page--form">
     <gc-page-header [title]="isNew ? 'Nueva sucursal' : (branch.data()?.nombre ?? 'Sucursal')"/>
     <gc-organization-nav />
-    <div><a routerLink="/organization/branches">Volver a sucursales</a></div>
     @if (branch.busy()) { <p role="status" class="gc-org-muted">Cargando sucursal…</p> }
     @if (branch.status()==='error') {
       <gc-error-state [message]="readError()" (retry)="reload()" />

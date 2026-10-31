@@ -44,3 +44,11 @@ En operaciones importantes POST, PUT, PATCH y DELETE iniciadas por el usuario, v
 ## Placeholders de formularios
 
 En formularios sencillos, mantener etiquetas visibles y usar `placeholder` solo como ejemplo útil (formato de código, dirección, moneda, zona horaria). No usarlo para sustituir la etiqueta, repetirla ni imponer un valor por defecto. Los ejemplos nunca pasan al payload; los errores y requisitos importantes se muestran fuera del campo. En formularios extensos utilizar el patrón guiado existente cuando aporte claridad.
+
+## Breadcrumbs y navegación jerárquica
+
+`GcBreadcrumbs` construye la jerarquía a partir del árbol de rutas activo de Angular, no de los segmentos de URL ni de textos escritos en cada página. En los features, agrupar las rutas con un padre sin componente y `data: { breadcrumb: 'Sección' }`; declarar la lista como hijo `path: ''` y las páginas nuevas o de detalle como hijos `path: 'new'` y `path: ':id'`. Las rutas de lista y detalle mantienen los mismos URLs públicos.
+
+El breadcrumb inicia siempre en `Inicio`, muestra los niveles intermedios como enlaces, y el último como texto con `aria-current="page"`. Usa un `nav` con etiqueta accesible y lista ordenada. Los niveles visibles se ajustan a espacios estrechos; no se ocultan enlaces de retorno. No duplicar «Volver a…» si el breadcrumb ya contiene el enlace al listado.
+
+Ejemplos: `Inicio / Dispositivos / Nuevo dispositivo`, `Inicio / Sucursales / Detalle de sucursal`, `Inicio / Empresa` y `Inicio / Seguridad`. Evitar rutas planas `devices/new` que pierden la relación padre-hijo.

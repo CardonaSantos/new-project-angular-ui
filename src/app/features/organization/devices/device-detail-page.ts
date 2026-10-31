@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { GcConfirmedAction } from '../../../core/ux/gc-confirmed-action';
@@ -22,12 +22,11 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
 
 @Component({
   selector:'gc-device-detail-page',
-  imports:[RouterLink,ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcErrorState,GcOrganizationNav],
+  imports:[ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcErrorState,GcOrganizationNav],
   template:`
   <div class="gc-org-page gc-org-page--form">
     <gc-page-header [title]="isNew ? 'Nuevo dispositivo' : (device.data()?.nombre ?? 'Dispositivo')"/>
     <gc-organization-nav />
-    <div><a routerLink="/organization/devices">Volver a dispositivos</a></div>
     @if (device.busy()) {<p role="status" class="gc-org-muted">Cargando dispositivo…</p>}
     @if (device.status()==='error') {
       <gc-error-state [message]="readError()" (retry)="reload()" />

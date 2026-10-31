@@ -69,3 +69,7 @@ No se alteran endpoints ni reglas de negocio del backend. No se han ejecutado pr
 - Los inputs vacíos de Empresa, Sucursales y Dispositivos usan ejemplos breves en `placeholder`; nunca se envían como valores reales.
 - La etiqueta visible se mantiene siempre, incluso si el campo está completo o se autocompleta. Los errores aparecen junto al campo, no dentro del placeholder.
 - Los selectores y la hora nativa utilizan sus propios controles; no se agregan ejemplos innecesarios. Formularios complejos (como recetas) se pueden implementar como formularios guiados por pasos.
+
+## Navegación jerárquica y retorno
+
+Las rutas de Sucursales y Dispositivos ahora tienen padres de ruta sin componente; el breadcrumb global puede mostrar `Inicio / Sucursales / Nueva sucursal` y `Inicio / Dispositivos / Nuevo dispositivo`, con los niveles anteriores navegables. No cambian los URLs ni la protección de cambios sin guardar. La vuelta al listado se realiza desde el breadcrumb y la pestaña superior, sin duplicar un botón de retorno.
