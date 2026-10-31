@@ -277,7 +277,8 @@ export class GcBranchDetailPage implements OnInit {
       confirmText: this.isNew ? 'Crear sucursal' : 'Guardar cambios',
     }, () => firstValueFrom(this.isNew
       ? this.api.create(dto) : this.api.update(this.id, changes)));
-    if (!result || !result.ok) { if(result.reason==='error')this.saveError.set(gcErrorMessage(result.error)); return; }
+    if (!result) return;
+    if (!result.ok) { if(result.reason==='error')this.saveError.set(gcErrorMessage(result.error)); return; }
     this.notify.show(this.isNew?'Sucursal creada.':'Sucursal actualizada.','success');
     if (this.isNew) {
       this.form.markAsPristine();
@@ -309,7 +310,8 @@ export class GcBranchDetailPage implements OnInit {
       confirmText: 'Guardar configuración',
       danger: sensitive,
     }, () => firstValueFrom(this.api.updateConfig(this.id, changes)));
-    if (!result || !result.ok) { if(result.reason==='error')this.configError.set(gcErrorMessage(result.error)); return; }
+    if (!result) return;
+    if (!result.ok) { if(result.reason==='error')this.configError.set(gcErrorMessage(result.error)); return; }
     this.config.set(result.value);
     this.settings.markAsPristine();
     this.notify.show('Configuración guardada.','success');
@@ -325,7 +327,8 @@ export class GcBranchDetailPage implements OnInit {
       confirmText: active ? 'Activar' : 'Desactivar',
       danger: !active,
     }, () => firstValueFrom(this.api.status(this.id, active, this.reason().trim())));
-    if (!result || !result.ok) {if(result.reason==='error')this.statusError.set(gcErrorMessage(result.error));return;}
+    if (!result) return;
+    if (!result.ok) {if(result.reason==='error')this.statusError.set(gcErrorMessage(result.error));return;}
     this.reason.set('');
     this.notify.show(active?'Sucursal activada.':'Sucursal desactivada.','success');
     await this.load(); await this.refreshAccess();

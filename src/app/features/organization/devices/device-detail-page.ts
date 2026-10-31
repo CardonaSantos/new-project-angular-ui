@@ -227,7 +227,8 @@ export class GcDeviceDetailPage implements OnInit {
       confirmText: this.isNew ? 'Registrar dispositivo' : 'Guardar cambios',
     }, () => firstValueFrom(this.isNew
       ? this.api.create(dto) : this.api.update(this.id, changes)));
-    if (!result || !result.ok) {if(result.reason==='error')this.error.set(gcErrorMessage(result.error));return;}
+    if (!result) return;
+    if (!result.ok) {if(result.reason==='error')this.error.set(gcErrorMessage(result.error));return;}
     this.notify.show(this.isNew?'Dispositivo registrado.':'Dispositivo actualizado.','success');
     if(this.isNew) { this.form.markAsPristine(); await this.router.navigate(['/organization/devices',result.value.id]);
     } else await this.load();
@@ -243,7 +244,8 @@ export class GcDeviceDetailPage implements OnInit {
       confirmText: next ? 'Activar' : 'Desactivar',
       danger: !next,
     }, () => firstValueFrom(this.api.status(this.id, next, this.reason().trim())));
-    if (!result || !result.ok) {if(result.reason==='error')this.statusError.set(gcErrorMessage(result.error));return;}
+    if (!result) return;
+    if (!result.ok) {if(result.reason==='error')this.statusError.set(gcErrorMessage(result.error));return;}
     this.reason.set('');this.notify.show(next?'Dispositivo activado.':'Dispositivo desactivado.','success');
     await this.load();
   }

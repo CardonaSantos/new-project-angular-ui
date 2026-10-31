@@ -160,7 +160,8 @@ export class GcCompanyPage implements OnInit {
       confirmText: 'Guardar cambios',
       danger: sensitive,
     }, () => firstValueFrom(this.api.update(changes)));
-    if (!result || !result.ok) {
+    if (!result) return;
+    if (!result.ok) {
       if (result.reason==='error') this.error.set(gcErrorMessage(result.error));
       return;
     }
