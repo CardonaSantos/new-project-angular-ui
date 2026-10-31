@@ -1,5 +1,7 @@
 
 import {DatePipe} from '@angular/common';
+import {formatInstant} from '../../../../shared/formatting';
+import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {Component,OnInit,inject,signal,computed} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
@@ -75,6 +77,7 @@ import type {ActivityItem,Audit,Page,StaffOverview} from '../data-access/users.m
 export class GcUserAuditPage implements OnInit {
  private readonly route=inject(ActivatedRoute);
  private readonly api=inject(UsersApi);
+ private readonly branch=inject(GcBranchContext);
  protected readonly id=this.route.snapshot.paramMap.get('id')??this.route.snapshot.parent?.paramMap.get('id')??'';
  protected readonly activity=new GcPageState<Page<ActivityItem>>();
  protected readonly audit=new GcPageState<Page<Audit>>();
@@ -89,8 +92,12 @@ export class GcUserAuditPage implements OnInit {
   {key:'status',label:'Estado'},{key:'amount',label:'Importe'},{key:'at',label:'Fecha'}
  ];
  protected readonly activityRows=computed<GcTableRow[]>(()=>this.activity.data()?.data.map(x=>({
-  kind:x.kind,label:x.label,status:x.status,amount:x.amount,at:new Date(x.at).toLocaleString(),
+  kind:x.kind,label:x.label,status:x.status,amount:x.amount,at:this.renderDate(x.at),
  }))??[]);
+ protected renderDate(instant:string):string {
+  try{return formatInstant(instant,this.branch.active()?.zonaHoraria??'America/Guatemala');}
+  catch{return '—'}
+ }
  ngOnInit(){this.refreshActivity();void this.loadAudit()}
  protected activityError(){return gcErrorMessage(this.activity.error())}
  protected auditError(){return gcErrorMessage(this.audit.error())}

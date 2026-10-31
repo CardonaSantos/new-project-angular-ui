@@ -10,6 +10,7 @@ import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
+import {formatDecimal} from '../../../../shared/formatting';
 import {UsersApi} from '../data-access/users.api';
 import type {Page,StaffReportRow} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
@@ -53,7 +54,7 @@ export class GcStaffReportPage implements OnInit {
   {key:'nombre',label:'Usuario'},{key:'ordenes',label:'Órdenes registradas'},
   {key:'cobros',label:'Cobros realizados'},{key:'importe',label:'Importe cobrado'}];
  protected readonly rows=computed<GcTableRow[]>(()=>this.page.data()?.data.map(r=>({
-  nombre:r.nombre,ordenes:r.ordenes,cobros:r.cobros,importe:r.importeCobrado
+  nombre:r.nombre,ordenes:r.ordenes,cobros:r.cobros,importe:formatDecimal(r.importeCobrado,{minimumFractionDigits:2,maximumFractionDigits:2})
  }))??[]);
  ngOnInit(){void this.load()}
  protected readError(){return gcErrorMessage(this.page.error())}

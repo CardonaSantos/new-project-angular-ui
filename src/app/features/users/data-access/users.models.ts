@@ -56,8 +56,6 @@ export interface UserOption {id:string;label:string;email:string;avatarMediaId:s
 export interface Options<T> {data:T[];meta:{hasMore:boolean;nextCursor:string|null}}
 export interface MediaRecord {id:string;contexto:string;mimeType:string;url:string|null;urlPublica?:string|null;tipo:string}
 export interface MediaAccess {url:string;publico:boolean;expiresIn:number|null}
-export interface Activity {id?:string;kind:string;createdAt?:string;[key:string]:unknown}
-export interface ReportSummary { [key:string]:unknown }
 export const ROLE_SCOPES:readonly {value:Scope;label:string}[]=[
   {value:'GLOBAL',label:'Global'}, {value:'SUCURSAL',label:'Por sucursal'}
 ];
