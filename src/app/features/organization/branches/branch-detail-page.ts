@@ -49,6 +49,9 @@ import { GcOrganizationNav } from '../organization-nav';
               <label for="br-name">Nombre</label>
               <input id="br-name" formControlName="nombre" maxlength="120"
                 [attr.aria-invalid]="form.controls.nombre.invalid && form.controls.nombre.touched"/>
+              @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+                <small class="gc-org-error">Introduce un nombre.</small>
+              }
             </div>
             <div class="gc-org-field">
               <label for="br-phone">Teléfono</label>
@@ -56,7 +59,11 @@ import { GcOrganizationNav } from '../organization-nav';
             </div>
             <div class="gc-org-field">
               <label for="br-timezone">Zona horaria</label>
-              <input id="br-timezone" formControlName="zonaHoraria" maxlength="64"/>
+              <input id="br-timezone" formControlName="zonaHoraria" maxlength="64"
+                [attr.aria-invalid]="form.controls.zonaHoraria.invalid && form.controls.zonaHoraria.touched"/>
+              @if (form.controls.zonaHoraria.invalid && form.controls.zonaHoraria.touched) {
+                <small class="gc-org-error">Introduce una zona horaria válida.</small>
+              }
             </div>
             <div class="gc-org-field">
               <label for="br-address">Dirección</label>
@@ -73,6 +80,8 @@ import { GcOrganizationNav } from '../organization-nav';
         </form>
       </section>
       @if (!isNew && branch.data()) {
+        @if (!config() && !configError()) { <p role="status" class="gc-org-muted">Cargando configuración…</p> }
+        @if (config()) {
         <section class="gc-org-card gc-org-narrow">
           <div class="gc-org-row"><h2>Configuración</h2></div>
           <form [formGroup]="settings" class="gc-org-form" (ngSubmit)="saveConfig()" novalidate>
@@ -80,10 +89,16 @@ import { GcOrganizationNav } from '../organization-nav';
               <div class="gc-org-field">
                 <label for="br-cutoff">Corte operativo</label>
                 <input id="br-cutoff" type="time" formControlName="horaCorteOperativo" />
+                @if (settings.controls.horaCorteOperativo.invalid && settings.controls.horaCorteOperativo.touched) {
+                  <small class="gc-org-error">Introduce una hora entre 00:00 y 23:59.</small>
+                }
               </div>
               <div class="gc-org-field">
                 <label for="br-currency">Moneda</label>
                 <input id="br-currency" formControlName="moneda" maxlength="3" />
+                @if (settings.controls.moneda.invalid && settings.controls.moneda.touched) {
+                  <small class="gc-org-error">Usa un código de tres letras.</small>
+                }
               </div>
             </div>
             <div class="gc-org-switches">
@@ -102,6 +117,8 @@ import { GcOrganizationNav } from '../organization-nav';
             </div>
           </form>
         </section>
+        }
+        @if (configError()) { <p role="alert" class="gc-org-alert">{{ configError() }}</p> }
         @if (overview(); as counts) {
           <section class="gc-org-card gc-org-page">
             <h2>Resumen operativo</h2>
@@ -186,6 +203,8 @@ export class GcBranchDetailPage implements OnInit {
     await this.branch.load(() => firstValueFrom(this.api.get(this.id)));
     const item=this.branch.data();
     if (!item) return;
+    this.config.set(null);
+    this.overview.set(null);
     try {
       const scope = await firstValueFrom(this.branchAuth.capabilities(this.id));
       this.targetPermissions.set(scope.permissions);
@@ -195,6 +214,8 @@ export class GcBranchDetailPage implements OnInit {
       telefono:item.telefono??'',zonaHoraria:item.zonaHoraria,
     });
     this.form.controls.codigo.disable();
+    this.form.controls.zonaHoraria.addValidators(Validators.required);
+    this.form.controls.zonaHoraria.updateValueAndValidity();
     if (!this.canManage()) this.form.disable();
     else { this.form.enable(); this.form.controls.codigo.disable(); }
     this.configError.set(null);

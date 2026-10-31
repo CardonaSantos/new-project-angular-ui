@@ -33,6 +33,7 @@ import { GcOrganizationNav } from '../organization-nav';
                 <label for="co-name">Nombre comercial</label>
                 <input id="co-name" formControlName="nombreComercial" maxlength="150"
                   [attr.aria-invalid]="invalid('nombreComercial')" />
+                @if (invalid('nombreComercial')) { <small class="gc-org-error">Introduce el nombre comercial.</small> }
               </div>
               <div class="gc-org-field">
                 <label for="co-legal">Razón social</label>
@@ -46,19 +47,22 @@ import { GcOrganizationNav } from '../organization-nav';
                 <label for="co-currency">Moneda base</label>
                 <input id="co-currency" formControlName="moneda" maxlength="3"
                   [attr.aria-invalid]="invalid('moneda')" />
+                @if (invalid('moneda')) { <small class="gc-org-error">Usa un código de tres letras.</small> }
                 <small>Ejemplo: GTQ</small>
               </div>
               <div class="gc-org-field">
                 <label for="co-zone">Zona horaria</label>
                 <input id="co-zone" formControlName="zonaHoraria" maxlength="64"
                   [attr.aria-invalid]="invalid('zonaHoraria')" />
+                @if (invalid('zonaHoraria')) { <small class="gc-org-error">Introduce una zona horaria.</small> }
                 <small>Ejemplo: America/Guatemala</small>
               </div>
               <div class="gc-org-field">
                 <label for="co-valuation">Valoración de inventario</label>
                 <select id="co-valuation" formControlName="metodoValoracion">
-                  <option value="PROMEDIO_PONDERADO">Promedio ponderado</option>
-                  <option value="FIFO">Primeras entradas, primeras salidas</option>
+                  @for (method of methods(); track method) {
+                    <option [value]="method">{{ method === 'FIFO' ? 'Primeras entradas, primeras salidas' : 'Promedio ponderado' }}</option>
+                  }
                 </select>
               </div>
             </div>
@@ -90,6 +94,7 @@ export class GcCompanyPage implements OnInit {
   protected readonly page = new GcPageState<Company>();
   protected readonly action = new GcAsyncAction();
   protected readonly error = signal<string | null>(null);
+  protected readonly methods = signal<ValuationMethod[]>(['PROMEDIO_PONDERADO','FIFO']);
   protected readonly form = new FormGroup({
     nombreComercial: new FormControl('', { nonNullable:true, validators:[Validators.required, Validators.maxLength(150)] }),
     razonSocial: new FormControl(''),
@@ -104,6 +109,10 @@ export class GcCompanyPage implements OnInit {
       try { await this.access.load(); } catch { /* API errors surface in global notifications. */ }
     }
     await this.load();
+    try {
+      const caps = await firstValueFrom(this.api.capabilities());
+      this.methods.set(caps.valuationMethods);
+    } catch { /* The current company values remain visible. */ }
   }
   protected invalid(field: 'nombreComercial'|'moneda'|'zonaHoraria'): boolean {
     const c = this.form.controls[field]; return c.invalid && c.touched;

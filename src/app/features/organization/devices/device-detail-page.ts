@@ -48,6 +48,9 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
               <label for="dv-name">Nombre</label>
               <input id="dv-name" formControlName="nombre" maxlength="120"
                 [attr.aria-invalid]="form.controls.nombre.invalid && form.controls.nombre.touched" />
+              @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+                <small class="gc-org-error">Introduce un nombre.</small>
+              }
             </div>
             <div class="gc-org-field">
               <label for="dv-branch">Sucursal</label>

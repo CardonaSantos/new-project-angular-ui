@@ -31,13 +31,13 @@ import { GcOrganizationNav } from '../organization-nav';
     </gc-page-header>
     <gc-organization-nav />
     <section class="gc-org-card gc-org-page">
-      <div class="gc-org-toolbar">
+      <form class="gc-org-toolbar" (submit)="applySearch($event)">
         <gc-table-toolbar searchLabel="Buscar sucursales" [query]="search()"
           (queryChange)="search.set($event)"/>
         <gc-filter-bar filterId="branch-active-filter" label="Estado" [value]="status()"
           [options]="statusOptions" (valueChange)="updateStatus($event)" />
-        <button gcButton variant="outline" type="button" (click)="applySearch()">Buscar</button>
-      </div>
+        <button gcButton variant="outline" type="submit">Buscar</button>
+      </form>
       @if (page.status() === 'error') {
         <gc-error-state [message]="errorMessage()" (retry)="reload()"/>
       } @else {
@@ -91,7 +91,7 @@ export class GcBranchesPage implements OnInit {
   }
   protected errorMessage(): string { return gcErrorMessage(this.page.error()); }
   protected reload(): void { void this.load(); }
-  protected applySearch(): void { this.pageIndex.set(0); void this.load(); }
+  protected applySearch(event?: Event): void { event?.preventDefault(); this.pageIndex.set(0); void this.load(); }
   protected updateStatus(value: string): void { this.status.set(value); this.applySearch(); }
   protected onPage(change: GcPageChange): void {
     this.pageIndex.set(change.index); this.pageSize.set(change.size); void this.load();

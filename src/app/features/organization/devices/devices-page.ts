@@ -32,7 +32,7 @@ import { GcOrganizationNav } from '../organization-nav';
     </gc-page-header>
     <gc-organization-nav />
     <section class="gc-org-card gc-org-page">
-      <div class="gc-org-toolbar">
+      <form class="gc-org-toolbar" (submit)="applySearch($event)">
         <gc-table-toolbar searchLabel="Buscar dispositivos" [query]="search()"
           (queryChange)="search.set($event)"/>
         <div class="gc-org-field">
@@ -49,8 +49,8 @@ import { GcOrganizationNav } from '../organization-nav';
           [value]="typeFilter()" (valueChange)="setType($event)"/>
         <gc-filter-bar filterId="dv-active-filter" label="Estado" [options]="statuses"
           [value]="statusFilter()" (valueChange)="setStatus($event)"/>
-        <button gcButton variant="outline" type="button" (click)="applySearch()">Buscar</button>
-      </div>
+        <button gcButton variant="outline" type="submit">Buscar</button>
+      </form>
       @if (page.status()==='error') {
         <gc-error-state [message]="errorMessage()" (retry)="reload()"/>
       } @else {
@@ -106,7 +106,7 @@ export class GcDevicesPage implements OnInit {
   protected setType(value:string):void {this.typeFilter.set(value);this.applySearch();}
   protected setStatus(value:string):void {this.statusFilter.set(value);this.applySearch();}
   protected setBranch(value:string):void {this.branchFilter.set(value);this.applySearch();}
-  protected applySearch():void {this.pageIndex.set(0);void this.load();}
+  protected applySearch(event?:Event):void {event?.preventDefault();this.pageIndex.set(0);void this.load();}
   protected onPage(change:GcPageChange):void {
     this.pageIndex.set(change.index);this.pageSize.set(change.size);void this.load();
   }
