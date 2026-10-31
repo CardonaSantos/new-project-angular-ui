@@ -41,9 +41,10 @@ import { GcOrganizationNav } from '../organization-nav';
               <label for="br-code">Código</label>
               <input id="br-code" formControlName="codigo" maxlength="32"
                 placeholder="Ej. SUCURSAL_NORTE" spellcheck="false"
-                [attr.aria-invalid]="form.controls.codigo.invalid && form.controls.codigo.touched" />
+                [attr.aria-invalid]="form.controls.codigo.invalid && form.controls.codigo.touched"
+                [attr.aria-describedby]="form.controls.codigo.invalid && form.controls.codigo.touched ? 'br-code-error' : null" />
               @if (form.controls.codigo.touched && form.controls.codigo.invalid) {
-                <small class="gc-org-error">Usa entre 2 y 32 caracteres: letras, números, guion o guion bajo.</small>
+                <small id="br-code-error" class="gc-org-error">Usa entre 2 y 32 caracteres: letras, números, guion o guion bajo.</small>
               }
             </div>
             <div class="gc-org-field">
@@ -65,9 +66,10 @@ import { GcOrganizationNav } from '../organization-nav';
               <label for="br-timezone">Zona horaria</label>
               <input id="br-timezone" formControlName="zonaHoraria" maxlength="64"
                 placeholder="Ej. America/Guatemala" spellcheck="false"
-                [attr.aria-invalid]="form.controls.zonaHoraria.invalid && form.controls.zonaHoraria.touched"/>
+                [attr.aria-invalid]="form.controls.zonaHoraria.invalid && form.controls.zonaHoraria.touched"
+                [attr.aria-describedby]="form.controls.zonaHoraria.invalid && form.controls.zonaHoraria.touched ? 'br-zone-error' : null" />
               @if (form.controls.zonaHoraria.invalid && form.controls.zonaHoraria.touched) {
-                <small class="gc-org-error">Introduce una zona horaria válida.</small>
+                <small id="br-zone-error" class="gc-org-error">Introduce una zona horaria válida.</small>
               }
             </div>
             <div class="gc-org-field">

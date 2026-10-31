@@ -40,18 +40,20 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
               <label for="dv-code">Código</label>
               <input id="dv-code" formControlName="codigo" maxlength="32"
                 placeholder="Ej. POS_CAJA_01" spellcheck="false"
-                [attr.aria-invalid]="form.controls.codigo.invalid && form.controls.codigo.touched" />
+                [attr.aria-invalid]="form.controls.codigo.invalid && form.controls.codigo.touched"
+                [attr.aria-describedby]="form.controls.codigo.invalid && form.controls.codigo.touched ? 'dv-code-error' : null" />
               @if (form.controls.codigo.touched && form.controls.codigo.invalid) {
-                <small class="gc-org-error">Usa entre 2 y 32 caracteres: letras, números, guion o guion bajo.</small>
+                <small id="dv-code-error" class="gc-org-error">Usa entre 2 y 32 caracteres: letras, números, guion o guion bajo.</small>
               }
             </div>
             <div class="gc-org-field">
               <label for="dv-name">Nombre</label>
               <input id="dv-name" formControlName="nombre" maxlength="120"
                 placeholder="Ej. Caja principal"
-                [attr.aria-invalid]="form.controls.nombre.invalid && form.controls.nombre.touched" />
+                [attr.aria-invalid]="form.controls.nombre.invalid && form.controls.nombre.touched"
+                [attr.aria-describedby]="form.controls.nombre.invalid && form.controls.nombre.touched ? 'dv-name-error' : null" />
               @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
-                <small class="gc-org-error">Introduce un nombre.</small>
+                <small id="dv-name-error" class="gc-org-error">Introduce un nombre.</small>
               }
             </div>
             <div class="gc-org-field">

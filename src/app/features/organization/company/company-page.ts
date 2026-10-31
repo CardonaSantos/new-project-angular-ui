@@ -51,15 +51,17 @@ import { GcOrganizationNav } from '../organization-nav';
                 <label for="co-currency">Moneda base</label>
                 <input id="co-currency" formControlName="moneda" maxlength="3"
                   placeholder="Ej. GTQ"
-                  [attr.aria-invalid]="invalid('moneda')" />
-                @if (invalid('moneda')) { <small class="gc-org-error">Usa un código de tres letras.</small> }
+                  [attr.aria-invalid]="invalid('moneda')"
+                  [attr.aria-describedby]="invalid('moneda') ? 'co-currency-error' : null" />
+                @if (invalid('moneda')) { <small id="co-currency-error" class="gc-org-error">Usa un código de tres letras.</small> }
               </div>
               <div class="gc-org-field">
                 <label for="co-zone">Zona horaria</label>
                 <input id="co-zone" formControlName="zonaHoraria" maxlength="64"
                   placeholder="Ej. America/Guatemala" spellcheck="false"
-                  [attr.aria-invalid]="invalid('zonaHoraria')" />
-                @if (invalid('zonaHoraria')) { <small class="gc-org-error">Introduce una zona horaria.</small> }
+                  [attr.aria-invalid]="invalid('zonaHoraria')"
+                  [attr.aria-describedby]="invalid('zonaHoraria') ? 'co-zone-error' : null" />
+                @if (invalid('zonaHoraria')) { <small id="co-zone-error" class="gc-org-error">Introduce una zona horaria.</small> }
               </div>
               <div class="gc-org-field">
                 <label for="co-valuation">Valoración de inventario</label>
