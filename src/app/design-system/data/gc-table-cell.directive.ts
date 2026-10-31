@@ -26,6 +26,7 @@ export class GcTableCellDirective {
     _directive: GcTableCellDirective,
     context: unknown,
   ): context is GcTableCellContext {
+    void context;
     return true;
   }
 }
