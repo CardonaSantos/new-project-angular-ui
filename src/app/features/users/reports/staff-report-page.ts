@@ -1,6 +1,5 @@
 
 import {Component,inject,OnInit,computed,signal} from '@angular/core';
-import {RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
 import {GcButtonDirective} from '../../../design-system/components/button/gc-button.directive';
@@ -10,13 +9,13 @@ import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
-import {formatDecimal} from '../../../../shared/formatting';
+import {formatDecimal} from '../../../shared/formatting';
 import {UsersApi} from '../data-access/users.api';
 import type {Page,StaffReportRow} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
 @Component({
  selector:'gc-staff-report-page',
- imports:[RouterLink,GcUsersNav,GcPageHeader,GcButtonDirective,GcPagination,GcDataTable,GcErrorState],
+ imports:[GcUsersNav,GcPageHeader,GcButtonDirective,GcPagination,GcDataTable,GcErrorState],
  template:`
  <div class="gc-u-page">
   <gc-page-header title="Resumen de personal"/><gc-users-nav/>

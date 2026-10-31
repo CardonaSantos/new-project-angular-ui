@@ -1,7 +1,7 @@
 
 import {Component,inject,OnInit,signal} from '@angular/core';
 import {DatePipe} from '@angular/common';
-import {ActivatedRoute,RouterLink} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
 import {GcButtonDirective} from '../../../design-system/components/button/gc-button.directive';
@@ -17,7 +17,7 @@ import {UsersApi} from '../data-access/users.api';
 import type {Page,Session} from '../data-access/users.models';
 @Component({
  selector:'gc-user-security-page',
- imports:[DatePipe,RouterLink,GcPageHeader,GcButtonDirective,GcErrorState,GcPagination],
+ imports:[DatePipe,GcPageHeader,GcButtonDirective,GcErrorState,GcPagination],
  template:`
  <div class="gc-u-page gc-u-narrow">
   <gc-page-header title="Sesiones y contraseña"/>

@@ -1,6 +1,6 @@
 
 import {DatePipe} from '@angular/common';
-import {formatInstant} from '../../../../shared/formatting';
+import {formatInstant} from '../../../shared/formatting';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {UsersAccess} from '../data-access/users-access';
 import {Component,OnInit,inject,signal,computed} from '@angular/core';

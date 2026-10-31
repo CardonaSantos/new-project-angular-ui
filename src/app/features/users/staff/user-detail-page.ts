@@ -16,7 +16,7 @@ import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confir
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {UsersApi,RolesApi,MediaApi} from '../data-access/users.api';
 import {UsersAccess} from '../data-access/users-access';
-import type {UserRecord,Role,UserUpdate} from '../data-access/users.models';
+import type {UserRecord,Role,UserUpdate,CredentialsIssued} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
 @Component({
  selector:'gc-user-detail-page',
@@ -221,7 +221,7 @@ export class GcUserDetailPage implements OnInit {
   const dto:UserUpdate={nombre:name,email,apellidos:v.apellidos?.trim()||null,telefono:v.telefono?.trim()||null,
    idioma:v.idioma.trim(),zonaHoraria:v.zonaHoraria.trim()};
   this.saveError.set(null);
-  const r=await this.saveAction.runConfirmed(this.dialog,{
+  const r=await this.saveAction.runConfirmed<UserRecord|CredentialsIssued>(this.dialog,{
    title:this.isNew?'Crear usuario':'Guardar usuario',
    message:this.isNew?'¿Crear esta cuenta de usuario?':'¿Guardar los cambios de usuario?',
    confirmText:this.isNew?'Crear usuario':'Guardar cambios'
@@ -232,8 +232,10 @@ export class GcUserDetailPage implements OnInit {
     :firstValueFrom(this.api.update(this.id,dto)));
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.saveError.set(gcErrorMessage(r.error));return}
-  if(this.isNew){if('temporaryPassword' in r.value){this.createdId.set(r.value.user.id);
-      this.createdSecret.set(r.value.temporaryPassword);this.form.markAsPristine()} }
+  if(this.isNew){const created=r.value as CredentialsIssued;
+   this.createdId.set(created.user.id);
+   this.createdSecret.set(created.temporaryPassword);
+   this.form.markAsPristine();}
   else{await this.load();this.notices.show('Usuario actualizado.','success')}
  }
  protected async copySecret(){

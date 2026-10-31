@@ -1,6 +1,6 @@
 
 import {Component,inject,OnInit,signal} from '@angular/core';
-import {ActivatedRoute,Router,RouterLink} from '@angular/router';
+import {ActivatedRoute,Router} from '@angular/router';
 import {FormControl,FormGroup,ReactiveFormsModule,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
@@ -17,7 +17,7 @@ import type {Role,PermissionGroup,Scope} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
 @Component({
  selector:'gc-role-detail-page',
- imports:[ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcErrorState,GcUsersNav,RouterLink],
+ imports:[ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcErrorState,GcUsersNav],
  template:`
  <div class="gc-u-page gc-u-narrow">
   <gc-page-header [title]="isNew?'Nuevo rol':(role.data()?.nombre??'Rol')"/>
