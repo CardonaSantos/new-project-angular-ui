@@ -42,22 +42,28 @@ describe('Gastro Core HTTP interceptors', () => {
 
   afterEach(() => mock.verify());
 
-  function logIn(): void {
+  const flushAsyncParsers = (): Promise<void> =>
+    new Promise(resolve => setTimeout(resolve, 0));
+
+  async function logIn(): Promise<void> {
     session.login({ email: 'a@example.com', password: 'secret' }).subscribe();
     const login = mock.expectOne('/api/auth/login');
     expect(login.request.withCredentials).toBe(true);
     expect(login.request.headers.has('Authorization')).toBe(false);
     login.flush(sessionResponse());
+    await flushAsyncParsers();
     mock.expectOne('/api/auth/me').flush({ user: sessionResponse().user, roles: [] });
     mock.expectOne('/api/branches/my-access').flush(branches);
+    await flushAsyncParsers();
     mock.expectOne('/api/auth/capabilities?sucursalId=b1')
       .flush({ sucursalId: 'b1', permissions: ['inventory.read'] });
+    await flushAsyncParsers();
     expect(session.authenticated()).toBe(true);
     expect(branch.has('inventory.read')).toBe(true);
   }
 
-  it('attaches Bearer only to /api and branch header only with opt-in context', () => {
-    logIn();
+  it('attaches Bearer only to /api and branch header only with opt-in context', async () => {
+    await logIn();
     http.get('/api/inventory/articles', {
       context: new HttpContext().set(GC_BRANCH_REQUEST, true),
     }).subscribe();
@@ -77,8 +83,8 @@ describe('Gastro Core HTTP interceptors', () => {
     external.flush({ ok: true });
   });
 
-  it('rotates refresh cookie once for concurrent 401s and replays each request once', () => {
-    logIn();
+  it('rotates refresh cookie once for concurrent 401s and replays each request once', async () => {
+    await logIn();
     const results: unknown[] = [];
     http.get('/api/orders').subscribe(value => results.push(value));
     http.get('/api/inventory/stock').subscribe(value => results.push(value));
@@ -90,6 +96,7 @@ describe('Gastro Core HTTP interceptors', () => {
     expect(refresh.request.withCredentials).toBe(true);
     expect(refresh.request.headers.has('Authorization')).toBe(false);
     refresh.flush(sessionResponse('access-v2'));
+    await flushAsyncParsers();
     const orderRetry = mock.expectOne('/api/orders');
     const stockRetry = mock.expectOne('/api/inventory/stock');
     expect(orderRetry.request.headers.get('Authorization')).toBe('Bearer access-v2');
@@ -100,8 +107,8 @@ describe('Gastro Core HTTP interceptors', () => {
     expect(notices.notices()).toEqual([]);
   });
 
-  it('surfaces a readable error and never retries 409 conflicts', () => {
-    logIn();
+  it('surfaces a readable error and never retries 409 conflicts', async () => {
+    await logIn();
     let error: unknown;
     http.post('/api/orders', { key: 'x' }).subscribe({ error: failure => { error = failure; } });
     mock.expectOne('/api/orders').flush(
@@ -123,14 +130,15 @@ describe('Gastro Core HTTP interceptors', () => {
     expect(notices.notices()).toEqual([]);
   });
 
-  it('revokes local credentials after failed refresh without replaying failed requests', () => {
-    logIn();
+  it('revokes local credentials after failed refresh without replaying failed requests', async () => {
+    await logIn();
     let error: unknown;
     http.get('/api/orders').subscribe({ error: failure => { error = failure; } });
     mock.expectOne('/api/orders').flush({}, { status: 401, statusText: 'Unauthorized' });
     mock.expectOne('/api/auth/refresh').flush(
       { message: 'Refresh token inválido' }, { status: 401, statusText: 'Unauthorized' },
     );
+    await flushAsyncParsers();
     expect(session.accessToken()).toBeNull();
     expect(session.status()).toBe('expired');
     expect(error).toBeInstanceOf(GcApiError);

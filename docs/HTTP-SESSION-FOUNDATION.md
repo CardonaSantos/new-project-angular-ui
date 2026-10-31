@@ -72,3 +72,7 @@ npm start
 ```
 
 Rutas para comprobar: `/login`, `/change-password` (solo sesión temporal), `/workspace` (protegida), `/` y `/lab/**` (playgrounds locales). Las tests HTTP usan `HttpTestingController`, sin DB ni backend real; comprobar además con Postman/browser que el cookie circula y que el backend está disponible.
+
+## Rendimiento
+
+Los esquemas Zod de Auth/capabilities se cargan con importación dinámica al ejecutar una petición de esos dominios, para no penalizar el bundle inicial de Angular. El resto de features siguen pudiendo usar validación Zod lazy de la misma forma.
