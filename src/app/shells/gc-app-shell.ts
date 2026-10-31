@@ -1,7 +1,9 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter } from 'rxjs';
+import { filter, firstValueFrom } from 'rxjs';
+import { GcCurrentAvatarStore } from '../core/auth/gc-current-avatar.store';
+import { UsersApi } from '../features/users/data-access/users.api';
 import { GcSidebar } from '../design-system/navigation/gc-sidebar';
 import { GcTopbar } from '../design-system/navigation/gc-topbar';
 import { GcProfileMenu } from '../design-system/profile/gc-profile-menu';
@@ -32,6 +34,8 @@ export class GcAppShell {
   protected readonly context = inject(GcBranchContext);
   protected readonly orgAccess = inject(OrganizationAccess);
   protected readonly usersAccess = inject(UsersAccess);
+  private readonly avatar=inject(GcCurrentAvatarStore);
+  private readonly usersApi=inject(UsersApi);
   private readonly realtime = inject(GcRealtimeService);
   private readonly router = inject(Router);
   protected readonly items = computed<readonly GcNavigationItem[]>(() =>
@@ -63,6 +67,14 @@ export class GcAppShell {
       } else {
         this.orgAccess.reset();
         this.usersAccess.clear();
+      }
+    });
+    effect(() => {
+      const user=this.session.user();
+      if(this.session.authenticated()&&user?.id){
+        void this.avatar.loadFor(user.id,()=>firstValueFrom(this.usersApi.me()));
+      }else{
+        this.avatar.clear();
       }
     });
     // Invalidate connections on identity/branch changes; rejoin rooms after real backend integration.

@@ -18,10 +18,11 @@ import {UsersApi} from '../data-access/users.api';
 import {UsersAccess} from '../data-access/users-access';
 import type {Page,UserRecord} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
+import {GcUserAvatar} from '../../../design-system/profile/gc-user-avatar';
 @Component({
  selector:'gc-users-page',
  imports:[RouterLink,GcPageHeader,GcButtonDirective,GcUsersNav,GcDataTable,GcTableCellDirective,
-  GcTableToolbar,GcFilterBar,GcPagination,GcStatusBadge,GcErrorState],
+  GcTableToolbar,GcFilterBar,GcPagination,GcStatusBadge,GcErrorState,GcUserAvatar],
  template:`
  <div class="gc-u-page">
   <gc-page-header title="Usuarios">
@@ -46,6 +47,12 @@ import {GcUsersNav} from '../users-nav';
    @else if(page.status()==='error'){<gc-error-state [message]="readError()" (retry)="reload()"/>}
    @else{
     <gc-data-table [rows]="rows()" [columns]="columns" [loading]="page.busy()">
+     <ng-template gcTableCell="nombre" let-row>
+      <div class="gc-u-avatar-row gc-u-avatar-cell">
+       <gc-user-avatar [url]="row['avatarUrl']" [name]="row['nombre']"/>
+       <span>{{row['nombre']}}</span>
+      </div>
+     </ng-template>
      <ng-template gcTableCell="estado" let-row><gc-status-badge
        [label]="row['estado'] ? 'Activo':'Inactivo'" [tone]="row['estado'] ? 'success':'neutral'"/></ng-template>
      <ng-template gcTableCell="accion" let-row>
@@ -77,6 +84,7 @@ export class GcUsersPage implements OnInit {
  ];
  protected readonly rows=computed<GcTableRow[]>(()=>this.page.data()?.data.map(u=>({
   id:u.id,nombre:u.profile.nombreCompleto,email:u.profile.email,
+  avatarUrl:u.profile.avatar.url,
   roles:u.access.assignments.map(a=>a.rolNombre).filter(Boolean).join(', ')||'—',
   estado:u.account.activo,accion:u.id,
  }))??[]);

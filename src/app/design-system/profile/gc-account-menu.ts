@@ -4,6 +4,8 @@ import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { filter, firstValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { GcSessionService } from '../../core/auth/gc-session.service';
+import { GcCurrentAvatarStore } from '../../core/auth/gc-current-avatar.store';
+import { GcUserAvatar } from './gc-user-avatar';
 import { gcErrorMessage } from '../../core/http/api-error';
 import { GcNotificationService } from '../../core/ux/gc-notification.service';
 import { GcAsyncAction } from '../../core/ux/gc-async-action';
@@ -11,13 +13,13 @@ import { ConfirmDialogService } from '../confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'gc-account-menu',
-  imports: [MatMenuModule, RouterLink],
+  imports: [MatMenuModule, RouterLink, GcUserAvatar],
   template: `
     <button type="button" class="gc-account-trigger"
       [matMenuTriggerFor]="menu"
       [attr.aria-label]="'Cuenta de ' + (session.user()?.nombre ?? '')"
       [disabled]="action.pending()">
-      <span class="gc-avatar" aria-hidden="true">{{ initials() }}</span>
+      <gc-user-avatar [url]="avatar.url()" [name]="session.user()?.nombre??''" size="sm"/>
       <span class="gc-account-label">{{ session.user()?.nombre }}</span>
     </button>
     <mat-menu #menu="matMenu" xPosition="before" [hasBackdrop]="true"
@@ -53,6 +55,7 @@ import { ConfirmDialogService } from '../confirm-dialog/confirm-dialog.service';
 })
 export class GcAccountMenu {
   protected readonly session = inject(GcSessionService);
+  protected readonly avatar=inject(GcCurrentAvatarStore);
   protected readonly action = new GcAsyncAction();
   private readonly router = inject(Router);
   private readonly confirmations = inject(ConfirmDialogService);
@@ -65,11 +68,6 @@ export class GcAccountMenu {
       filter((event): event is NavigationStart => event instanceof NavigationStart),
       takeUntilDestroyed(this.destroyRef),
     ).subscribe(() => this.menuTrigger()?.closeMenu());
-  }
-
-  protected initials(): string {
-    return (this.session.user()?.nombre ?? '')
-      .trim().split(/\s+/).slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('');
   }
 
   protected async logout(all: boolean): Promise<void> {

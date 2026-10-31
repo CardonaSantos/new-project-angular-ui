@@ -13,11 +13,13 @@ import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confir
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {UsersAccess} from '../data-access/users-access';
+import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
+import {GcUserAvatar} from '../../../design-system/profile/gc-user-avatar';
 import {MediaApi,UsersApi} from '../data-access/users.api';
 import type {UserRecord} from '../data-access/users.models';
 @Component({
  selector:'gc-my-profile-page',
- imports:[ReactiveFormsModule,GcFileUpload,GcPageHeader,GcButtonDirective,GcErrorState],
+ imports:[ReactiveFormsModule,GcFileUpload,GcPageHeader,GcButtonDirective,GcErrorState,GcUserAvatar],
  template:`
  <div class="gc-u-page gc-u-narrow">
   <gc-page-header title="Mi perfil"/>
@@ -26,8 +28,7 @@ import type {UserRecord} from '../data-access/users.models';
   @if(page.data();as user){
    <section class="gc-u-card gc-u-page">
     <div class="gc-u-avatar-row">
-     @if(user.profile.avatar.url){<img class="gc-u-avatar" [src]="user.profile.avatar.url" alt="Fotografía de perfil"/>}
-     @else{<div class="gc-u-avatar" aria-label="Sin fotografía">{{user.profile.nombre.slice(0,1)}}</div>}
+     <gc-user-avatar [url]="user.profile.avatar.url" [name]="user.profile.nombreCompleto" size="lg"/>
      <div><strong>{{user.profile.nombreCompleto}}</strong><p class="gc-u-muted">{{user.profile.email}}</p></div>
     </div>
     <form class="gc-u-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
@@ -71,6 +72,7 @@ import type {UserRecord} from '../data-access/users.models';
 })
 export class GcMyProfilePage implements OnInit {
  private readonly api=inject(UsersApi);
+ private readonly avatarStore=inject(GcCurrentAvatarStore);
  private readonly media=inject(MediaApi);
  private readonly branch=inject(GcBranchContext);
  private readonly access=inject(UsersAccess);
@@ -110,7 +112,7 @@ export class GcMyProfilePage implements OnInit {
     ()=>firstValueFrom(this.api.updateMe(dto)));
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.error.set(gcErrorMessage(r.error));return}
-  this.page.data.set(r.value);this.form.markAsPristine();
+  this.page.data.set(r.value);this.avatarStore.updateFrom(r.value);this.form.markAsPristine();
   this.notices.show('Perfil actualizado.','success');
  }
  protected async savePhoto(){
@@ -128,6 +130,7 @@ export class GcMyProfilePage implements OnInit {
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.photoError.set(gcErrorMessage(r.error));return}
   this.selected.set(null);this.uploadedMediaId.set(null);this.page.data.set(r.value);
+  this.avatarStore.updateFrom(r.value);
   this.notices.show('Fotografía actualizada.','success');
  }
  protected async removePhoto(){
@@ -137,7 +140,7 @@ export class GcMyProfilePage implements OnInit {
     ()=>firstValueFrom(this.api.avatarMe(null)));
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.photoError.set(gcErrorMessage(r.error));return}
-  this.page.data.set(r.value);
+  this.page.data.set(r.value);this.avatarStore.updateFrom(r.value);
   this.notices.show('Fotografía eliminada del perfil.','success');
  }
  hasUnsavedChanges(){return this.form.dirty||!!this.selected()}

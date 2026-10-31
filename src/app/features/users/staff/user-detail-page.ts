@@ -18,9 +18,11 @@ import {UsersApi,RolesApi,MediaApi} from '../data-access/users.api';
 import {UsersAccess} from '../data-access/users-access';
 import type {UserRecord,Role,UserUpdate,CredentialsIssued} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
+import {GcUserAvatar} from '../../../design-system/profile/gc-user-avatar';
+import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
 @Component({
  selector:'gc-user-detail-page',
- imports:[ReactiveFormsModule,RouterLink,GcPageHeader,GcButtonDirective,GcUsersNav,GcFileUpload,GcErrorState],
+ imports:[ReactiveFormsModule,RouterLink,GcPageHeader,GcButtonDirective,GcUsersNav,GcFileUpload,GcErrorState,GcUserAvatar],
  template:`
  <div class="gc-u-page gc-u-narrow">
   <gc-page-header [title]="isNew?'Nuevo usuario':(page.data()?.profile?.nombreCompleto??'Usuario')"/>
@@ -110,8 +112,7 @@ import {GcUsersNav} from '../users-nav';
     <section class="gc-u-card gc-u-page">
      <h2>Fotografía</h2>
      <div class="gc-u-avatar-row">
-      @if(user.profile.avatar.url){<img class="gc-u-avatar" [src]="user.profile.avatar.url" alt="Fotografía de usuario"/>}
-      @else{<div class="gc-u-avatar" aria-label="Sin fotografía">{{user.profile.nombre.slice(0,1)}}</div>}
+      <gc-user-avatar [url]="user.profile.avatar.url" [name]="user.profile.nombreCompleto" size="lg"/>
      </div>
      @if(access.isGlobalAdmin()){
       <gc-file-upload inputId="user-photo" label="Seleccionar imagen" [maxFiles]="1" [maxSizeMb]="10" [cropSquare]="true" [acceptedMime]="avatarMime"
@@ -153,6 +154,7 @@ export class GcUserDetailPage implements OnInit {
  private readonly route=inject(ActivatedRoute);
  private readonly router=inject(Router);
  private readonly api=inject(UsersApi);
+ private readonly avatarStore=inject(GcCurrentAvatarStore);
  private readonly rolesApi=inject(RolesApi);
  private readonly media=inject(MediaApi);
  protected readonly access=inject(UsersAccess);
@@ -302,7 +304,9 @@ export class GcUserDetailPage implements OnInit {
   });
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.photoError.set(gcErrorMessage(r.error));return}
-  this.photoFile.set(null);this.uploadedMediaId.set(null);this.page.data.set(r.value);this.notices.show('Fotografía actualizada.','success');
+  this.photoFile.set(null);this.uploadedMediaId.set(null);this.page.data.set(r.value);
+  if(this.id===this.session.user()?.id)this.avatarStore.updateFrom(r.value);
+  this.notices.show('Fotografía actualizada.','success');
  }
  protected async removePhoto(){
   this.photoError.set(null);
@@ -312,7 +316,9 @@ export class GcUserDetailPage implements OnInit {
   },()=>firstValueFrom(this.api.avatar(this.id,null)));
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.photoError.set(gcErrorMessage(r.error));return}
-  this.page.data.set(r.value);this.notices.show('Fotografía eliminada.','success');
+  this.page.data.set(r.value);
+  if(this.id===this.session.user()?.id)this.avatarStore.updateFrom(r.value);
+  this.notices.show('Fotografía eliminada.','success');
  }
  hasUnsavedChanges(){return !!this.createdSecret()||this.form.dirty||!!this.photoFile()}
 }
