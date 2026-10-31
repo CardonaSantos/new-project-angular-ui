@@ -70,6 +70,8 @@ export class GcFileUpload implements OnDestroy {
   }finally{this.processing.set(false)}
  }
 
+ /** Clear previews after a successful save. */
+ reset(){this.clear()}
  protected clear(){
   if(this.processing())return;
   this.clearPreviews();
