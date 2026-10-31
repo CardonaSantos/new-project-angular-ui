@@ -1,5 +1,5 @@
 
-import {Component,inject,OnInit,signal} from '@angular/core';
+import {Component,inject,OnInit,signal,viewChild} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {ReactiveFormsModule,FormControl,FormGroup,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
@@ -157,6 +157,7 @@ export class GcUserDetailPage implements OnInit {
  private readonly avatarStore=inject(GcCurrentAvatarStore);
  private readonly rolesApi=inject(RolesApi);
  private readonly media=inject(MediaApi);
+ private readonly photoPicker=viewChild(GcFileUpload);
  protected readonly access=inject(UsersAccess);
  protected readonly branch=inject(GcBranchContext);
  protected readonly session=inject(GcSessionService);
@@ -304,7 +305,7 @@ export class GcUserDetailPage implements OnInit {
   });
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.photoError.set(gcErrorMessage(r.error));return}
-  this.photoFile.set(null);this.uploadedMediaId.set(null);this.page.data.set(r.value);
+  this.photoPicker()?.reset();this.photoFile.set(null);this.uploadedMediaId.set(null);this.page.data.set(r.value);
   if(this.id===this.session.user()?.id)this.avatarStore.updateFrom(r.value);
   this.notices.show('Fotografía actualizada.','success');
  }
