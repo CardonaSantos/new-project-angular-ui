@@ -26,6 +26,7 @@ import { ConfirmDialogService } from '../confirm-dialog/confirm-dialog.service';
         <strong class="gc-account-info-name">{{ session.user()?.nombre }}</strong>
         <span class="gc-account-info-email">{{ session.user()?.email }}</span>
       </div>
+      <a mat-menu-item routerLink="/account/profile">Mi perfil</a>
       <a mat-menu-item routerLink="/account/security">Cambiar contraseña</a>
       <button type="button" mat-menu-item [disabled]="action.pending()" (click)="logout(false)">
         Cerrar sesión

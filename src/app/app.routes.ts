@@ -25,6 +25,17 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/account/gc-account-security-page').then(m => m.GcAccountSecurityPage),
       },
       {
+        path: 'account/profile', title: 'Mi perfil — Gastro Core',
+        data: { breadcrumb: 'Mi perfil' },
+        canActivate: [gcSessionGuard],
+        canDeactivate: [gcUnsavedChangesGuard],
+        loadComponent: () => import('./features/users/profile/my-profile-page').then(m => m.GcMyProfilePage),
+      },
+      {
+        path: 'users', canActivate: [gcSessionGuard],
+        loadChildren: () => import('./features/users/users.routes').then(m => m.USERS_ROUTES),
+      },
+      {
         path: 'organization',
         canActivate: [gcSessionGuard],
         loadChildren: () =>

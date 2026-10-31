@@ -72,7 +72,7 @@ import {GcUsersNav} from '../users-nav';
      </div>
     </form>
    </section>
-   @if(!isNew&&user){
+   @if(!isNew&&page.data();as user){
     <section class="gc-u-card gc-u-page">
      <div class="gc-u-row"><h2>Asignaciones</h2><span class="gc-u-muted">{{user.access.assignments.length}} registradas</span></div>
      @for(a of user.access.assignments;track a.id??(a.rolId+':'+a.sucursalId)){

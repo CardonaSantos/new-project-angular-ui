@@ -12,6 +12,7 @@ import { GcNavigationItem } from '../design-system/navigation/navigation.model';
 import { GcSessionService } from '../core/auth/gc-session.service';
 import { GcBranchContext } from '../core/organization/gc-branch-context';
 import { OrganizationAccess } from '../features/organization/data-access/organization-access';
+import { UsersAccess } from '../features/users/data-access/users-access';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
@@ -30,12 +31,16 @@ export class GcAppShell {
   private readonly auth = inject(GcAuthFacade);
   protected readonly context = inject(GcBranchContext);
   protected readonly orgAccess = inject(OrganizationAccess);
+  protected readonly usersAccess = inject(UsersAccess);
   private readonly realtime = inject(GcRealtimeService);
   private readonly router = inject(Router);
   protected readonly items = computed<readonly GcNavigationItem[]>(() =>
     this.session.authenticated()
       ? [
         { label: 'Inicio', path: '/workspace', initials: 'IN', exact: true },
+        ...((this.usersAccess.canRead()||this.usersAccess.canGlobal('roles.read')||
+          this.usersAccess.canGlobal('users.reports.read'))
+          ? [{label:'Usuarios',path:'/users',initials:'US',exact:false}]:[]),
         ...((this.orgAccess.canGlobal('organization.read') ||
           this.context.has('branches.read') || this.context.has('devices.read'))
           ? [{ label: 'Configuración', path: '/organization', initials: 'CF', exact: false }] : []),
@@ -54,8 +59,10 @@ export class GcAppShell {
     effect(() => {
       if (this.session.authenticated()) {
         void this.orgAccess.load().catch(() => undefined);
+        void this.usersAccess.load().catch(() => undefined);
       } else {
         this.orgAccess.reset();
+        this.usersAccess.clear();
       }
     });
     // Invalidate connections on identity/branch changes; rejoin rooms after real backend integration.
