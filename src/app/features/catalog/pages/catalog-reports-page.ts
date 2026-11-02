@@ -14,7 +14,7 @@ import {PRODUCT_KINDS,type CatalogPriceCoverage,type CatalogSummary} from '../da
  <main class="cat-page">
   <gc-catalog-nav/>
   <section class="cat-card">
-   <div class="cat-row"><h2>Cobertura comercial y precios</h2>
+   <div class="cat-row"><h2>Estado de precios y productos</h2>
     <label class="cat-field">Sucursal
      <select [value]="branchId()" (change)="chooseBranch($any($event.target).value)">
       @for(branch of context.branches();track branch.id){
@@ -42,17 +42,17 @@ import {PRODUCT_KINDS,type CatalogPriceCoverage,type CatalogSummary} from '../da
     <section class="cat-card">
      <h2>{{report.nombre??'Sucursal seleccionada'}}</h2>
      <div class="cat-metrics">
-      <div class="cat-metric"><strong>{{report.variantesVisibles??0}}</strong><span>Variantes visibles</span></div>
-      <div class="cat-metric"><strong>{{report.conPrecio??0}}</strong><span>Con precio vigente</span></div>
-      <div class="cat-metric"><strong>{{report.sinPrecio??0}}</strong><span>Sin precio vigente</span></div>
-      <div class="cat-metric"><strong>{{report.vendiblesPorPrecioYEstado??0}}</strong><span>Habilitadas comercialmente</span></div>
+      <div class="cat-metric"><strong>{{report.variantesVisibles??0}}</strong><span>Presentaciones disponibles</span></div>
+      <div class="cat-metric"><strong>{{report.conPrecio??0}}</strong><span>Con precio actualizado</span></div>
+      <div class="cat-metric"><strong>{{report.sinPrecio??0}}</strong><span>Sin precio actualizado</span></div>
+      <div class="cat-metric"><strong>{{report.vendiblesPorPrecioYEstado??0}}</strong><span>Disponibles para la venta</span></div>
       <div class="cat-metric"><strong>{{report.menusPublicados??0}}</strong><span>Menús publicados</span></div>
       <div class="cat-metric"><strong>{{report.productosConImagen??0}}</strong><span>Productos con fotografía</span></div>
      </div>
      @if((report.sinPrecio??0)>0){
-      <p class="cat-alert" role="status">Existen variantes visibles sin precio vigente. Revisa la sección «Precios» antes de publicar un menú.</p>
+      <p class="cat-alert" role="status">Hay presentaciones sin precio para esta sucursal. Revisa la sección «Precios» antes de publicar un menú.</p>
      }
-     <p class="cat-muted">La cobertura no verifica stock, ingredientes ni disponibilidad de recetas. La cantidad de productos con fotografías no garantiza fotos válidas para todas sus variantes.</p>
+     <p class="cat-muted">Estos datos muestran la oferta comercial. Consulta las existencias antes de confirmar las ventas.</p>
     </section>
    }
   }
@@ -76,7 +76,7 @@ import {PRODUCT_KINDS,type CatalogPriceCoverage,type CatalogSummary} from '../da
       </tbody>
      </table></div>
     }
-    <p class="cat-muted">Las ventas y la rentabilidad no forman parte de este reporte: se calcularán con los módulos de Órdenes y Recetas.</p>
+    <p class="cat-muted">Este reporte todavía no incluye las ventas ni las ganancias.</p>
    </section>
   }
  </main>`,
