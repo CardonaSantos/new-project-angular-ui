@@ -100,6 +100,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
          [disabled]="!access.canManage()"/>
        </label>
        @if(product.tipo==='INVENTARIABLE'){
+        @if(editVariant()?.articuloInventario?.nombre){<p class="cat-muted">Artículo actual: {{editVariant()?.articuloInventario?.nombre}}</p>}
         <gc-inventory-picker id="catalog-linked-article" label="Artículo físico de Inventario"
          kind="article" [value]="articleId()" (valueChange)="articleId.set($event)"
          [disabled]="!access.canManage()"/>
@@ -195,6 +196,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected readonly branch=inject(GcBranchContext);
  protected readonly isNew=this.route.snapshot.paramMap.get('id')==='new';
  private readonly id=this.route.snapshot.paramMap.get('id')??'';
+ private committed=false;
  protected readonly page=new GcPageState<CatalogProduct>();
  protected readonly categories=signal<CatalogCategory[]>([]);
  protected readonly groups=signal<CatalogGroup[]>([]);
@@ -226,7 +228,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected readonly variants=computed(()=>this.page.data()?.varianteProductosComoProducto??[]);
  hasUnsavedChanges(){
   const d=this.page.data();
-  return this.isNew?!!this.code()||!!this.name():!!d&&(
+  return this.committed?false:this.isNew?!!this.code()||!!this.name():!!d&&(
    this.name()!==d.nombre||this.description()!==(d.descripcion??'')||
    this.category()!==(d.categoriaId??d.categoria?.id??'')||this.visible()!==d.visibleEnMenu);
  }
@@ -275,8 +277,8 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   try{
    if(this.isNew){
     const k=PRODUCT_KINDS.find(x=>x.value===this.kind())?.value??'PREPARADO';
-    const result=await firstValueFrom(this.api.createProduct({...dto,codigo:this.code().trim(),tipo:k,
-     variantes:[{nombre:'Regular'}]}));
+    const result=await firstValueFrom(this.api.createProduct({...dto,codigo:this.code().trim(),tipo:k}));
+    this.committed=true;
     await this.router.navigate(['/catalog/products',result.id]);
    }else{
     const original=this.page.data();
@@ -312,6 +314,9 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected async saveVariant(event:Event){
   event.preventDefault();if(!this.access.canManage()||this.saving()||!this.variantName().trim())return;
   const d=this.editVariant(),original=this.page.data();if(!original)return;
+  if(original.tipo==='INVENTARIABLE'&&!this.articleId()){
+   this.variantError.set('Selecciona un artículo de Inventario de tipo Producto terminado.');return;
+  }
   this.saving.set(true);this.variantError.set(null);
   try{
    const dto={
