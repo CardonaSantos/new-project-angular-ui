@@ -9,7 +9,7 @@ import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
 import type {CatalogVariant} from '../../catalog/data-access/catalog.models';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
-import {parseApiDecimal,toApiDecimal,formatDecimal} from '../../../shared/formatting';
+import {parseApiDecimal,toApiDecimal} from '../../../shared/formatting';
 import {GcRecipesNav} from '../recipes-nav';
 import {RecipesApi} from '../data-access/recipes.api';
 import {RecipesAccess} from '../data-access/recipes-access';
