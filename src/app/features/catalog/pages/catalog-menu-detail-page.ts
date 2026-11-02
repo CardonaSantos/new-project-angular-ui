@@ -11,7 +11,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 import {GcCatalogNav} from '../catalog-nav';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
-import {WEEKDAYS,menuDraft,menuLayout,menuValidation,isMenuConflict,menuStatus,
+import {WEEKDAYS,menuDraft,menuLayout,menuValidation,isMenuVersionConflict,menuStatus,
  type MenuDraft,type MenuDraftSection} from '../data-access/catalog-menu-editor';
 import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/catalog.models';
 
@@ -341,7 +341,7 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
   try{
    await firstValueFrom(this.api.replaceMenuLayout(current.id,menuLayout(this.draft(),current.version)));
    await this.reload();this.notify.show('Distribución guardada. El menú queda en borrador.','success');
-  }catch(e){if(isMenuConflict(e))this.conflict.set(true);
+  }catch(e){if(isMenuVersionConflict(e))this.conflict.set(true);
    this.errorText.set(gcErrorMessage(e))
   }finally{this.busy.set(false)}
  }
@@ -357,7 +357,7 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
    await firstValueFrom(this.api.publishMenu(m.id,m.version));await this.reload();
    this.notify.show('Menú publicado correctamente.','success');
   }catch(e){
-   if(isMenuConflict(e)&&/versi[oó]n|cambi[oó]|modificad/i.test(gcErrorMessage(e)))
+   if(isMenuVersionConflict(e))
     this.conflict.set(true);
    this.publishError.set(gcErrorMessage(e))
   }finally{this.busy.set(false)}
