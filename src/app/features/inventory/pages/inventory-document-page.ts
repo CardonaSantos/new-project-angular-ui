@@ -15,6 +15,7 @@ import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcInventorySubnav,OPERATION_LINKS} from '../components/inventory-subnav';
 import {InventoryApi} from '../data-access/inventory.api';
 import {formatDecimal} from '../../../shared/formatting';
+import {inventoryInstant,inventoryMovementLabel} from '../data-access/inventory-presentation';
 import type {InventoryMovement,CountDetail,TransferDetail} from '../data-access/inventory.models';
 
 function formatted(value:string|null|undefined){
@@ -92,6 +93,7 @@ export class GcInventoryDocumentPage implements OnInit {
  protected readonly page=new GcPageState<CountDetail|TransferDetail|InventoryMovement>();
  protected readonly action=new GcConfirmedAction();
  protected readonly error=signal<string|null>(null);
+ protected date(value:string){return inventoryInstant(value,this.branch.active()?.zonaHoraria)}
  protected title(){return this.view==='count'?'Detalle del conteo':this.view==='transfer'?'Transferencia':'Movimiento de inventario'}
  protected backLink(){return this.view==='count'?'/inventory/operations/counts':
   this.view==='transfer'?'/inventory/operations/transfers':'/inventory/operations/movements'}
@@ -107,20 +109,20 @@ export class GcInventoryDocumentPage implements OnInit {
  }
  protected status(data:CountDetail|TransferDetail|InventoryMovement){
   if('estado' in data)return data.estado;
-  return data.tipo;
+  return inventoryMovementLabel(data.tipo);
  }
  protected info(data:CountDetail|TransferDetail|InventoryMovement){
   if('almacenId' in data)return [
    {label:'Almacén',value:data.almacenId},{label:'Estado',value:data.estado},
-   {label:'Nota',value:data.nota??'—'},{label:'Fecha',value:data.creadoEn}];
+   {label:'Nota',value:data.nota??'—'},{label:'Fecha',value:this.date(data.creadoEn)}];
   if('numero' in data)return [
    {label:'Número',value:data.numero},{label:'Origen',value:data.origen.nombre},
    {label:'Destino',value:data.destino.nombre},{label:'Estado',value:data.estado},
    {label:'Nota',value:data.nota??'—'}];
   return [
-   {label:'Tipo',value:data.tipo},{label:'Artículo',value:data.articulo.nombre},
+   {label:'Tipo',value:inventoryMovementLabel(data.tipo)},{label:'Artículo',value:data.articulo.nombre},
    {label:'Cantidad',value:formatted(data.cantidad)},{label:'Motivo',value:data.nota??'—'},
-   {label:'Fecha',value:data.creadoEn}];
+   {label:'Fecha',value:this.date(data.creadoEn)}];
  }
  protected lines(data:CountDetail|TransferDetail|InventoryMovement){
   if(!('lineas' in data))return [];
