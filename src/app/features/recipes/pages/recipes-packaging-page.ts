@@ -128,7 +128,7 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
       <button class="rec-primary" type="button" [disabled]="busy()||validation().length>0||!dirty()" (click)="save()">
        {{busy()?'Guardando…':'Guardar regla'}}</button>
       @if(selected();as current){
-       <button type="button" [disabled]="busy()" (click)="status(current)">
+       <button type="button" [disabled]="busy()||dirty()" (click)="status(current)">
         {{current.activa?'Desactivar':'Activar'}} regla</button>
       }
      </div>
@@ -201,7 +201,12 @@ export class GcRecipesPackagingPage implements OnInit,GcDirtyAware {
  }
  private snapshot(){return {name:this.name(),scope:this.scope(),mode:this.mode(),
   branch:this.branchId(),variant:this.variantId(),materials:this.materials()}}
- protected createNew(){
+ protected async createNew(){
+  if(this.dirty()){
+   const ok=await this.dialog.confirm({title:'Descartar cambios',
+    message:'Se perderán los cambios que todavía no has guardado.',confirmText:'Continuar',danger:true});
+   if(!ok)return;
+  }
   this.selected.set(null);this.editing.set(true);
   this.name.set('');this.scope.set('ORDEN');this.mode.set('PARA_LLEVAR');
   this.branchId.set('');this.variantId.set('');this.materials.set([]);this.baseline=JSON.stringify(this.snapshot());
