@@ -19,6 +19,7 @@ import type {Article,ArticleCreate,ArticleUpdate,Unit,InventoryKind,InventoryPho
 import {ARTICLE_KINDS} from '../data-access/inventory.models';
 import {GcInventoryNav} from '../inventory-nav';
 import {toApiDecimal} from '../../../shared/formatting';
+import {articleChanges,articleRelations} from '../data-access/inventory-article-presentation';
 
 @Component({
  selector:'gc-inventory-article-page',
@@ -112,14 +113,17 @@ import {toApiDecimal} from '../../../shared/formatting';
      }
     </section>
     <section class="inv-card">
-     <h2>Relaciones con otros módulos</h2>
+     <h2>Uso en otros módulos</h2>
+     <p class="inv-muted">Estos usos pueden impedir la desactivación del artículo. No bloquean el cambio de nombre.</p>
      @if(dependencies();as data){
-      <dl class="inv-kv">
-       @for(item of dependencyEntries(data);track item.key){
-        <div><dt>{{item.key}}</dt><dd>{{item.value}}</dd></div>
-       }
-      </dl>
-     } @else{<p class="inv-muted">Consultando dependencias…</p>}
+      @if(relationEntries(data).length){
+       <dl class="inv-kv">
+        @for(item of relationEntries(data);track item.key){
+         <div><dt>{{item.label}}</dt><dd>{{item.count}}</dd></div>
+        }
+       </dl>
+      } @else {<p class="inv-muted">Sin relaciones activas registradas con otros módulos.</p>}
+     } @else{<p class="inv-muted">Consultando usos del artículo…</p>}
     </section>
     <section class="inv-card">
      <h2>Estado del artículo</h2>
@@ -199,10 +203,7 @@ export class GcInventoryArticlePage implements OnInit {
   try{this.dependencies.set(await firstValueFrom(this.api.articleDependencies(this.id)))}
   catch{this.dependencies.set({})}
  }
- protected dependencyEntries(data:Record<string,unknown>){
-  return Object.entries(data).filter(([,v])=>typeof v==='number'||typeof v==='string')
-   .map(([key,value])=>({key,value:String(value)}));
- }
+ protected readonly relationEntries=articleRelations;
  protected orderedPhotos(){
   const data=this.page.data()?.imagenes??[];
   return this.mediaIds().map(id=>data.find(x=>x.mediaId===id)).filter((p):p is InventoryPhoto=>!!p);
@@ -234,10 +235,14 @@ export class GcInventoryArticlePage implements OnInit {
    unidadBaseId:v.unidadBaseId,requiereLote:v.requiereLote,requiereVencimiento:v.requiereVencimiento,
    stockMinimo:minimo};
   if(this.canManageCost())dto.costoReferencia=costo;
-  const update:ArticleUpdate={nombre:dto.nombre,requiereLote:dto.requiereLote,
-   requiereVencimiento:dto.requiereVencimiento,stockMinimo:dto.stockMinimo};
-  if(this.canManageCost())update.costoReferencia=costo;
+  const previous=this.page.data();
+  if(!this.isNew&&!previous){this.saveError.set('No se pudo cargar el artículo para editarlo.');return}
+  const update:ArticleUpdate=previous?articleChanges(previous,v,this.canManageCost()):{};
   this.saveError.set(null);
+  if(!this.isNew&&Object.keys(update).length===0){
+   this.form.markAsPristine();
+   return;
+  }
   const r=await this.action.runConfirmed<Article>(this.dialog,{
    title:this.isNew?'Crear artículo':'Guardar artículo',
    message:this.isNew?'¿Registrar este artículo?':'¿Guardar los cambios del artículo?',
