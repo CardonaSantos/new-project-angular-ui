@@ -23,5 +23,19 @@ export const CATALOG_ROUTES:Routes=[
   canDeactivate:[gcUnsavedChangesGuard],
   loadComponent:()=>import('./pages/catalog-extras-page').then(m=>m.GcCatalogExtrasPage)},
  {path:'prices',title:'Precios — Gastro Core',data:{breadcrumb:'Precios'},
-  loadComponent:()=>import('./pages/catalog-prices-page').then(m=>m.GcCatalogPricesPage)}
+  loadComponent:()=>import('./pages/catalog-prices-page').then(m=>m.GcCatalogPricesPage)},
+ {path:'menus',data:{breadcrumb:'Menús'},children:[
+  {path:'',pathMatch:'full',title:'Menús — Gastro Core',
+   loadComponent:()=>import('./pages/catalog-menus-page').then(m=>m.GcCatalogMenusPage)},
+  {path:'new',title:'Nuevo menú — Gastro Core',data:{breadcrumb:'Nuevo menú'},
+   canDeactivate:[gcUnsavedChangesGuard],
+   loadComponent:()=>import('./pages/catalog-menu-detail-page').then(m=>m.GcCatalogMenuDetailPage)},
+  {path:':id',title:'Configuración de menú — Gastro Core',data:{breadcrumb:'Detalle del menú'},
+   canDeactivate:[gcUnsavedChangesGuard],
+   loadComponent:()=>import('./pages/catalog-menu-detail-page').then(m=>m.GcCatalogMenuDetailPage)}
+ ]},
+ {path:'preview',title:'Menú vigente — Gastro Core',data:{breadcrumb:'Vista de menú'},
+  loadComponent:()=>import('./pages/catalog-menu-preview-page').then(m=>m.GcCatalogMenuPreviewPage)},
+ {path:'reports',title:'Reportes comerciales — Gastro Core',data:{breadcrumb:'Reportes'},
+  loadComponent:()=>import('./pages/catalog-reports-page').then(m=>m.GcCatalogReportsPage)}
 ];
