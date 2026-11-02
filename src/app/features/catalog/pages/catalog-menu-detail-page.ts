@@ -26,7 +26,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
   @if(isNew||page.data()){
    <section class="cat-card">
     <div class="cat-row"><h2>{{isNew?'Nuevo menú':'Configuración general'}}</h2>
-     @if(page.data();as menu){<span class="cat-muted">{{status(menu)}} · Versión {{menu.version}}</span>}
+     @if(page.data();as menu){<span class="cat-muted">{{status(menu)}}</span>}
     </div>
     <form class="cat-form" (submit)="saveBasics($event)">
      <label>Código
@@ -69,7 +69,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
      <div class="cat-row"><h2>Secciones y productos</h2>
       @if(access.canMenus()){<button type="button" (click)="addSection()">Agregar sección</button>}
      </div>
-     <p class="cat-muted">Ordena las secciones y las variantes. Un producto puede tener variantes con distinto precio.</p>
+     <p class="cat-muted">Organiza las secciones y las presentaciones de cada producto.</p>
      @for(section of draft().sections;track section.key;let i=$index){
       <div class="cat-section-card">
        <div class="cat-row">
@@ -86,7 +86,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
         }
        </div>
        <div class="cat-table-wrap"><table class="cat-table">
-        <thead><tr><th>Variante comercial</th><th>Orden</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Presentación del producto</th><th>Orden</th><th>Acciones</th></tr></thead>
         <tbody>
          @for(item of section.items;track item.varianteId;let j=$index){
           <tr><td>{{item.nombre}}</td><td>{{j+1}}</td><td>
@@ -114,13 +114,13 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
            @for(product of products();track product.id){<option [value]="product.id">{{product.nombre}}</option>}
           </select>
          </label>
-         <label class="cat-field">Variante
+         <label class="cat-field">Presentación
           <select [value]="variantId()" (change)="variantId.set($any($event.target).value)">
-           <option value="">Seleccionar variante</option>
+           <option value="">Seleccionar presentación</option>
            @for(variant of variants();track variant.id){<option [value]="variant.id">{{variant.nombre}}</option>}
           </select>
          </label>
-         <button type="button" (click)="appendItem(i)" [disabled]="!variantId()">Agregar variante</button>
+         <button type="button" (click)="appendItem(i)" [disabled]="!variantId()">Agregar presentación</button>
         </div>
         @if(optionsMore()){<p class="cat-muted">Hay más resultados: especifica mejor el nombre del producto.</p>}
         @if(lookupError()){<p role="alert" class="cat-alert">{{lookupError()}}</p>}
@@ -155,11 +155,11 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
     <section class="cat-card">
      <h2>Guardar configuración de la carta</h2>
      @for(message of validation().errors;track message){<p class="cat-muted">{{message}}</p>}
-     <p class="cat-muted">Guardar la distribución incrementará la versión y retirará la publicación actual, si existe.</p>
+     <p class="cat-muted">Al guardar estos cambios, la carta dejará de estar publicada hasta que decidas volver a mostrarla.</p>
      @if(errorText()){<p class="cat-alert" role="alert">{{errorText()}}</p>}
      @if(conflict()){
-      <p class="cat-alert" role="alert">Otra sesión modificó este menú. Conservamos tus cambios en pantalla. Copia lo necesario y recarga antes de volver a guardar.</p>
-      <button type="button" (click)="reload()">Descartar borrador local y cargar versión actual</button>
+      <p class="cat-alert" role="alert">Esta carta cambió mientras la editabas. Copia los ajustes que necesites antes de volver a cargarla.</p>
+      <button type="button" (click)="reload()">Descartar mis cambios y volver a cargar</button>
      }
      @if(access.canMenus()){
       <button type="button" class="cat-primary" (click)="saveLayout()"
@@ -170,7 +170,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
      <div class="cat-row"><h2>Publicación</h2>
       @if(page.data();as menu){<strong>{{status(menu)}}</strong>}
      </div>
-     <p class="cat-muted">Publicar verifica fotografías confirmadas, precios y estado de todas las variantes en cada sucursal. No verifica existencias ni recetas.</p>
+     <p class="cat-muted">Para publicar, cada presentación necesita fotografías, precios y estar habilitada en las sucursales elegidas.</p>
      @if(page.data();as menu){
       @if(menu.publicadoEn&&access.canMenus()){
        <button type="button" (click)="unpublish()" [disabled]="busy()||layoutDirty()">Retirar de publicación</button>
@@ -180,7 +180,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
       }
      }
      @if(publishError()){<p class="cat-alert" role="alert">{{publishError()}}</p>}
-     <p class="cat-muted">Para ver exactamente la carta publicada usa «Vista de menú vigente».</p>
+     <p class="cat-muted">Utiliza «Vista de la carta» para comprobar cómo la verán en cada sucursal.</p>
     </section>
    }
   }
@@ -334,7 +334,7 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
   const current=this.page.data();
   if(!current||!this.access.canMenus()||this.busy()||this.conflict()||!this.validation().valid)return;
   const ok=await this.confirm.confirm({title:'Guardar distribución',
-   message:'Se guardarán las secciones, horarios y sucursales. Si el menú estaba publicado, dejará de estarlo.',
+   message:'Se guardarán las secciones, los horarios y las sucursales. Si la carta ya estaba publicada, tendrás que publicarla de nuevo.',
    confirmText:'Guardar cambios'});
   if(!ok)return;
   this.busy.set(true);this.errorText.set(null);
@@ -349,7 +349,7 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
   const m=this.page.data();
   if(!m||!this.access.canMenus()||this.layoutDirty()||!this.validation().valid||!m.activo||this.busy())return;
   const ok=await this.confirm.confirm({title:'Publicar menú',
-   message:'El servidor comprobará cada variante para todas las sucursales. Publicarlo hará visible su carta comercial vigente.',
+   message:'Se revisarán los productos, los precios y las fotografías de cada sucursal antes de mostrar la carta.',
    confirmText:'Publicar'});
   if(!ok)return;
   this.busy.set(true);this.publishError.set(null);
