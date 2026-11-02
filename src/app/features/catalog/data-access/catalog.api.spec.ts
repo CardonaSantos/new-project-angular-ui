@@ -2,6 +2,7 @@ import {HttpTestingController,provideHttpClientTesting} from '@angular/common/ht
 import {provideHttpClient} from '@angular/common/http';
 import {TestBed} from '@angular/core/testing';
 import {CatalogApi,catalogParams} from './catalog.api';
+import {GC_SILENT_ERROR} from '../../../core/http/api-context';
 
 describe('CAT-A HTTP contracts',()=>{
  let api:CatalogApi;let http:HttpTestingController;
@@ -15,6 +16,20 @@ describe('CAT-A HTTP contracts',()=>{
   const p=catalogParams({search:'',activo:false,page:2,limit:20,orden:0,unused:null});
   expect(p.keys().sort()).toEqual(['activo','limit','orden','page']);
   expect(p.get('activo')).toBe('false');
+ });
+ it('never issues an empty product-detail request for a creation URL',()=>{
+  const errors:unknown[]=[];
+  api.product('', 'branch-1').subscribe({error:e=>errors.push(e)});
+  expect(errors.length).toBe(1);
+  expect(String(errors[0])).toContain('No se identificó el producto');
+  http.expectNone(r=>r.url.includes('/api/catalog/products/'));
+ });
+ it('suppresses duplicate global toasts for read requests handled inline',()=>{
+  api.categories({limit:20}).subscribe();
+  const req=http.expectOne(r=>r.url==='/api/catalog/categories');
+  expect(req.request.context.get(GC_SILENT_ERROR)).toBe(true);
+  expect(req.request.params.get('limit')).toBe('20');
+  req.flush({data:[],meta:{page:1,limit:20,total:0,totalPages:0}});
  });
  it('covers categories list, tree, options, detail and all writes',()=>{
   api.categories({page:2,activo:false}).subscribe();
