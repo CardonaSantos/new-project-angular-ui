@@ -18,6 +18,8 @@ import {GcInventoryNav} from '../inventory-nav';
 import {GcInventorySubnav,STOCK_LINKS,OPERATION_LINKS} from '../components/inventory-subnav';
 import {InventoryApi} from '../data-access/inventory.api';
 import {InventoryUrlState,type InventoryFilters} from '../data-access/inventory-url-state';
+import {GcInventoryPicker} from '../components/inventory-picker';
+import {OrganizationAccess} from '../../organization/data-access/organization-access';
 import type {InventoryKind,CountStatus,TransferStatus} from '../data-access/inventory.models';
 import {formatDecimal} from '../../../shared/formatting';
 
@@ -48,7 +50,7 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
  selector:'gc-inventory-list-page',
  providers:[InventoryUrlState],
  imports:[RouterLink,GcPageHeader,GcButtonDirective,GcDataTable,GcTableCellDirective,
-  GcPagination,GcErrorState,GcInventoryNav,GcInventorySubnav],
+  GcPagination,GcErrorState,GcInventoryNav,GcInventorySubnav,GcInventoryPicker],
  template:`
  <div class="inv-page">
   <gc-page-header [title]="config.title"/>
@@ -135,6 +137,33 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
    }
    @if(view==='stock'){<p class="inv-muted">Existencias físicas, no reservas de pedidos.</p>}
   </section>
+  @if(view==='lots'&&access.canGlobal('inventory.articles.manage')){
+   <section class="inv-card inv-narrow">
+    <h2>Registrar lote</h2>
+    <div class="inv-grid">
+     <gc-inventory-picker id="new-lot-article" kind="article" label="Artículo"
+       [value]="newLotArticle()" (valueChange)="newLotArticle.set($event)"/>
+     <div class="inv-field"><label for="new-lot-code">Código de lote</label>
+      <input id="new-lot-code" maxlength="100" placeholder="Ej. LOTE-2026-001"
+       [value]="newLotCode()" (input)="newLotCode.set($any($event.target).value)"/>
+     </div>
+     <div class="inv-field"><label for="new-lot-manufacture">Fecha de elaboración (opcional)</label>
+      <input id="new-lot-manufacture" type="date" [value]="newLotManufacture()"
+       (change)="newLotManufacture.set($any($event.target).value)"/>
+     </div>
+     <div class="inv-field"><label for="new-lot-expiry">Fecha de vencimiento (opcional)</label>
+      <input id="new-lot-expiry" type="date" [value]="newLotExpiry()"
+       (change)="newLotExpiry.set($any($event.target).value)"/>
+     </div>
+    </div>
+    @if(lotError()){<p role="alert" class="inv-alert">{{lotError()}}</p>}
+    <div class="inv-actions">
+     <button gcButton type="button" [disabled]="action.busy()||!newLotArticle()||!newLotCode().trim()"
+      (click)="createLot()">Crear lote</button>
+    </div>
+    <p class="inv-muted">Los lotes nuevos pueden aparecer sin existencias. Selecciona el artículo para consultarlos.</p>
+   </section>
+  }
  </div>`,
  styleUrl:'../inventory.scss'
 })
@@ -143,6 +172,7 @@ export class GcInventoryListPage {
  protected readonly url=inject(InventoryUrlState);
  private readonly route=inject(ActivatedRoute);
  private readonly api=inject(InventoryApi);
+ protected readonly access=inject(OrganizationAccess);
  private readonly dialog=inject(ConfirmDialogService);
  private readonly notice=inject(GcNotificationService);
  protected readonly view=(this.route.snapshot.data['view']??'lots') as View;
@@ -157,6 +187,11 @@ export class GcInventoryListPage {
  protected readonly articles=signal<{id:string;nombre:string}[]>([]);
  protected readonly page=new GcPageState<{rows:GcTableRow[];total:number}>();
  protected readonly action=new GcConfirmedAction();
+ protected readonly newLotArticle=signal('');
+ protected readonly newLotCode=signal('');
+ protected readonly newLotManufacture=signal('');
+ protected readonly newLotExpiry=signal('');
+ protected readonly lotError=signal<string|null>(null);
  protected readonly states=computed(()=>{
   if(this.view==='articles')return [{value:'true',label:'Activos'},{value:'false',label:'Inactivos'}];
   if(this.view==='counts')return ['BORRADOR','CONFIRMADO','CANCELADO'].map(v=>({value:v,label:v.replaceAll('_',' ')}));
@@ -219,7 +254,7 @@ export class GcInventoryListPage {
      imagen:s.articulo.imagenPrincipalUrl, cantidad:decimal(s.cantidad),
      ubicacion:s.ubicacion.nombre,lote:s.lote?.codigoLote??'—'}));
    }else if(this.view==='lots'){
-    const r=await firstValueFrom(this.api.lots({...q,sucursalId:f.sucursalId,articuloId:f.articuloId}));
+    const r=await firstValueFrom(this.api.lots({...q,sucursalId:f.sucursalId,articuloId:f.articuloId,incluirSinExistencias:!!f.articuloId}));
     total=r.meta.total;rows=r.data.map(l=>({id:l.id,nombre:l.articulo.nombre,
      codigo:l.codigoLote,cantidad:decimal(l.cantidad),vencimiento:l.fechaVencimiento??'—',
      estado:l.bloqueado?'Bloqueado':'Disponible',bloqueado:l.bloqueado,acciones:l.id}));
@@ -242,6 +277,26 @@ export class GcInventoryListPage {
    }
    return {rows,total};
   },r=>r.rows.length===0);
+ }
+ protected async createLot(){
+  this.lotError.set(null);
+  const article=this.newLotArticle(),code=this.newLotCode().trim();
+  if(!article||!code)return;
+  if(this.newLotManufacture()&&this.newLotExpiry()&&this.newLotManufacture()>this.newLotExpiry()){
+   this.lotError.set('La elaboración no puede ser posterior al vencimiento.');return;
+  }
+  const r=await this.action.runConfirmed(this.dialog,{
+   title:'Crear lote',message:'¿Registrar el lote para el artículo seleccionado?',
+   confirmText:'Crear lote'},
+   ()=>firstValueFrom(this.api.createLot({articuloId:article,codigoLote:code,
+    ...(this.newLotManufacture()?{fechaElaboracion:this.newLotManufacture()}:{}),
+    ...(this.newLotExpiry()?{fechaVencimiento:this.newLotExpiry()}:{})})));
+  if(!r)return;
+  if(!r.ok){if(r.reason==='error')this.lotError.set(gcErrorMessage(r.error));return}
+  this.newLotCode.set('');this.newLotManufacture.set('');this.newLotExpiry.set('');
+  this.notice.show('Lote registrado.','success');
+  await this.url.patch({articuloId:article,page:1});
+  await this.load(this.url.filters());
  }
  protected async toggleLot(row:GcTableRow){
   const id=objectValue(row['id']);const current=row['bloqueado']===true;
