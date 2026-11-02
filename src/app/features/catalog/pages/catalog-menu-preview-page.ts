@@ -1,4 +1,4 @@
-import {Component,computed,inject,signal,OnInit} from '@angular/core';
+import {Component,inject,signal,OnInit} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -86,7 +86,7 @@ export class GcCatalogMenuPreviewPage implements OnInit {
  protected readonly result=signal<CatalogBranchMenu|null>(null);
  protected readonly busy=signal(false);
  protected readonly error=signal<string|null>(null);
- protected readonly selectedBranch=computed(()=>this.branches.branches().find(x=>x.id===this.branchId()));
+ private requestGeneration=0;
  ngOnInit(){this.branchId.set(this.branches.branchId()??this.branches.branches()[0]?.id??'');void this.load()}
  protected now(){this.localDate.set('');void this.load()}
  protected money(value:string,currency:string){
@@ -100,10 +100,14 @@ export class GcCatalogMenuPreviewPage implements OnInit {
   return date.toISOString();
  }
  protected async load(){
-  const id=this.branchId();if(!id||!this.access.canRead()||this.busy())return;
-  this.busy.set(true);this.error.set(null);
-  try{this.result.set(await firstValueFrom(this.api.branchMenu(id,this.dateIso())))}
-  catch(e){this.result.set(null);this.error.set(gcErrorMessage(e))}
-  finally{this.busy.set(false)}
+  const id=this.branchId();if(!id||!this.access.canRead())return;
+  const generation=++this.requestGeneration;
+  this.busy.set(true);this.error.set(null);this.result.set(null);
+  try{
+   const result=await firstValueFrom(this.api.branchMenu(id,this.dateIso()));
+   if(generation===this.requestGeneration)this.result.set(result);
+  }catch(e){
+   if(generation===this.requestGeneration)this.error.set(gcErrorMessage(e));
+  }finally{if(generation===this.requestGeneration)this.busy.set(false)}
  }
 }
