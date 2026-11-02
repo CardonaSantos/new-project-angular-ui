@@ -89,7 +89,7 @@ function positivePrice(raw:string):string{
    @if(access.canPrices()){
     <section class="cat-card">
      <h2>Programar un nuevo precio</h2>
-     <p class="cat-muted">El importe nuevo se registra con fecha de inicio. Si se superpone con otra tarifa, el servidor rechazará la operación.</p>
+     <p class="cat-muted">El importe nuevo se registra con fecha de inicio. Si ya existe otro precio para esas fechas, tendrás que elegir un período diferente.</p>
      <form class="cat-form" (submit)="save($event)">
       <label>Precio en quetzales
        <input inputmode="decimal" [value]="amount()" (input)="amount.set($any($event.target).value)" required
@@ -120,7 +120,7 @@ function positivePrice(raw:string):string{
         }
        </fieldset>
       }
-     } @else {<p class="cat-muted">La variante no tiene grupos de extras asociados.</p>}
+     } @else {<p class="cat-muted">Esta presentación todavía no tiene extras asignados.</p>}
      <button class="cat-primary" type="button" (click)="quote()" [disabled]="loading()">Calcular total</button>
      @if(quoteResult();as result){
       <div class="cat-metrics">
