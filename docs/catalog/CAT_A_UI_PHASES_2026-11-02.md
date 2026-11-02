@@ -100,3 +100,42 @@ Fuente: `src/modules/catalog/presentation/http`, `catalog.dto.ts`, `catalog.serv
 13. Verificar CI lint/build/tests aprobada en el último commit de CAT-A y aprobar revisión del PR antes de fusionarlo.
 
 **Cierre de código no equivale a aceptación funcional local.** Registrar defectos de la prueba en PR #17 y corregirlos antes de integrar en `main`.
+
+
+## Auditoría UX posterior a las pruebas de interfaz (2026-11-02)
+
+**Hallazgo confirmado:** en el listado, un producto con categoría tenía su relación correcta, pero el formulario mostraba «Sin categoría». La búsqueda de opciones cargaba como máximo 50 categorías antes del detalle; el `select` podía no tener la opción asignada cuando se cargaba el valor del registro.
+
+### Ajustes realizados en Angular
+
+- El detalle siempre conserva la categoría existente de `GET /catalog/products/:id` aunque no aparezca en `GET /catalog/categories/options`. Si la relación no trae el nombre, consulta el detalle de la categoría; nunca muestra IDs técnicos como etiqueta.
+- Las opciones conservan la selección al ejecutar nuevas búsquedas; una categoría inactiva todavía aparece identificada como tal, sin sustituirla por «Sin categoría».
+- `[selected]` se liga explícitamente al valor actual en los selectores de categorías, artículos, extras, precios, sucursales y menús. Esto evita una selección visual incorrecta cuando los elementos llegan después del formulario.
+- El formulario de categorías separa «Buscar categoría» del selector guardado mediante etiquetas accesibles y evita enviar el formulario al presionar Intro en el buscador.
+- El detalle de categoría conserva la categoría superior guardada, incluso cuando dejó de estar activa.
+- La edición de extras conserva su grupo original fuera de la página actual o incluso cuando el grupo está inactivo.
+- El detalle de una presentación conserva sus grupos asociados aunque estén fuera de las primeras opciones de búsqueda.
+- Un producto preparado no muestra «Sin artículo asociado» como error; no requiere vínculo directo a un artículo físico de inventario.
+- Textos visibles de catálogo, vista previa, publicación, precios, reportes y producto editados en lenguaje comercial, sin referencias a servidor, identificadores de base de datos ni versiones técnicas.
+- Errores de publicación con IDs o códigos internos se transforman en indicaciones de fotos, precios y disponibilidad; los conflictos de edición siguen distinguiéndose de requisitos comerciales pendientes.
+- Pruebas unitarias nuevas en `catalog-selection.spec.ts` y `catalog-ui-copy.spec.ts` para selección persistida, búsqueda paginada, valores inactivos y mensajes sin campos internos.
+
+### Verificación de cobertura contra el backend
+
+Se compararon los cuatro controladores CAT-A en `new-project@main` con `catalog.api.ts` y las páginas de la rama `feat/catalog-ui-20261102`. **Resultado: 46/46 métodos HTTP de CAT-A se invocan en componentes de la interfaz.** Esto incluye lectura y escritura de categorías, productos, variantes, extras, precios, layout, programación, publicación, proyección y reportes.
+
+No se detectaron endpoints HTTP adicionales de CAT-A en ese código que necesiten nueva pantalla. La vista de tablet/cliente y la creación de órdenes siguen fuera del alcance administrativo de CAT-A; pertenecen al flujo de Órdenes y permisos de acceso independientes.
+
+### Aceptación local pendiente
+
+1. Abrir el producto de prueba con categoría y verificar que el selector muestre su nombre desde la primera carga.
+2. Buscar una categoría diferente y luego borrar la búsqueda: el valor elegido no debe cambiar solo.
+3. Cambiar únicamente el nombre de un producto y guardar: su categoría debe mantenerse.
+4. Revisar un producto que tenga categoría inactiva y comprobar el indicador, sin mostrar IDs.
+5. Editar un grupo de extras que no aparece entre los primeros resultados y confirmar su preselección.
+6. Comprobar en menús y precios que los selectores de sucursal y producto no se reinicien con los resultados.
+7. Verificar el lenguaje visible en `/catalog/preview`, `/catalog/menus`, `/catalog/reports` y los formularios.
+8. Repetir la prueba de publicar una carta incompleta: ninguna notificación debe mostrar identificadores o claves técnicas.
+9. Confirmar la CI aprobada del último commit antes de fusionar el PR #17.
+
+Las pruebas unitarias y CI validan código y contratos; **no** equivalen a ejecución con el navegador local y los datos privados.
