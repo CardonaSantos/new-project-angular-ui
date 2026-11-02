@@ -93,7 +93,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
      @for(x of result.data;track x.id){
       <tr><td><strong>{{x.nombre}}</strong></td><td>{{x.grupo?.nombre??groupLabel(x.grupoId)}}</td>
        <td>{{money(x.incrementoPrecio)}}</td>
-       <td>{{x.requiereComposicion?'Requiere receta o composición':'No requerida'}}</td>
+       <td>{{x.requiereComposicion?'Necesita preparación':'No requiere preparación'}}</td>
        <td>{{x.activo?'Activo':'Inactivo'}}</td>
        <td><button type="button" (click)="chooseModifier(x)">Editar</button></td>
       </tr>
@@ -115,7 +115,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <select [value]="modifierGroup()" (change)="modifierGroup.set($any($event.target).value)"
        [disabled]="!!selectedModifier()">
        <option value="">Seleccionar grupo</option>
-       @for(g of groups();track g.id){@if(g.activo){<option [value]="g.id">{{g.nombre}}</option>}}
+       @for(g of groups();track g.id){@if(g.activo||g.id===modifierGroup()){<option [value]="g.id">{{g.nombre}}</option>}}
       </select>
      </label>
      <label>Nombre de la opción
@@ -131,7 +131,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <label class="cat-check"><input type="checkbox" [checked]="modifierActive()"
        (change)="modifierActive.set($any($event.target).checked)"/> Opción activa</label>
      }
-     <p class="cat-muted">Los recargos específicos por sucursal se configuran en «Precios». Aquí no se modifica el inventario.</p>
+     <p class="cat-muted">El precio de este extra puede cambiar por sucursal. Configúralo en «Precios».</p>
      @if(modifierError()){<p role="alert" class="cat-alert">{{modifierError()}}</p>}
      <div class="cat-actions">
       <button class="cat-primary" type="submit" [disabled]="busy()||!modifierGroup()||!modifierName().trim()">
@@ -193,7 +193,11 @@ export class GcCatalogExtrasPage implements GcDirtyAware{
   if(!this.access.canRead())return;
   this.groupBusy.set(true);this.groupError.set(null);
   try{const res=await firstValueFrom(this.api.modifierGroups({page:this.groupPage(),limit:20}));
-   this.groups.set(res.data);this.groupTotal.set(res.meta.total)
+   // An extra can belong to a group outside the current page of groups.
+   const selected=this.selectedModifier()?.grupo??this.groups().find(x=>x.id===this.modifierGroup());
+   this.groups.set(selected&& !res.data.some(x=>x.id===selected.id)?
+    [selected,...res.data]:res.data);
+   this.groupTotal.set(res.meta.total)
   }catch(e){this.groupError.set(gcErrorMessage(e))}
   finally{this.groupBusy.set(false)}
  }
@@ -228,6 +232,9 @@ export class GcCatalogExtrasPage implements GcDirtyAware{
  protected chooseModifier(x:CatalogModifier){
   this.newModifierMode.set(false);this.selectedModifier.set(x);this.modifierGroup.set(x.grupoId);
   this.modifierName.set(x.nombre);this.modifierPrice.set(x.incrementoPrecio);
+  if(x.grupo&&!this.groups().some(g=>g.id===x.grupoId)){
+   this.groups.update(items=>[x.grupo!,...items]);
+  }
   this.requiresRecipe.set(x.requiereComposicion);this.modifierActive.set(x.activo);
  }
  protected newModifier(){this.selectedModifier.set(null);this.newModifierMode.set(true);
