@@ -87,3 +87,14 @@
 .cat-section-card .cat-toolbar .cat-field{flex:1 1 12rem}
 .cat-card hr{width:100%;border:0;border-top:1px solid var(--gc-outline-variant)}
 @media(max-width:650px){.cat-section-card .cat-toolbar .cat-field{flex:1 1 100%}}
+
+/* Keep saved relations visibly selected, with separate names for search and selection. */
+.cat-category-picker{display:grid;gap:.35rem;min-width:0}
+.cat-category-picker>label{font-size:.85rem;font-weight:600}
+.cat-category-picker>select,.cat-search-inline>input{
+ background:var(--gc-surface);border:1px solid var(--gc-outline);color:var(--gc-on-surface);
+ border-radius:.5rem;min-height:38px;padding:.4rem .6rem;width:100%;font:inherit;font-size:.9rem;min-width:0
+}
+.cat-search-inline{display:flex;gap:.35rem;align-items:center}
+.cat-search-inline>input{flex:1}
+.cat-search-inline>button{flex:0 0 auto}
