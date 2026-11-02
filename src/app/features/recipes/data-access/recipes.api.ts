@@ -14,6 +14,7 @@ export const recipePaths={
  versions:(id:string)=>'/api/recipes/'+encodeURIComponent(id)+'/versions',
  version:(id:string)=>'/api/recipes/versions/'+encodeURIComponent(id),
  publish:(id:string)=>'/api/recipes/versions/'+encodeURIComponent(id)+'/publish',
+ unpublish:(id:string)=>'/api/recipes/versions/'+encodeURIComponent(id)+'/unpublish',
  versionPreview:(id:string)=>'/api/recipes/versions/'+encodeURIComponent(id)+'/preview',
  modifier:(id:string)=>'/api/recipes/modifiers/'+encodeURIComponent(id)+'/components',
  packaging:'/api/recipes/packaging',
@@ -54,6 +55,8 @@ export class RecipesApi {
   return this.http.put<RecipeVersion>(recipePaths.version(id),dto,silent);
  }
  publish(id:string){return this.http.post<RecipeVersion>(recipePaths.publish(id),{},silent)}
+ unpublish(id:string){return this.http.post<{id:string;activa:boolean;publicadaEn:string}>(recipePaths.unpublish(id),{},silent)}
+ discardVersion(id:string){return this.http.delete<{id:string;descartada:boolean}>(recipePaths.version(id),silent)}
  preview(id:string,q:{sucursalId:string;ubicacionId?:string;cantidad?:string}){
   return this.http.get<RecipePreview>(recipePaths.versionPreview(id),params(q));
  }
