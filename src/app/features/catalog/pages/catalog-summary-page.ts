@@ -41,18 +41,18 @@ interface Overview{summary:CatalogSummary;coverage:CatalogPriceCoverage|null}
      @if(page.data();as response){
       <div class="cat-metrics">
        <div class="cat-metric"><strong>{{response.summary.productosActivos}}</strong><span>Productos activos</span></div>
-       <div class="cat-metric"><strong>{{response.summary.variantesActivas}}</strong><span>Variantes activas</span></div>
+       <div class="cat-metric"><strong>{{response.summary.variantesActivas}}</strong><span>Presentaciones activas</span></div>
        <div class="cat-metric"><strong>{{response.summary.menusPublicados}}</strong><span>Menús publicados</span></div>
        <div class="cat-metric"><strong>{{response.summary.productosSinImagen}}</strong><span>Productos sin fotografía</span></div>
       </div>
       @if(response.coverage;as coverage){
        <h2>Precios y disponibilidad comercial</h2>
        <div class="cat-metrics">
-        <div class="cat-metric"><strong>{{coverage.conPrecio??0}}</strong><span>Variantes con precio</span></div>
-        <div class="cat-metric"><strong>{{coverage.sinPrecio??0}}</strong><span>Variantes sin precio vigente</span></div>
-        <div class="cat-metric"><strong>{{coverage.vendiblesPorPrecioYEstado??0}}</strong><span>Habilitadas comercialmente</span></div>
+        <div class="cat-metric"><strong>{{coverage.conPrecio??0}}</strong><span>Presentaciones con precio</span></div>
+        <div class="cat-metric"><strong>{{coverage.sinPrecio??0}}</strong><span>Presentaciones sin precio</span></div>
+        <div class="cat-metric"><strong>{{coverage.vendiblesPorPrecioYEstado??0}}</strong><span>Disponibles para la venta</span></div>
        </div>
-       <p class="cat-muted">La disponibilidad comercial no verifica las existencias físicas ni ingredientes.</p>
+       <p class="cat-muted">Antes de aceptar una venta, revisa las existencias y los ingredientes disponibles.</p>
       }
       @if(response.summary.productosPorTipo.length){
        <h2>Productos por tipo</h2>
@@ -62,7 +62,7 @@ interface Overview{summary:CatalogSummary;coverage:CatalogPriceCoverage|null}
         }
        </ul>
       }
-      <p class="cat-muted">Los indicadores de ventas y rentabilidad no están calculados en este reporte.</p>
+      <p class="cat-muted">Este resumen no incluye las ventas ni las ganancias.</p>
      }
     }
    </section>
