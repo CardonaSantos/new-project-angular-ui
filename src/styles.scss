@@ -22,13 +22,13 @@
   --gc-on-error: #fff;
   --gc-font-scale: 1;
   --gc-radius: 14px;
-  --gc-space: 1rem;
-  --gc-control-height: 2.75rem;
+  --gc-space: .85rem;
+  --gc-control-height: 2.5rem;
   --gc-shell-width: 16rem;
   --gc-transition: 160ms ease;
   --gc-motion-fast: 140ms;
   --gc-motion-panel: 200ms;
-  --gc-table-cell-padding: .85rem;
+  --gc-table-cell-padding: .5rem;
 
   @include mat.theme((
     color: (
@@ -43,7 +43,7 @@
 :root[data-gc-density='compact'] {
   --gc-space: 0.625rem;
   --gc-control-height: 2.5rem;
-  --gc-table-cell-padding: .55rem;
+  --gc-table-cell-padding: .42rem;
 }
 
 html { min-height: 100%; font-size: calc(100% * var(--gc-font-scale)); }
@@ -67,7 +67,7 @@ a { color: var(--gc-primary); }
   justify-content: center;
   gap: .5rem;
   min-height: var(--gc-control-height);
-  padding: .5rem 1rem;
+  padding: .4rem .75rem;
   border: 1px solid transparent;
   border-radius: calc(var(--gc-radius) * .65);
   cursor: pointer;
@@ -90,7 +90,7 @@ a { color: var(--gc-primary); }
   background: var(--gc-surface-container-low);
   border: 1px solid var(--gc-outline-variant);
   border-radius: var(--gc-radius);
-  padding: clamp(1rem, 2.5vw, 1.5rem);
+  padding: clamp(.75rem, 1.7vw, 1.15rem);
 }
 .gc-muted { color: var(--gc-on-surface-variant); }
 .gc-stack { display: grid; gap: var(--gc-space); }

@@ -1,14 +1,14 @@
 
 :host {display:block;width:100%;min-width:0}
-.gc-u-page {display:grid;gap:1.25rem;min-width:0;width:100%}
+.gc-u-page {display:grid;gap:.9rem;min-width:0;width:100%}
 .gc-u-narrow {width:min(100%,65rem);margin-inline:auto}
 .gc-u-tabs {display:flex;gap:.25rem;flex-wrap:wrap;border-bottom:1px solid var(--gc-outline-variant)}
 .gc-u-tabs a {display:inline-flex;align-items:center;min-height:44px;padding:.5rem .85rem;color:var(--gc-on-surface-variant);text-decoration:none;border-bottom:2px solid transparent}
 .gc-u-tabs a[aria-current="page"] {color:var(--gc-primary);border-color:var(--gc-primary);font-weight:650}
-.gc-u-card {padding:clamp(1rem,2.5vw,1.5rem);background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius);min-width:0}
+.gc-u-card {padding:clamp(.75rem,1.6vw,1.15rem);background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius);min-width:0}
 .gc-u-card h2 {font-size:1.15rem;margin:0 0 1rem}
-.gc-u-form {display:grid;gap:1.15rem}
-.gc-u-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.25rem}
+.gc-u-form {display:grid;gap:.85rem}
+.gc-u-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem 1rem}
 .gc-u-field {display:grid;gap:.4rem;min-width:0;align-content:start}
 .gc-u-field label,.gc-u-field .label {font-size:.875rem;font-weight:600}
 .gc-u-field input,.gc-u-field select,.gc-u-field textarea {display:block;width:100%;min-width:0;min-height:44px;border:1px solid var(--gc-outline);border-radius:calc(var(--gc-radius)*.65);padding:.55rem .75rem;background:var(--gc-surface);color:var(--gc-on-surface)}

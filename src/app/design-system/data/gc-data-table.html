@@ -1,9 +1,10 @@
 <div class="gc-table-frame" [attr.aria-busy]="loading()">
-  @if (loading()) {
+  @if (loading() && rows().length === 0) {
     <gc-skeleton [lines]="5" label="Cargando registros" />
   } @else if (rows().length === 0) {
     <gc-empty-state title="Sin resultados" description="No se encontraron registros para los filtros seleccionados." />
   } @else {
+    @if (loading()) { <div class="gc-table-refresh" role="status">Actualizando registros…</div> }
     <div class="gc-table-scroll" tabindex="0" role="region" aria-label="Tabla de registros, desplazable horizontalmente">
       <table>
         <thead>

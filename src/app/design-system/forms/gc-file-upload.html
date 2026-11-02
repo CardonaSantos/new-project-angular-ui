@@ -5,7 +5,7 @@
     (change)="onFiles($event)"
     [attr.aria-describedby]="inputId() + '-help'" />
   <small [id]="inputId() + '-help'">
-    {{ formatLabel() }} · {{ maxFiles()===1 ? '1 archivo' : maxFiles()+' archivos' }} · Máximo {{ maxSizeMb() }} MB.
+    {{ formatLabel() }} · {{ maxFiles()===1 ? '1 archivo' : maxFiles()+' archivos' }} · Máximo {{ maxSizeMb() }} MB{{ cropSquare() ? ' por imagen recortada' : ' por archivo' }}.
   </small>
   @if(processing()){<p role="status">Preparando imagen…</p>}
   @if(errors().length){

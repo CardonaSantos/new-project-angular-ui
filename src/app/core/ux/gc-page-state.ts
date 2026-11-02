@@ -1,4 +1,4 @@
-import { computed, signal } from '@angular/core';
+import { computed, signal, untracked } from '@angular/core';
 
 export type GcPageStatus = 'idle' | 'loading' | 'refreshing' | 'ready' | 'empty' | 'error';
 
@@ -12,10 +12,12 @@ export class GcPageState<T> {
 
   async load(fetcher: () => Promise<T>, isEmpty: (value: T) => boolean = () => false): Promise<void> {
     const current = ++this.generation;
-    this.status.set(this.data() === null ? 'loading' : 'refreshing');
+    // load() may run within a feature effect; data is not a filter dependency.
+    this.status.set(untracked(this.data) === null ? 'loading' : 'refreshing');
     this.error.set(null);
     try {
-      const value = await fetcher();
+      // Avoid accidentally tracking page state or other signals read by fetcher.
+      const value = await untracked(fetcher);
       if (current !== this.generation) return;
       this.data.set(value);
       this.status.set(isEmpty(value) ? 'empty' : 'ready');

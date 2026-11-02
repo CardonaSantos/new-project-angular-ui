@@ -42,6 +42,8 @@ export class GcAppShell {
     this.session.authenticated()
       ? [
         { label: 'Inicio', path: '/workspace', initials: 'IN', exact: true },
+        ...((this.orgAccess.canGlobal('inventory.read')||this.context.has('inventory.read'))
+         ? [{label:'Inventario',path:'/inventory',initials:'IV',exact:false}]:[]),
         ...((this.usersAccess.canRead()||this.usersAccess.canGlobal('roles.read')||
           this.usersAccess.canGlobal('users.reports.read'))
           ? [{label:'Usuarios',path:'/users',initials:'US',exact:false}]:[]),
