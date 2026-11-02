@@ -68,7 +68,7 @@ import {GcRecipesNav} from '../recipes-nav';
         <td>{{item.ubicacion.nombre}}</td>
         <td>{{item.lote?.codigoLote??'Sin lote'}}</td>
         @if(doc.costoTotal!==undefined&&access.canSeeCosts()){
-         <td>{{item.costoTotal!=null?currency(item.costoTotal):'—'}}</td>}
+         <td>{{item.costoTotal!==null&&item.costoTotal!==undefined?currency(item.costoTotal):'—'}}</td>}
        </tr>
       } @empty {<tr><td colspan="5">No hay consumos registrados.</td></tr>}
      </tbody></table></div>
