@@ -5,7 +5,7 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {InventoryApi} from '../../inventory/data-access/inventory.api';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
-import type {CatalogGroup,CatalogModifier} from '../../catalog/data-access/catalog.models';
+import type {CatalogGroup} from '../../catalog/data-access/catalog.models';
 import type {Warehouse} from '../../inventory/data-access/inventory.models';
 import {formatDecimal,formatCurrency,parseApiDecimal,toApiDecimal} from '../../../shared/formatting';
 import {RecipesApi} from '../data-access/recipes.api';
@@ -105,11 +105,11 @@ import {GcRecipesNav} from '../recipes-nav';
      <td>{{qty(x.cantidad,x.articulo?.unidadBase?.codigo)}}</td>
      <td>{{x.ubicacion?.nombre??'—'}}</td>
      @if(r.costoEstimado!==undefined&&access.canSeeCosts()){
-      <td>{{x.costoTotal!=null?money(x.costoTotal):'—'}}</td>}
+      <td>{{x.costoTotal!==null&&x.costoTotal!==undefined?money(x.costoTotal):'—'}}</td>}
     </tr>} @empty {<tr><td colspan="4">No hay consumos calculados para mostrar.</td></tr>}
     </tbody>
    </table></div>
-   @if(r.costoEstimado!=null&&access.canSeeCosts()){<strong>Costo estimado: {{money(r.costoEstimado)}}</strong>}
+   @if(r.costoEstimado!==null&&r.costoEstimado!==undefined&&access.canSeeCosts()){<strong>Costo estimado: {{money(r.costoEstimado)}}</strong>}
    <p class="rec-note">Esta comprobación no reserva ingredientes ni crea ventas.</p>
   </section>
  }
