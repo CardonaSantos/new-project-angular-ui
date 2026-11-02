@@ -113,7 +113,9 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        @if(product.tipo==='INVENTARIABLE'){
         @if(editVariant()?.articuloInventario?.nombre){<p class="cat-muted">Artículo asociado: {{editVariant()?.articuloInventario?.nombre}}</p>}
         <gc-inventory-picker id="catalog-linked-article" label="Artículo físico de Inventario"
-         kind="article" [value]="articleId()" (valueChange)="articleId.set($event)"
+         kind="article" [value]="articleId()"
+         [selectedLabel]="editVariant()?.articuloInventario?.nombre??''"
+         (valueChange)="articleId.set($event)"
          [disabled]="!access.canManage()"/>
        }
        @if(editVariant()){
