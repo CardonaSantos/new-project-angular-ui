@@ -4,6 +4,16 @@
 **Rama:** `feat/catalog-ui-20261102`. **PR:** #17 (draft hasta cierre de C5).  
 **Alcance:** interfaz administrativa. La vista tablet, QR y la creación de órdenes pertenecen a otro sprint.
 
+## Estado de la implementación
+
+- **C1 — Implementada y CI aprobada:** contratos HTTP tipados y pantalla inicial.
+- **C2 — Implementada, aceptación local pendiente:** categorías, productos, variantes, disponibilidad por sede, medios y diagnóstico de publicación.
+- **C3 — Implementada, aceptación local pendiente:** grupos, extras, asignaciones a variantes, precios por sede, vigencias, historial y cotizador.
+- **C4 — Pendiente:** menús editables, publicación y proyección.
+- **C5 — Pendiente:** reportes de cobertura y aceptación integral.
+
+La CI valida compilación, lint y tests de contratos. No sustituye pruebas funcionales contra NestJS/PostgreSQL ni pruebas de subida real de imágenes.
+
 ## Regla de entrega
 
 - **C1 — Fundación:** rutas, modelos, cliente de los 46 endpoints, casos de autorización global/sucursal, página Resumen; CI y tests de contratos.
