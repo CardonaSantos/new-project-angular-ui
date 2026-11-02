@@ -11,9 +11,9 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcInventoryNav} from '../inventory-nav';
 import {InventoryApi} from '../data-access/inventory.api';
 import {InventoryUrlState} from '../data-access/inventory-url-state';
-import {formatDecimal} from '../../../shared/formatting';
+
 import {GcDataTable,type GcTableColumn} from '../../../design-system/data/gc-data-table';
-import {inventoryMoney,inventoryValuationRows,valuationMethod} from '../data-access/inventory-presentation';
+import {inventoryCalendar,inventoryMoney,inventoryValuationRows,valuationMethod} from '../data-access/inventory-presentation';
 function valuationRowsMissingNames(rows:ReturnType<typeof inventoryValuationRows>):boolean{
  return rows.some(row=>row.nombre==='Nombre no proporcionado por el servidor');
 }
@@ -34,9 +34,8 @@ function valueText(value:unknown,key:string):string {
  if(value===null||value===undefined)return '—';
  if(typeof value==='boolean')return value?'Sí':'No';
  if(typeof value==='string'){
-  if(/^(valor|costo|importe)/i.test(key)){
-   try{return formatDecimal(value,{minimumFractionDigits:2,maximumFractionDigits:2})}catch{return value}
-  }
+  if(key==='vencimiento'||key==='fechaVencimiento')return inventoryCalendar(value);
+  if(/^(valor|costo|importe)/i.test(key))return inventoryMoney(value);
   return value;
  }
  if(typeof value==='number')return String(value);
