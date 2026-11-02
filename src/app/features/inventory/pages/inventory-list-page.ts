@@ -22,6 +22,7 @@ import {GcInventoryPicker} from '../components/inventory-picker';
 import {OrganizationAccess} from '../../organization/data-access/organization-access';
 import type {InventoryKind,CountStatus,TransferStatus} from '../data-access/inventory.models';
 import {formatDecimal} from '../../../shared/formatting';
+import {inventoryInstant,inventoryCalendar,inventoryMovementLabel} from '../data-access/inventory-presentation';
 
 type View='articles'|'stock'|'lots'|'movements'|'counts'|'transfers';
 const VIEWS:Record<View,{title:string;columns:GcTableColumn[];create?:string}> = {
@@ -228,6 +229,7 @@ export class GcInventoryListPage {
  }
  protected canRead(){return this.branch.has('inventory.read')||this.view==='articles'||this.branch.branches().length>0}
  protected errorMessage(){return gcErrorMessage(this.page.error())}
+ private zone(id:string){return this.branch.branches().find(b=>b.id===id)?.zonaHoraria}
  protected reload(){void this.load(this.url.filters())}
  protected async setFilter(key:keyof InventoryFilters,value:string){
   await this.url.patch({[key]:value,page:1});
@@ -247,7 +249,7 @@ export class GcInventoryListPage {
  private async loadOptions(sucursalId:string){
   try{
    const r=await firstValueFrom(this.api.warehouseOptions({sucursalId,limit:50}));
-   this.warehouses.set(r.data);
+   this.warehouses.set(r.data.map(w=>({id:w.id,nombre:w.label||w.nombre||w.codigo})));
   }catch{this.warehouses.set([])}
   if(this.view==='lots'||this.view==='stock'||this.view==='movements'){
    try{const r=await firstValueFrom(this.api.articleOptions({limit:50}));this.articles.set(r.data)}
@@ -274,19 +276,19 @@ export class GcInventoryListPage {
    }else if(this.view==='lots'){
     const r=await firstValueFrom(this.api.lots({...q,sucursalId:f.sucursalId,articuloId:f.articuloId,incluirSinExistencias:!!f.articuloId}));
     total=r.meta.total;rows=r.data.map(l=>({id:l.id,nombre:l.articulo.nombre,
-     codigo:l.codigoLote,cantidad:decimal(l.cantidad),vencimiento:l.fechaVencimiento??'—',
+     codigo:l.codigoLote,cantidad:decimal(l.cantidad),vencimiento:inventoryCalendar(l.fechaVencimiento),
      estado:l.bloqueado?'Bloqueado':'Disponible',bloqueado:l.bloqueado,acciones:l.id}));
    }else if(this.view==='movements'){
     const r=await firstValueFrom(this.api.movements({...q,sucursalId:f.sucursalId,
      articuloId:f.articuloId,almacenId:f.almacenId}));
     total=r.meta.total;rows=r.data.map(m=>({id:m.id,nombre:m.articulo.nombre,
-     imagen:m.articulo.imagenPrincipalUrl,tipo:m.tipo,cantidad:decimal(m.cantidad),
-     fecha:m.creadoEn,acciones:m.id}));
+     imagen:m.articulo.imagenPrincipalUrl,tipo:inventoryMovementLabel(m.tipo),cantidad:decimal(m.cantidad),
+     fecha:inventoryInstant(m.creadoEn,this.zone(f.sucursalId)),acciones:m.id}));
    }else if(this.view==='counts'){
     const r=await firstValueFrom(this.api.counts({...q,sucursalId:f.sucursalId,
      almacenId:f.almacenId,estado:f.estado as CountStatus||undefined}));
     total=r.meta.total;rows=r.data.map(d=>({id:d.id,almacen:d.almacen.nombre,
-     estado:d.estado,lineas:d.numeroLineas,fecha:d.creadoEn,acciones:d.id}));
+     estado:d.estado,lineas:d.numeroLineas,fecha:inventoryInstant(d.creadoEn,this.zone(f.sucursalId)),acciones:d.id}));
    }else{
     const r=await firstValueFrom(this.api.transfers({...q,sucursalId:f.sucursalId,
      estado:f.estado as TransferStatus||undefined}));
