@@ -17,10 +17,10 @@ import type {CatalogBranchMenu} from '../data-access/catalog.models';
  <main class="cat-page">
   <gc-catalog-nav/>
   <section class="cat-card">
-   <div class="cat-row"><h2>Vista de menú vigente</h2>
+   <div class="cat-row"><h2>Vista de la carta</h2>
     <a routerLink="/catalog/menus">Administrar menús</a>
    </div>
-   <p class="cat-muted">Muestra exactamente las variantes comerciales que el servidor publica para la sucursal y fecha consultadas. No genera órdenes.</p>
+   <p class="cat-muted">Consulta cómo se verá la carta de la sucursal en la fecha que elijas.</p>
    <div class="cat-toolbar">
     <label class="cat-field">Sucursal
      <select [value]="branchId()" (change)="branchId.set($any($event.target).value)">
@@ -35,7 +35,7 @@ import type {CatalogBranchMenu} from '../data-access/catalog.models';
     <button type="button" (click)="load()" [disabled]="busy()||!branchId()">Ver menú</button>
     <button type="button" (click)="now()" [disabled]="busy()">Ahora</button>
    </div>
-   <p class="cat-muted">La hora de esta consulta se introduce en la zona horaria de tu equipo. El servidor interpreta la vigencia en la zona horaria configurada de la sucursal.</p>
+   <p class="cat-muted">Selecciona la fecha y la hora para comprobar qué productos estarán disponibles en la carta.</p>
    @if(busy()){<p role="status" class="cat-muted">Consultando la carta…</p>}
    @if(error()){<gc-error-state [message]="error()!" (retry)="load()"/>}
   </section>
@@ -72,7 +72,7 @@ import type {CatalogBranchMenu} from '../data-access/catalog.models';
      }
     </section>
    }
-   <p class="cat-muted">Precios y disponibilidad comercial. La vista no asegura stock físico ni ingredientes disponibles.</p>
+   <p class="cat-muted">La disponibilidad puede cambiar durante el día. Revisa las existencias antes de confirmar un pedido.</p>
   }
  </main>`,
  styleUrl:'../catalog.scss'
