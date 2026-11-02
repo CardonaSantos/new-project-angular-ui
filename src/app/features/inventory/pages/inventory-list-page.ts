@@ -2,6 +2,8 @@
 import {Component,computed,effect,inject,signal} from '@angular/core';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
+import {MatDialog} from '@angular/material/dialog';
+import {GcImagePreviewDialog} from '../../../design-system/media/gc-image-preview-dialog';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
@@ -120,8 +122,11 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
     <gc-data-table [columns]="config.columns" [rows]="page.data()?.rows??[]" [loading]="page.busy()">
      <ng-template gcTableCell="nombre" let-row>
       <div class="inv-photo">
-       @if(image(row['imagen'])){
-        <img [src]="image(row['imagen'])" alt="" loading="lazy" (error)="imageFailed($event)"/>
+       @if(image(row['imagen']);as photoUrl){
+        <button type="button" class="inv-image-trigger" [attr.aria-label]="'Ampliar imagen de '+row['nombre']"
+         (click)="openPhoto(photoUrl,objectValue(row['nombre']))">
+         <img [src]="photoUrl" alt="" loading="lazy" (error)="imageFailed($event)"/>
+        </button>
        } @else {<span class="inv-placeholder" aria-hidden="true">IMG</span>}
        <span>{{row['nombre']}}</span>
       </div>
@@ -185,6 +190,7 @@ export class GcInventoryListPage {
  private readonly api=inject(InventoryApi);
  protected readonly access=inject(OrganizationAccess);
  private readonly dialog=inject(ConfirmDialogService);
+ private readonly previewDialog=inject(MatDialog);
  private readonly notice=inject(GcNotificationService);
  protected readonly view=(this.route.snapshot.data['view']??'lots') as View;
  protected readonly config=VIEWS[this.view];
@@ -243,6 +249,13 @@ export class GcInventoryListPage {
   if(this.view==='counts')return '/inventory/operations/counts/'+encodeURIComponent(value);
   if(this.view==='transfers')return '/inventory/operations/transfers/'+encodeURIComponent(value);
   return null;
+ }
+ protected readonly objectValue=objectValue;
+ protected openPhoto(url:string,alt:string){
+  this.previewDialog.open(GcImagePreviewDialog,{
+   data:{url,alt},width:'min(94vw,720px)',maxWidth:'94vw',
+   ariaLabel:'Vista de fotografía de artículo',autoFocus:'dialog',restoreFocus:true,
+  });
  }
  protected image(v:GcTableRow[string]):string|null{return typeof v==='string'&&v?v:null}
  protected imageFailed(event:Event){(event.target as HTMLImageElement).style.visibility='hidden'}
