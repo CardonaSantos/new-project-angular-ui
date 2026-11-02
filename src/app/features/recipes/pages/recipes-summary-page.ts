@@ -42,7 +42,8 @@ import type {RecipeCoverage} from '../data-access/recipes.models';
       @for(item of r.pendientes.data;track item.id){
        <tr><td>{{item.producto.nombre}}</td><td>{{item.nombre}}</td>
         <td>Sin receta publicada</td><td>
-         @if(access.canManage()){<a class="rec-link" routerLink="/recipes/list/new">Crear receta</a>}
+         @if(access.canManage()){<a class="rec-link" routerLink="/recipes/list/new"
+          [queryParams]="{varianteId:item.id}">Crear receta</a>}
         </td></tr>
       } @empty {<tr><td colspan="4">No hay presentaciones pendientes con estos filtros.</td></tr>}
      </tbody>
