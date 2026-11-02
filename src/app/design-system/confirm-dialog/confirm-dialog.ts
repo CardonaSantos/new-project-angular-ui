@@ -7,6 +7,7 @@ import type { ConfirmDialogOptions } from './confirm-dialog.service';
   selector: 'gc-confirm-dialog',
   imports: [MatDialogModule, GcButtonDirective],
   templateUrl: './confirm-dialog.html',
+  styleUrl: './confirm-dialog.scss',
 })
 export class ConfirmDialog {
   readonly data = inject<ConfirmDialogOptions>(MAT_DIALOG_DATA);

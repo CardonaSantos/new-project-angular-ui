@@ -24,9 +24,6 @@ import { GcBrandLogo } from '../branding/gc-brand-logo';
           </a>
         }
       </nav>
-      @if (!collapsed() || mobileOpen()) {
-        <p class="gc-sidebar-note">Gastro Core · UI Lab sin backend</p>
-      }
     </aside>
   `,
   styleUrl: './gc-sidebar.scss',

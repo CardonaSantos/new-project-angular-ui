@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { gcAuthGuard, gcPermissionGuard } from './core/auth/gc-auth.guards';
-import { gcPasswordChangeGuard, gcSessionGuard } from './core/auth/gc-real.guards';
+import { gcGuestGuard, gcPasswordChangeGuard, gcSessionGuard } from './core/auth/gc-real.guards';
 import { gcUnsavedChangesGuard } from './core/ux/gc-unsaved-changes.guard';
 
 export const routes: Routes = [
   {
-    path: 'login', title: 'Iniciar sesión — Gastro Core',
+    path: 'login', title: 'Iniciar sesión — Gastro Core', canActivate: [gcGuestGuard],
     loadComponent: () => import('./features/auth/login/gc-login-page').then(m => m.GcLoginPage),
   },
   {
@@ -17,6 +17,13 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./shells/gc-app-shell').then((m) => m.GcAppShell),
     children: [
+      { path: '', pathMatch: 'full', redirectTo: 'workspace' },
+      {
+        path: 'account/security', title: 'Seguridad — Gastro Core',
+        data: { breadcrumb: 'Seguridad' },
+        canActivate: [gcSessionGuard],
+        loadComponent: () => import('./features/auth/account/gc-account-security-page').then(m => m.GcAccountSecurityPage),
+      },
       {
         path: 'workspace', title: 'Inicio — Gastro Core',
         data: { breadcrumb: 'Inicio' },
@@ -24,7 +31,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/workspace/gc-workspace-page').then(m => m.GcWorkspacePage),
       },
       {
-        path: '', pathMatch: 'full', title: 'Design System — Gastro Core UI',
+        path: 'lab/design-system', title: 'Design System — Gastro Core UI',
         data: { breadcrumb: 'Design System' },
         loadComponent: () =>
           import('./features/foundation/foundation-page').then((m) => m.FoundationPage),

@@ -16,7 +16,7 @@ Para incorporar un nuevo preset, registrar pares light y dark tipados en theme-p
 - gc-status-badge: tone neutral/success/warning/danger.
 - gc-page-header: título, sobrelínea, descripción y espacio gcPageActions.
 - gc-empty-state: estado vacío reutilizable.
-- ConfirmDialogService: confirmaciones solamente; formularios y motivos en páginas, no diálogos.
+- ConfirmDialogService: confirmaciones solamente; formularios y motivos en páginas, no diálogos. Usar siempre el diálogo compartido: acciones separadas 16 px en escritorio, 12 px en móvil, botones de al menos 44 px, cancelar primero y acción de riesgo al final; no colocar botones pegados ni copiar estilos de confirmación en cada feature.
 - Formly + Angular Reactive Forms; factories gcTextField y gcSelectField. Validar DTO en los límites de API más adelante.
 
 ## Accesibilidad y estilo

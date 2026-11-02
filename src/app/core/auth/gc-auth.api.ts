@@ -36,7 +36,7 @@ export class GcAuthApi {
 
   changePassword(body: GcChangePassword) {
     return this.http.patch<unknown>(API_ENDPOINTS.auth.password, body, {
-      withCredentials: true, context: new HttpContext().set(GC_SILENT_ERROR, true),
+      withCredentials: true, context: new HttpContext().set(GC_SILENT_ERROR, true).set(GC_SKIP_REFRESH, true),
     }).pipe(switchMap(value => from(
       import('./gc-auth.models').then(model => model.gcChangePasswordResultSchema.parse(value)),
     )));

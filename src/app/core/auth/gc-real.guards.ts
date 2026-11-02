@@ -4,7 +4,7 @@ import { map } from 'rxjs';
 import { GcSessionService } from './gc-session.service';
 import { GcBranchContext } from '../organization/gc-branch-context';
 
-/** Server grants access; guards only keep the UI's navigation coherent. */
+/** Only the API authorizes access; guards coordinate navigation. */
 export const gcSessionGuard: CanActivateFn = () => {
   const session = inject(GcSessionService);
   const router = inject(Router);
@@ -13,6 +13,14 @@ export const gcSessionGuard: CanActivateFn = () => {
     if (session.passwordChangeRequired()) return router.createUrlTree(['/change-password']);
     return true;
   }));
+};
+
+export const gcGuestGuard: CanActivateFn = () => {
+  const session = inject(GcSessionService);
+  const router = inject(Router);
+  return session.restore().pipe(map(ok => !ok ? true :
+    router.createUrlTree([session.passwordChangeRequired() ? '/change-password' : '/workspace']),
+  ));
 };
 
 export const gcPasswordChangeGuard: CanActivateFn = () => {

@@ -1,11 +1,13 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterOutlet, NavigationEnd } from '@angular/router';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 import { GcSidebar } from '../design-system/navigation/gc-sidebar';
 import { GcTopbar } from '../design-system/navigation/gc-topbar';
 import { GcProfileMenu } from '../design-system/profile/gc-profile-menu';
 import { GcBranchSwitcher } from '../design-system/profile/gc-branch-switcher';
+import { GcActiveBranchSwitcher } from '../design-system/profile/gc-active-branch-switcher';
+import { GcAccountMenu } from '../design-system/profile/gc-account-menu';
 import { GcNavigationItem } from '../design-system/navigation/navigation.model';
 import { GcSessionService } from '../core/auth/gc-session.service';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
@@ -14,7 +16,7 @@ import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
 
 @Component({
   selector: 'gc-app-shell',
-  imports: [RouterOutlet, RouterLink, GcSidebar, GcTopbar, GcProfileMenu, GcBranchSwitcher ],
+  imports: [RouterOutlet, GcSidebar, GcTopbar, GcProfileMenu, GcBranchSwitcher, GcActiveBranchSwitcher, GcAccountMenu],
   templateUrl: './gc-app-shell.html',
   styleUrl: './gc-app-shell.scss',
 })
@@ -26,9 +28,11 @@ export class GcAppShell {
   private readonly auth = inject(GcAuthFacade);
   private readonly realtime = inject(GcRealtimeService);
   private readonly router = inject(Router);
-  protected readonly items = computed<readonly GcNavigationItem[]>(() => [
-    { label: 'Inicio (API real)', path: '/workspace', initials: 'GC', exact: true },
-    { label: 'Design System', path: '/', initials: 'DS', exact: true },
+  protected readonly items = computed<readonly GcNavigationItem[]>(() =>
+    this.session.authenticated()
+      ? [{ label: 'Inicio', path: '/workspace', initials: 'IN', exact: true }]
+      : [
+    { label: 'Design System', path: '/lab/design-system', initials: 'DS', exact: true },
     { label: 'Tablas y filtros', path: '/patterns/tables', initials: 'TB', exact: true },
     { label: 'UI / UX Lab', path: '/lab/behaviors', initials: 'UX', exact: true },
     ...(this.auth.has('settings.manage') ?

@@ -102,11 +102,8 @@ export class GcSessionService {
     return this.api.logout(all).pipe(
       tap(() => this.clear()),
       map(() => undefined),
-      catchError(error => {
-        // Revocation failed: clear locally but never claim server logout succeeded.
-        this.clear();
-        return throwError(() => error);
-      }),
+      // A failed logout must not navigate back into an unrevoked refresh cookie.
+      // Keep the session visible so the user can retry.
     );
   }
 

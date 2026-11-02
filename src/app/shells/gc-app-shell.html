@@ -15,7 +15,8 @@
       (mobileToggle)="mobileOpen.set(!mobileOpen())">
       <div gcTopbarActions class="gc-account-actions">
         @if (session.authenticated()) {
-          <a routerLink="/workspace" class="gc-session-link">{{ session.user()?.nombre }}</a>
+          <gc-active-branch-switcher />
+          <gc-account-menu />
         } @else {
           <gc-branch-switcher />
           <gc-profile-menu />

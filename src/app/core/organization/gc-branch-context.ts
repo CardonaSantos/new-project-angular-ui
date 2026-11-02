@@ -14,7 +14,7 @@ export class GcBranchContext {
   readonly active = computed(() => this.branches().find(branch => branch.id === this.branchId()) ?? null);
   private generation = 0;
 
-  has(permission: string): boolean { return this.permissions().includes(permission); }
+  has(permission: string): boolean { return !this.loading() && this.permissions().includes(permission); }
 
   load(): Observable<void> {
     return this.api.myAccess().pipe(
@@ -33,12 +33,11 @@ export class GcBranchContext {
       return throwError(() => new Error('La sucursal no está entre tus accesos autorizados.'));
     }
     const generation = ++this.generation;
-    this.branchId.set(id);
-    this.permissions.set([]);
     this.loading.set(true);
     return this.api.capabilities(id).pipe(
       tap(result => {
         if (generation === this.generation && result.sucursalId === id) {
+          this.branchId.set(id);
           this.permissions.set(result.permissions);
         }
       }),

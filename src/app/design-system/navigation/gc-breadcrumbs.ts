@@ -14,13 +14,19 @@ interface GcCrumb {
   imports: [RouterLink],
   template: `
     <nav class="gc-crumbs" aria-label="Ruta de navegación">
-      <a routerLink="/" aria-label="Inicio">Inicio</a>
+      @if (crumbs().length === 1 && crumbs()[0].title === 'Inicio') {
+        <span aria-current="page" class="gc-current">Inicio</span>
+      } @else {
+        <a routerLink="/workspace">Inicio</a>
+      }
       @for (crumb of crumbs(); track crumb.link) {
-        <span class="gc-separator" aria-hidden="true">/</span>
+        @if (!(crumbs().length === 1 && crumb.title === 'Inicio')) {
+          <span class="gc-separator" aria-hidden="true">/</span>
         @if ($last) {
           <span aria-current="page" class="gc-current">{{ crumb.title }}</span>
         } @else {
           <a [routerLink]="crumb.link">{{ crumb.title }}</a>
+        }
         }
       }
     </nav>
