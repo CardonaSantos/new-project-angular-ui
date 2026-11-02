@@ -12,6 +12,11 @@ import {GcInventoryNav} from '../inventory-nav';
 import {InventoryApi} from '../data-access/inventory.api';
 import {InventoryUrlState} from '../data-access/inventory-url-state';
 import {formatDecimal} from '../../../shared/formatting';
+import {GcDataTable,type GcTableColumn} from '../../../design-system/data/gc-data-table';
+import {inventoryMoney,inventoryValuationRows,valuationMethod} from '../data-access/inventory-presentation';
+function valuationRowsMissingNames(rows:ReturnType<typeof inventoryValuationRows>):boolean{
+ return rows.some(row=>row.nombre==='Nombre no proporcionado por el servidor');
+}
 type Report='masters'|'valuation'|'expiry'|'reconciliation';
 const names:Record<Report,string>={
  masters:'Maestros',valuation:'Valoración',expiry:'Vencimientos',reconciliation:'Conciliación'
@@ -40,7 +45,7 @@ function valueText(value:unknown,key:string):string {
 @Component({
  selector:'gc-inventory-reports-page',
  providers:[InventoryUrlState],
- imports:[GcPageHeader,GcButtonDirective,GcErrorState,GcInventoryNav],
+ imports:[GcPageHeader,GcButtonDirective,GcErrorState,GcInventoryNav,GcDataTable],
  template:`
  <div class="inv-page">
   <gc-page-header title="Reportes de inventario"/>
@@ -66,30 +71,48 @@ function valueText(value:unknown,key:string):string {
    @else if(page.busy()){<p role="status" class="inv-muted">Actualizando reporte…</p>}
    @if(page.status()==='error'){<gc-error-state [message]="readError()" (retry)="reload()"/>}
    @if(page.data();as data){
-    <dl class="inv-kv">
-     @for(item of metrics();track item.key){
-      <div><dt>{{human(item.key)}}</dt><dd>{{show(item.value,item.key)}}</dd></div>
-     }
-    </dl>
-    @for(group of groups();track group.key){
-     <div class="inv-stack">
-      <div class="inv-row"><h3>{{human(group.key)}}</h3>
-       <span class="inv-muted">{{group.items.length}} elementos</span></div>
-      @for(item of group.items.slice(0,visible());track $index){
-       <dl class="inv-kv inv-card">
-        @for(pair of objectEntries(item);track pair.key){
-         <div><dt>{{human(pair.key)}}</dt><dd>{{show(pair.value,pair.key)}}</dd></div>
-        }
-       </dl>
-      }
-      @if(group.items.length>visible()){
-       <button type="button" gcButton variant="outline" (click)="visible.update(n=>n+25)">
-        Mostrar más ({{group.items.length-visible()}} restantes)
-       </button>
-      }
+    @if(type()==='valuation'){
+     <div class="inv-valuation-summary">
+      <div><span class="inv-muted">Valor total del inventario físico</span>
+       <strong>{{money(data['valorInventario'])}}</strong></div>
+      <div><span class="inv-muted">Método de valoración</span>
+       <strong class="inv-valuation-method">{{method(data['metodoValoracion'])}}</strong></div>
      </div>
+     <div class="inv-row">
+      <h2>Valor por artículo</h2>
+      <span class="inv-muted">{{valuationRows().length}} artículos</span>
+     </div>
+     @if(valuationMissingNames()){
+      <p class="inv-alert" role="status">El servidor todavía no proporciona nombres de artículos en este reporte. Actualiza el backend para visualizar los nombres y códigos.</p>
+     }
+     <gc-data-table [rows]="valuationRows()" [columns]="valuationColumns"/>
+     @if(data['nota']){<p class="inv-muted">{{data['nota']}}</p>}
+    } @else {
+     <dl class="inv-kv">
+      @for(item of metrics();track item.key){
+       <div><dt>{{human(item.key)}}</dt><dd>{{show(item.value,item.key)}}</dd></div>
+      }
+     </dl>
+     @for(group of groups();track group.key){
+      <div class="inv-stack">
+       <div class="inv-row"><h3>{{human(group.key)}}</h3>
+        <span class="inv-muted">{{group.items.length}} elementos</span></div>
+       @for(item of group.items.slice(0,visible());track $index){
+        <dl class="inv-kv inv-card">
+         @for(pair of objectEntries(item);track pair.key){
+          <div><dt>{{human(pair.key)}}</dt><dd>{{show(pair.value,pair.key)}}</dd></div>
+         }
+        </dl>
+       }
+       @if(group.items.length>visible()){
+        <button type="button" gcButton variant="outline" (click)="visible.update(n=>n+25)">
+         Mostrar más ({{group.items.length-visible()}} restantes)
+        </button>
+       }
+      </div>
+     }
+     @if(!metrics().length&&!groups().length){<p class="inv-muted">El reporte no devolvió registros.</p>}
     }
-    @if(!metrics().length&&!groups().length){<p class="inv-muted">El reporte no devolvió registros.</p>}
    }
   </section>
  </div>`,
@@ -103,9 +126,17 @@ export class GcInventoryReportsPage {
  protected readonly page=new GcPageState<Record<string,unknown>>();
  protected readonly types:readonly Report[]=['masters','valuation','expiry','reconciliation'];
  protected readonly labels=names;
+ protected readonly money=inventoryMoney;
+ protected readonly method=valuationMethod;
+ protected readonly valuationColumns:GcTableColumn[]=[
+  {key:'nombre',label:'Artículo'},{key:'codigo',label:'Código'},
+  {key:'valor',label:'Valor (GTQ)',numeric:true},
+ ];
  protected readonly type=computed<Report>(()=>this.types.includes(this.url.filters().tipo as Report)?
   this.url.filters().tipo as Report:'masters');
  protected readonly visible=signal(25);
+ protected readonly valuationRows=computed(()=>inventoryValuationRows(this.page.data()??{}));
+ protected readonly valuationMissingNames=computed(()=>valuationRowsMissingNames(this.valuationRows()));
  protected readonly metrics=computed(()=>Object.entries(this.page.data()??{})
   .filter(([,value])=>value===null||['string','number','boolean'].includes(typeof value))
   .filter(([key])=>!/(^id$|Id$)/.test(key))
