@@ -16,6 +16,7 @@ describe('Catalog edit forms retain saved selections',()=>{
  it('converts abbreviated details to a stable label and never shows raw IDs',()=>{
   expect(readableCategory({id:'cm123',nombre:'Cafés calientes'}))
    .toEqual({id:'cm123',nombre:'Cafés calientes',parentId:null,orden:0,activa:true});
+  expect(readableCategory({id:'old',nombre:'Cafés retirados',activa:false})?.activa).toBe(false);
   expect(readableCategory(null)).toBeNull();
  });
 });
