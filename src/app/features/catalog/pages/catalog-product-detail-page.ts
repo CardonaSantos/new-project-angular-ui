@@ -358,7 +358,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected async saveBranch(){
   const v=this.editVariant(),sucursalId=this.branch.branchId();
   if(!v||!sucursalId||!this.access.canManageBranch()||this.busy())return;
-  let pausadaHasta:string|null=null;
+  let pausadaHasta:string|null;
   try{pausadaHasta=this.branchPause()?new Date(this.branchPause()).toISOString():null}
   catch{this.variantError.set('Fecha de pausa inválida.');return}
   this.saving.set(true);this.variantError.set(null);
