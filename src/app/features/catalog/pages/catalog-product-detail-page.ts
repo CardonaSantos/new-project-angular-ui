@@ -282,7 +282,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
    const attached=this.editVariant()?.varianteGrupoModificadoresComoVariante??[];
    const prior=attached.flatMap(link=>link.grupo?[link.grupo]:[]);
    const selected=this.groups().find(x=>x.id===this.groupId());
-   const all=[...result.data];
+   const all:CatalogGroup[]=[...result.data];
    for(const item of [...prior,...(selected?[selected]:[])]){
     if(!all.some(x=>x.id===item.id))all.unshift(item);
    }
