@@ -17,7 +17,7 @@ export interface GcPageChange {
       <div class="gc-controls">
         <label for="gc-page-size">Filas</label>
         <select id="gc-page-size" [value]="size()" (change)="changeSize(+$any($event.target).value)">
-          @for (option of sizes; track option) { <option [value]="option">{{ option }}</option> }
+          @for (option of sizes; track option) { <option [value]="option" [selected]="option === size()">{{ option }}</option> }
         </select>
         <button type="button" [disabled]="index() <= 0"
           aria-label="Página anterior" (click)="previous()">Anterior</button>
