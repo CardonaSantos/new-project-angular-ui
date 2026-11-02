@@ -127,13 +127,22 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
      <ng-template gcTableCell="acciones" let-row>
       @if(link(row['id']);as url){<a class="inv-link" [routerLink]="url">Ver detalle</a>}
       @else if(view==='lots'){
-       <button type="button" gcButton variant="outline" [disabled]="action.busy()"
+       <button type="button" gcButton variant="outline" [disabled]="action.busy()||lotReason().trim().length<3"
         (click)="toggleLot(row)">{{row['bloqueado']?'Desbloquear':'Bloquear'}}</button>
       }
      </ng-template>
     </gc-data-table>
     <gc-pagination [index]="url.filters().page-1" [size]="url.filters().limit"
       [total]="page.data()?.total??0" (pageChange)="onPage($event)"/>
+   }
+
+   @if(view==='lots'&&access.canGlobal('inventory.articles.manage')){
+    <div class="inv-field">
+     <label for="lot-block-reason">Motivo para bloquear o desbloquear un lote</label>
+     <input id="lot-block-reason" [value]="lotReason()" maxlength="500"
+      (input)="lotReason.set($any($event.target).value)"
+      placeholder="Ej. Retiro preventivo por calidad"/>
+    </div>
    }
    @if(view==='stock'){<p class="inv-muted">Existencias físicas, no reservas de pedidos.</p>}
   </section>
@@ -192,6 +201,7 @@ export class GcInventoryListPage {
  protected readonly newLotManufacture=signal('');
  protected readonly newLotExpiry=signal('');
  protected readonly lotError=signal<string|null>(null);
+ protected readonly lotReason=signal('');
  protected readonly states=computed(()=>{
   if(this.view==='articles')return [{value:'true',label:'Activos'},{value:'false',label:'Inactivos'}];
   if(this.view==='counts')return ['BORRADOR','CONFIRMADO','CANCELADO'].map(v=>({value:v,label:v.replaceAll('_',' ')}));
@@ -300,6 +310,7 @@ export class GcInventoryListPage {
   await this.load(this.url.filters());
  }
  protected async toggleLot(row:GcTableRow){
+  if(this.lotReason().trim().length<3)return;
   const id=objectValue(row['id']);const current=row['bloqueado']===true;
   const next=!current;
   const r=await this.action.runConfirmed(this.dialog,{
@@ -307,9 +318,9 @@ export class GcInventoryListPage {
    message:next?'El lote quedará fuera de la cantidad utilizable. ¿Continuar?':
     '¿Desbloquear este lote para su uso?',
    confirmText:next?'Bloquear':'Desbloquear',danger:next,
-  },()=>firstValueFrom(this.api.blockLot(id,next,next?'Control preventivo de inventario':'Liberación autorizada del lote')));
+  },()=>firstValueFrom(this.api.blockLot(id,next,this.lotReason().trim())));
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.notice.show(gcErrorMessage(r.error),'error');return}
-  this.notice.show('Estado del lote actualizado.','success');await this.load(this.url.filters());
+  this.lotReason.set('');this.notice.show('Estado del lote actualizado.','success');await this.load(this.url.filters());
  }
 }

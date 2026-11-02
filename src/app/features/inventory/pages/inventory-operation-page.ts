@@ -10,7 +10,6 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
-import {OrganizationAccess} from '../../organization/data-access/organization-access';
 import {GcInventoryNav} from '../inventory-nav';
 import {GcInventorySubnav,OPERATION_LINKS} from '../components/inventory-subnav';
 import {GcInventoryPicker} from '../components/inventory-picker';
@@ -99,7 +98,6 @@ export class GcInventoryOperationPage {
  private readonly dialog=inject(ConfirmDialogService);
  private readonly notice=inject(GcNotificationService);
  private readonly router=inject(Router);
- private readonly access=inject(OrganizationAccess);
  protected readonly links=OPERATION_LINKS;
  protected readonly action=new GcConfirmedAction();
  protected readonly kind=signal<Operation>('inbound');
@@ -116,8 +114,13 @@ export class GcInventoryOperationPage {
  constructor(){
   this.form.valueChanges.subscribe(()=>this.key=crypto.randomUUID());
  }
- protected canWrite(){return this.access.canGlobal('inventory.adjust')||
-  this.branch.has('inventory.adjust')||this.branch.has('inventory.transfer')}
+ protected canWrite(){
+  const kind=this.kind();
+  if(kind==='consume')return this.branch.has('inventory.consume.internal');
+  if(kind==='opening'||kind==='inbound')
+   return this.branch.has('inventory.adjust')&&this.branch.has('inventory.costs.manage');
+  return this.branch.has('inventory.adjust');
+ }
  protected branchChange(id:string){
   this.warehouseId.set('');this.locationId.set('');this.lotId.set('');
   void this.url.patch({sucursalId:id});
@@ -134,8 +137,8 @@ export class GcInventoryOperationPage {
   }catch(e){this.error.set(e instanceof Error?e.message:gcErrorMessage(e));return}
   if((this.kind()==='opening'||this.kind()==='inbound')&&!cost){
    this.error.set('Indica el costo unitario de entrada.');return}
-  if(this.kind()==='consume'&&!v.destinoUso.trim()){
-   this.error.set('Indica el destino del consumo interno.');return}
+  if(this.kind()==='consume'&&(v.destinoUso.trim().length<3||v.motivo.trim().length<5)){
+   this.error.set('El destino requiere 3 caracteres y el motivo al menos 5.');return}
   const dto={articuloId:this.articleId(),ubicacionId:this.locationId(),
    ...(this.lotId()?{loteId:this.lotId()}:{}),cantidad:amount,
    claveOperacion:this.key,motivo:v.motivo.trim()};

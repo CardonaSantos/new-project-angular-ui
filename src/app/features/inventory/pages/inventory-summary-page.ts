@@ -86,10 +86,7 @@ export class GcInventorySummaryPage{
  constructor(){effect(()=>{const id=this.url.filters().sucursalId;if(id)void this.load(id)})}
  protected selectBranch(id:string){void this.url.patch({sucursalId:id})}
  protected quantity(v:string|null|undefined){try{return v?formatDecimal(v):'0'}catch{return '—'}}
- protected isLow(item:StockSummary){
-  if(item.stockMinimo===null)return false;
-  try{return parseApiDecimal(item.cantidad).lessThan(parseApiDecimal(item.stockMinimo))}catch{return false}
- }
+ protected isLow(item:StockSummary){return item.bajoMinimo===true}
  protected hasBlocked(item:StockSummary){
   try{return parseApiDecimal(item.cantidadBloqueada??'0').greaterThan(0)}catch{return false}
  }
