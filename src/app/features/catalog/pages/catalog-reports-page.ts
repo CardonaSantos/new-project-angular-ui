@@ -18,7 +18,7 @@ import {PRODUCT_KINDS,type CatalogPriceCoverage,type CatalogSummary} from '../da
     <label class="cat-field">Sucursal
      <select [value]="branchId()" (change)="chooseBranch($any($event.target).value)">
       @for(branch of context.branches();track branch.id){
-       <option [value]="branch.id">{{branch.nombre}}</option>
+       <option [value]="branch.id" [selected]="branch.id===branchId()">{{branch.nombre}}</option>
       }
      </select>
     </label>
