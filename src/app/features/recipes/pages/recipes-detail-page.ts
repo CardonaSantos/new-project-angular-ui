@@ -100,8 +100,14 @@ interface IngredientForm {
          <td>{{quantity(v.rendimiento,v.unidadRendimiento?.codigo)}}</td>
          <td>{{v.recetaComponentesComoRecetaVersion?.length??0}}</td>
          <td>{{v.activa&&v.publicadaEn?'Publicada':v.publicadaEn?'Anterior':'Borrador'}}</td>
-         <td><button type="button" (click)="selectVersion(v)" [disabled]="busy()">
-          {{v.publicadaEn?'Ver ingredientes':'Editar borrador'}}</button></td>
+         <td><div class="rec-actions">
+          <button type="button" (click)="selectVersion(v)" [disabled]="busy()">
+           {{v.publicadaEn?'Ver ingredientes':access.canManage()?'Editar borrador':'Ver ingredientes'}}</button>
+          @if(!v.publicadaEn&&access.canPublish()&&page.data()?.activa){
+           <button type="button" (click)="publishVersion(v)" [disabled]="busy()||formulaDirty()">
+            Publicar</button>
+          }
+         </div></td>
         </tr>
        } @empty {<tr><td colspan="5">Esta receta aún no tiene fórmulas.</td></tr>}
       </tbody>
@@ -113,7 +119,7 @@ interface IngredientForm {
     <section class="rec-card">
      <div class="rec-top">
       <h2>{{isNew?'Ingredientes de la receta':formulaVersionId()?'Fórmula en borrador':'Nueva fórmula'}}</h2>
-      @if(!isNew){<button type="button" (click)="cancelFormula()" [disabled]="busy()">Cerrar</button>}
+      @if(!isNew){<button type="button" (click)="discardFormula()" [disabled]="busy()">Cerrar</button>}
      </div>
      <div class="rec-form">
       <gc-inventory-picker id="yield-unit" kind="unit" label="Unidad de rendimiento"
@@ -229,17 +235,20 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected readonly quantity=readableQuantity;
  protected readonly versions=computed(()=>this.page.data()?.recetaVersionesComoReceta??[]);
  protected readonly validation=computed(()=>validateFormula(this.versionDto(),this.kind()==='PRODUCCION'?this.targetId():undefined));
- private initial='';
+ private formulaInitial='';
  private saved=false;
+ protected readonly formulaDirty=computed(()=>this.editingFormula()&&
+  JSON.stringify(this.formulaSnapshot())!==this.formulaInitial);
  private nextKey=0;
  hasUnsavedChanges(){
   if(this.saved)return false;
-  const snapshot=JSON.stringify(this.snapshot());
-  return this.initial?this.initial!==snapshot:(!!this.name()||!!this.targetId()||this.ingredients().length>0);
+  if(this.isNew)return !!this.name()||!!this.targetId()||this.ingredients().length>0;
+  const saved=this.page.data();
+  return !!saved&&(this.name()!==saved.nombre||this.active()!==saved.activa||this.formulaDirty());
  }
- private snapshot(){return {name:this.name(),kind:this.kind(),active:this.active(),target:this.targetId(),
-  editor:this.editingFormula(),version:this.formulaVersionId(),unit:this.unitId(),amount:this.yieldAmount(),
-  shelf:this.shelfLife(),ingredients:this.ingredients(),publish:this.publishNow()}}
+ private formulaSnapshot(){return {version:this.formulaVersionId(),unit:this.unitId(),
+  amount:this.yieldAmount(),shelf:this.shelfLife(),ingredients:this.ingredients(),
+  publish:this.publishNow()}}
  async ngOnInit(){
   if(this.isNew){await this.findVariants();return}
   await this.reload();
@@ -251,7 +260,7 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
   this.name.set(r.nombre);this.kind.set(r.tipo);this.active.set(r.activa);
   this.targetId.set(r.tipo==='VENTA'?r.varianteId??'':r.articuloResultadoId??'');
   this.cancelFormula();this.viewingVersion.set(null);
-  this.initial=JSON.stringify(this.snapshot());
+  this.formulaInitial=JSON.stringify(this.formulaSnapshot());
  }
  protected changeKind(kind:string){
   this.kind.set(kind==='PRODUCCION'?'PRODUCCION':'VENTA');this.targetId.set('');
@@ -266,6 +275,9 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected async saveRecipe(event:Event){
   event.preventDefault();
   if(this.isNew||!this.access.canManage()||this.busy())return;
+  if(this.formulaDirty()){
+   this.formError.set('Guarda la fórmula o cierra su edición antes de cambiar los datos generales.');return;
+  }
   const original=this.page.data();if(!original)return;
   const changes={
    ...(this.name().trim()!==original.nombre?{nombre:this.name().trim()}:{}),
@@ -305,19 +317,31 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
     mermaPorcentaje:x.mermaPorcentaje
    })),publicar:this.publishNow()&&this.access.canPublish()};
  }
- protected startNewVersion(){
+ protected async startNewVersion(){
+  if(this.formulaDirty()){
+   const ok=await this.confirm.confirm({title:'Descartar cambios de fórmula',
+    message:'Se perderán los cambios que todavía no has guardado.',confirmText:'Continuar',danger:true});
+   if(!ok)return;
+  }
   const base=this.versions().find(x=>x.activa&&x.publicadaEn)??this.versions()[0];
   this.formulaVersionId.set(null);
   this.viewingVersion.set(null);
   this.loadVersion(base);
   this.editingFormula.set(true);this.publishNow.set(false);this.formulaError.set(null);
+  this.formulaInitial=JSON.stringify(this.formulaSnapshot());
  }
- protected selectVersion(v:RecipeVersion){
+ protected async selectVersion(v:RecipeVersion){
+  if(this.formulaDirty()){
+   const ok=await this.confirm.confirm({title:'Descartar cambios de fórmula',
+    message:'Se perderán los cambios que todavía no has guardado.',confirmText:'Continuar',danger:true});
+   if(!ok)return;
+  }
   if(v.publicadaEn){this.viewingVersion.set(v);this.editingFormula.set(false);return}
   if(!this.access.canManage()){this.viewingVersion.set(v);return}
   this.viewingVersion.set(null);this.formulaVersionId.set(v.id);
   this.loadVersion(v);this.editingFormula.set(true);this.publishNow.set(false);
   this.formulaError.set(null);
+  this.formulaInitial=JSON.stringify(this.formulaSnapshot());
  }
  private loadVersion(v?:RecipeVersion){
   this.unitId.set(v?.unidadRendimientoId??'');
@@ -329,6 +353,14 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
    unidadId:x.unidadId,unidadNombre:x.unidad?.nombre??'',
    cantidad:x.cantidad,mermaPorcentaje:x.mermaPorcentaje
   })));
+ }
+ protected async discardFormula(){
+  if(this.formulaDirty()){
+   const ok=await this.confirm.confirm({title:'Cerrar la fórmula',
+    message:'Se perderán los cambios que todavía no has guardado.',confirmText:'Cerrar',danger:true});
+   if(!ok)return;
+  }
+  this.cancelFormula();
  }
  protected cancelFormula(){
   this.editingFormula.set(false);this.formulaVersionId.set(null);
@@ -360,6 +392,9 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  }
  protected async publishVersion(v:RecipeVersion){
   if(!this.access.canPublish()||v.publicadaEn||this.busy())return;
+  if(this.formulaDirty()){
+   this.formulaError.set('Guarda o descarta los cambios antes de publicar otra fórmula.');return;
+  }
   const ok=await this.confirm.confirm({title:'Publicar fórmula',
    message:'La fórmula publicada se utilizará en nuevas preparaciones y ya no podrá editarse.',
    confirmText:'Publicar'});
