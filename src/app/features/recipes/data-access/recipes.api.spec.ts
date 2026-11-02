@@ -48,6 +48,10 @@ describe('REC-A UI contracts (phase 1)',()=>{
   r=http.expectOne(recipePaths.version('rv1'));expect(r.request.method).toBe('PUT');r.flush({});
   api.publish('rv1').subscribe();
   r=http.expectOne(recipePaths.publish('rv1'));expect(r.request.method).toBe('POST');r.flush({});
+  api.unpublish('rv1').subscribe();
+  r=http.expectOne(recipePaths.unpublish('rv1'));expect(r.request.method).toBe('POST');r.flush({activa:false});
+  api.discardVersion('draft1').subscribe();
+  r=http.expectOne(recipePaths.version('draft1'));expect(r.request.method).toBe('DELETE');r.flush({descartada:true});
   api.preview('rv1',{sucursalId:'b1'}).subscribe();
   r=http.expectOne(x=>x.url===recipePaths.versionPreview('rv1'));
   expect(r.request.params.has('ubicacionId')).toBe(false);r.flush({});
