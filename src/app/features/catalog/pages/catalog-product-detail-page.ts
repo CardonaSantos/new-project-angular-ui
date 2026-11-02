@@ -111,7 +111,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
          [disabled]="!access.canManage()"/>
        </label>
        @if(product.tipo==='INVENTARIABLE'){
-        @if(editVariant()?.articuloInventario?.nombre){<p class="cat-muted">Artículo actual: {{editVariant()?.articuloInventario?.nombre}}</p>}
+        @if(editVariant()?.articuloInventario?.nombre){<p class="cat-muted">Artículo asociado: {{editVariant()?.articuloInventario?.nombre}}</p>}
         <gc-inventory-picker id="catalog-linked-article" label="Artículo físico de Inventario"
          kind="article" [value]="articleId()" (valueChange)="articleId.set($event)"
          [disabled]="!access.canManage()"/>
@@ -192,7 +192,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       @for(v of r.variantes;track v.varianteId){
        @for(code of v.advertencias;track code){<p class="cat-muted">{{warning(code)}}</p>}
       }
-     } @else {<p class="cat-muted">Selecciona una sucursal para consultar la preparación comercial.</p>}
+     } @else {<p class="cat-muted">Selecciona una sucursal para revisar este producto.</p>}
     </section>
     <section class="cat-card">
      <h2>Estado del producto</h2>
