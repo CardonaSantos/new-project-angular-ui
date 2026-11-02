@@ -259,9 +259,12 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected async searchCategories(){
   try{
    const result=await firstValueFrom(this.api.categoryOptions({search:this.categorySearch().trim(),limit:50}));
+   const options:CatalogCategory[]=result.data.map(x=>({
+    id:x.id,nombre:x.label,parentId:x.parentId,orden:0,activa:true
+   }));
    const selected=this.page.data()?.categoria;
-   this.categories.set(selected&&!result.data.some(x=>x.id===selected.id)?
-    [selected,...result.data]:result.data);
+   this.categories.set(selected&&!options.some(x=>x.id===selected.id)?
+    [selected,...options]:options);
   }catch(e){this.saveError.set(gcErrorMessage(e))}
  }
  protected async searchGroups(){
