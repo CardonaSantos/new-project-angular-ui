@@ -20,6 +20,8 @@ export const RECIPES_ROUTES:Routes=[
  {path:'packaging',title:'Reglas de empaque — Gastro Core',data:{breadcrumb:'Empaques'},
   canDeactivate:[gcUnsavedChangesGuard],
   loadComponent:()=>import('./pages/recipes-packaging-page').then(x=>x.GcRecipesPackagingPage)},
+ {path:'check',title:'Comprobar ingredientes — Gastro Core',data:{breadcrumb:'Comprobar ingredientes'},
+  loadComponent:()=>import('./pages/recipes-check-page').then(x=>x.GcRecipesCheckPage)},
  {path:'production',data:{breadcrumb:'Producción'},children:[
   {path:'',title:'Producción — Gastro Core',
    loadComponent:()=>import('./pages/recipes-production-page').then(x=>x.GcRecipesProductionPage)},
