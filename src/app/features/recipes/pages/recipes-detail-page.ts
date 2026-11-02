@@ -55,9 +55,9 @@ interface IngredientForm {
           (keydown.enter)="$event.preventDefault();findVariants()"/>
         </label><button type="button" (click)="findVariants()">Buscar</button>
         <label class="rec-field">Presentación
-         <select [value]="targetId()" (change)="targetId.set($any($event.target).value)">
+         <select [value]="targetId()" (change)="chooseVariant($any($event.target).value)">
           <option value="" [selected]="!targetId()">Seleccionar presentación</option>
-          @for(v of variants();track v.id){
+          @for(v of visibleVariants();track v.id){
            <option [value]="v.id" [selected]="v.id===targetId()">{{v.label??(v.producto?.nombre+' · '+v.nombre)}}</option>
           }
          </select>
@@ -66,7 +66,7 @@ interface IngredientForm {
        @if(moreVariants()){<p class="rec-muted rec-wide">Busca por el nombre para encontrar más presentaciones.</p>}
       } @else {
        <gc-inventory-picker class="rec-wide" id="recipe-result" kind="article"
-        label="Preparación que obtendrás" [value]="targetId()" (valueChange)="targetId.set($event)"/>
+        label="Preparación que obtendrás" [value]="targetId()" (valueChange)="chooseOutput($event)"/>
        <p class="rec-note rec-wide">Selecciona un artículo de preparación o producto terminado del Inventario.</p>
       }
      } @else if(page.data();as recipe){
@@ -218,6 +218,12 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected readonly targetId=signal('');
  protected readonly variantSearch=signal('');
  protected readonly variants=signal<CatalogVariant[]>([]);
+ protected readonly selectedVariant=signal<CatalogVariant|null>(null);
+ protected readonly visibleVariants=computed(()=>{
+  const all=[...this.variants()],saved=this.selectedVariant();
+  if(saved&&!all.some(x=>x.id===saved.id))all.unshift(saved);
+  return all;
+ });
  protected readonly moreVariants=signal(false);
  protected readonly editingFormula=signal(false);
  protected readonly formulaVersionId=signal<string|null>(null);
@@ -250,7 +256,19 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
   amount:this.yieldAmount(),shelf:this.shelfLife(),ingredients:this.ingredients(),
   publish:this.publishNow()}}
  async ngOnInit(){
-  if(this.isNew){await this.findVariants();return}
+  if(this.isNew){
+   await this.findVariants();
+   const linked=this.route.snapshot.queryParamMap.get('varianteId');
+   if(linked){
+    try{
+     const variant=await firstValueFrom(this.catalog.variant(linked));
+     if(variant.activo&&variant.producto?.tipo==='PREPARADO'){
+      this.selectedVariant.set(variant);this.targetId.set(variant.id);
+     }
+    }catch{/* The form remains usable if the linked product is no longer available. */}
+   }
+   return;
+  }
   await this.reload();
  }
  protected pageError(){return gcErrorMessage(this.page.error())}
@@ -264,6 +282,25 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  }
  protected changeKind(kind:string){
   this.kind.set(kind==='PRODUCCION'?'PRODUCCION':'VENTA');this.targetId.set('');
+  this.selectedVariant.set(null);this.formError.set(null);
+ }
+ protected chooseVariant(id:string){
+  this.targetId.set(id);
+  this.selectedVariant.set(this.visibleVariants().find(x=>x.id===id)??null);
+ }
+ protected async chooseOutput(id:string){
+  this.targetId.set(id);this.formError.set(null);
+  if(!id)return;
+  try{
+   const article=await firstValueFrom(this.inventory.article(id));
+   if(this.targetId()!==id)return;
+   if(article.tipo!=='PREPARACION'&&article.tipo!=='PRODUCTO_TERMINADO'){
+    this.targetId.set('');
+    this.formError.set('Elige una preparación o un producto terminado del Inventario.');return;
+   }
+   this.unitId.set(article.unidadBase.id);
+   this.unitLabel.set(article.unidadBase.nombre+' ('+article.unidadBase.codigo+')');
+  }catch(e){this.formError.set(gcErrorMessage(e))}
  }
  protected async findVariants(){
   try{
