@@ -1,4 +1,4 @@
-import {Component,inject,signal,computed} from '@angular/core';
+import {Component,inject,signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
