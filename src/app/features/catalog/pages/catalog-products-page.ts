@@ -29,8 +29,8 @@ import {PRODUCT_KINDS,type CatalogProduct,type CatalogCategory,type CatalogPage}
     <button type="button" (click)="applySearch()">Buscar</button>
     <label class="cat-field">Categoría
      <select [value]="category()" (change)="patch({categoriaId:$any($event.target).value||null,page:null})">
-      <option value="">Todas</option>
-      @for(item of categories();track item.id){<option [value]="item.id">{{item.nombre}}</option>}
+      <option value="" [selected]="!category()">Todas</option>
+      @for(item of categories();track item.id){<option [value]="item.id" [selected]="item.id===category()">{{item.nombre}}</option>}
      </select>
     </label>
     <label class="cat-field">Tipo
