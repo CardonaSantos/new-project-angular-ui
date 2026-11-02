@@ -2,7 +2,7 @@
 import {Component,computed,effect,inject,input,output,signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {InventoryApi} from '../data-access/inventory.api';
-import type {InventoryKind} from '../data-access/inventory.models';
+import type {InventoryKind,Dimension} from '../data-access/inventory.models';
 
 export type InventoryPickerKind='article'|'warehouse'|'location'|'lot'|'unit';
 interface Choice {id:string;label:string}
@@ -41,6 +41,8 @@ export class GcInventoryPicker {
  readonly articleId=input('');
  /** Restrict article searches when a form requires a specific inventory category. */
  readonly articleKind=input<InventoryKind|''>('');
+ /** Limits units to the dimension of the ingredient or commercial yield. */
+ readonly unitDimension=input<Dimension|''>('');
  readonly disabled=input(false);
  readonly valueChange=output<string>();
  protected readonly search=signal('');
@@ -60,7 +62,7 @@ export class GcInventoryPicker {
  private generation=0;
  constructor(){
   effect(()=>{
-   this.kind();this.branchId();this.warehouseId();this.articleId();this.articleKind();
+   this.kind();this.branchId();this.warehouseId();this.articleId();this.articleKind();this.unitDimension();
    void this.load();
   });
   effect(()=>{
@@ -112,7 +114,7 @@ export class GcInventoryPicker {
     }));
     items=r.data.map(x=>({id:x.id,label:x.label||x.nombre||x.codigo}));more=r.meta.hasMore;
    }else if(kind==='unit'){
-    const r=await firstValueFrom(this.api.unitOptions({search,limit:50}));
+    const r=await firstValueFrom(this.api.unitOptions({search,limit:50,dimension:this.unitDimension()||undefined}));
     items=r.data.map(x=>({id:x.id,label:x.nombre+' ('+x.codigo+')'}));more=r.meta.hasMore;
    }else{
     if(!this.articleId()||!this.branchId())return;
