@@ -63,13 +63,13 @@ export class GcInventoryPicker {
    }else if(kind==='warehouse'){
     if(!this.branchId())return;
     const r=await firstValueFrom(this.api.warehouseOptions({search,sucursalId:this.branchId(),limit:50}));
-    items=r.data.map(x=>({id:x.id,label:x.nombre}));more=r.meta.hasMore;
+    items=r.data.map(x=>({id:x.id,label:x.label||x.nombre||x.codigo}));more=r.meta.hasMore;
    }else if(kind==='location'){
     if(!this.warehouseId())return;
     const r=await firstValueFrom(this.api.locationOptions({
      almacenId:this.warehouseId(),sucursalId:this.branchId()||undefined,search,limit:50
     }));
-    items=r.data.map(x=>({id:x.id,label:x.nombre}));more=r.meta.hasMore;
+    items=r.data.map(x=>({id:x.id,label:x.label||x.nombre||x.codigo}));more=r.meta.hasMore;
    }else if(kind==='unit'){
     const r=await firstValueFrom(this.api.unitOptions({search,limit:50}));
     items=r.data.map(x=>({id:x.id,label:x.nombre+' ('+x.codigo+')'}));more=r.meta.hasMore;
