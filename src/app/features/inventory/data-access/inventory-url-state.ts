@@ -1,5 +1,5 @@
 
-import {computed,inject,Injectable} from '@angular/core';
+import {computed,effect,inject,Injectable} from '@angular/core';
 import {ActivatedRoute,Router} from '@angular/router';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -34,6 +34,17 @@ export class InventoryUrlState {
    ubicacionId:p.get('ubicacionId')??'',loteId:p.get('loteId')??'',sucursalId:branchId,
   };
  });
+ constructor(){
+  effect(()=>{
+   const desired=this.branch.branchId(),branches=this.branch.branches();
+   const requested=this.params().get('sucursalId');
+   const chosen=desired&&branches.some(b=>b.id===desired)?desired:branches[0]?.id;
+   if(!chosen||requested&&branches.some(b=>b.id===requested))return;
+   void Promise.resolve().then(()=>this.router.navigate([],{
+    relativeTo:this.route,queryParams:{sucursalId:chosen},queryParamsHandling:'merge',replaceUrl:true
+   }));
+  });
+ }
  async patch(patch:Record<string,string|number|null>):Promise<boolean>{
   const params:Record<string,string|null>={};
   for(const [key,value] of Object.entries(patch)){

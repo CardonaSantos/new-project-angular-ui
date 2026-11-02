@@ -24,6 +24,7 @@ export const INVENTORY_ROUTES:Routes=[
  {path:'stock',data:{breadcrumb:'Existencias'},children:[
   listing('stock','Existencias'),
   {path:'lots',data:{breadcrumb:'Lotes',view:'lots'},title:'Lotes — Gastro Core',
+   canDeactivate:[gcUnsavedChangesGuard],
    loadComponent:()=>import('./pages/inventory-list-page').then(m=>m.GcInventoryListPage)}
  ]},
  {path:'operations',data:{breadcrumb:'Operaciones'},children:[

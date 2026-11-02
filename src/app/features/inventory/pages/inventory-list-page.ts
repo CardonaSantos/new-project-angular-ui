@@ -278,6 +278,7 @@ export class GcInventoryListPage {
    return {rows,total};
   },r=>r.rows.length===0);
  }
+ hasUnsavedChanges(){return !!this.newLotCode().trim()||!!this.newLotExpiry()||!!this.newLotManufacture()}
  protected async createLot(){
   this.lotError.set(null);
   const article=this.newLotArticle(),code=this.newLotCode().trim();
