@@ -79,7 +79,7 @@ export class InventoryApi {
  stock(q:BranchFilters){return this.http.get<InventoryPage<StockPosition>>(this.e.stock,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<StockPosition>>())}
  summary(q:BranchFilters){return this.http.get<{data:StockSummary[];totalArticulos:number;nota:string}>(this.e.stockSummary,{params:inventoryParams(q)})}
  lots(q:BranchFilters&{incluirSinExistencias?:boolean}){
-  return this.http.get<InventoryPage<InventoryLot>>(this.e.lots,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<InventoryLot>>())
+  return this.http.get<InventoryPage<InventoryLot>>(this.e.lots,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<InventoryLot>>())}
  createLot(dto:{articuloId:string;codigoLote:string;fechaElaboracion?:string;fechaVencimiento?:string}){
   return this.http.post<InventoryLot>(this.e.lots,dto,silent)}
  blockLot(id:string,bloqueado:boolean,motivo:string){
@@ -92,13 +92,13 @@ export class InventoryApi {
  claveOperacion:string;destinoUso:string;motivo:string}){
   return this.http.post<InventoryMovement>(this.e.internalConsumption,dto,silent)}
  counts(q:{sucursalId:string;almacenId?:string;estado?:CountStatus;page?:number;limit?:number}){
-  return this.http.get<InventoryPage<CountListItem>>(this.e.counts,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<CountListItem>>())
+  return this.http.get<InventoryPage<CountListItem>>(this.e.counts,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<CountListItem>>())}
  count(id:string){return this.http.get<CountDetail>(this.e.count(id))}
  createCount(dto:CountCreate){return this.http.post<CountDetail>(this.e.counts,dto,silent)}
  countAction(id:string,action:'confirm'|'cancel'){
   return this.http.post<CountDetail>(this.e.countAction(id,action),{},silent)}
  transfers(q:{sucursalId:string;almacenOrigenId?:string;almacenDestinoId?:string;estado?:TransferStatus;page?:number;limit?:number}){
-  return this.http.get<InventoryPage<TransferListItem>>(this.e.transfers,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<TransferListItem>>())
+  return this.http.get<InventoryPage<TransferListItem>>(this.e.transfers,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<TransferListItem>>())}
  transfer(id:string){return this.http.get<TransferDetail>(this.e.transfer(id))}
  createTransfer(dto:TransferCreate){return this.http.post<TransferDetail>(this.e.transfers,dto,silent)}
  transferAction(id:string,action:'dispatch'|'receive'|'cancel'){
