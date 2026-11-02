@@ -6,9 +6,9 @@ export function keepSelected<T extends {id:string}>(
  return entries.some(entry=>entry.id===selected.id)?[...entries]:[selected,...entries];
 }
 export function readableCategory(
- source:{id:string;nombre:string;parentId?:string|null}|null|undefined
+ source:{id:string;nombre:string;parentId?:string|null;activa?:boolean}|null|undefined
 ){
  if(!source)return null;
  return {id:source.id,nombre:source.nombre,parentId:source.parentId??null,
-  orden:0,activa:true};
+  orden:0,activa:source.activa??true};
 }
