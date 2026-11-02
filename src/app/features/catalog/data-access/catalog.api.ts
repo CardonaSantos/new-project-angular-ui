@@ -21,7 +21,7 @@ export function catalogParams(values:object):HttpParams{
  return params;
 }
 const silent={context:gcSilentRequest()};
-const params=(values:object)=>({params:catalogParams(values)});
+const params=(values:object)=>({params:catalogParams(values),...silent});
 
 /** CAT-A's 46 authenticated routes, grouped by the server's domain ownership.
  * No mutation uses automatic retry: prices, menus and publishing have business effects. */
@@ -35,12 +35,12 @@ export class CatalogApi {
   return this.http.get<CatalogPage<CatalogCategory>>(this.e.categories,params(q));
  }
  categoryTree(){
-  return this.http.get<{data:CatalogCategory[];total:number}>(this.e.categoryTree);
+  return this.http.get<{data:CatalogCategory[];total:number}>(this.e.categoryTree,silent);
  }
  categoryOptions(q:CatalogOptionsQuery={}){
   return this.http.get<CatalogOptions<CatalogCategory&{label:string}>>(this.e.categoryOptions,params(q));
  }
- category(id:string){return this.http.get<CatalogCategory>(this.e.category(id))}
+ category(id:string){return this.http.get<CatalogCategory>(this.e.category(id),silent)}
  createCategory(dto:CatalogCategoryCreate){return this.http.post<CatalogCategory>(this.e.categories,dto,silent)}
  updateCategory(id:string,dto:CatalogCategoryPatch){
   return this.http.patch<CatalogCategory>(this.e.category(id),dto,silent);
@@ -158,7 +158,7 @@ export class CatalogApi {
  createMenu(dto:CatalogMenuCreate){
   return this.http.post<CatalogMenu>(this.e.menus,dto,silent);
  }
- menu(id:string){return this.http.get<CatalogMenu>(this.e.menu(id))}
+ menu(id:string){return this.http.get<CatalogMenu>(this.e.menu(id),silent)}
  updateMenu(id:string,dto:CatalogMenuPatch){
   return this.http.patch<CatalogMenu>(this.e.menu(id),dto,silent);
  }
