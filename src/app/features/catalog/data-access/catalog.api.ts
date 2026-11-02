@@ -4,7 +4,7 @@ import {throwError} from 'rxjs';
 import {API_ENDPOINTS} from '../../../core/http/api-endpoints';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
- CatalogCategory,CatalogCategoryCreate,CatalogCategoryPatch,CatalogProduct,
+ CatalogCategory,CatalogCategoryOption,CatalogCategoryCreate,CatalogCategoryPatch,CatalogProduct,
  CatalogProductCreate,CatalogProductPatch,CatalogVariant,CatalogVariantInput,
  CatalogVariantPatch,CatalogVariantBranchPatch,CatalogGroup,CatalogGroupCreate,
  CatalogGroupPatch,CatalogModifier,CatalogModifierCreate,CatalogModifierPatch,
@@ -39,7 +39,7 @@ export class CatalogApi {
   return this.http.get<{data:CatalogCategory[];total:number}>(this.e.categoryTree,silent);
  }
  categoryOptions(q:CatalogOptionsQuery={}){
-  return this.http.get<CatalogOptions<CatalogCategory&{label:string}>>(this.e.categoryOptions,params(q));
+  return this.http.get<CatalogOptions<CatalogCategoryOption>>(this.e.categoryOptions,params(q));
  }
  category(id:string){return this.http.get<CatalogCategory>(this.e.category(id),silent)}
  createCategory(dto:CatalogCategoryCreate){return this.http.post<CatalogCategory>(this.e.categories,dto,silent)}
