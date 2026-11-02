@@ -112,13 +112,13 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
          <label class="cat-field">Producto
           <select [value]="productId()" (change)="chooseProduct($any($event.target).value)">
            <option value="">Seleccionar producto</option>
-           @for(product of products();track product.id){<option [value]="product.id">{{product.nombre}}</option>}
+           @for(product of products();track product.id){<option [value]="product.id" [selected]="product.id===productId()">{{product.nombre}}</option>}
           </select>
          </label>
          <label class="cat-field">Presentación
           <select [value]="variantId()" (change)="variantId.set($any($event.target).value)">
            <option value="">Seleccionar presentación</option>
-           @for(variant of variants();track variant.id){<option [value]="variant.id">{{variant.nombre}}</option>}
+           @for(variant of variants();track variant.id){<option [value]="variant.id" [selected]="variant.id===variantId()">{{variant.nombre}}</option>}
           </select>
          </label>
          <button type="button" (click)="appendItem(i)" [disabled]="!variantId()">Agregar presentación</button>
