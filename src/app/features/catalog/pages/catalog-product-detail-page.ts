@@ -14,6 +14,7 @@ import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
 import type {CatalogProduct,CatalogCategory,CatalogVariant,CatalogGroup,CatalogGroupAttachment,CatalogProductReadiness} from '../data-access/catalog.models';
 import {PRODUCT_KINDS} from '../data-access/catalog.models';
+import {keepSelected,readableCategory} from '../data-access/catalog-selection';
 import {catalogProductRoute} from '../data-access/catalog-product-route';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 
@@ -80,7 +81,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
      </tr></thead><tbody>
       @for(v of variants();track v.id){
        <tr><td>{{v.nombre}} @if(v.sku){<span class="cat-muted">· {{v.sku}}</span>}</td>
-       <td>{{v.articuloInventario?.nombre??'No vinculado'}}</td>
+       <td>{{product.tipo==='INVENTARIABLE'?(v.articuloInventario?.nombre??'Sin artículo asociado'):'No corresponde'}}</td>
        <td>{{v.activo?'Activa':'Inactiva'}}</td>
        <td><button type="button" (click)="chooseVariant(v)">Configurar</button></td></tr>
       } @empty {<tr><td colspan="4">Todavía no hay variantes comerciales.</td></tr>}
@@ -262,18 +263,24 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
    const options:CatalogCategory[]=result.data.map(x=>({
     id:x.id,nombre:x.label,parentId:x.parentId,orden:0,activa:true
    }));
-   const selected=this.page.data()?.categoria;
-   this.categories.set(selected&&!options.some(x=>x.id===selected.id)?
-    [selected,...options]:options);
+   const currentId=this.category();
+   const existing=this.categories().find(x=>x.id===currentId)??null;
+   const saved=readableCategory(this.page.data()?.categoria);
+   const selected=existing??(saved?.id===currentId?saved:null);
+   this.categories.set(keepSelected(options,selected));
   }catch(e){this.saveError.set(gcErrorMessage(e))}
  }
  protected async searchGroups(){
   try{
    const result=await firstValueFrom(this.api.modifierGroupOptions({search:this.groupSearch().trim(),limit:50}));
    const attached=this.editVariant()?.varianteGrupoModificadoresComoVariante??[];
-   const present=result.data.map(x=>x.id);
-   const prior=attached.flatMap(link=>link.grupo&&!present.includes(link.grupoId)?[link.grupo]:[]);
-   this.groups.set([...prior,...result.data]);
+   const prior=attached.flatMap(link=>link.grupo?[link.grupo]:[]);
+   const selected=this.groups().find(x=>x.id===this.groupId());
+   const all=[...result.data];
+   for(const item of [...prior,...(selected?[selected]:[])]){
+    if(!all.some(x=>x.id===item.id))all.unshift(item);
+   }
+   this.groups.set(all);
   }catch(e){this.variantError.set(gcErrorMessage(e))}
  }
  protected error(){return gcErrorMessage(this.page.error())}
@@ -282,6 +289,12 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   const d=this.page.data();if(!d)return;
   this.code.set(d.codigo);this.name.set(d.nombre);this.description.set(d.descripcion??'');
   this.kind.set(d.tipo);this.category.set(d.categoriaId??d.categoria?.id??'');
+  // Product details arrive after the first search. Always restore their saved category.
+  let saved=readableCategory(d.categoria);
+  if(!saved&&this.category()){
+   try{saved=readableCategory(await firstValueFrom(this.api.category(this.category())))}catch{/* unavailable category */}
+  }
+  this.categories.set(keepSelected(this.categories(),saved));
   this.visible.set(d.visibleEnMenu);this.editVariant.set(null);
   await this.fetchReadiness();
  }
@@ -336,9 +349,18 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   this.creatingVariant.set(false);this.editVariant.set(v);
   this.variantName.set(v.nombre);this.variantSku.set(v.sku??'');this.variantOrder.set(v.orden);
   this.variantActive.set(v.activo);this.articleId.set(v.articuloInventarioId??v.articuloInventario?.id??'');
-  this.links.set((v.varianteGrupoModificadoresComoVariante??[]).map(x=>({
+  const attached=v.varianteGrupoModificadoresComoVariante??[];
+  this.links.set(attached.map(x=>({
    grupoId:x.grupoId,orden:x.orden,obligatorio:x.obligatorio
   })));
+  // Preserve each associated group even if it is absent from the current search.
+  this.groups.update(current=>{
+   const all=[...current];
+   for(const link of attached){
+    if(link.grupo&&!all.some(x=>x.id===link.grupoId))all.push(link.grupo);
+   }
+   return all;
+  });
   if(this.branch.branchId())try{
    const response=await firstValueFrom(this.api.variant(v.id,this.branch.branchId()!));
    this.branchEnabled.set(response.habilitadaSucursal??true);
