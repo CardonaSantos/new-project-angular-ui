@@ -44,6 +44,9 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       </select>
      </label>
      <label>Categoría
+      <input placeholder="Buscar categoría" [value]="categorySearch()" maxlength="120"
+       (input)="categorySearch.set($any($event.target).value)" (keyup.enter)="searchCategories()"/>
+      <button type="button" (click)="searchCategories()">Buscar categoría</button>
       <select [value]="category()" (change)="category.set($any($event.target).value)" [disabled]="!access.canManage()">
        <option value="">Sin categoría</option>
        @for(c of categories();track c.id){<option [value]="c.id">{{c.nombre}}</option>}
@@ -120,6 +123,13 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       @if(editVariant();as v){
        <hr/>
        <h2>Extras permitidos para {{v.nombre}}</h2>
+       <div class="cat-toolbar">
+        <label class="cat-field">Buscar grupos de extras
+         <input [value]="groupSearch()" maxlength="120"
+          (input)="groupSearch.set($any($event.target).value)" (keyup.enter)="searchGroups()"/>
+        </label>
+        <button type="button" (click)="searchGroups()">Buscar grupos</button>
+       </div>
        <p class="cat-muted">Asocia grupos configurados en Extras. Los límites de elección son propios del grupo.</p>
        <div class="cat-form">
         @for(link of links();track link.grupoId){
@@ -206,6 +216,8 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  private committed=false;
  protected readonly page=new GcPageState<CatalogProduct>();
  protected readonly categories=signal<CatalogCategory[]>([]);
+ protected readonly categorySearch=signal('');
+ protected readonly groupSearch=signal('');
  protected readonly groups=signal<CatalogGroup[]>([]);
  protected readonly readiness=signal<CatalogProductReadiness|null>(null);
  protected readonly kinds=PRODUCT_KINDS;
@@ -241,15 +253,26 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
    this.category()!==(d.categoriaId??d.categoria?.id??'')||this.visible()!==d.visibleEnMenu);
  }
  async ngOnInit(){
-  try{
-   const r=await firstValueFrom(this.api.categoryTree());
-   this.categories.set(r.data.flatMap(x=>this.flatten(x)));
-   const g=await firstValueFrom(this.api.modifierGroups({page:1,limit:100}));
-   this.groups.set(g.data);
-  }catch(e){this.saveError.set(gcErrorMessage(e))}
+  await Promise.all([this.searchCategories(),this.searchGroups()]);
   if(!this.isNew)await this.reload();
  }
- private flatten(x:CatalogCategory):CatalogCategory[]{return [x,...(x.children??[]).flatMap(c=>this.flatten(c))]}
+ protected async searchCategories(){
+  try{
+   const result=await firstValueFrom(this.api.categoryOptions({search:this.categorySearch().trim(),limit:50}));
+   const selected=this.page.data()?.categoria;
+   this.categories.set(selected&&!result.data.some(x=>x.id===selected.id)?
+    [selected,...result.data]:result.data);
+  }catch(e){this.saveError.set(gcErrorMessage(e))}
+ }
+ protected async searchGroups(){
+  try{
+   const result=await firstValueFrom(this.api.modifierGroupOptions({search:this.groupSearch().trim(),limit:50}));
+   const attached=this.editVariant()?.varianteGrupoModificadoresComoVariante??[];
+   const present=result.data.map(x=>x.id);
+   const prior=attached.flatMap(link=>link.grupo&&!present.includes(link.grupoId)?[link.grupo]:[]);
+   this.groups.set([...prior,...result.data]);
+  }catch(e){this.variantError.set(gcErrorMessage(e))}
+ }
  protected error(){return gcErrorMessage(this.page.error())}
  protected async reload(){
   await this.page.load(()=>firstValueFrom(this.api.product(this.id,this.branch.branchId()??undefined)));
