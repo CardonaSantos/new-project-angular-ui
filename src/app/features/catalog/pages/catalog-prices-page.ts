@@ -162,7 +162,7 @@ export class GcCatalogPricesPage implements OnInit{
  protected readonly error=signal<string|null>(null);
  protected readonly linkedGroups=computed(()=>this.selectedVariant()?.varianteGrupoModificadoresComoVariante??[]);
  async ngOnInit(){this.branchId.set(this.branch.branchId()??this.branch.branches()[0]?.id??'');await this.loadOptions()}
- protected date(v:string){try{return formatInstant(v,this.branch.active()?.zonaHoraria??'America/Guatemala')}catch{return '—'}}
+ protected date(v:string){try{return formatInstant(v,this.branch.branches().find(b=>b.id===this.branchId())?.zonaHoraria??'America/Guatemala')}catch{return '—'}}
  protected money(v:string,moneda:string){try{return formatCurrency(v,moneda==='USD'?'USD':'GTQ')}catch{return '—'}}
  protected setMode(v:string){this.mode.set(v==='modifier'?'modifier':'variant');this.selectEntity('');void this.loadOptions()}
  protected selectBranch(v:string){this.branchId.set(v);void this.reload()}
