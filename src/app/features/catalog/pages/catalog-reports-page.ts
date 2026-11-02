@@ -93,6 +93,7 @@ export class GcCatalogReportsPage implements OnInit{
  protected readonly busy=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly canQuery=computed(()=>this.access.canReports()&&!!this.branchId());
+ private requestGeneration=0;
  ngOnInit(){this.branchId.set(this.context.branchId()??this.context.branches()[0]?.id??'');void this.reload()}
  protected chooseBranch(id:string){this.branchId.set(id);void this.reload()}
  protected resetDate(){this.queryDate.set('');void this.reload()}
@@ -104,16 +105,20 @@ export class GcCatalogReportsPage implements OnInit{
   return parsed.toISOString();
  }
  protected async reload(){
-  if(!this.canQuery()||this.busy())return;
-  this.busy.set(true);this.error.set(null);
+  if(!this.canQuery())return;
+  const generation=++this.requestGeneration;
+  this.busy.set(true);this.error.set(null);this.coverage.set(null);this.summary.set(null);
   try{
    const branch=this.branchId(),date=this.dateIso();
    const [coverage,summary]=await Promise.all([
     firstValueFrom(this.api.priceCoverage(branch,date)),
     firstValueFrom(this.api.summary(branch))
    ]);
-   this.coverage.set(coverage);this.summary.set(summary);
-  }catch(e){this.error.set(gcErrorMessage(e))}
-  finally{this.busy.set(false)}
+   if(generation===this.requestGeneration){
+    this.coverage.set(coverage);this.summary.set(summary);
+   }
+  }catch(e){
+   if(generation===this.requestGeneration)this.error.set(gcErrorMessage(e));
+  }finally{if(generation===this.requestGeneration)this.busy.set(false)}
  }
 }
