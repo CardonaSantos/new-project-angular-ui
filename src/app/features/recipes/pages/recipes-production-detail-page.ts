@@ -2,6 +2,7 @@ import {Component,inject,OnInit,signal} from '@angular/core';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcPageState} from '../../../core/ux/gc-page-state';
+import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
@@ -78,6 +79,7 @@ import {GcRecipesNav} from '../recipes-nav';
 })
 export class GcRecipesProductionDetailPage implements OnInit {
  protected readonly access=inject(RecipesAccess);
+ private readonly branchContext=inject(GcBranchContext);
  private readonly api=inject(RecipesApi);
  private readonly dialog=inject(ConfirmDialogService);
  private readonly notifications=inject(GcNotificationService);
@@ -86,7 +88,8 @@ export class GcRecipesProductionDetailPage implements OnInit {
  protected readonly busy=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly number=formatDecimal;
- protected readonly date=formatInstant;
+ protected readonly date=(value:string)=>formatInstant(value,
+  this.branchContext.branches().find(x=>x.id===this.state.data()?.ubicacionDestino.almacen?.sucursalId)?.zonaHoraria??'America/Guatemala');
  protected readonly currency=formatCurrency;
  protected readonly message=()=>gcErrorMessage(this.state.error());
  protected readonly status=(v:string)=>v==='CONFIRMADA'?'Confirmada':v==='CANCELADA'?'Cancelada':'Pendiente';
