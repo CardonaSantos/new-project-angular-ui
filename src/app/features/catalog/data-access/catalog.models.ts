@@ -33,7 +33,7 @@ export interface CatalogCategory extends CatalogImages {
  _count?:{productosComoCategoria:number;categoriasComoParent:number};
  children?:CatalogCategory[];totalProductos?:number;
 }
-export type CatalogCategoryCreate={nombre:string;parentId?:string|null;orden?:number};
+export interface CatalogCategoryCreate {nombre:string;parentId?:string|null;orden?:number}
 export type CatalogCategoryPatch=Partial<CatalogCategoryCreate>;
 export interface CatalogArticleLink {id:string;codigo:string;nombre:string;activo:boolean}
 export interface CatalogVariant extends CatalogImages {
@@ -69,20 +69,20 @@ export interface CatalogGroup {
  id:string;nombre:string;minimo:number;maximo:number|null;activo:boolean;
  modificadoresComoGrupo?:CatalogModifier[];_count?:{varianteGrupoModificadoresComoGrupo:number};label?:string;
 }
-export type CatalogGroupCreate={nombre:string;minimo:number;maximo?:number|null};
+export interface CatalogGroupCreate {nombre:string;minimo:number;maximo?:number|null}
 export type CatalogGroupPatch=Partial<CatalogGroupCreate>&{activo?:boolean};
 export interface CatalogModifier {
  id:string;grupoId:string;nombre:string;incrementoPrecio:string;requiereComposicion:boolean;
  activo:boolean;grupo?:CatalogGroup;
 }
-export type CatalogModifierCreate={
+export interface CatalogModifierCreate {
  grupoId:string;nombre:string;incrementoPrecio:string;requiereComposicion?:boolean;
-};
+}
 export type CatalogModifierPatch=Partial<Omit<CatalogModifierCreate,'grupoId'>>&{activo?:boolean};
 export interface CatalogVariantGroupLink {
  grupoId:string;orden:number;obligatorio:boolean;grupo?:CatalogGroup;
 }
-export type CatalogGroupAttachment={grupoId:string;orden:number;obligatorio:boolean};
+export interface CatalogGroupAttachment {grupoId:string;orden:number;obligatorio:boolean}
 export interface CatalogPriceCreate {
  entityId:string;sucursalId:string;importe:string;vigenteDesde:string;vigenteHasta?:string|null;
 }
@@ -129,9 +129,9 @@ export interface CatalogMenu {
  sucursales:{sucursalId:string;activa:boolean;sucursal?:{id:string;codigo:string;nombre:string;activa:boolean}}[];
  secciones:CatalogMenuSection[];horarios:CatalogMenuSchedule[];
 }
-export type CatalogMenuCreate={
+export interface CatalogMenuCreate {
  codigo:string;nombre:string;descripcion?:string|null;sucursalIds:string[];
-};
+}
 export type CatalogMenuPatch=Partial<Pick<CatalogMenu,'nombre'|'descripcion'|'activo'>>;
 export interface CatalogMenuLayout {
  expectedVersion:number;sucursalIds:string[];
