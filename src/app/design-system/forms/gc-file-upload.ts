@@ -40,7 +40,7 @@ export class GcFileUpload implements OnDestroy {
   target.value=''; // Re-selecting the same file must work.
   if(!picked.length||this.processing())return;
   const result=gcCheckFiles(picked,{
-   maxFiles:this.maxFiles(),maxBytes:this.maxSizeMb()*1024*1024,
+   maxFiles:this.maxFiles(),maxBytes:this.cropSquare()?Number.POSITIVE_INFINITY:this.maxSizeMb()*1024*1024,
    allowedMime:this.acceptedMime()
   });
   this.errors.set(result.errors);
@@ -49,14 +49,27 @@ export class GcFileUpload implements OnDestroy {
   try{
    let accepted=[...result.accepted];
    if(this.cropSquare()){
-    if(accepted.length!==1)throw new Error('Selecciona una sola fotografía.');
-    const dialog=this.dialog.open<GcImageCropDialog,File,File>(GcImageCropDialog,{
-      data:accepted[0],width:'min(94vw,440px)',maxWidth:'94vw',
-      ariaLabel:'Recortar fotografía',autoFocus:'dialog',restoreFocus:true
+    const croppedFiles:File[]=[];
+    // Crop originals before applying upload-size limits. Process sequentially
+    // to avoid decoding multiple large photographs into memory simultaneously.
+    for(const file of accepted){
+     const dialog=this.dialog.open<GcImageCropDialog,File,File>(GcImageCropDialog,{
+       data:file,width:'min(94vw,440px)',maxWidth:'94vw',
+       ariaLabel:'Recortar fotografía',autoFocus:'dialog',restoreFocus:true
+     });
+     const cropped=await firstValueFrom(dialog.afterClosed());
+     if(!cropped)return; // Keep prior selection unchanged when crop is canceled.
+     croppedFiles.push(cropped);
+    }
+    accepted=croppedFiles;
+    const output=gcCheckFiles(accepted,{
+     maxFiles:this.maxFiles(),maxBytes:this.maxSizeMb()*1024*1024,
+     allowedMime:this.acceptedMime(),
     });
-    const cropped=await firstValueFrom(dialog.afterClosed());
-    if(!cropped)return; // Cancellation preserves the last valid selection.
-    accepted=[cropped];
+    if(output.errors.length){
+     this.errors.set(output.errors);
+     return;
+    }
    }
    this.clearPreviews();
    this.previews.set(accepted.map(file=>{
