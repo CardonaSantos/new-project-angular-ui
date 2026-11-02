@@ -44,15 +44,21 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        @for(k of kinds;track k.value){<option [value]="k.value">{{k.label}}</option>}
       </select>
      </label>
-     <label>Categoría
-      <input placeholder="Buscar categoría" [value]="categorySearch()" maxlength="120"
-       (input)="categorySearch.set($any($event.target).value)" (keyup.enter)="searchCategories()"/>
-      <button type="button" (click)="searchCategories()">Buscar categoría</button>
-      <select [value]="category()" (change)="category.set($any($event.target).value)" [disabled]="!access.canManage()">
+     <div class="cat-category-picker">
+      <label for="catalog-category">Categoría</label>
+      <div class="cat-search-inline">
+       <input id="catalog-category-search" aria-label="Buscar por nombre de categoría"
+        placeholder="Buscar categoría" [value]="categorySearch()" maxlength="120"
+        (input)="categorySearch.set($any($event.target).value)"
+        (keydown.enter)="$event.preventDefault();searchCategories()"/>
+       <button type="button" (click)="searchCategories()">Buscar</button>
+      </div>
+      <select id="catalog-category" [value]="category()" (change)="category.set($any($event.target).value)"
+       [disabled]="!access.canManage()" aria-label="Categoría asignada al producto">
        <option value="">Sin categoría</option>
        @for(c of categories();track c.id){<option [value]="c.id">{{c.nombre}}</option>}
       </select>
-     </label>
+     </div>
      <label class="cat-wide">Descripción para el menú
       <textarea [value]="description()" (input)="description.set($any($event.target).value)" rows="3"
        maxlength="1500" [disabled]="!access.canManage()"></textarea>
@@ -73,30 +79,30 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     <gc-catalog-gallery [entityId]="product.id" kind="product" [photos]="product.imagenes??[]"
      [editable]="access.canManage()" (updated)="reload()"/>
     <section class="cat-card">
-     <div class="cat-row"><h2>Variantes comerciales</h2>
-      <span class="cat-muted">{{variants().length}} variantes</span></div>
-     <p class="cat-muted">Ejemplo: Regular y Grande. Cada variante puede tener su precio y sus extras.</p>
+     <div class="cat-row"><h2>Presentaciones y tamaños</h2>
+      <span class="cat-muted">{{variants().length}} presentaciones</span></div>
+     <p class="cat-muted">Agrega opciones como pequeño, mediano o grande. Cada una puede tener su propio precio y extras.</p>
      <div class="cat-table-wrap"><table class="cat-table"><thead><tr>
-      <th>Variante</th><th>Artículo físico</th><th>Estado</th><th>Acción</th>
+      <th>Presentación</th><th>Artículo de inventario</th><th>Estado</th><th>Acción</th>
      </tr></thead><tbody>
       @for(v of variants();track v.id){
        <tr><td>{{v.nombre}} @if(v.sku){<span class="cat-muted">· {{v.sku}}</span>}</td>
        <td>{{product.tipo==='INVENTARIABLE'?(v.articuloInventario?.nombre??'Sin artículo asociado'):'No corresponde'}}</td>
        <td>{{v.activo?'Activa':'Inactiva'}}</td>
        <td><button type="button" (click)="chooseVariant(v)">Configurar</button></td></tr>
-      } @empty {<tr><td colspan="4">Todavía no hay variantes comerciales.</td></tr>}
+      } @empty {<tr><td colspan="4">Todavía no hay presentaciones.</td></tr>}
      </tbody></table></div>
-     @if(access.canManage()){<button type="button" (click)="newVariant()">Agregar variante</button>}
+     @if(access.canManage()){<button type="button" (click)="newVariant()">Agregar presentación</button>}
     </section>
     @if(editVariant()||creatingVariant()){
      <section class="cat-card">
-      <h2>{{creatingVariant()?'Nueva variante':'Configurar variante'}}</h2>
+      <h2>{{creatingVariant()?'Nueva presentación':'Editar presentación'}}</h2>
       <form class="cat-form" (submit)="saveVariant($event)">
        <label>Nombre
         <input [value]="variantName()" (input)="variantName.set($any($event.target).value)"
          [disabled]="!access.canManage()" maxlength="120" required/>
        </label>
-       <label>SKU (opcional)
+       <label>Código de presentación (opcional)
         <input [value]="variantSku()" (input)="variantSku.set($any($event.target).value)"
          [disabled]="!access.canManage()" maxlength="50"/>
        </label>
@@ -112,18 +118,18 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        }
        @if(editVariant()){
         <label class="cat-check"><input type="checkbox" [checked]="variantActive()"
-         (change)="variantActive.set($any($event.target).checked)" [disabled]="!access.canManage()"/> Variante activa</label>
+         (change)="variantActive.set($any($event.target).checked)" [disabled]="!access.canManage()"/> Presentación activa</label>
        }
        @if(variantError()){<p role="alert" class="cat-alert">{{variantError()}}</p>}
        <div class="cat-actions">
         @if(access.canManage()){<button class="cat-primary" [disabled]="busy()||!variantName().trim()" type="submit">
-         {{busy()?'Guardando…':'Guardar variante'}}</button>}
+         {{busy()?'Guardando…':'Guardar presentación'}}</button>}
         <button type="button" (click)="cancelVariant()">Cerrar</button>
        </div>
       </form>
       @if(editVariant();as v){
        <hr/>
-       <h2>Extras permitidos para {{v.nombre}}</h2>
+       <h2>Extras disponibles para {{v.nombre}}</h2>
        <div class="cat-toolbar">
         <label class="cat-field">Buscar grupos de extras
          <input [value]="groupSearch()" maxlength="120"
@@ -131,7 +137,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
         </label>
         <button type="button" (click)="searchGroups()">Buscar grupos</button>
        </div>
-       <p class="cat-muted">Asocia grupos configurados en Extras. Los límites de elección son propios del grupo.</p>
+       <p class="cat-muted">Elige qué opciones adicionales estarán disponibles para esta presentación.</p>
        <div class="cat-form">
         @for(link of links();track link.grupoId){
          <div class="cat-row">
@@ -152,7 +158,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
         <div class="cat-actions">
          <button type="button" [disabled]="!access.canManage()||!groupId()" (click)="addGroup()">Agregar grupo</button>
          <button type="button" class="cat-primary" [disabled]="!access.canManage()||busy()" (click)="saveGroups()">
-          Guardar extras de variante</button>
+          Guardar extras</button>
         </div>
        </div>
        <gc-catalog-gallery [entityId]="v.id" kind="variant" [photos]="v.imagenes??[]"
@@ -179,8 +185,8 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
      </section>
     }
     <section class="cat-card">
-     <h2>Preparación para publicar</h2>
-     <p class="cat-muted">Se valida para la sucursal seleccionada. Los avisos no reemplazan el control de inventario ni recetas.</p>
+     <h2>Revisión del producto</h2>
+     <p class="cat-muted">Comprueba qué falta para mostrar este producto en la carta de la sucursal.</p>
      @if(readiness();as r){
       <strong>{{r.lista?'Listo para publicar':'Requiere atención'}}</strong>
       @for(v of r.variantes;track v.varianteId){
@@ -306,14 +312,14 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected warning(code:string){
   const labels:Record<string,string>={
    SIN_PRECIO:'Configura el precio para esta sucursal.',
-   SIN_FOTOGRAFIA_CONFIRMADA:'Agrega una fotografía confirmada.',
+   SIN_FOTOGRAFIA_CONFIRMADA:'Agrega una fotografía al producto o a su presentación.',
    PAUSADA_EN_SUCURSAL:'La venta está pausada en esta sucursal.',
-   PRODUCTO_O_VARIANTE_INACTIVA:'Activa el producto y su variante.',
+   PRODUCTO_O_VARIANTE_INACTIVA:'Activa el producto y su presentación.',
    OCULTA_EN_MENU:'Habilita la visibilidad del producto.',
    ARTICULO_FISICO_INVALIDO:'Revisa el artículo de inventario asociado.',
    SUCURSAL_INACTIVA:'La sucursal no está activa.',
   };
-  return labels[code]??'Existe una condición comercial que requiere revisión.';
+  return labels[code]??'Revisa la configuración de esta presentación antes de publicarla.';
  }
  protected async save(event:Event){
   event.preventDefault();if(!this.access.canManage()||this.busy()||!this.name().trim()||
