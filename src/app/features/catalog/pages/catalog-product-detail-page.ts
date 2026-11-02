@@ -56,7 +56,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <select id="catalog-category" [value]="category()" (change)="category.set($any($event.target).value)"
        [disabled]="!access.canManage()" aria-label="Categoría asignada al producto">
        <option value="" [selected]="!category()">Sin categoría</option>
-       @for(c of categories();track c.id){<option [value]="c.id" [selected]="c.id===category()">{{c.nombre}}</option>}
+       @for(c of categories();track c.id){<option [value]="c.id" [selected]="c.id===category()">{{c.nombre}}{{c.activa?'':' (inactiva)'}}</option>}
       </select>
      </div>
      <label class="cat-wide">Descripción para el menú
