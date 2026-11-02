@@ -25,7 +25,7 @@ import type {CatalogBranchMenu} from '../data-access/catalog.models';
     <label class="cat-field">Sucursal
      <select [value]="branchId()" (change)="branchId.set($any($event.target).value)">
       @for(branch of branches.branches();track branch.id){
-       <option [value]="branch.id">{{branch.nombre}}</option>
+       <option [value]="branch.id" [selected]="branch.id===branchId()">{{branch.nombre}}</option>
       }
      </select>
     </label>
