@@ -56,6 +56,32 @@ describe('REC-A UI contracts (phase 1)',()=>{
   r=http.expectOne(x=>x.url===recipePaths.versionPreview('rv1'));
   expect(r.request.params.has('ubicacionId')).toBe(false);r.flush({});
  });
+ it('covers commercial ingredient quotes and all seven production routes',()=>{
+  api.quote({recetaVersionId:'v1',sucursalId:'b1',ubicacionId:'l1',cantidad:'2',
+   modificadores:['extra1'],modalidad:'PARA_LLEVAR'}).subscribe();
+  let r=http.expectOne(recipePaths.preview);
+  expect(r.request.method).toBe('POST');expect(r.request.body.modificadores).toEqual(['extra1']);r.flush({});
+  api.productionList({sucursalId:'b1',page:2,limit:20}).subscribe();
+  r=http.expectOne(x=>x.url===recipePaths.production);
+  expect(r.request.params.get('page')).toBe('2');r.flush({data:[],meta:{page:2,limit:20,total:0,totalPages:0}});
+  const input={recetaVersionId:'v1',ubicacionDestinoId:'l1',cantidadProducida:'1000',
+   claveOperacion:'PROD:UI:abc'};
+  api.productionDraft(input).subscribe();
+  r=http.expectOne(recipePaths.production);
+  expect(r.request.method).toBe('POST');expect(r.request.body.claveOperacion).toBe('PROD:UI:abc');r.flush({});
+  api.productionExecute(input).subscribe();
+  r=http.expectOne(recipePaths.execute);
+  expect(r.request.method).toBe('POST');expect(r.request.body).toEqual(input);r.flush({});
+  api.productionDetail('p1').subscribe();
+  http.expectOne(recipePaths.productionOne('p1')).flush({});
+  api.productionConfirm('p1').subscribe();
+  r=http.expectOne(recipePaths.confirm('p1'));expect(r.request.method).toBe('POST');r.flush({});
+  api.productionCancel('p1').subscribe();
+  r=http.expectOne(recipePaths.cancel('p1'));expect(r.request.method).toBe('POST');r.flush({});
+  api.productionReport({sucursalId:'b1',fechaDesde:'2026-11-01T00:00:00Z'}).subscribe();
+  r=http.expectOne(x=>x.url===recipePaths.productionReport);
+  expect(r.request.params.get('fechaDesde')).toBe('2026-11-01T00:00:00Z');r.flush({});
+ });
  it('covers modifier ingredient composition and packaging lifecycle',()=>{
   api.modifier('m1').subscribe();http.expectOne(recipePaths.modifier('m1')).flush({});
   api.setModifier('m1',[{articuloId:'a1',unidadId:'u1',cantidad:'1',efecto:'SUMAR'}]).subscribe();
