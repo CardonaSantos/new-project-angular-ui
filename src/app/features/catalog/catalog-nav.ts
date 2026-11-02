@@ -12,7 +12,7 @@ import {RouterLink,RouterLinkActive} from '@angular/router';
    <a routerLink="/catalog/extras" routerLinkActive="active" ariaCurrentWhenActive="page">Extras</a>
    <a routerLink="/catalog/prices" routerLinkActive="active" ariaCurrentWhenActive="page">Precios</a>
    <a routerLink="/catalog/menus" routerLinkActive="active" ariaCurrentWhenActive="page">Menús</a>
-   <a routerLink="/catalog/preview" routerLinkActive="active" ariaCurrentWhenActive="page">Vista de menú vigente</a>
+   <a routerLink="/catalog/preview" routerLinkActive="active" ariaCurrentWhenActive="page">Vista de la carta</a>
   }
   @if(access.canReports()){
    <a routerLink="/catalog/reports" routerLinkActive="active" ariaCurrentWhenActive="page">Reportes</a>
