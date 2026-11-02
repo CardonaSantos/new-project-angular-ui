@@ -1,4 +1,4 @@
-import {menuDraft,menuLayout,menuValidation,isMenuConflict,menuStatus} from './catalog-menu-editor';
+import {menuDraft,menuLayout,menuValidation,isMenuConflict,isMenuVersionConflict,menuStatus} from './catalog-menu-editor';
 import type {CatalogMenu} from './catalog.models';
 
 const example:CatalogMenu={
@@ -50,5 +50,8 @@ describe('CAT-A menu editor contract',()=>{
   expect(isMenuConflict({status:409})).toBe(true);
   expect(isMenuConflict({status:400})).toBe(false);
   expect(isMenuConflict(new Error('network'))).toBe(false);
+  expect(isMenuVersionConflict({status:409,message:'Menú incompleto: SIN_PRECIO'})).toBe(false);
+  expect(isMenuVersionConflict({status:409,message:'Menú modificado por otra sesión'})).toBe(true);
+  expect(isMenuVersionConflict({status:409,message:'La versión del menú cambió'})).toBe(true);
  });
 });
