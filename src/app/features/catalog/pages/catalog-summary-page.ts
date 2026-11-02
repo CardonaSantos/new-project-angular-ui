@@ -6,6 +6,7 @@ import {GcPageState} from '../../../core/ux/gc-page-state';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {CatalogApi} from '../data-access/catalog.api';
+import {GcCatalogNav} from '../catalog-nav';
 import {CatalogAccess} from '../data-access/catalog-access';
 import {PRODUCT_KINDS,type CatalogSummary,type CatalogPriceCoverage} from '../data-access/catalog.models';
 
@@ -13,11 +14,11 @@ interface Overview{summary:CatalogSummary;coverage:CatalogPriceCoverage|null}
 
 @Component({
  selector:'gc-catalog-summary-page',
- imports:[GcPageHeader,GcErrorState],
+ imports:[GcPageHeader,GcErrorState,GcCatalogNav],
  template:`
   <main class="cat-page">
    <gc-page-header title="Catálogo comercial" description="Configuración comercial y cobertura por sucursal"/>
-   <nav class="cat-nav" aria-label="Catálogo comercial"><a aria-current="page">Resumen</a></nav>
+   <gc-catalog-nav/>
    <section class="cat-card">
     <div class="cat-row">
      <h2>Estado del catálogo</h2>
