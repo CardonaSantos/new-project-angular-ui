@@ -156,6 +156,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
      <h2>Guardar configuración de la carta</h2>
      @for(message of validation().errors;track message){<p class="cat-muted">{{message}}</p>}
      <p class="cat-muted">Guardar la distribución incrementará la versión y retirará la publicación actual, si existe.</p>
+     @if(errorText()){<p class="cat-alert" role="alert">{{errorText()}}</p>}
      @if(conflict()){
       <p class="cat-alert" role="alert">Otra sesión modificó este menú. Conservamos tus cambios en pantalla. Copia lo necesario y recarga antes de volver a guardar.</p>
       <button type="button" (click)="reload()">Descartar borrador local y cargar versión actual</button>
@@ -244,6 +245,9 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
  }
  protected async saveBasics(event:Event){
   event.preventDefault();if(!this.access.canMenus()||this.busy()||!this.name().trim())return;
+  if(!this.isNew&&this.layoutDirty()){
+   this.errorText.set('Guarda primero la distribución y los horarios: cambiar los datos generales recargaría el menú.');return;
+  }
   if(this.isNew&&(!this.validCode()||!this.draft().branches.length)){
    this.errorText.set('Introduce un código válido y selecciona una sucursal.');return;
   }
@@ -352,7 +356,9 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
   try{
    await firstValueFrom(this.api.publishMenu(m.id,m.version));await this.reload();
    this.notify.show('Menú publicado correctamente.','success');
-  }catch(e){if(isMenuConflict(e))this.conflict.set(true);
+  }catch(e){
+   if(isMenuConflict(e)&&/versi[oó]n|cambi[oó]|modificad/i.test(gcErrorMessage(e)))
+    this.conflict.set(true);
    this.publishError.set(gcErrorMessage(e))
   }finally{this.busy.set(false)}
  }
