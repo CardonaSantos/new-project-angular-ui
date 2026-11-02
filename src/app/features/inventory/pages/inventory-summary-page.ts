@@ -23,7 +23,6 @@ import type {StockSummary} from '../data-access/inventory.models';
   <gc-inventory-nav/>
   <section class="inv-card">
    <div class="inv-row">
-    <h2>Sucursal</h2>
     <div class="inv-field">
      <label for="overview-branch">Consultar sucursal</label>
      <select id="overview-branch" [value]="url.filters().sucursalId"
@@ -32,7 +31,8 @@ import type {StockSummary} from '../data-access/inventory.models';
      </select>
     </div>
    </div>
-   @if(page.busy()){<p role="status" class="inv-muted">Cargando existencias…</p>}
+   @if(page.busy()&&!page.data()){<p role="status" class="inv-muted">Cargando existencias…</p>}
+   @else if(page.busy()){<p role="status" class="inv-muted">Actualizando existencias…</p>}
    @if(page.status()==='error'){<gc-error-state [message]="gcError()" (retry)="reload()"/>}
    @if(page.data();as result){
     <div class="inv-metrics">

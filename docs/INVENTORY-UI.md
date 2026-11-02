@@ -72,3 +72,9 @@ activa; NestJS sigue aplicando autorización real. Entradas manuales necesitan
 \`inventory.consume.internal\`. La clave idempotente cambia al modificar
 cualquier selección o campo de la operación, pero no al reintentar el mismo
 envío fallido.
+
+## Correcciones de aceptación visual (2026-11-02)
+
+- El estado de página no debe quedar en skeleton mientras `meta.total` ya representa filas. La causa era el seguimiento accidental de `GcPageState.data` dentro de un `effect` de consulta. El acceso a datos y ejecución del fetcher ahora es `untracked`; la respuesta más reciente mantiene el control de la generación.
+- La barra superior muestra exclusivamente breadcrumbs visibles; el título semántico H1 sigue disponible a lectores de pantalla. Las secciones y tablas usan un espaciado más denso y conservan opciones accesibles de teclado.
+- Desactivar una sucursal no es una solución del problema de carga: los filtros por sucursal siguen normalizados en la URL y los permisos del backend son la fuente de verdad.

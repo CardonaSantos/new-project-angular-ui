@@ -61,10 +61,11 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
    <gc-inventory-subnav [links]="operationLinks" label="Operaciones"/>
   }
   <section class="inv-card">
-   <div class="inv-row">
-    <h2>{{config.title}}</h2>
-    @if(config.create&&canCreate()){<a gcButton [routerLink]="config.create">{{view==='articles'?'Nuevo artículo':view==='movements'?'Registrar movimiento':view==='counts'?'Nuevo conteo':'Nueva transferencia'}}</a>}
-   </div>
+   @if(config.create&&canCreate()){
+    <div class="inv-row inv-create-row">
+     <a gcButton [routerLink]="config.create">{{view==='articles'?'Nuevo artículo':view==='movements'?'Registrar movimiento':view==='counts'?'Nuevo conteo':'Nueva transferencia'}}</a>
+    </div>
+   }
    <form class="inv-toolbar" (submit)="apply($event)">
     @if(view==='articles'||view==='movements'){
      <div class="inv-field"><label for="inv-search">Buscar artículo</label>

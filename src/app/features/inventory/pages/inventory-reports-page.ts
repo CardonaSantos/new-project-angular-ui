@@ -62,10 +62,10 @@ function valueText(value:unknown,key:string):string {
      </select>
     </div>
    </div>
-   @if(page.busy()){<p role="status" class="inv-muted">Calculando reporte…</p>}
+   @if(page.busy()&&!page.data()){<p role="status" class="inv-muted">Calculando reporte…</p>}
+   @else if(page.busy()){<p role="status" class="inv-muted">Actualizando reporte…</p>}
    @if(page.status()==='error'){<gc-error-state [message]="readError()" (retry)="reload()"/>}
    @if(page.data();as data){
-    <h2>{{labels[type()]}}</h2>
     <dl class="inv-kv">
      @for(item of metrics();track item.key){
       <div><dt>{{human(item.key)}}</dt><dd>{{show(item.value,item.key)}}</dd></div>

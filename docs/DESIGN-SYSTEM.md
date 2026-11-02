@@ -75,3 +75,11 @@ anteriores sin almacenar duplicados en localStorage.
   diálogos no son estado navegable; proteger edición pendiente con el guard común.
 - Los selectores por cursor no se sustituyen por paginación falsa de cliente.
   Nunca ordenar únicamente la página visible cuando la API controla la ordenación.
+
+
+## Navegación por breadcrumbs y densidad operativa (2026-11-02)
+
+- El breadcrumb del topbar es el encabezado **visible** de la página. `GcPageHeader` mantiene `h1` para lectores de pantalla, sin repetir un título H1 grande ni su descripción en pantalla. Las acciones proyectadas del encabezado siguen visibles. No ocultar los encabezados internos útiles que describen formularios, apartados o métricas.
+- Densidad estándar: tarjetas y tablas compactas, sin desperdiciar espacio vertical. El espaciado de tabla se controla mediante `--gc-table-cell-padding`. Controles de escritorio ~40 px; conservar al menos 44 px para controles táctiles y foco visible.
+- No ocultar datos de tablas durante un refresh: mostrar filas anteriores con indicador de actualización. Solo mostrar skeleton cuando todavía no existen datos. Todos los estados de carga deben finalizar sin loops por Signals/effects.
+- Cargas iniciadas por `effect()` deben depender exclusivamente de los filtros, permisos o sucursal. No registrar `GcPageState.data/status` como dependencia del efecto de carga; `GcPageState.load` ejecuta accesos propios bajo `untracked`.
