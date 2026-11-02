@@ -10,6 +10,10 @@ import {RecipesAccess} from './data-access/recipes-access';
    <a routerLink="/recipes/extras" routerLinkActive="active" ariaCurrentWhenActive="page">Extras</a>
    <a routerLink="/recipes/packaging" routerLinkActive="active" ariaCurrentWhenActive="page">Empaques</a>
   }
+  @if(access.canProductionRead()){
+   <a routerLink="/recipes/production" routerLinkActive="active" ariaCurrentWhenActive="page">Producción</a>
+   <a routerLink="/recipes/reports" routerLinkActive="active" ariaCurrentWhenActive="page">Reportes</a>
+  }
  </nav>`,styleUrl:'./recipes.scss'
 })
 export class GcRecipesNav {protected readonly access=inject(RecipesAccess)}

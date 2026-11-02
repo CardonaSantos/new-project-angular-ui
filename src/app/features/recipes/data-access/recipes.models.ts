@@ -79,3 +79,53 @@ export interface RecipePreview {
  recetaVersionId:string;sucursalId:string;requiereUbicacion?:boolean;
  ingredientes?:{articuloId:string;articulo?:Article|null;cantidad:string;unidadId:string;unidad?:Unit|null;mermaPorcentaje:string}[];
 }
+
+// REC-UI 2: all quantities remain decimal strings; costs are absent without authorization.
+export type ProductionStatus='BORRADOR'|'CONFIRMADA'|'CANCELADA';
+export interface ProductionInput {
+ recetaVersionId:string;ubicacionDestinoId:string;ubicacionConsumoId?:string;
+ cantidadProducida:string;claveOperacion:string;fechaVencimiento?:string;
+ origenes?:{articuloId:string;ubicacionId:string;loteId?:string}[];
+}
+export interface ProductionListItem {
+ id:string;estado:ProductionStatus;receta:string;recetaVersion:number;
+ ubicacion:string;cantidadProducida:string;articuloResultado:Article|null;
+ unidadResultado:Unit|null;lote:string|null;confirmadoEn:string|null;
+ creadoEn:string;costoTotal?:string|null;
+}
+export interface ProductionDetail {
+ id:string;estado:ProductionStatus;recetaVersion:RecipeVersion&{receta:RecipeRecord};
+ ubicacionDestino:{id:string;nombre:string;almacenId:string};
+ articuloResultado:Article|null;cantidadProducida:string;
+ loteResultado?:{codigoLote:string}|null;fechaVencimiento:string|null;
+ confirmadoEn:string|null;creadoEn:string;costoTotal?:string|null;
+ consumos:{id:string;articulo:Pick<Article,'id'|'codigo'|'nombre'>;
+  ubicacion:{id:string;nombre:string};lote:{id:string;codigoLote:string}|null;
+  cantidad:string;costoUnitario?:string;costoTotal?:string|null}[];
+}
+export interface ProductionReport {
+ sucursalId:string;periodo:{desde:string|null;hastaExclusiva:string|null};
+ produccionesConfirmadas:number;
+ articulos:{articuloId:string;codigo:string;nombre:string;unidad:string;
+  cantidad:string;costoTotal?:string}[];
+ costoTotal?:string;
+}
+export interface MaterialRequirement {
+ articuloId:string;articulo?:Article|null;
+ requerido:string;disponible:string;faltante?:string;
+}
+export interface ConsumptionPreview {
+ articuloId:string;articulo?:Article|null;
+ ubicacion?:{id:string;nombre:string}|null;
+ lote?:{id:string;codigoLote:string}|null;
+ cantidad:string;costoTotal?:string|null;
+}
+export interface RecipeStockPreview extends RecipePreview {
+ disponible?:boolean;cantidad?:string;
+ insuficientes?:MaterialRequirement[];consumos?:ConsumptionPreview[];
+ costoEstimado?:string|null;
+}
+export interface RecipeQuoteInput {
+ recetaVersionId:string;sucursalId:string;ubicacionId?:string;cantidad?:string;
+ modificadores?:string[];modalidad?:PackagingMode;
+}

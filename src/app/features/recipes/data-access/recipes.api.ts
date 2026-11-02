@@ -4,7 +4,8 @@ import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
  RecipeKind,RecipePage,RecipeRecord,RecipeOption,RecipeCoverage,RecipeCreate,
  RecipeVersionInput,RecipeVersion,ModifierComposition,ModifierPhysicalInput,
- PackagingRule,PackagingRuleInput,RecipePreview
+ PackagingRule,PackagingRuleInput,RecipeStockPreview,RecipeQuoteInput,
+ ProductionInput,ProductionDetail,ProductionListItem,ProductionReport
 } from './recipes.models';
 
 export const recipePaths={
@@ -20,6 +21,12 @@ export const recipePaths={
  packaging:'/api/recipes/packaging',
  packagingOne:(id:string)=>'/api/recipes/packaging/'+encodeURIComponent(id),
  packagingStatus:(id:string)=>'/api/recipes/packaging/'+encodeURIComponent(id)+'/status',
+ production:'/api/production/batches',
+ execute:'/api/production/batches/execute',
+ productionOne:(id:string)=>'/api/production/batches/'+encodeURIComponent(id),
+ confirm:(id:string)=>'/api/production/batches/'+encodeURIComponent(id)+'/confirm',
+ cancel:(id:string)=>'/api/production/batches/'+encodeURIComponent(id)+'/cancel',
+ productionReport:'/api/production/batches/reports/summary',
 } as const;
 export function recipeParams(query:object):HttpParams{
  let params=new HttpParams();
@@ -58,7 +65,29 @@ export class RecipesApi {
  unpublish(id:string){return this.http.post<{id:string;activa:boolean;publicadaEn:string}>(recipePaths.unpublish(id),{},silent)}
  discardVersion(id:string){return this.http.delete<{id:string;descartada:boolean}>(recipePaths.version(id),silent)}
  preview(id:string,q:{sucursalId:string;ubicacionId?:string;cantidad?:string}){
-  return this.http.get<RecipePreview>(recipePaths.versionPreview(id),params(q));
+  return this.http.get<RecipeStockPreview>(recipePaths.versionPreview(id),params(q));
+ }
+ quote(dto:RecipeQuoteInput){
+  return this.http.post<RecipeStockPreview>(recipePaths.preview,dto,silent);
+ }
+ productionList(q:{sucursalId:string;page?:number;limit?:number;fechaDesde?:string;fechaHasta?:string}){
+  return this.http.get<RecipePage<ProductionListItem>>(recipePaths.production,params(q));
+ }
+ productionDetail(id:string){return this.http.get<ProductionDetail>(recipePaths.productionOne(id),silent)}
+ productionDraft(dto:ProductionInput){
+  return this.http.post<ProductionDetail>(recipePaths.production,dto,silent);
+ }
+ productionExecute(dto:ProductionInput){
+  return this.http.post<ProductionDetail>(recipePaths.execute,dto,silent);
+ }
+ productionConfirm(id:string){
+  return this.http.post<ProductionDetail>(recipePaths.confirm(id),{},silent);
+ }
+ productionCancel(id:string){
+  return this.http.post<{id:string;estado:'CANCELADA'}>(recipePaths.cancel(id),{},silent);
+ }
+ productionReport(q:{sucursalId:string;fechaDesde?:string;fechaHasta?:string}){
+  return this.http.get<ProductionReport>(recipePaths.productionReport,params(q));
  }
  coverage(q:{search?:string;page?:number;limit?:number}={}){
   return this.http.get<RecipeCoverage>(recipePaths.coverage,params(q));

@@ -19,5 +19,16 @@ export const RECIPES_ROUTES:Routes=[
   loadComponent:()=>import('./pages/recipes-extras-page').then(x=>x.GcRecipesExtrasPage)},
  {path:'packaging',title:'Reglas de empaque — Gastro Core',data:{breadcrumb:'Empaques'},
   canDeactivate:[gcUnsavedChangesGuard],
-  loadComponent:()=>import('./pages/recipes-packaging-page').then(x=>x.GcRecipesPackagingPage)}
+  loadComponent:()=>import('./pages/recipes-packaging-page').then(x=>x.GcRecipesPackagingPage)},
+ {path:'production',data:{breadcrumb:'Producción'},children:[
+  {path:'',title:'Producción — Gastro Core',
+   loadComponent:()=>import('./pages/recipes-production-page').then(x=>x.GcRecipesProductionPage)},
+  {path:'new',title:'Nueva producción — Gastro Core',data:{breadcrumb:'Nueva'},
+   canDeactivate:[gcUnsavedChangesGuard],
+   loadComponent:()=>import('./pages/recipes-production-form-page').then(x=>x.GcRecipesProductionFormPage)},
+  {path:':id',title:'Detalle de producción — Gastro Core',data:{breadcrumb:'Detalle'},
+   loadComponent:()=>import('./pages/recipes-production-detail-page').then(x=>x.GcRecipesProductionDetailPage)}
+ ]},
+ {path:'reports',title:'Reportes de producción — Gastro Core',data:{breadcrumb:'Reportes'},
+  loadComponent:()=>import('./pages/recipes-production-report-page').then(x=>x.GcRecipesProductionReportPage)}
 ];
