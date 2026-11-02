@@ -1,4 +1,4 @@
-import {Component,inject,signal} from '@angular/core';
+import {Component,effect,inject,signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
@@ -6,6 +6,7 @@ import {formatDecimal,formatCurrency} from '../../../shared/formatting';
 import {RecipesApi} from '../data-access/recipes.api';
 import {RecipesAccess} from '../data-access/recipes-access';
 import type {ProductionReport} from '../data-access/recipes.models';
+import {inclusiveBranchPeriod} from '../data-access/production-period';
 import {GcRecipesNav} from '../recipes-nav';
 
 @Component({
@@ -62,17 +63,21 @@ export class GcRecipesProductionReportPage {
  protected readonly decimal=formatDecimal;
  protected readonly currency=formatCurrency;
  private gen=0;
+ constructor(){effect(()=>{
+  this.branchId();this.from();this.to();
+  this.gen++;this.report.set(null);this.error.set(null);
+ })}
  protected async load(){
   if(!this.branchId())return;
   const gen=++this.gen;
   this.busy.set(true);this.error.set(null);this.report.set(null);
   try{
+   const timeZone=this.branch.branches().find(x=>x.id===this.branchId())?.zonaHoraria??'America/Guatemala';
    const r=await firstValueFrom(this.api.productionReport({sucursalId:this.branchId(),
-    ...(this.from()?{fechaDesde:new Date(this.from()+'T00:00:00').toISOString()}:{}),
-    ...(this.to()?{fechaHasta:new Date(new Date(this.to()+'T00:00:00').getTime()+86400000).toISOString()}:{}),
+    ...inclusiveBranchPeriod(this.from(),this.to(),timeZone)
    }));
    if(this.gen===gen)this.report.set(r);
-  }catch(e){if(this.gen===gen)this.error.set(gcErrorMessage(e))}
+   }catch(e){if(this.gen===gen)this.error.set(e instanceof Error&&!(e as {status?:number}).status?e.message:gcErrorMessage(e))}
   finally{if(this.gen===gen)this.busy.set(false)}
  }
 }
