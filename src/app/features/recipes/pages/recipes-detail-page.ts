@@ -104,6 +104,12 @@ interface IngredientForm {
          <td><div class="rec-actions">
           <button type="button" (click)="selectVersion(v)" [disabled]="busy()">
            {{v.publicadaEn?'Ver ingredientes':access.canManage()?'Editar borrador':'Ver ingredientes'}}</button>
+          @if(v.publicadaEn&&v.activa&&access.canPublish()){
+           <button type="button" (click)="unpublishVersion(v)" [disabled]="busy()||hasUnsavedChanges()">Retirar del uso</button>
+          }
+          @if(!v.publicadaEn&&access.canManage()){
+           <button type="button" (click)="discardVersion(v)" [disabled]="busy()||hasUnsavedChanges()">Descartar borrador</button>
+          }
           @if(!v.publicadaEn&&access.canPublish()&&page.data()?.activa){
            <button type="button" (click)="publishVersion(v)" [disabled]="busy()||formulaDirty()">
             Publicar</button>
@@ -434,6 +440,30 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
     this.notify.show('Fórmula guardada.','success');
    }
   }catch(e){this.formulaError.set(gcErrorMessage(e))}
+  finally{this.busy.set(false)}
+ }
+ protected async unpublishVersion(v:RecipeVersion){
+  if(!v.activa||!v.publicadaEn||!this.access.canPublish()||this.busy()||this.hasUnsavedChanges())return;
+  const ok=await this.confirm.confirm({title:'Retirar fórmula de uso',
+   message:'Esta fórmula dejará de utilizarse en nuevas preparaciones. Se conservará su historial.',
+   confirmText:'Retirar fórmula',danger:true});
+  if(!ok)return;
+  this.busy.set(true);this.formulaError.set(null);
+  try{await firstValueFrom(this.api.unpublish(v.id));await this.reload();
+   this.notify.show('La fórmula ya no está disponible para nuevas preparaciones.','success')}
+  catch(e){this.formulaError.set(gcErrorMessage(e))}
+  finally{this.busy.set(false)}
+ }
+ protected async discardVersion(v:RecipeVersion){
+  if(v.publicadaEn||v.activa||!this.access.canManage()||this.busy()||this.hasUnsavedChanges())return;
+  const ok=await this.confirm.confirm({title:'Descartar borrador',
+   message:'Se eliminará definitivamente esta fórmula sin publicar. Esta acción no se puede deshacer.',
+   confirmText:'Descartar borrador',danger:true});
+  if(!ok)return;
+  this.busy.set(true);this.formulaError.set(null);
+  try{await firstValueFrom(this.api.discardVersion(v.id));await this.reload();
+   this.notify.show('Borrador descartado.','success')}
+  catch(e){this.formulaError.set(gcErrorMessage(e))}
   finally{this.busy.set(false)}
  }
  protected async publishVersion(v:RecipeVersion){
