@@ -1,0 +1,46 @@
+
+:host {display:block;width:100%;min-width:0}
+.gc-u-page {display:grid;gap:1.25rem;min-width:0;width:100%}
+.gc-u-narrow {width:min(100%,65rem);margin-inline:auto}
+.gc-u-tabs {display:flex;gap:.25rem;flex-wrap:wrap;border-bottom:1px solid var(--gc-outline-variant)}
+.gc-u-tabs a {display:inline-flex;align-items:center;min-height:44px;padding:.5rem .85rem;color:var(--gc-on-surface-variant);text-decoration:none;border-bottom:2px solid transparent}
+.gc-u-tabs a[aria-current="page"] {color:var(--gc-primary);border-color:var(--gc-primary);font-weight:650}
+.gc-u-card {padding:clamp(1rem,2.5vw,1.5rem);background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius);min-width:0}
+.gc-u-card h2 {font-size:1.15rem;margin:0 0 1rem}
+.gc-u-form {display:grid;gap:1.15rem}
+.gc-u-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.25rem}
+.gc-u-field {display:grid;gap:.4rem;min-width:0;align-content:start}
+.gc-u-field label,.gc-u-field .label {font-size:.875rem;font-weight:600}
+.gc-u-field input,.gc-u-field select,.gc-u-field textarea {display:block;width:100%;min-width:0;min-height:44px;border:1px solid var(--gc-outline);border-radius:calc(var(--gc-radius)*.65);padding:.55rem .75rem;background:var(--gc-surface);color:var(--gc-on-surface)}
+.gc-u-field input::placeholder,.gc-u-field textarea::placeholder {color:var(--gc-on-surface-variant)}
+.gc-u-field input[aria-invalid="true"] {border-color:var(--gc-error)}
+.gc-u-field input:focus-visible,.gc-u-field select:focus-visible {outline:2px solid var(--gc-primary);outline-offset:2px}
+.gc-u-field small,.gc-u-muted {color:var(--gc-on-surface-variant);font-size:.875rem}
+.gc-u-field .gc-u-error {color:var(--gc-error)}
+.gc-u-actions {display:flex;align-items:center;flex-wrap:wrap;gap:1rem}
+.gc-u-actions button,.gc-u-actions a {min-height:44px}
+.gc-u-alert {border:1px solid var(--gc-error);border-radius:.65rem;padding:.75rem;overflow-wrap:anywhere}
+.gc-u-toolbar {display:flex;align-items:end;gap:.75rem;flex-wrap:wrap}
+.gc-u-toolbar > :first-child {flex:1 1 14rem}
+.gc-u-row {display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.gc-u-row h2 {margin:0}
+.gc-u-status {font-size:.875rem;color:var(--gc-on-surface-variant)}
+.gc-u-avatar {width:80px;height:80px;object-fit:cover;border-radius:50%;border:1px solid var(--gc-outline-variant);background:var(--gc-surface-container);display:grid;place-items:center;font-weight:700}
+.gc-u-avatar-row {display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.gc-u-check-list {display:grid;gap:.55rem;max-height:24rem;overflow:auto;padding:.75rem;border:1px solid var(--gc-outline-variant);border-radius:.65rem}
+.gc-u-check {display:flex;align-items:center;gap:.65rem;min-height:38px;cursor:pointer;font-size:.875rem}
+.gc-u-check input {width:1.2rem;height:1.2rem;accent-color:var(--gc-primary);flex:none}
+.gc-u-divider {height:1px;background:var(--gc-outline-variant);margin:.5rem 0}
+.gc-u-metrics {display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.8rem}
+.gc-u-metric {padding:.85rem;border:1px solid var(--gc-outline-variant);border-radius:.6rem}
+.gc-u-metric strong {display:block;font-size:1.4rem;font-variant-numeric:tabular-nums}
+.gc-u-metric span {color:var(--gc-on-surface-variant);font-size:.8rem}
+.gc-u-code {display:block;overflow-wrap:anywhere;padding:1rem;border:1px solid var(--gc-outline-variant);border-radius:.5rem;font-family:monospace;font-size:1rem;user-select:all}
+.gc-u-secret {border:1px solid var(--gc-primary);border-radius:.7rem;padding:1rem;display:grid;gap:.75rem}
+.gc-u-table-action {display:inline-flex;min-height:44px;align-items:center}
+.gc-u-options {display:grid;gap:.5rem}
+.gc-u-reason {width:min(100%,34rem)}
+.gc-u-raw {white-space:pre-wrap;overflow-wrap:anywhere;max-height:18rem;overflow:auto;font-size:.8rem}
+@media(max-width:640px){.gc-u-grid{grid-template-columns:1fr}.gc-u-actions{align-items:stretch;flex-direction:column}.gc-u-actions button,.gc-u-actions a{width:100%}}
+
+.gc-u-avatar-cell{flex-wrap:nowrap;justify-content:flex-start;gap:.7rem;min-width:10rem;overflow-wrap:anywhere}

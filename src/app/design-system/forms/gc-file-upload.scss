@@ -3,8 +3,12 @@
 input { width:100%; min-height:44px; padding:.65rem; border:1px dashed var(--gc-outline); border-radius:var(--gc-radius); color:var(--gc-on-surface); background:var(--gc-surface); }
 small { color:var(--gc-on-surface-variant); }
 .errors { margin:0; color:var(--gc-error); padding-left:1.25rem; }
-.previews { display:grid; grid-template-columns:repeat(auto-fill,minmax(115px,1fr)); gap:.6rem; }
+.previews { display:grid; grid-template-columns:repeat(auto-fill,minmax(115px,155px)); gap:.6rem; }
 figure { margin:0; min-width:0; }
 img { width:100%; height:100px; object-fit:cover; border-radius:.5rem; border:1px solid var(--gc-outline-variant); }
 figcaption { overflow-wrap:anywhere; font-size:.75rem; }
 .clear { justify-self:start; border:1px solid var(--gc-outline); background:transparent; color:var(--gc-on-surface); border-radius:.5rem; padding:.5rem .8rem; cursor:pointer; }
+
+input:disabled,.clear:disabled{opacity:.6;cursor:wait}
+input:focus-visible,.clear:focus-visible{outline:2px solid var(--gc-primary);outline-offset:2px}
+.gc-upload p[role=status]{margin:0;color:var(--gc-on-surface-variant)}
