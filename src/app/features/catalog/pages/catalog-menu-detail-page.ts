@@ -7,6 +7,7 @@ import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {gcErrorMessage} from '../../../core/http/api-error';
+import {catalogUiError} from '../data-access/catalog-ui-copy';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 import {GcCatalogNav} from '../catalog-nav';
 import {CatalogApi} from '../data-access/catalog.api';
@@ -92,8 +93,8 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
           <tr><td>{{item.nombre}}</td><td>{{j+1}}</td><td>
            @if(access.canMenus()){
             <div class="cat-actions">
-             <button type="button" (click)="moveItem(i,j,-1)" [disabled]="j===0" aria-label="Mover variante arriba">↑</button>
-             <button type="button" (click)="moveItem(i,j,1)" [disabled]="j===section.items.length-1" aria-label="Mover variante abajo">↓</button>
+             <button type="button" (click)="moveItem(i,j,-1)" [disabled]="j===0" aria-label="Mover presentación arriba">↑</button>
+             <button type="button" (click)="moveItem(i,j,1)" [disabled]="j===section.items.length-1" aria-label="Mover presentación abajo">↓</button>
              <button type="button" (click)="removeItem(i,j)">Quitar</button>
             </div>
            }
@@ -272,7 +273,7 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
     }
    }
    this.notify.show('Datos del menú guardados.','success');
-  }catch(e){this.errorText.set(gcErrorMessage(e))}finally{this.busy.set(false)}
+  }catch(e){this.errorText.set(catalogUiError(e))}finally{this.busy.set(false)}
  }
  protected addSection(){this.draft.update(d=>({...d,sections:[...d.sections,{
   key:'draft-'+Date.now()+'-'+d.sections.length,nombre:'Nueva sección',items:[]}] }))}
@@ -342,7 +343,7 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
    await firstValueFrom(this.api.replaceMenuLayout(current.id,menuLayout(this.draft(),current.version)));
    await this.reload();this.notify.show('Distribución guardada. El menú queda en borrador.','success');
   }catch(e){if(isMenuVersionConflict(e))this.conflict.set(true);
-   this.errorText.set(gcErrorMessage(e))
+   this.errorText.set(catalogUiError(e))
   }finally{this.busy.set(false)}
  }
  protected async publish(){
@@ -359,7 +360,7 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
   }catch(e){
    if(isMenuVersionConflict(e))
     this.conflict.set(true);
-   this.publishError.set(gcErrorMessage(e))
+   this.publishError.set(catalogUiError(e))
   }finally{this.busy.set(false)}
  }
  protected async unpublish(){
@@ -371,6 +372,6 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
   this.busy.set(true);this.publishError.set(null);
   try{await firstValueFrom(this.api.unpublishMenu(m.id));await this.reload();
    this.notify.show('Menú retirado de publicación.','success');
-  }catch(e){this.publishError.set(gcErrorMessage(e))}finally{this.busy.set(false)}
+  }catch(e){this.publishError.set(catalogUiError(e))}finally{this.busy.set(false)}
  }
 }
