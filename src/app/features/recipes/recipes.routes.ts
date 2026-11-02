@@ -1,7 +1,8 @@
 import type {Routes} from '@angular/router';
 import {gcUnsavedChangesGuard} from '../../core/ux/gc-unsaved-changes.guard';
 export const RECIPES_ROUTES:Routes=[
- {path:'',pathMatch:'full',redirectTo:'summary'},
+ {path:'',pathMatch:'full',title:'Recetas y producción — Gastro Core',
+  loadComponent:()=>import('./pages/recipes-landing-page').then(x=>x.GcRecipesLandingPage)},
  {path:'summary',title:'Resumen de recetas — Gastro Core',data:{breadcrumb:'Resumen'},
   loadComponent:()=>import('./pages/recipes-summary-page').then(x=>x.GcRecipesSummaryPage)},
  {path:'list',data:{breadcrumb:'Recetas'},children:[
