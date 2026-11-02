@@ -1,6 +1,8 @@
 
 import {HttpClient,HttpParams} from '@angular/common/http';
 import {inject,Injectable} from '@angular/core';
+import {retry,throwError,timer} from 'rxjs';
+import {isTransientInventoryReadError} from './inventory-read-retry';
 import {API_ENDPOINTS} from '../../../core/http/api-endpoints';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
@@ -18,12 +20,16 @@ export function inventoryParams(input:object):HttpParams{
  return params;
 }
 const silent={context:gcSilentRequest()};
+function safeInventoryGetRetry<T>(){
+ return retry<T>({count:2,delay:(error,attempt)=>isTransientInventoryReadError(error)
+  ?timer(attempt*350):throwError(()=>error)});
+}
 @Injectable({providedIn:'root'})
 export class InventoryApi {
  private readonly http=inject(HttpClient);
  private readonly e=API_ENDPOINTS.inventory;
  articles(q:{page?:number;limit?:number;search?:string;tipo?:InventoryKind;activo?:boolean}={}){
-  return this.http.get<InventoryPage<Article>>(this.e.articles,{params:inventoryParams(q)});
+  return this.http.get<InventoryPage<Article>>(this.e.articles,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<Article>>());
  }
  articleOptions(q:{search?:string;cursor?:string;limit?:number;tipo?:InventoryKind}={}){
   return this.http.get<InventoryOptions<Article&{label:string}>>(this.e.articleOptions,{params:inventoryParams(q)});
@@ -70,15 +76,15 @@ export class InventoryApi {
   return this.http.patch<Location>(this.e.location(id),dto,silent)}
  locationStatus(id:string,activo:boolean,motivo:string){
   return this.http.patch<Location>(this.e.locationStatus(id),{activo,motivo},silent)}
- stock(q:BranchFilters){return this.http.get<InventoryPage<StockPosition>>(this.e.stock,{params:inventoryParams(q)})}
+ stock(q:BranchFilters){return this.http.get<InventoryPage<StockPosition>>(this.e.stock,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<StockPosition>>())}
  summary(q:BranchFilters){return this.http.get<{data:StockSummary[];totalArticulos:number;nota:string}>(this.e.stockSummary,{params:inventoryParams(q)})}
  lots(q:BranchFilters&{incluirSinExistencias?:boolean}){
-  return this.http.get<InventoryPage<InventoryLot>>(this.e.lots,{params:inventoryParams(q)})}
+  return this.http.get<InventoryPage<InventoryLot>>(this.e.lots,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<InventoryLot>>())
  createLot(dto:{articuloId:string;codigoLote:string;fechaElaboracion?:string;fechaVencimiento?:string}){
   return this.http.post<InventoryLot>(this.e.lots,dto,silent)}
  blockLot(id:string,bloqueado:boolean,motivo:string){
   return this.http.patch<InventoryLot>(this.e.lotBlock(id),{bloqueado,motivo},silent)}
- movements(q:BranchFilters){return this.http.get<InventoryPage<InventoryMovement>>(this.e.movements,{params:inventoryParams(q)})}
+ movements(q:BranchFilters){return this.http.get<InventoryPage<InventoryMovement>>(this.e.movements,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<InventoryMovement>>())}
  movement(id:string){return this.http.get<InventoryMovement>(this.e.movement(id))}
  manual(kind:'opening'|'inbound'|'outbound'|'waste',dto:ManualPosting){
   return this.http.post<InventoryMovement>(this.e.manual(kind),dto,silent)}
@@ -86,13 +92,13 @@ export class InventoryApi {
  claveOperacion:string;destinoUso:string;motivo:string}){
   return this.http.post<InventoryMovement>(this.e.internalConsumption,dto,silent)}
  counts(q:{sucursalId:string;almacenId?:string;estado?:CountStatus;page?:number;limit?:number}){
-  return this.http.get<InventoryPage<CountListItem>>(this.e.counts,{params:inventoryParams(q)})}
+  return this.http.get<InventoryPage<CountListItem>>(this.e.counts,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<CountListItem>>())
  count(id:string){return this.http.get<CountDetail>(this.e.count(id))}
  createCount(dto:CountCreate){return this.http.post<CountDetail>(this.e.counts,dto,silent)}
  countAction(id:string,action:'confirm'|'cancel'){
   return this.http.post<CountDetail>(this.e.countAction(id,action),{},silent)}
  transfers(q:{sucursalId:string;almacenOrigenId?:string;almacenDestinoId?:string;estado?:TransferStatus;page?:number;limit?:number}){
-  return this.http.get<InventoryPage<TransferListItem>>(this.e.transfers,{params:inventoryParams(q)})}
+  return this.http.get<InventoryPage<TransferListItem>>(this.e.transfers,{params:inventoryParams(q),...silent}).pipe(safeInventoryGetRetry<InventoryPage<TransferListItem>>())
  transfer(id:string){return this.http.get<TransferDetail>(this.e.transfer(id))}
  createTransfer(dto:TransferCreate){return this.http.post<TransferDetail>(this.e.transfers,dto,silent)}
  transferAction(id:string,action:'dispatch'|'receive'|'cancel'){
