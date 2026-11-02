@@ -37,7 +37,7 @@ function positivePrice(raw:string):string{
    <div class="cat-toolbar">
     <label class="cat-field">Tipo de precio
      <select [value]="mode()" (change)="setMode($any($event.target).value)">
-      <option value="variant">Productos y variantes</option><option value="modifier">Extras</option>
+      <option value="variant">Presentaciones de productos</option><option value="modifier">Extras</option>
      </select>
     </label>
     <label class="cat-field">Buscar
@@ -46,7 +46,7 @@ function positivePrice(raw:string):string{
     </label>
     <button type="button" (click)="loadOptions()">Buscar</button>
    </div>
-   <label class="cat-field">Seleccionar {{mode()==='variant'?'variante':'extra'}}
+   <label class="cat-field">Seleccionar {{mode()==='variant'?'presentación':'extra'}}
     <select [value]="entityId()" (change)="selectEntity($any($event.target).value)">
      <option value="">Seleccionar</option>
      @if(mode()==='variant'){
@@ -109,7 +109,7 @@ function positivePrice(raw:string):string{
    @if(mode()==='variant'){
     <section class="cat-card">
      <h2>Cotizar una selección</h2>
-     <p class="cat-muted">Simula el total comercial con extras. No cobra, no crea una orden y no descuenta ingredientes.</p>
+     <p class="cat-muted">Elige los extras para calcular cuánto costaría esta presentación.</p>
      @if(linkedGroups().length){
       @for(group of linkedGroups();track group.grupoId){
        <fieldset class="cat-options"><legend>{{group.grupo?.nombre??'Extras'}} · Mín. {{group.grupo?.minimo??0}}</legend>
