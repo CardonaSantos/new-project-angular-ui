@@ -73,7 +73,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <select [value]="parent()" (change)="parent.set($any($event.target).value)">
        <option value="">Sin categoría superior</option>
        @for(item of parents();track item.id){
-        <option [value]="item.id">{{item.nombre}}</option>
+        <option [value]="item.id">{{item.nombre}}{{item.activa?'':' (inactiva)'}}</option>
        }
       </select>
      </label>
@@ -126,7 +126,16 @@ export class GcCatalogCategoriesPage implements GcDirtyAware{
  protected readonly saveError=signal<string|null>(null);
  protected readonly currentPage=computed(()=>Math.max(1,Number(this.query().get('page')||1)||1));
  protected readonly state=computed(()=>this.query().get('activo')??'');
- protected readonly parents=computed(()=>this.tree().filter(x=>x.activa&&x.id!==this.editing()?.id));
+ protected readonly parents=computed(()=>{
+  const current=this.editing(),selectedId=this.parent();
+  const options=this.tree().filter(x=>(x.activa||x.id===selectedId)&&x.id!==current?.id);
+  const saved=current?.parent;
+  if(selectedId&&saved?.id===selectedId&&!options.some(x=>x.id===selectedId)){
+   return [{id:saved.id,nombre:saved.nombre,parentId:saved.parentId??null,
+    orden:0,activa:false},...options];
+  }
+  return options;
+ });
  constructor(){effect(()=>{
   const page=this.currentPage(),state=this.state(),search=this.query().get('search')??'';
   this.search.set(search);void this.load(page,state,search);
