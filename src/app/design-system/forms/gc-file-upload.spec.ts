@@ -65,4 +65,62 @@ describe('GcFileUpload photo policy',()=>{
   expect(emitted).toEqual([]);
   fixture.destroy();
  });
+ it('crops multiple inventory photos before checking their upload size',async()=>{
+  const prepared=[
+   new File(['a'],'first.jpg',{type:'image/jpeg'}),
+   new File(['b'],'second.jpg',{type:'image/jpeg'}),
+  ];
+  const dialog={open:vi.fn()
+   .mockReturnValueOnce({afterClosed:()=>of(prepared[0])})
+   .mockReturnValueOnce({afterClosed:()=>of(prepared[1])})};
+  await TestBed.configureTestingModule({
+   imports:[GcFileUpload],providers:[{provide:MatDialog,useValue:dialog}]
+  }).compileComponents();
+  const fixture=TestBed.createComponent(GcFileUpload);
+  fixture.componentRef.setInput('inputId','inventory-photos');
+  fixture.componentRef.setInput('maxFiles',10);
+  fixture.componentRef.setInput('maxSizeMb',10);
+  fixture.componentRef.setInput('cropSquare',true);
+  fixture.detectChanges();
+  const selected:File[][]=[];
+  fixture.componentInstance.filesSelected.subscribe(files=>selected.push([...files]));
+  const originals=[
+   new File(['original'],'first.jpg',{type:'image/jpeg'}),
+   new File(['original'],'second.jpg',{type:'image/jpeg'})
+  ];
+  // Source file dimensions and raw file size are not the upload size.
+  Object.defineProperty(originals[0],'size',{value:15*1024*1024});
+  const input=fixture.nativeElement.querySelector('input[type=file]') as HTMLInputElement;
+  Object.defineProperty(input,'files',{configurable:true,value:originals});
+  input.dispatchEvent(new Event('change'));
+  await fixture.whenStable();
+  expect(dialog.open).toHaveBeenCalledTimes(2);
+  expect(selected).toEqual([prepared]);
+  expect(fixture.nativeElement.textContent).toContain('por imagen recortada');
+  fixture.destroy();
+ });
+ it('does not upload a cropped result beyond 10 MB',async()=>{
+  const cropped=new File(['image'],'huge.jpg',{type:'image/jpeg'});
+  Object.defineProperty(cropped,'size',{value:11*1024*1024});
+  const dialog={open:vi.fn().mockReturnValue({afterClosed:()=>of(cropped)})};
+  await TestBed.configureTestingModule({
+   imports:[GcFileUpload],providers:[{provide:MatDialog,useValue:dialog}]
+  }).compileComponents();
+  const fixture=TestBed.createComponent(GcFileUpload);
+  fixture.componentRef.setInput('inputId','inventory-photos');
+  fixture.componentRef.setInput('cropSquare',true);
+  fixture.componentRef.setInput('maxSizeMb',10);
+  fixture.detectChanges();
+  const selected:File[][]=[];
+  fixture.componentInstance.filesSelected.subscribe(files=>selected.push([...files]));
+  const input=fixture.nativeElement.querySelector('input[type=file]') as HTMLInputElement;
+  Object.defineProperty(input,'files',{configurable:true,value:[
+   new File(['original'],'original.jpg',{type:'image/jpeg'})]});
+  input.dispatchEvent(new Event('change'));
+  await fixture.whenStable();fixture.detectChanges();
+  expect(selected).toEqual([]);
+  expect(fixture.nativeElement.querySelector('[role=alert]').textContent).toContain('tamaño no permitido');
+  fixture.destroy();
+ });
+
 });
