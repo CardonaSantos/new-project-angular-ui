@@ -369,6 +369,10 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected async saveFormula(){
   if(!this.access.canManage()||this.busy()||!this.targetId()||!this.name().trim())return;
   if(this.validation().length)return;
+  const original=this.page.data();
+  if(!this.isNew&&original&&(this.name()!==original.nombre||this.active()!==original.activa)){
+   this.formulaError.set('Guarda primero el nombre y el estado de la receta.');return;
+  }
   this.busy.set(true);this.formulaError.set(null);
   try{
    const dto=normalizeFormula(this.versionDto());
