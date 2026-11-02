@@ -26,7 +26,7 @@ interface Overview{summary:CatalogSummary;coverage:CatalogPriceCoverage|null}
       <label for="catalog-branch">Sucursal seleccionada</label>
       <select id="catalog-branch" [value]="branch.branchId()??''" (change)="chooseBranch($any($event.target).value)">
        @for(item of branch.branches();track item.id){
-        <option [value]="item.id">{{item.nombre}}</option>
+        <option [value]="item.id" [selected]="item.id===branch.branchId()">{{item.nombre}}</option>
        }
       </select>
      </div>
