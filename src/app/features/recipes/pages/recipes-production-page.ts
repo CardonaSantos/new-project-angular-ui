@@ -8,6 +8,7 @@ import {formatInstant,formatDecimal} from '../../../shared/formatting';
 import {RecipesApi} from '../data-access/recipes.api';
 import {RecipesAccess} from '../data-access/recipes-access';
 import type {RecipePage,ProductionListItem} from '../data-access/recipes.models';
+import {inclusiveBranchPeriod} from '../data-access/production-period';
 import {GcRecipesNav} from '../recipes-nav';
 
 @Component({
@@ -82,8 +83,8 @@ export class GcRecipesProductionPage {
   if(!id){this.state.reset();return}
   void this.state.load(()=>firstValueFrom(this.api.productionList({
    sucursalId:id,page:pg,limit:20,
-   ...(from?{fechaDesde:new Date(from+'T00:00:00').toISOString()}:{}),
-   ...(to?{fechaHasta:new Date(new Date(to+'T00:00:00').getTime()+86400000).toISOString()}:{}),
+   ...inclusiveBranchPeriod(from,to,
+    this.branch.branches().find(x=>x.id===id)?.zonaHoraria??'America/Guatemala')
   })));
  })}
  protected reload(){this.token.update(n=>n+1)}
