@@ -107,9 +107,11 @@ import {articleChanges,articleRelations} from '../data-access/inventory-article-
       } @empty{<p class="inv-muted">Este artículo todavía no tiene imágenes.</p>}
      </div>
      @if(canManage()){
-      <gc-file-upload inputId="article-photo" label="Agregar imágenes"
-        [maxFiles]="10" [maxSizeMb]="10" [cropSquare]="true" [acceptedMime]="imageTypes"
+      @if(mediaIds().length<10){
+       <gc-file-upload inputId="article-photo" label="Agregar imágenes"
+        [maxFiles]="10-mediaIds().length" [maxSizeMb]="10" [cropSquare]="true" [acceptedMime]="imageTypes"
         (filesSelected)="files.set([...$event]);uploaded.set([])"/>
+      } @else {<p class="inv-muted">La galería alcanzó el máximo de 10 imágenes. Quita una antes de agregar otra.</p>}
       <p class="inv-muted">Puedes seleccionar imágenes grandes: se recortan y reducen antes de subirlas. El tamaño final máximo es 10 MB por fotografía. La primera imagen será la principal.</p>
       @if(mediaError()){<p role="alert" class="inv-alert">{{mediaError()}}</p>}
       <div class="inv-actions">
