@@ -95,7 +95,7 @@ export interface ProductionListItem {
 }
 export interface ProductionDetail {
  id:string;estado:ProductionStatus;recetaVersion:RecipeVersion&{receta:RecipeRecord};
- ubicacionDestino:{id:string;nombre:string;almacenId:string};
+ ubicacionDestino:{id:string;nombre:string;almacenId:string;almacen?:{sucursalId:string}};
  articuloResultado:Article|null;cantidadProducida:string;
  loteResultado?:{codigoLote:string}|null;fechaVencimiento:string|null;
  confirmadoEn:string|null;creadoEn:string;costoTotal?:string|null;
