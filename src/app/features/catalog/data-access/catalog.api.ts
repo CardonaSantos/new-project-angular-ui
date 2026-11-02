@@ -1,5 +1,6 @@
 import {HttpClient,HttpParams} from '@angular/common/http';
 import {inject,Injectable} from '@angular/core';
+import {throwError} from 'rxjs';
 import {API_ENDPOINTS} from '../../../core/http/api-endpoints';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
@@ -61,6 +62,7 @@ export class CatalogApi {
   return this.http.get<CatalogOptions<CatalogProduct&{label:string}>>(this.e.productOptions,params(q));
  }
  product(id:string,sucursalId?:string){
+  if(!id.trim())return throwError(()=>new Error('No se identificó el producto para consultar su detalle.'));
   return this.http.get<CatalogProduct>(this.e.product(id),params({sucursalId}));
  }
  createProduct(dto:CatalogProductCreate){
