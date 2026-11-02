@@ -50,3 +50,9 @@
 .inv-image-trigger:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
 .inv-photo .inv-image-trigger img{display:block}
 .inv-gallery .inv-image-trigger img{display:block;width:90px;height:90px;object-fit:cover}
+
+/* Compact summaries for nested master and reconciliation reports. */
+.inv-report-master-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:.7rem}
+.inv-report-master-grid .inv-kv{gap:.75rem}
+.inv-report-ok{padding:.75rem 1rem;border:1px solid var(--gc-outline-variant);
+ border-radius:.65rem;background:var(--gc-surface-container);font-weight:600}
