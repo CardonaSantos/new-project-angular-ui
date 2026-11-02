@@ -1,4 +1,4 @@
-import {Component,computed,effect,inject,signal} from '@angular/core';
+import {Component,computed,effect,inject,signal,untracked} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
@@ -176,7 +176,7 @@ export class GcCatalogExtrasPage implements GcDirtyAware{
  protected readonly busy=computed(()=>this.saving());
  protected readonly validGroup=computed(()=>this.groupName().trim().length>0&&Number.isInteger(this.minimum())&&this.minimum()>=0&&
   (this.maximum()===''||(Number.isInteger(Number(this.maximum()))&&Number(this.maximum())>=this.minimum())));
- constructor(){effect(()=>{if(this.access.canRead()){void this.loadGroups();void this.loadModifiers()}})}
+ constructor(){effect(()=>{if(this.access.canRead())untracked(()=>{void this.loadGroups();void this.loadModifiers()})})}
  hasUnsavedChanges(){
   const group=this.selectedGroup();
   const mod=this.selectedModifier();
