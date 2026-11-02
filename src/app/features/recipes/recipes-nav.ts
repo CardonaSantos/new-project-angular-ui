@@ -9,6 +9,7 @@ import {RecipesAccess} from './data-access/recipes-access';
    <a routerLink="/recipes/list" routerLinkActive="active" ariaCurrentWhenActive="page">Recetas</a>
    <a routerLink="/recipes/extras" routerLinkActive="active" ariaCurrentWhenActive="page">Extras</a>
    <a routerLink="/recipes/packaging" routerLinkActive="active" ariaCurrentWhenActive="page">Empaques</a>
+   <a routerLink="/recipes/check" routerLinkActive="active" ariaCurrentWhenActive="page">Comprobar ingredientes</a>
   }
   @if(access.canProductionRead()){
    <a routerLink="/recipes/production" routerLinkActive="active" ariaCurrentWhenActive="page">Producción</a>
