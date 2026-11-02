@@ -14,6 +14,7 @@ import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
 import type {CatalogProduct,CatalogCategory,CatalogVariant,CatalogGroup,CatalogGroupAttachment,CatalogProductReadiness} from '../data-access/catalog.models';
 import {PRODUCT_KINDS} from '../data-access/catalog.models';
+import {catalogProductRoute} from '../data-access/catalog-product-route';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 
 @Component({
@@ -198,8 +199,10 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  private readonly notice=inject(GcNotificationService);
  protected readonly access=inject(CatalogAccess);
  protected readonly branch=inject(GcBranchContext);
- protected readonly isNew=this.route.snapshot.paramMap.get('id')==='new';
- private readonly id=this.route.snapshot.paramMap.get('id')??'';
+ private readonly productRoute=catalogProductRoute(
+  this.route.snapshot.routeConfig?.path,this.route.snapshot.paramMap.get('id'));
+ protected readonly isNew=this.productRoute.isNew;
+ private readonly id=this.productRoute.id??'';
  private committed=false;
  protected readonly page=new GcPageState<CatalogProduct>();
  protected readonly categories=signal<CatalogCategory[]>([]);
