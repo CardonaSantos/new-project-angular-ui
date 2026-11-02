@@ -62,7 +62,7 @@ import {PRODUCT_KINDS,type CatalogPriceCoverage,type CatalogSummary} from '../da
     <div class="cat-metrics">
      <div class="cat-metric"><strong>{{overview.categoriasActivas}}</strong><span>Categorías activas</span></div>
      <div class="cat-metric"><strong>{{overview.productosActivos}}</strong><span>Productos activos</span></div>
-     <div class="cat-metric"><strong>{{overview.variantesActivas}}</strong><span>Variantes activas</span></div>
+     <div class="cat-metric"><strong>{{overview.variantesActivas}}</strong><span>Presentaciones activas</span></div>
      <div class="cat-metric"><strong>{{overview.gruposActivos}}</strong><span>Grupos de extras</span></div>
      <div class="cat-metric"><strong>{{overview.modificadoresActivos}}</strong><span>Extras activos</span></div>
      <div class="cat-metric"><strong>{{overview.productosSinImagen}}</strong><span>Productos sin fotografía</span></div>
