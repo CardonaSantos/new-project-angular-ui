@@ -1,4 +1,4 @@
-import {Component,computed,inject,input,output,signal,viewChild} from '@angular/core';
+import {Component,computed,effect,inject,input,output,signal,viewChild} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {MatDialog} from '@angular/material/dialog';
 import {GcFileUpload} from '../../../design-system/forms/gc-file-upload';
@@ -70,12 +70,10 @@ export class GcCatalogGallery{
  private synced='';
  protected readonly dirty=computed(()=>this.order().join('|')!==this.photos().map(x=>x.mediaId).join('|'));
  constructor(){
-  // Photo input may refresh after an upload; preserve unsaved order until successful sync.
-  import('@angular/core').then(()=>undefined);
- }
- ngDoCheck(){
-  const key=this.entityId()+'|'+this.photos().map(p=>p.mediaId).join('|');
-  if(key!==this.synced){this.synced=key;this.order.set(this.photos().map(p=>p.mediaId))}
+  effect(()=>{
+   const items=this.photos(),key=this.entityId()+'|'+items.map(p=>p.mediaId).join('|');
+   if(key!==this.synced){this.synced=key;this.order.set(items.map(p=>p.mediaId))}
+  });
  }
  protected photo(id:string){return this.photos().find(p=>p.mediaId===id)}
  protected move(id:string,d:number){this.order.update(a=>{
