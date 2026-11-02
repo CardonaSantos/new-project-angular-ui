@@ -124,7 +124,7 @@ export class GcInventoryDocumentPage implements OnInit {
    description:l.lote?.codigoLote??'Sin lote',quantity:formatted(l.cantidadEnviada)}));
  }
  protected async act(kind:'confirm'|'cancel'|'dispatch'|'receive'){
-  const titles:{[key:string]:string}={
+  const titles:Record<string,string>={
    confirm:'Confirmar conteo',cancel:'Cancelar documento',dispatch:'Despachar transferencia',
    receive:'Confirmar recepción total'};
   const result=await this.action.runConfirmed(this.dialog,{

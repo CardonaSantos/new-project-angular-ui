@@ -1,5 +1,5 @@
 
-import {Component,OnInit,computed,effect,inject,signal} from '@angular/core';
+import {Component,computed,effect,inject,signal} from '@angular/core';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -138,7 +138,7 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
  </div>`,
  styleUrl:'../inventory.scss'
 })
-export class GcInventoryListPage implements OnInit {
+export class GcInventoryListPage {
  protected readonly branch=inject(GcBranchContext);
  protected readonly url=inject(InventoryUrlState);
  private readonly route=inject(ActivatedRoute);
@@ -173,7 +173,6 @@ export class GcInventoryListPage implements OnInit {
    if(branch)void this.loadOptions(branch);
   });
  }
- ngOnInit(){}
  protected canRead(){return this.branch.has('inventory.read')||this.view==='articles'||this.branch.branches().length>0}
  protected errorMessage(){return gcErrorMessage(this.page.error())}
  protected reload(){void this.load(this.url.filters())}
@@ -205,7 +204,7 @@ export class GcInventoryListPage implements OnInit {
  private async load(f:InventoryFilters){
   if(this.view!=='articles'&&!f.sucursalId)return;
   await this.page.load(async()=>{
-   let rows:GcTableRow[]=[],total=0;
+   let rows:GcTableRow[],total:number;
    const q={page:f.page,limit:f.limit};
    if(this.view==='articles'){
     const r=await firstValueFrom(this.api.articles({...q,search:f.search,

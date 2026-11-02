@@ -200,7 +200,7 @@ export class GcInventoryArticlePage implements OnInit {
   catch{this.dependencies.set({})}
  }
  protected dependencyEntries(data:Record<string,unknown>){
-  return Object.entries(data).filter(([_,v])=>typeof v==='number'||typeof v==='string')
+  return Object.entries(data).filter(([,v])=>typeof v==='number'||typeof v==='string')
    .map(([key,value])=>({key,value:String(value)}));
  }
  protected orderedPhotos(){

@@ -5,7 +5,7 @@ export type CountStatus='BORRADOR'|'CONFIRMADO'|'CANCELADO';
 export type TransferStatus='BORRADOR'|'EN_TRANSITO'|'RECIBIDA'|'CANCELADA';
 export interface InventoryPage<T> {data:T[];meta:{page:number;limit:number;total:number;totalPages:number}}
 export interface InventoryOptions<T> {data:T[];meta:{hasMore:boolean;nextCursor:string|null}}
-export type RecordId={id:string};
+export interface RecordId {id:string}
 export interface InventoryPhoto {mediaId:string;principal:boolean;orden:number;url:string|null;nombreOriginal?:string;confirmada?:boolean}
 export interface Unit {id:string;codigo:string;nombre:string;dimension:Dimension;esBase:boolean;activo?:boolean}
 export interface Conversion {id:string;unidadOrigen?:Unit;unidadDestino?:Unit;factor:string;dimension?:Dimension}

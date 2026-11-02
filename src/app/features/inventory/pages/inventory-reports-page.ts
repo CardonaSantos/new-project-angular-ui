@@ -103,11 +103,11 @@ export class GcInventoryReportsPage {
   this.url.filters().tipo as Report:'masters');
  protected readonly visible=signal(25);
  protected readonly metrics=computed(()=>Object.entries(this.page.data()??{})
-  .filter(([_,value])=>value===null||['string','number','boolean'].includes(typeof value))
+  .filter(([,value])=>value===null||['string','number','boolean'].includes(typeof value))
   .filter(([key])=>!/(^id$|Id$)/.test(key))
   .map(([key,value])=>({key,value})));
  protected readonly groups=computed(()=>Object.entries(this.page.data()??{})
-  .filter(([_,value])=>Array.isArray(value))
+  .filter(([,value])=>Array.isArray(value))
   .map(([key,value])=>({key,items:value as unknown[]})));
  constructor(){
   effect(()=>{const f=this.url.filters(),type=this.type();

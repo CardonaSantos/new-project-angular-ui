@@ -194,7 +194,7 @@ export class GcInventoryUnitsPage {
   this.resetUnit();this.notice.show('Unidad guardada.','success');await this.load('units');
  }
  protected previewEntries(data:Record<string,unknown>){
-  return Object.entries(data).filter(([_,v])=>typeof v==='string'||typeof v==='number')
+  return Object.entries(data).filter(([,v])=>typeof v==='string'||typeof v==='number')
    .map(([key,value])=>({key,value:String(value)}));
  }
  protected async preview(){

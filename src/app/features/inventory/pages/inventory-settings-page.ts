@@ -19,7 +19,6 @@ import {GcInventorySubnav,SETTINGS_LINKS} from '../components/inventory-subnav';
 import {GcInventoryPicker} from '../components/inventory-picker';
 import {InventoryUrlState} from '../data-access/inventory-url-state';
 import {InventoryApi} from '../data-access/inventory.api';
-import type {Warehouse,Location} from '../data-access/inventory.models';
 
 type Scope='warehouses'|'locations';
 @Component({
