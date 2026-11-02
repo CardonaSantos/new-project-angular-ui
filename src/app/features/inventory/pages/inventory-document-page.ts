@@ -95,8 +95,11 @@ export class GcInventoryDocumentPage implements OnInit {
  protected gcError(){return gcErrorMessage(this.page.error())}
  protected reload(){void this.load()}
  private async load(){
-  await this.page.load(()=>firstValueFrom(this.view==='count'?this.api.count(this.id):
-   this.view==='transfer'?this.api.transfer(this.id):this.api.movement(this.id)));
+  await this.page.load(async()=>this.view==='count'
+   ?await firstValueFrom(this.api.count(this.id))
+   :this.view==='transfer'
+    ?await firstValueFrom(this.api.transfer(this.id))
+    :await firstValueFrom(this.api.movement(this.id)));
  }
  protected status(data:CountDetail|TransferDetail|InventoryMovement){
   if('estado' in data)return data.estado;
@@ -133,9 +136,9 @@ export class GcInventoryDocumentPage implements OnInit {
     kind==='confirm'?'El conteo ajustará existencias con base en las diferencias verificadas. ¿Continuar?':
     'Esta operación modificará el estado del documento. ¿Continuar?',
    confirmText:titles[kind],danger:kind==='cancel'||kind==='confirm'},
-   ()=>firstValueFrom(this.view==='count'
-    ?this.api.countAction(this.id,kind as 'confirm'|'cancel')
-    :this.api.transferAction(this.id,kind as 'dispatch'|'receive'|'cancel')));
+   async()=>this.view==='count'
+     ?await firstValueFrom(this.api.countAction(this.id,kind as 'confirm'|'cancel'))
+     :await firstValueFrom(this.api.transferAction(this.id,kind as 'dispatch'|'receive'|'cancel')));
   if(!result)return;
   if(!result.ok){if(result.reason==='error')this.error.set(gcErrorMessage(result.error));return}
   this.error.set(null);this.notice.show('Documento actualizado.','success');await this.load();

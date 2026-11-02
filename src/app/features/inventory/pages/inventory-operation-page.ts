@@ -111,7 +111,7 @@ export class GcInventoryOperationPage {
   cantidad:new FormControl('',{nonNullable:true,validators:[Validators.required,
    Validators.pattern(/^(?:0|[1-9]\d*)(?:\.\d{1,6})?$/)]}),
   costoUnitario:new FormControl('',{nonNullable:true,validators:Validators.pattern(/^(?:0|[1-9]\d*)(?:\.\d{1,6})?$/)}),
-  destinoUso:new FormControl(''),motivo:new FormControl('',{nonNullable:true,validators:Validators.required})
+  destinoUso:new FormControl('',{nonNullable:true}),motivo:new FormControl('',{nonNullable:true,validators:Validators.required})
  });
  constructor(){
   this.form.valueChanges.subscribe(()=>this.key=crypto.randomUUID());

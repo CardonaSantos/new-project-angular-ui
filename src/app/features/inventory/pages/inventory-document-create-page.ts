@@ -57,7 +57,7 @@ function emptyLine():DocumentLine {
       </div>
       <gc-inventory-picker id="document-target-warehouse" label="Almacén de destino" kind="warehouse"
        [branchId]="targetBranch()" [value]="targetWarehouse()"
-       (valueChange)="targetWarehouse.set($event);lines.set([emptyLine()])"/>
+       (valueChange)="targetWarehouse.set($event);resetLines()"/>
      }
     </div>
     <div class="inv-field"><label for="document-note">Nota</label>
@@ -159,6 +159,7 @@ export class GcInventoryDocumentCreatePage {
  }
  protected setTargetBranch(id:string){this.targetBranch.set(id);this.targetWarehouse.set('');this.lines.set([emptyLine()])}
  protected setWarehouse(id:string){this.warehouseId.set(id);this.lines.set([emptyLine()])}
+ protected resetLines(){this.lines.set([emptyLine()])}
  protected addLine(){this.lines.update(current=>[...current,emptyLine()])}
  protected removeLine(key:string){this.lines.update(current=>current.filter(l=>l.key!==key))}
  protected setLine(key:string,update:Partial<DocumentLine>){
@@ -200,7 +201,7 @@ export class GcInventoryDocumentCreatePage {
    title:this.isCount?'Crear conteo':'Crear transferencia',
    message:'El documento se guardará como BORRADOR. ¿Confirmas la creación?',
    confirmText:'Crear borrador'},
-   ()=>firstValueFrom(this.isCount?this.api.createCount(count):this.api.createTransfer(transfer)));
+   async()=>this.isCount?await firstValueFrom(this.api.createCount(count)):await firstValueFrom(this.api.createTransfer(transfer)));
   if(!result)return;
   if(!result.ok){if(result.reason==='error')this.error.set(gcErrorMessage(result.error));return}
   this.form.reset({nota:''});this.lines.set([emptyLine()]);this.warehouseId.set('');

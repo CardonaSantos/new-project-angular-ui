@@ -78,7 +78,7 @@ export class GcInventoryPicker {
     const r=await firstValueFrom(this.api.lots({sucursalId:this.branchId(),
       articuloId:this.articleId(),incluirSinExistencias:true,limit:50,page:1}));
     items=r.data.map(x=>({id:x.id,label:x.codigoLote+
-      (x.bloqueado?' · Bloqueado':'')}));more=r.meta.hasMore;
+      (x.bloqueado?' · Bloqueado':'')}));more=r.meta.total>r.meta.page*r.meta.limit;
    }
    if(current===this.generation){this.items.set(items);this.more.set(more)}
   }catch{

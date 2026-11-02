@@ -10,8 +10,7 @@ import type {
  CountStatus,TransferStatus
 } from './inventory.models';
 
-type FilterValue=string|number|boolean|null|undefined;
-export function inventoryParams(input:Record<string,FilterValue>):HttpParams{
+export function inventoryParams(input:object):HttpParams{
  let params=new HttpParams();
  for(const [key,value] of Object.entries(input)){
   if(value!==undefined&&value!==null&&value!=='')params=params.set(key,String(value));
