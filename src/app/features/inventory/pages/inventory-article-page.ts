@@ -3,6 +3,8 @@ import {Component,OnInit,inject,signal,viewChild} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {FormControl,FormGroup,ReactiveFormsModule,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
+import {MatDialog} from '@angular/material/dialog';
+import {GcImagePreviewDialog} from '../../../design-system/media/gc-image-preview-dialog';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
 import {GcButtonDirective} from '../../../design-system/components/button/gc-button.directive';
 import {GcFileUpload} from '../../../design-system/forms/gc-file-upload';
@@ -88,8 +90,12 @@ import {articleChanges,articleRelations} from '../data-access/inventory-article-
      <div class="inv-gallery">
       @for(pic of orderedPhotos();track pic.mediaId){
        <div class="inv-stack">
-        @if(pic.url){<img [src]="pic.url" [alt]="pic.nombreOriginal??article.nombre"/>}
-        @else{<div class="inv-placeholder">IMG</div>}
+        @if(pic.url){
+         <button type="button" class="inv-image-trigger" (click)="openPhoto(pic.url,article.nombre)"
+          [attr.aria-label]="'Ampliar fotografía de '+article.nombre">
+          <img [src]="pic.url" [alt]="pic.nombreOriginal??article.nombre"/>
+         </button>
+        } @else{<div class="inv-placeholder">IMG</div>}
         @if(canManage()){
          <div class="inv-actions">
           <button type="button" gcButton variant="outline" (click)="shift(pic.mediaId,-1)" [disabled]="mediaAction.busy()">↑</button>
@@ -102,9 +108,9 @@ import {articleChanges,articleRelations} from '../data-access/inventory-article-
      </div>
      @if(canManage()){
       <gc-file-upload inputId="article-photo" label="Agregar imágenes"
-        [maxFiles]="10" [maxSizeMb]="10" [acceptedMime]="imageTypes"
+        [maxFiles]="10" [maxSizeMb]="10" [cropSquare]="true" [acceptedMime]="imageTypes"
         (filesSelected)="files.set([...$event]);uploaded.set([])"/>
-      <p class="inv-muted">La primera imagen de la galería será la principal. Guarda los cambios para aplicar el orden.</p>
+      <p class="inv-muted">Puedes seleccionar imágenes grandes: se recortan y reducen antes de subirlas. El tamaño final máximo es 10 MB por fotografía. La primera imagen será la principal.</p>
       @if(mediaError()){<p role="alert" class="inv-alert">{{mediaError()}}</p>}
       <div class="inv-actions">
        <button gcButton type="button" [disabled]="mediaAction.busy()||form.dirty||(!mediaDirty()&&!files().length)"
@@ -152,6 +158,7 @@ export class GcInventoryArticlePage implements OnInit {
  private readonly api=inject(InventoryApi);
  private readonly media=inject(MediaApi);
  private readonly dialog=inject(ConfirmDialogService);
+ private readonly previewDialog=inject(MatDialog);
  private readonly notice=inject(GcNotificationService);
  protected readonly access=inject(OrganizationAccess);
  private readonly picker=viewChild(GcFileUpload);
@@ -204,6 +211,13 @@ export class GcInventoryArticlePage implements OnInit {
   catch{this.dependencies.set({})}
  }
  protected readonly relationEntries=articleRelations;
+ protected openPhoto(url:string|null,alt:string){
+  if(!url)return;
+  this.previewDialog.open(GcImagePreviewDialog,{
+   data:{url,alt},width:'min(94vw,720px)',maxWidth:'94vw',
+   ariaLabel:'Vista de fotografía de artículo',autoFocus:'dialog',restoreFocus:true,
+  });
+ }
  protected orderedPhotos(){
   const data=this.page.data()?.imagenes??[];
   return this.mediaIds().map(id=>data.find(x=>x.mediaId===id)).filter((p):p is InventoryPhoto=>!!p);
