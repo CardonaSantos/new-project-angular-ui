@@ -72,7 +72,8 @@ export class GcRecipesProductionPage {
  protected readonly state=new GcPageState<RecipePage<ProductionListItem>>();
  protected readonly busy=computed(()=>this.state.busy());
  protected readonly decimal=formatDecimal;
- protected readonly date=formatInstant;
+ protected readonly date=(value:string)=>formatInstant(value,
+  this.branch.branches().find(x=>x.id===this.branchId())?.zonaHoraria??'America/Guatemala');
  protected readonly gcError=gcErrorMessage;
  private readonly token=signal(0);
  constructor(){effect(()=>{
