@@ -13,7 +13,7 @@ import type {
  CatalogMenuPatch,CatalogMenuLayout,CatalogBranchMenu,CatalogSummary,CatalogPriceCoverage
 } from './catalog.models';
 
-export function catalogParams(values:Record<string,unknown>):HttpParams{
+export function catalogParams(values:object):HttpParams{
  let params=new HttpParams();
  for(const [key,value] of Object.entries(values)){
   if(value!==undefined&&value!==null&&value!=='')params=params.set(key,String(value));
@@ -21,7 +21,7 @@ export function catalogParams(values:Record<string,unknown>):HttpParams{
  return params;
 }
 const silent={context:gcSilentRequest()};
-const params=(values:Record<string,unknown>)=>({params:catalogParams(values)});
+const params=(values:object)=>({params:catalogParams(values)});
 
 /** CAT-A's 46 authenticated routes, grouped by the server's domain ownership.
  * No mutation uses automatic retry: prices, menus and publishing have business effects. */
