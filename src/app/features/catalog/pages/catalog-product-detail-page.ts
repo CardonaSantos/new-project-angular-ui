@@ -55,8 +55,8 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       </div>
       <select id="catalog-category" [value]="category()" (change)="category.set($any($event.target).value)"
        [disabled]="!access.canManage()" aria-label="Categoría asignada al producto">
-       <option value="">Sin categoría</option>
-       @for(c of categories();track c.id){<option [value]="c.id">{{c.nombre}}</option>}
+       <option value="" [selected]="!category()">Sin categoría</option>
+       @for(c of categories();track c.id){<option [value]="c.id" [selected]="c.id===category()">{{c.nombre}}</option>}
       </select>
      </div>
      <label class="cat-wide">Descripción para el menú
@@ -151,7 +151,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
          <select [value]="groupId()" (change)="groupId.set($any($event.target).value)" [disabled]="!access.canManage()">
           <option value="">Seleccionar grupo</option>
           @for(group of groups();track group.id){
-           @if(group.activo&&!linked(group.id)){<option [value]="group.id">{{group.nombre}}</option>}
+           @if(group.activo&&!linked(group.id)){<option [value]="group.id" [selected]="group.id===groupId()">{{group.nombre}}</option>}
           }
          </select>
         </label>
