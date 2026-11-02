@@ -29,7 +29,7 @@ function positivePrice(raw:string):string{
    <div class="cat-row"><h2>Precios comerciales</h2>
     <label class="cat-field">Sucursal
      <select [value]="branchId()" (change)="selectBranch($any($event.target).value)">
-      @for(b of branch.branches();track b.id){<option [value]="b.id">{{b.nombre}}</option>}
+      @for(b of branch.branches();track b.id){<option [value]="b.id" [selected]="b.id===branchId()">{{b.nombre}}</option>}
      </select>
     </label>
    </div>
@@ -51,10 +51,10 @@ function positivePrice(raw:string):string{
      <option value="">Seleccionar</option>
      @if(mode()==='variant'){
       @for(item of variants();track item.id){
-       <option [value]="item.id">{{item.label??(item.producto?.nombre+' · '+item.nombre)}}</option>
+       <option [value]="item.id" [selected]="item.id===entityId()">{{item.label??(item.producto?.nombre+' · '+item.nombre)}}</option>
       }
      } @else {
-      @for(item of modifiers();track item.id){<option [value]="item.id">{{item.grupo?.nombre}} · {{item.nombre}}</option>}
+      @for(item of modifiers();track item.id){<option [value]="item.id" [selected]="item.id===entityId()">{{item.grupo?.nombre}} · {{item.nombre}}</option>}
      }
     </select>
    </label>
