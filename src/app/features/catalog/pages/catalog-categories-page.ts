@@ -71,9 +71,9 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
      </label>
      <label>Categoría superior
       <select [value]="parent()" (change)="parent.set($any($event.target).value)">
-       <option value="">Sin categoría superior</option>
+       <option value="" [selected]="!parent()">Sin categoría superior</option>
        @for(item of parents();track item.id){
-        <option [value]="item.id">{{item.nombre}}{{item.activa?'':' (inactiva)'}}</option>
+        <option [value]="item.id" [selected]="item.id===parent()">{{item.nombre}}{{item.activa?'':' (inactiva)'}}</option>
        }
       </select>
      </label>
