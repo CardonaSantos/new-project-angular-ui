@@ -34,7 +34,7 @@ import type {CatalogMenu,CatalogPage} from '../data-access/catalog.models';
      <select [value]="branchId()" (change)="patch({sucursalId:$any($event.target).value||null,page:null})">
       <option value="">Todas las autorizadas</option>
       @for(branch of context.branches();track branch.id){
-       <option [value]="branch.id">{{branch.nombre}}</option>
+       <option [value]="branch.id" [selected]="branch.id===branchId()">{{branch.nombre}}</option>
       }
      </select>
     </label>
