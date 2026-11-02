@@ -36,6 +36,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/users/users.routes').then(m => m.USERS_ROUTES),
       },
       {
+        path: 'recipes', canActivate: [gcSessionGuard], data: { breadcrumb: 'Recetas' },
+        loadChildren: () => import('./features/recipes/recipes.routes').then(m => m.RECIPES_ROUTES),
+      },
+      {
         path: 'catalog', canActivate: [gcSessionGuard], data: { breadcrumb: 'Catálogo' },
         loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.CATALOG_ROUTES),
       },

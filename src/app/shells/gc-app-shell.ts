@@ -16,6 +16,7 @@ import { GcBranchContext } from '../core/organization/gc-branch-context';
 import { OrganizationAccess } from '../features/organization/data-access/organization-access';
 import { UsersAccess } from '../features/users/data-access/users-access';
 import { CatalogAccess } from '../features/catalog/data-access/catalog-access';
+import { RecipesAccess } from '../features/recipes/data-access/recipes-access';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
@@ -36,6 +37,7 @@ export class GcAppShell {
   protected readonly orgAccess = inject(OrganizationAccess);
   protected readonly usersAccess = inject(UsersAccess);
   protected readonly catalogAccess = inject(CatalogAccess);
+  protected readonly recipesAccess = inject(RecipesAccess);
   private readonly avatar=inject(GcCurrentAvatarStore);
   private readonly usersApi=inject(UsersApi);
   private readonly realtime = inject(GcRealtimeService);
@@ -46,6 +48,8 @@ export class GcAppShell {
         { label: 'Inicio', path: '/workspace', initials: 'IN', exact: true },
         ...(this.catalogAccess.canEnter()
           ? [{label:'Catálogo',path:'/catalog',initials:'CA',exact:false}]:[]),
+        ...(this.recipesAccess.canEnter()
+          ? [{label:'Recetas',path:'/recipes',initials:'RE',exact:false}]:[]),
         ...((this.orgAccess.canGlobal('inventory.read')||this.context.has('inventory.read'))
          ? [{label:'Inventario',path:'/inventory',initials:'IV',exact:false}]:[]),
         ...((this.usersAccess.canRead()||this.usersAccess.canGlobal('roles.read')||
