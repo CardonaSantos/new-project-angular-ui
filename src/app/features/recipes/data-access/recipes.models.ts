@@ -16,7 +16,7 @@ export const EFFECTS:readonly {value:ModifierEffect;label:string}[]=[
 export interface RecipePage<T>{data:T[];meta:{page:number;limit:number;total:number;totalPages:number}}
 export interface RecipeComponent {
  id:string;articuloId:string;unidadId:string;cantidad:string;mermaPorcentaje:string;
- articulo?:Pick<Article,'id'|'codigo'|'nombre'>|null;unidad?:Unit|null;
+ articulo?:(Pick<Article,'id'|'codigo'|'nombre'>&{unidadBase?:Unit})|null;unidad?:Unit|null;
 }
 export interface RecipeComponentInput {articuloId:string;unidadId:string;cantidad:string;mermaPorcentaje?:string}
 export interface RecipeVersion {

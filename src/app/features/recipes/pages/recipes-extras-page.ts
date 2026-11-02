@@ -3,6 +3,7 @@ import {firstValueFrom} from 'rxjs';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
 import {InventoryApi} from '../../inventory/data-access/inventory.api';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
+import type {Dimension} from '../../inventory/data-access/inventory.models';
 import {GcRecipesNav} from '../recipes-nav';
 import {RecipesAccess} from '../data-access/recipes-access';
 import {RecipesApi} from '../data-access/recipes.api';
@@ -15,7 +16,7 @@ import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confir
 import {parseApiDecimal,toApiDecimal} from '../../../shared/formatting';
 interface ExtraLine {
  key:number;articuloId:string;articuloLabel:string;unidadId:string;
- unidadLabel:string;cantidad:string;efecto:ModifierEffect;
+ unidadLabel:string;dimension:Dimension|'';cantidad:string;efecto:ModifierEffect;
  sustituyeArticuloId:string;sustituyeLabel:string;
 }
 @Component({
@@ -73,6 +74,7 @@ interface ExtraLine {
         [disabled]="!access.canManage()" (valueChange)="changeArticle(i,$event)"/>
        <gc-inventory-picker [id]="'extra-unit-'+item.key" kind="unit" label="Unidad"
         [value]="item.unidadId" [selectedLabel]="item.unidadLabel"
+        [unitDimension]="item.dimension"
         [disabled]="!access.canManage()" (valueChange)="changeLine(i,{unidadId:$event,unidadLabel:''})"/>
        <label class="rec-field">Cantidad
         <input inputmode="decimal" [value]="item.cantidad" [disabled]="!access.canManage()"
@@ -160,7 +162,8 @@ export class GcRecipesExtrasPage implements OnInit,GcDirtyAware{
    this.selected.set(item);
    this.lines.set((item.modificadorComponentesComoModificador??[]).map(x=>({
     key:++this.key,articuloId:x.articuloId,articuloLabel:x.articulo?.nombre??'',
-    unidadId:x.unidadId,unidadLabel:x.unidad?.nombre??'',cantidad:x.cantidad,
+    unidadId:x.unidadId,unidadLabel:x.unidad?.nombre??'',
+    dimension:x.articulo?.unidadBase?.dimension??'',cantidad:x.cantidad,
     efecto:x.efecto,sustituyeArticuloId:x.sustituyeArticuloId??'',
     sustituyeLabel:x.sustituyeArticulo?.nombre??''
    })));
@@ -172,18 +175,19 @@ export class GcRecipesExtrasPage implements OnInit,GcDirtyAware{
   this.lines.update(xs=>xs.map((x,j)=>i===j?{...x,...patch}:x))
  }
  protected async changeArticle(i:number,id:string){
-  this.changeLine(i,{articuloId:id,articuloLabel:'',unidadId:'',unidadLabel:''});
+  this.changeLine(i,{articuloId:id,articuloLabel:'',unidadId:'',unidadLabel:'',dimension:''});
   if(!id)return;
   try{
    const item=await firstValueFrom(this.inventory.article(id));
    if(this.lines()[i]?.articuloId===id)this.changeLine(i,{
     articuloLabel:item.nombre,unidadId:item.unidadBase.id,
-    unidadLabel:item.unidadBase.nombre+' ('+item.unidadBase.codigo+')'
+    unidadLabel:item.unidadBase.nombre+' ('+item.unidadBase.codigo+')',
+    dimension:item.unidadBase.dimension
    });
   }catch{/* A readable fallback is provided by the shared picker. */}
  }
  protected addLine(){this.lines.update(x=>[...x,{
-  key:++this.key,articuloId:'',articuloLabel:'',unidadId:'',unidadLabel:'',
+  key:++this.key,articuloId:'',articuloLabel:'',unidadId:'',unidadLabel:'',dimension:'',
   cantidad:'',efecto:'SUMAR',sustituyeArticuloId:'',sustituyeLabel:''
  }])}
  protected removeLine(i:number){this.lines.update(xs=>xs.filter((_,j)=>i!==j))}
@@ -202,7 +206,8 @@ export class GcRecipesExtrasPage implements OnInit,GcDirtyAware{
    this.selected.set(result);
    this.lines.set((result.modificadorComponentesComoModificador??[]).map(x=>({
     key:++this.key,articuloId:x.articuloId,articuloLabel:x.articulo?.nombre??'',
-    unidadId:x.unidadId,unidadLabel:x.unidad?.nombre??'',cantidad:x.cantidad,
+    unidadId:x.unidadId,unidadLabel:x.unidad?.nombre??'',
+    dimension:x.articulo?.unidadBase?.dimension??'',cantidad:x.cantidad,
     efecto:x.efecto,sustituyeArticuloId:x.sustituyeArticuloId??'',
     sustituyeLabel:x.sustituyeArticulo?.nombre??''
    })));

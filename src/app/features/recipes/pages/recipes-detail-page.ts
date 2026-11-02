@@ -9,6 +9,7 @@ import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
 import {InventoryApi} from '../../inventory/data-access/inventory.api';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
+import type {Dimension} from '../../inventory/data-access/inventory.models';
 import type {CatalogVariant} from '../../catalog/data-access/catalog.models';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 import {GcRecipesNav} from '../recipes-nav';
@@ -19,7 +20,7 @@ import type {RecipeKind,RecipeRecord,RecipeVersion,RecipeVersionInput} from '../
 
 interface IngredientForm {
  key:number;articuloId:string;articuloNombre:string;
- unidadId:string;unidadNombre:string;cantidad:string;mermaPorcentaje:string;
+ unidadId:string;unidadNombre:string;dimension:Dimension|'';cantidad:string;mermaPorcentaje:string;
 }
 @Component({
  selector:'gc-recipes-detail-page',
@@ -123,6 +124,7 @@ interface IngredientForm {
      </div>
      <div class="rec-form">
       <gc-inventory-picker id="yield-unit" kind="unit" label="Unidad de rendimiento"
+       [unitDimension]="kind()==='VENTA'?'UNIDAD':''"
        [value]="unitId()" [selectedLabel]="unitLabel()" (valueChange)="unitId.set($event)"
        [disabled]="!access.canManage()"/>
       <label class="rec-field">Cantidad que rinde
@@ -148,6 +150,7 @@ interface IngredientForm {
          [disabled]="!access.canManage()" (valueChange)="changeArticle(i,$event)"/>
         <gc-inventory-picker [id]="'ingredient-unit-'+line.key" kind="unit" label="Unidad"
          [value]="line.unidadId" [selectedLabel]="line.unidadNombre"
+         [unitDimension]="line.dimension"
          [disabled]="!access.canManage()" (valueChange)="changeIngredient(i,{unidadId:$event,unidadNombre:''})"/>
         <label class="rec-field">Cantidad
          <input inputmode="decimal" [value]="line.cantidad" [disabled]="!access.canManage()"
@@ -329,20 +332,21 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  }
  protected addIngredient(){
   this.ingredients.update(a=>[...a,{key:++this.nextKey,articuloId:'',articuloNombre:'',
-   unidadId:'',unidadNombre:'',cantidad:'',mermaPorcentaje:'0'}]);
+   unidadId:'',unidadNombre:'',dimension:'',cantidad:'',mermaPorcentaje:'0'}]);
  }
  protected changeIngredient(index:number,patch:Partial<IngredientForm>){
   this.ingredients.update(a=>a.map((x,i)=>i===index?{...x,...patch}:x));
  }
  protected removeIngredient(index:number){this.ingredients.update(a=>a.filter((_,i)=>i!==index))}
  protected async changeArticle(index:number,id:string){
-  this.changeIngredient(index,{articuloId:id,articuloNombre:'',unidadId:'',unidadNombre:''});
+  this.changeIngredient(index,{articuloId:id,articuloNombre:'',unidadId:'',unidadNombre:'',dimension:''});
   if(!id)return;
   try{
    const article=await firstValueFrom(this.inventory.article(id));
    if(this.ingredients()[index]?.articuloId===id){
     this.changeIngredient(index,{articuloNombre:article.nombre,
-     unidadId:article.unidadBase.id,unidadNombre:article.unidadBase.nombre+' ('+article.unidadBase.codigo+')'});
+     unidadId:article.unidadBase.id,unidadNombre:article.unidadBase.nombre+' ('+article.unidadBase.codigo+')',
+     dimension:article.unidadBase.dimension});
    }
   }catch{/* The picker still retains the selection and the server validates it on save. */}
  }
@@ -388,6 +392,7 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
   this.ingredients.set((v?.recetaComponentesComoRecetaVersion??[]).map(x=>({
    key:++this.nextKey,articuloId:x.articuloId,articuloNombre:x.articulo?.nombre??'',
    unidadId:x.unidadId,unidadNombre:x.unidad?.nombre??'',
+   dimension:x.articulo?.unidadBase?.dimension??'',
    cantidad:x.cantidad,mermaPorcentaje:x.mermaPorcentaje
   })));
  }
