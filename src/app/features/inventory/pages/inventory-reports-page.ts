@@ -2,6 +2,7 @@
 import {Component,computed,effect,inject,signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {OrganizationAccess} from '../../organization/data-access/organization-access';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
 import {GcButtonDirective} from '../../../design-system/components/button/gc-button.directive';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
@@ -48,8 +49,10 @@ function valueText(value:unknown,key:string):string {
    <div class="inv-row">
     <nav class="inv-subnav" aria-label="Tipo de reporte">
      @for(option of types;track option){
+      @if(option!=='valuation'||canCosts()){
       <button gcButton type="button" [variant]="type()===option?'primary':'outline'"
        (click)="choose(option)">{{labels[option]}}</button>
+      }
      }
     </nav>
     <div class="inv-field"><label for="inv-report-branch">Sucursal</label>
@@ -96,6 +99,7 @@ export class GcInventoryReportsPage {
  protected readonly branch=inject(GcBranchContext);
  protected readonly url=inject(InventoryUrlState);
  private readonly api=inject(InventoryApi);
+ protected readonly access=inject(OrganizationAccess);
  protected readonly page=new GcPageState<Record<string,unknown>>();
  protected readonly types:readonly Report[]=['masters','valuation','expiry','reconciliation'];
  protected readonly labels=names;
@@ -111,9 +115,11 @@ export class GcInventoryReportsPage {
   .map(([key,value])=>({key,items:value as unknown[]})));
  constructor(){
   effect(()=>{const f=this.url.filters(),type=this.type();
+   if(type==='valuation'&&!this.canCosts())return;
    if(type==='masters'||f.sucursalId)void this.load(type,f.sucursalId)
   });
  }
+ protected canCosts(){return this.access.canGlobal('inventory.costs.read')||this.branch.has('inventory.costs.read')}
  protected human(key:string){return caption(key)}
  protected show(value:unknown,key:string){return valueText(value,key)}
  protected objectEntries(value:unknown){

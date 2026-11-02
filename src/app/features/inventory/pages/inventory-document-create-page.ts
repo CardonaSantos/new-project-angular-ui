@@ -4,6 +4,7 @@ import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {FormControl,FormGroup,ReactiveFormsModule,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {OrganizationAccess} from '../../organization/data-access/organization-access';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
 import {GcButtonDirective} from '../../../design-system/components/button/gc-button.directive';
 import {GcConfirmedAction} from '../../../core/ux/gc-confirmed-action';
@@ -103,7 +104,7 @@ function emptyLine():DocumentLine {
          <input [id]="'line-qty-'+line.key" inputmode="decimal" placeholder="Ej. 12.500000"
           [value]="line.cantidad" (input)="setLine(line.key,{cantidad:$any($event.target).value})"/>
         </div>
-        @if(isCount){
+        @if(isCount&&(branch.has('inventory.costs.manage')||globalAccess.canGlobal('inventory.costs.manage'))){
          <div class="inv-field"><label [for]="'line-cost-'+line.key">Costo para diferencia positiva (si aplica)</label>
           <input [id]="'line-cost-'+line.key" inputmode="decimal" placeholder="Ej. 1.250000"
            [value]="line.costoUnitarioEntrada"
@@ -140,6 +141,7 @@ export class GcInventoryDocumentCreatePage {
  protected readonly branch=inject(GcBranchContext);
  protected readonly url=inject(InventoryUrlState);
  private readonly api=inject(InventoryApi);
+ protected readonly globalAccess=inject(OrganizationAccess);
  private readonly router=inject(Router);
  private readonly dialog=inject(ConfirmDialogService);
  private readonly notice=inject(GcNotificationService);
@@ -208,5 +210,5 @@ export class GcInventoryDocumentCreatePage {
   this.notice.show('Borrador creado.','success');
   await this.router.navigate(['/inventory/operations',this.isCount?'counts':'transfers',result.value.id]);
  }
- hasUnsavedChanges(){return this.form.dirty||this.lines().some(l=>!!l.articuloId||!!l.cantidad)}
+ hasUnsavedChanges(){return this.form.dirty||!!this.warehouseId()||!!this.targetBranch()||!!this.targetWarehouse()||this.lines().length>1||this.lines().some(l=>!!l.articuloId||!!l.cantidad||!!l.loteId)}
 }

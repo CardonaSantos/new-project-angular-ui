@@ -11,6 +11,7 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcInventoryNav} from '../inventory-nav';
+import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcInventorySubnav,OPERATION_LINKS} from '../components/inventory-subnav';
 import {InventoryApi} from '../data-access/inventory.api';
 import {formatDecimal} from '../../../shared/formatting';
@@ -51,23 +52,23 @@ function formatted(value:string|null|undefined){
     @if(view==='movement'){
      <p class="inv-muted">El Kardex es inmutable. Las correcciones se registran mediante nuevos documentos autorizados.</p>
     }
-    @if(view==='count'&&status(document)==='BORRADOR'){
+    @if(view==='count'&&status(document)==='BORRADOR'&&canAct()){
      <p class="inv-muted">Al confirmar, el sistema verificará que las existencias no hayan cambiado desde el conteo.</p>
     }
-    @if(view==='transfer'&&status(document)==='EN_TRANSITO'){
+    @if(view==='transfer'&&status(document)==='EN_TRANSITO'&&canAct()){
      <p class="inv-muted">La recepción actual es total; no se admiten recepciones parciales.</p>
     }
     @if(error()){<p role="alert" class="inv-alert">{{error()}}</p>}
     <div class="inv-actions">
-     @if(view==='count'&&status(document)==='BORRADOR'){
+     @if(view==='count'&&status(document)==='BORRADOR'&&canAct()){
       <button gcButton type="button" [disabled]="action.busy()" (click)="act('confirm')">Confirmar conteo</button>
       <button gcButton variant="danger" type="button" [disabled]="action.busy()" (click)="act('cancel')">Cancelar conteo</button>
      }
-     @if(view==='transfer'&&status(document)==='BORRADOR'){
+     @if(view==='transfer'&&status(document)==='BORRADOR'&&canAct()){
       <button gcButton type="button" [disabled]="action.busy()" (click)="act('dispatch')">Despachar</button>
       <button gcButton variant="danger" type="button" [disabled]="action.busy()" (click)="act('cancel')">Cancelar transferencia</button>
      }
-     @if(view==='transfer'&&status(document)==='EN_TRANSITO'){
+     @if(view==='transfer'&&status(document)==='EN_TRANSITO'&&canAct()){
       <button gcButton type="button" [disabled]="action.busy()" (click)="act('receive')">Confirmar recepción total</button>
      }
      <a [routerLink]="backLink()">Regresar al listado</a>
@@ -83,6 +84,9 @@ export class GcInventoryDocumentPage implements OnInit {
  private readonly dialog=inject(ConfirmDialogService);
  private readonly notice=inject(GcNotificationService);
  protected readonly operationLinks=OPERATION_LINKS;
+ private readonly branch=inject(GcBranchContext);
+ protected canAct(){return this.view==='count'?
+  this.branch.has('inventory.adjust'):this.branch.has('inventory.transfer')}
  protected readonly view=(this.route.snapshot.data['view']??'movement') as 'movement'|'count'|'transfer';
  private readonly id=this.route.snapshot.paramMap.get('id')??'';
  protected readonly page=new GcPageState<CountDetail|TransferDetail|InventoryMovement>();
@@ -127,6 +131,7 @@ export class GcInventoryDocumentPage implements OnInit {
    description:l.lote?.codigoLote??'Sin lote',quantity:formatted(l.cantidadEnviada)}));
  }
  protected async act(kind:'confirm'|'cancel'|'dispatch'|'receive'){
+  if(!this.canAct())return;
   const titles:Record<string,string>={
    confirm:'Confirmar conteo',cancel:'Cancelar documento',dispatch:'Despachar transferencia',
    receive:'Confirmar recepción total'};

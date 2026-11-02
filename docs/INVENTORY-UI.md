@@ -58,3 +58,17 @@ en el cliente. Las cantidades de stock físico no representan reservas de órden
 8. Resumen y reportes: números válidos; visibilidad de costos según permiso; carga y vacíos.
 9. Escritorio y móvil: zoom 200%, controles teclado, breadcrumbs, diálogos y error focalizable.
 10. No fusionar a main sin build, lint, pruebas y aceptación manual contra NestJS local.
+
+
+## Norma UX actualizada
+
+Los filtros en la URL son un requisito transversal del sistema, documentado en
+\`docs/DESIGN-SYSTEM.md\`. El motivo de bloqueo de lotes se solicita siempre
+al operador (mínimo 3 caracteres), sin textos de auditoría inventados. La UI
+oculta la acción a usuarios sin \`inventory.articles.manage\`. Los botones de
+confirmación de conteos y transferencias dependen de los permisos de la sucursal
+activa; NestJS sigue aplicando autorización real. Entradas manuales necesitan
+\`inventory.adjust\` y \`inventory.costs.manage\`, y consumo interno
+\`inventory.consume.internal\`. La clave idempotente cambia al modificar
+cualquier selección o campo de la operación, pero no al reintentar el mismo
+envío fallido.

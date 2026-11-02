@@ -52,3 +52,26 @@ En formularios sencillos, mantener etiquetas visibles y usar `placeholder` solo 
 El breadcrumb inicia siempre en `Inicio`, muestra los niveles intermedios como enlaces, y el último como texto con `aria-current="page"`. Usa un `nav` con etiqueta accesible y lista ordenada. Los niveles visibles se ajustan a espacios estrechos; no se ocultan enlaces de retorno. No duplicar «Volver a…» si el breadcrumb ya contiene el enlace al listado.
 
 Ejemplos: `Inicio / Dispositivos / Nuevo dispositivo`, `Inicio / Sucursales / Detalle de sucursal`, `Inicio / Empresa` y `Inicio / Seguridad`. Evitar rutas planas `devices/new` que pierden la relación padre-hijo.
+
+
+## Convención global: filtros y contexto en la URL
+
+La URL es la fuente de verdad del estado **navegable y compartible** de cada listado:
+búsqueda aplicada, filtros, orden compatible con el backend, paginación, sucursal,
+almacén, artículo, sección y tipo de reporte, según corresponda. Un enlace copiado
+debe reconstruir la misma consulta tras F5; Atrás/Adelante debe recuperar estados
+anteriores sin almacenar duplicados en localStorage.
+
+- Para tablas genéricas, reutilizar \`GcTableRouteState\` (página cero en UI,
+  parser URL). Si un módulo requiere filtros propios, usar un adaptador scoped
+  del mismo patrón; Inventory utiliza \`InventoryUrlState\` con \`page\` basado en 1
+  y \`limit\` porque coincide con sus contratos.
+- En cambios de filtros, restablecer \`page\` a 1. Usar
+  \`queryParamsHandling:'merge'\`; eliminar params vacíos y normalizar tamaños
+  inválidos. Los valores URL deben validarse y restringirse a sucursales accesibles;
+  el servidor sigue siendo la única fuente de autorización.
+- No colocar en la URL secretos, tokens, contraseñas, imágenes privadas, datos
+  de formularios sin guardar ni privilegios. Formularios locales, mensajes y
+  diálogos no son estado navegable; proteger edición pendiente con el guard común.
+- Los selectores por cursor no se sustituyen por paginación falsa de cliente.
+  Nunca ordenar únicamente la página visible cuando la API controla la ordenación.

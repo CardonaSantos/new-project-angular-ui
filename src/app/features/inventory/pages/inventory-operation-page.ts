@@ -31,7 +31,7 @@ type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
     <div class="inv-grid">
      <div class="inv-field">
       <label for="manual-type">Operación</label>
-      <select id="manual-type" [value]="kind()" (change)="kind.set($any($event.target).value)">
+      <select id="manual-type" [value]="kind()" (change)="kind.set($any($event.target).value);newRequestKey()">
        <option value="opening">Saldo inicial</option>
        <option value="inbound">Entrada manual</option>
        <option value="outbound">Salida manual</option>
@@ -46,16 +46,16 @@ type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
       </select>
      </div>
      <gc-inventory-picker id="manual-art" label="Artículo" kind="article" [value]="articleId()"
-      (valueChange)="articleId.set($event);lotId.set('')"/>
+      (valueChange)="articleId.set($event);lotId.set('');newRequestKey()"/>
      <gc-inventory-picker id="manual-warehouse" label="Almacén" kind="warehouse"
       [branchId]="url.filters().sucursalId" [value]="warehouseId()"
-      (valueChange)="warehouseId.set($event);locationId.set('')"/>
+      (valueChange)="warehouseId.set($event);locationId.set('');newRequestKey()"/>
      <gc-inventory-picker id="manual-location" label="Ubicación" kind="location"
       [branchId]="url.filters().sucursalId" [warehouseId]="warehouseId()" [value]="locationId()"
-      (valueChange)="locationId.set($event)"/>
+      (valueChange)="locationId.set($event);newRequestKey()"/>
      <gc-inventory-picker id="manual-lot" label="Lote (si aplica)" kind="lot"
       [branchId]="url.filters().sucursalId" [articleId]="articleId()" [value]="lotId()"
-      (valueChange)="lotId.set($event)"/>
+      (valueChange)="lotId.set($event);newRequestKey()"/>
      <div class="inv-field"><label for="manual-qty">Cantidad</label>
       <input id="manual-qty" formControlName="cantidad" inputmode="decimal"
        placeholder="Ej. 5.250000"
@@ -105,6 +105,7 @@ export class GcInventoryOperationPage {
  protected readonly locationId=signal('');protected readonly lotId=signal('');
  protected readonly error=signal<string|null>(null);
  private key=crypto.randomUUID();
+ protected newRequestKey(){this.key=crypto.randomUUID()}
  protected readonly form=new FormGroup({
   cantidad:new FormControl('',{nonNullable:true,validators:[Validators.required,
    Validators.pattern(/^(?:0|[1-9]\d*)(?:\.\d{1,6})?$/)]}),
@@ -122,7 +123,7 @@ export class GcInventoryOperationPage {
   return this.branch.has('inventory.adjust');
  }
  protected branchChange(id:string){
-  this.warehouseId.set('');this.locationId.set('');this.lotId.set('');
+  this.warehouseId.set('');this.locationId.set('');this.lotId.set('');this.newRequestKey();
   void this.url.patch({sucursalId:id});
  }
  protected async save(){

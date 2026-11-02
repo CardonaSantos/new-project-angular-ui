@@ -63,7 +63,7 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
   <section class="inv-card">
    <div class="inv-row">
     <h2>{{config.title}}</h2>
-    @if(config.create){<a gcButton [routerLink]="config.create">{{view==='articles'?'Nuevo artículo':view==='movements'?'Registrar movimiento':view==='counts'?'Nuevo conteo':'Nueva transferencia'}}</a>}
+    @if(config.create&&canCreate()){<a gcButton [routerLink]="config.create">{{view==='articles'?'Nuevo artículo':view==='movements'?'Registrar movimiento':view==='counts'?'Nuevo conteo':'Nueva transferencia'}}</a>}
    </div>
    <form class="inv-toolbar" (submit)="apply($event)">
     @if(view==='articles'||view==='movements'){
@@ -126,7 +126,7 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
      </ng-template>
      <ng-template gcTableCell="acciones" let-row>
       @if(link(row['id']);as url){<a class="inv-link" [routerLink]="url">Ver detalle</a>}
-      @else if(view==='lots'){
+      @else if(view==='lots'&&access.canGlobal('inventory.articles.manage')){
        <button type="button" gcButton variant="outline" [disabled]="action.busy()||lotReason().trim().length<3"
         (click)="toggleLot(row)">{{row['bloqueado']?'Desbloquear':'Bloquear'}}</button>
       }
@@ -217,6 +217,13 @@ export class GcInventoryListPage {
    const branch=this.url.filters().sucursalId;
    if(branch)void this.loadOptions(branch);
   });
+ }
+ protected canCreate(){
+  if(this.view==='articles')return this.access.canGlobal('inventory.articles.manage');
+  if(this.view==='movements')return this.branch.has('inventory.adjust')||this.branch.has('inventory.consume.internal');
+  if(this.view==='counts')return this.branch.has('inventory.adjust');
+  if(this.view==='transfers')return this.branch.has('inventory.transfer');
+  return false;
  }
  protected canRead(){return this.branch.has('inventory.read')||this.view==='articles'||this.branch.branches().length>0}
  protected errorMessage(){return gcErrorMessage(this.page.error())}
