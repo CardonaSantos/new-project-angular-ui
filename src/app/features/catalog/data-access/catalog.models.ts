@@ -33,6 +33,7 @@ export interface CatalogCategory extends CatalogImages {
  _count?:{productosComoCategoria:number;categoriasComoParent:number};
  children?:CatalogCategory[];totalProductos?:number;
 }
+export interface CatalogCategoryOption {id:string;label:string;parentId:string|null}
 export interface CatalogCategoryCreate {nombre:string;parentId?:string|null;orden?:number}
 export type CatalogCategoryPatch=Partial<CatalogCategoryCreate>;
 export interface CatalogArticleLink {id:string;codigo:string;nombre:string;activo:boolean}
