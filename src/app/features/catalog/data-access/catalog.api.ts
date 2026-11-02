@@ -185,6 +185,6 @@ export class CatalogApi {
   return this.http.get<CatalogPriceCoverage>(this.e.reports.coverage,params({sucursalId,fecha}));
  }
 }
-type CatalogVariantGroupLinkResult={
+interface CatalogVariantGroupLinkResult {
  grupoId:string;varianteId:string;orden:number;obligatorio:boolean;
-};
+}
