@@ -30,7 +30,18 @@
           @for (row of table.getRowModel().rows; track row.id) {
             <tr>
               @for (cell of row.getAllCells(); track cell.id) {
-                <td [class.numeric]="columns()[$index].numeric">{{ cell.getValue() ?? '—' }}</td>
+                <td [class.numeric]="columnsByKey().get(cell.column.id)?.numeric">
+                  @if (templatesByKey().get(cell.column.id); as template) {
+                    <ng-container [ngTemplateOutlet]="template"
+                      [ngTemplateOutletContext]="{
+                        $implicit: row.original,
+                        value: row.original[cell.column.id],
+                        column: columnsByKey().get(cell.column.id)
+                      }" />
+                  } @else {
+                    {{ cellText(row.original, cell.column.id) }}
+                  }
+                </td>
               }
             </tr>
           }

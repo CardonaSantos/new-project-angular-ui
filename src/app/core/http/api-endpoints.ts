@@ -7,8 +7,11 @@ export const API_ENDPOINTS = {
     me: '/api/auth/me',
     refresh: '/api/auth/refresh',
     logout: '/api/auth/logout',
+    logoutAll: '/api/auth/logout-all',
+    password: '/api/auth/password',
+    capabilities: '/api/auth/capabilities',
   },
-  organization: { branches: '/api/branches' },
+  organization: { branches: '/api/branches', myAccess: '/api/branches/my-access' },
   inventory: {
     articles: '/api/inventory/articles',
     stock: '/api/inventory/stock',

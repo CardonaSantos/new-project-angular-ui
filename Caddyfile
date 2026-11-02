@@ -1,6 +1,16 @@
 :{$PORT:3000} {
-  root * /srv
   encode gzip
-  try_files {path} /index.html
-  file_server
+
+  # Same-origin public /api route; preserves /api and gastro_refresh cookie path.
+  # API_UPSTREAM points to the NestJS service (private Railway hostname or localhost).
+  @api path /api /api/*
+  handle @api {
+    reverse_proxy {$API_UPSTREAM:127.0.0.1:3001}
+  }
+
+  handle {
+    root * /srv
+    try_files {path} /index.html
+    file_server
+  }
 }
