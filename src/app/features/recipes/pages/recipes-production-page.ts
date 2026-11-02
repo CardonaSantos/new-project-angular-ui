@@ -4,7 +4,7 @@ import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
-import {formatInstant,formatCurrency,formatDecimal} from '../../../shared/formatting';
+import {formatInstant,formatDecimal} from '../../../shared/formatting';
 import {RecipesApi} from '../data-access/recipes.api';
 import {RecipesAccess} from '../data-access/recipes-access';
 import type {RecipePage,ProductionListItem} from '../data-access/recipes.models';
@@ -82,7 +82,7 @@ export class GcRecipesProductionPage {
   void this.state.load(()=>firstValueFrom(this.api.productionList({
    sucursalId:id,page:pg,limit:20,
    ...(from?{fechaDesde:new Date(from+'T00:00:00').toISOString()}:{}),
-   ...(to?{fechaHasta:new Date(to+'T00:00:00').toISOString()}:{}),
+   ...(to?{fechaHasta:new Date(new Date(to+'T00:00:00').getTime()+86400000).toISOString()}:{}),
   })));
  })}
  protected reload(){this.token.update(n=>n+1)}
