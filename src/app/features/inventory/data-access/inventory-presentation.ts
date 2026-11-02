@@ -35,9 +35,9 @@ export function valuationMethod(value:unknown):string{
  if(value==='FIFO')return 'FIFO (primeras entradas, primeras salidas)';
  return typeof value==='string'&&value?value.replaceAll('_',' '):'No especificado';
 }
-export interface InventoryValuationRow{
+export type InventoryValuationRow={
  id:string; nombre:string; codigo:string; valor:string;
-}
+};
 export function inventoryValuationRows(payload:Record<string,unknown>):InventoryValuationRow[]{
  if(!Array.isArray(payload['articulos']))return [];
  return payload['articulos'].flatMap((record:unknown,index:number)=>{
