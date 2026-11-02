@@ -76,7 +76,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     <label class="cat-field">Filtrar por grupo
      <select [value]="filterGroup()" (change)="setFilter($any($event.target).value)">
       <option value="">Todos los grupos</option>
-      @for(g of groups();track g.id){<option [value]="g.id">{{g.nombre}}</option>}
+      @for(g of groups();track g.id){<option [value]="g.id" [selected]="g.id===modifierGroup()">{{g.nombre}}</option>}
      </select>
     </label>
     <label class="cat-field">Buscar extra
