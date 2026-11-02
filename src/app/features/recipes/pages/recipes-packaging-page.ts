@@ -111,7 +111,7 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
      <div class="rec-line">
       <div class="rec-line-grid">
        <gc-inventory-picker [id]="'packaging-material-'+line.key" kind="article" label="Material de empaque"
-        [value]="line.articuloId" [selectedLabel]="line.nombre" (valueChange)="changeArticle(i,$event)"
+        [value]="line.articuloId" [selectedLabel]="line.nombre" articleKind="EMPAQUE" (valueChange)="changeArticle(i,$event)"
         [disabled]="!access.canManage()"/>
        <label class="rec-field">Cantidad {{line.unidad?'('+line.unidad+')':''}}
         <input inputmode="decimal" [value]="line.cantidad" (input)="changeMaterial(i,{cantidad:$any($event.target).value})"
