@@ -1,5 +1,5 @@
 
-import {Component,computed,effect,inject,signal} from '@angular/core';
+import {Component,computed,effect,inject,isDevMode,signal} from '@angular/core';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {MatDialog} from '@angular/material/dialog';
@@ -310,6 +310,11 @@ export class GcInventoryListPage {
    }
    return {rows,total};
   },r=>r.rows.length===0);
+  // A caught exception does not appear in the browser console by default.
+  // In development, preserve the exact failure for diagnosing intermittent reads.
+  if(isDevMode()&&this.page.status()==='error'){
+   console.warn('[Inventory] Error loading '+this.view,this.page.error());
+  }
  }
  hasUnsavedChanges(){return !!this.newLotCode().trim()||!!this.newLotExpiry()||!!this.newLotManufacture()}
  protected async createLot(){
