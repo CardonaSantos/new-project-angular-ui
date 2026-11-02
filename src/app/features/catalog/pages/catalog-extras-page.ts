@@ -126,7 +126,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        placeholder="0.00" required/>
      </label>
      <label class="cat-check"><input type="checkbox" [checked]="requiresRecipe()"
-      (change)="requiresRecipe.set($any($event.target).checked)"/> Necesita composición o receta para producción</label>
+      (change)="requiresRecipe.set($any($event.target).checked)"/> Requiere preparación especial</label>
      @if(selectedModifier()){
       <label class="cat-check"><input type="checkbox" [checked]="modifierActive()"
        (change)="modifierActive.set($any($event.target).checked)"/> Opción activa</label>
