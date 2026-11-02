@@ -29,8 +29,8 @@ export interface StockPosition extends RecordId {
  lote?:{id:string;codigoLote:string;bloqueado:boolean;fechaVencimiento:string|null}|null;
  cantidad:string;costoUnitario?:string;costoTotal?:string;valorInventario?:string;
 }
-export interface StockSummary extends RecordId {articuloId:string;codigo:string;nombre:string;unidad:string;stockMinimo:string|null;
- cantidad:string;bloqueada:string;disponible?:string;utilizable?:string;valorInventario?:string;imagenPrincipalUrl?:string|null}
+export interface StockSummary {articuloId:string;codigo:string;nombre:string;unidad:string;stockMinimo:string|null;
+ cantidad:string;cantidadBloqueada:string;cantidadUtilizable:string;bajoMinimo:boolean;valor?:string;imagenPrincipalUrl?:string|null}
 export interface InventoryLot extends RecordId {codigoLote:string;articulo:{id:string;codigo:string;nombre:string};
  bloqueado:boolean;fechaElaboracion:string|null;fechaVencimiento:string|null;cantidad:string;
  posiciones:{ubicacionId:string;cantidad:string}[]}

@@ -19,7 +19,7 @@ import {GcInventorySubnav,STOCK_LINKS,OPERATION_LINKS} from '../components/inven
 import {InventoryApi} from '../data-access/inventory.api';
 import {InventoryUrlState,type InventoryFilters} from '../data-access/inventory-url-state';
 import type {InventoryKind,CountStatus,TransferStatus} from '../data-access/inventory.models';
-import {formatDecimal,parseApiDecimal} from '../../../shared/formatting';
+import {formatDecimal} from '../../../shared/formatting';
 
 type View='articles'|'stock'|'lots'|'movements'|'counts'|'transfers';
 const VIEWS:Record<View,{title:string;columns:GcTableColumn[];create?:string}> = {

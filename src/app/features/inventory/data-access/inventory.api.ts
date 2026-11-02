@@ -72,7 +72,7 @@ export class InventoryApi {
  locationStatus(id:string,activo:boolean,motivo:string){
   return this.http.patch<Location>(this.e.locationStatus(id),{activo,motivo},silent)}
  stock(q:BranchFilters){return this.http.get<InventoryPage<StockPosition>>(this.e.stock,{params:inventoryParams(q)})}
- summary(q:BranchFilters){return this.http.get<{data:StockSummary[]}>(this.e.stockSummary,{params:inventoryParams(q)})}
+ summary(q:BranchFilters){return this.http.get<{data:StockSummary[];totalArticulos:number;nota:string}>(this.e.stockSummary,{params:inventoryParams(q)})}
  lots(q:BranchFilters&{incluirSinExistencias?:boolean}){
   return this.http.get<InventoryPage<InventoryLot>>(this.e.lots,{params:inventoryParams(q)})}
  createLot(dto:{articuloId:string;codigoLote:string;fechaElaboracion?:string;fechaVencimiento?:string}){

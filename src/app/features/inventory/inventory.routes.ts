@@ -51,10 +51,10 @@ export const INVENTORY_ROUTES:Routes=[
  {path:'settings',data:{breadcrumb:'Configuración'},children:[
   {path:'',pathMatch:'full',redirectTo:'warehouses'},
   {path:'warehouses',data:{breadcrumb:'Almacenes y ubicaciones'},
-   title:'Almacenes — Gastro Core',
+   title:'Almacenes — Gastro Core',canDeactivate:[gcUnsavedChangesGuard],
    loadComponent:()=>import('./pages/inventory-settings-page').then(m=>m.GcInventorySettingsPage)},
   {path:'units',data:{breadcrumb:'Unidades y conversiones'},
-   title:'Unidades — Gastro Core',
+   title:'Unidades — Gastro Core',canDeactivate:[gcUnsavedChangesGuard],
    loadComponent:()=>import('./pages/inventory-units-page').then(m=>m.GcInventoryUnitsPage)}
  ]},
  {path:'reports',data:{breadcrumb:'Reportes'},title:'Reportes de inventario — Gastro Core',

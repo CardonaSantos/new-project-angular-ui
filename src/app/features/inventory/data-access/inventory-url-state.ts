@@ -34,7 +34,7 @@ export class InventoryUrlState {
    ubicacionId:p.get('ubicacionId')??'',loteId:p.get('loteId')??'',sucursalId:branchId,
   };
  });
- async patch(patch:Partial<Record<keyof InventoryFilters,string|number|null>>):Promise<boolean>{
+ async patch(patch:Record<string,string|number|null>):Promise<boolean>{
   const params:Record<string,string|null>={};
   for(const [key,value] of Object.entries(patch)){
    params[key]=value===null||value===''||value===1&&key==='page'?null:String(value);
