@@ -73,6 +73,12 @@ export function isMenuConflict(error:unknown):boolean {
  if(!error||typeof error!=='object')return false;
  return 'status' in error&&error.status===409;
 }
+/** Many validation failures are 409. Only stale versions require reloading a draft. */
+export function isMenuVersionConflict(error:unknown):boolean {
+ if(!isMenuConflict(error)||!error||typeof error!=='object'||!('message' in error))return false;
+ const message=error.message;
+ return typeof message==='string'&&/versi[oó]n|modificad[oa] por otra sesi[oó]n/i.test(message);
+}
 export function menuStatus(menu:CatalogMenu):string{
  if(!menu.activo)return 'Inactivo';
  return menu.publicadoEn?'Publicado':'Borrador';
