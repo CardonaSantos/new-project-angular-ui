@@ -43,7 +43,7 @@ export class GcPagination {
   readonly size = input(10);
   readonly total = input(0);
   readonly pageChange = output<GcPageChange>();
-  protected readonly sizes = [5, 10, 25, 50];
+  protected readonly sizes = [5, 10, 20, 25, 50];
   readonly pageCount = computed(() => Math.max(1, Math.ceil(this.total() / Math.max(1, this.size()))));
   readonly currentPage = computed(() => Math.min(this.pageCount(), this.index() + 1));
   readonly firstRecord = computed(() => this.total() === 0 ? 0 : this.index() * this.size() + 1);
