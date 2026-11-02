@@ -151,6 +151,10 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
          <label class="cat-check"><input type="checkbox" [checked]="branchEnabled()"
           (change)="branchEnabled.set($any($event.target).checked)" [disabled]="!access.canManageBranch()"/>
           Habilitada para vender en esta sucursal</label>
+         <label class="cat-field">Pausa hasta (opcional, hora de este equipo)
+          <input type="datetime-local" [value]="branchPause()" (input)="branchPause.set($any($event.target).value)"
+           [disabled]="!access.canManageBranch()"/>
+         </label>
          <label class="cat-field">Motivo (opcional)
           <input [value]="branchReason()" (input)="branchReason.set($any($event.target).value)" maxlength="500"
            [disabled]="!access.canManageBranch()"/>
@@ -221,6 +225,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected readonly variantError=signal<string|null>(null);
  protected readonly branchEnabled=signal(true);
  protected readonly branchReason=signal('');
+ protected readonly branchPause=signal('');
  protected readonly links=signal<CatalogGroupAttachment[]>([]);
  protected readonly groupId=signal('');
  protected readonly busy=computed(()=>this.saving());
@@ -308,7 +313,8 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   if(this.branch.branchId())try{
    const response=await firstValueFrom(this.api.variant(v.id,this.branch.branchId()!));
    this.branchEnabled.set(response.habilitadaSucursal??true);
-  }catch{this.branchEnabled.set(true)}
+   this.branchPause.set(response.pausadaHasta?this.localInput(response.pausadaHasta):'');
+  }catch{this.branchEnabled.set(true);this.branchPause.set('')}
  }
  protected cancelVariant(){this.creatingVariant.set(false);this.editVariant.set(null)}
  protected async saveVariant(event:Event){
@@ -345,12 +351,19 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   await this.reload();const v=this.variants().find(x=>x.id===id);
   if(v)await this.chooseVariant(v);
  }
+ private localInput(iso:string):string{
+  const d=new Date(iso);
+  return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+ }
  protected async saveBranch(){
   const v=this.editVariant(),sucursalId=this.branch.branchId();
   if(!v||!sucursalId||!this.access.canManageBranch()||this.busy())return;
+  let pausadaHasta:string|null=null;
+  try{pausadaHasta=this.branchPause()?new Date(this.branchPause()).toISOString():null}
+  catch{this.variantError.set('Fecha de pausa inválida.');return}
   this.saving.set(true);this.variantError.set(null);
   try{await firstValueFrom(this.api.variantBranch(v.id,{
-   sucursalId,habilitada:this.branchEnabled(),motivo:this.branchReason().trim()||null
+   sucursalId,habilitada:this.branchEnabled(),pausadaHasta,motivo:this.branchReason().trim()||null
   }));
    await this.fetchReadiness();this.notice.show('Disponibilidad actualizada.','success');
   }catch(e){this.variantError.set(gcErrorMessage(e))}finally{this.saving.set(false)}
