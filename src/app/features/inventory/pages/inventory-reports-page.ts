@@ -14,6 +14,7 @@ import {InventoryUrlState} from '../data-access/inventory-url-state';
 
 import {GcDataTable,type GcTableColumn} from '../../../design-system/data/gc-data-table';
 import {inventoryCalendar,inventoryMoney,inventoryValuationRows,valuationMethod} from '../data-access/inventory-presentation';
+import {inventoryMasterGroups,inventoryTypes,inventoryReconciliationRows} from '../data-access/inventory-report-presentation';
 function valuationRowsMissingNames(rows:ReturnType<typeof inventoryValuationRows>):boolean{
  return rows.some(row=>row.nombre==='Nombre no proporcionado por el servidor');
 }
@@ -86,6 +87,59 @@ function valueText(value:unknown,key:string):string {
      }
      <gc-data-table [rows]="valuationRows()" [columns]="valuationColumns"/>
      @if(data['nota']){<p class="inv-muted">{{data['nota']}}</p>}
+    } @else if(type()==='masters'){
+     <p class="inv-muted">Catálogos generales de inventario. Los artículos y unidades son globales; los almacenes y ubicaciones siguen el filtro de sucursal.</p>
+     <div class="inv-report-master-grid">
+      @for(group of masterGroups();track group.title){
+       <section class="inv-card">
+        <h2>{{group.title}}</h2>
+        <dl class="inv-kv">
+         @for(item of group.metrics;track item.label){
+          <div><dt>{{item.label}}</dt><dd>{{item.value}}</dd></div>
+         }
+        </dl>
+       </section>
+      }
+     </div>
+     @if(masterTypes().length){
+      <section class="inv-stack">
+       <h2>Artículos por tipo</h2>
+       <dl class="inv-kv inv-card">
+        @for(item of masterTypes();track item.label){
+         <div><dt>{{item.label}}</dt><dd>{{item.value}}</dd></div>
+        }
+       </dl>
+      </section>
+     }
+    } @else if(type()==='reconciliation'){
+     @if(data['conciliado']===true){
+      <p class="inv-report-ok" role="status">Inventario conciliado. No se encontraron diferencias entre existencias, Kardex y capas de costo.</p>
+     } @else {
+      <p class="inv-alert" role="status">Hay diferencias por investigar. Este reporte no realiza ajustes ni modifica las existencias.</p>
+     }
+     <section class="inv-stack">
+      <div class="inv-row"><h2>Diferencias entre existencias y Kardex</h2>
+       <span class="inv-muted">{{reconKardex().length}} posiciones</span></div>
+      @for(item of reconKardex();track item.key){
+       <div class="inv-card">
+        <strong>{{item.article}}</strong>
+        <span class="inv-muted">Ubicación: {{item.location}} · Lote: {{item.lot}}</span>
+        <div class="inv-row"><span>Existencia física: {{item.expected}}</span><span>Kardex: {{item.actual}}</span></div>
+       </div>
+      } @empty {<p class="inv-muted">Sin diferencias de cantidades frente al Kardex.</p>}
+     </section>
+     <section class="inv-stack">
+      <div class="inv-row"><h2>Diferencias entre existencias y capas de costo</h2>
+       <span class="inv-muted">{{reconLayers().length}} posiciones</span></div>
+      @for(item of reconLayers();track item.key){
+       <div class="inv-card">
+        <strong>{{item.article}}</strong>
+        <span class="inv-muted">Ubicación: {{item.location}}</span>
+        <div class="inv-row"><span>Existencia física: {{item.expected}}</span><span>Capas: {{item.actual}}</span></div>
+       </div>
+      } @empty {<p class="inv-muted">Sin diferencias frente a las capas de costo.</p>}
+     </section>
+     <p class="inv-muted">Una diferencia requiere investigación de los movimientos; no se corrige modificando directamente el saldo.</p>
     } @else {
      <dl class="inv-kv">
       @for(item of metrics();track item.key){
@@ -136,6 +190,10 @@ export class GcInventoryReportsPage {
  protected readonly visible=signal(25);
  protected readonly valuationRows=computed(()=>inventoryValuationRows(this.page.data()??{}));
  protected readonly valuationMissingNames=computed(()=>valuationRowsMissingNames(this.valuationRows()));
+ protected readonly masterGroups=computed(()=>inventoryMasterGroups(this.page.data()??{}));
+ protected readonly masterTypes=computed(()=>inventoryTypes(this.page.data()??{}));
+ protected readonly reconKardex=computed(()=>inventoryReconciliationRows(this.page.data()??{},'diferenciasKardex'));
+ protected readonly reconLayers=computed(()=>inventoryReconciliationRows(this.page.data()??{},'diferenciasCapas'));
  protected readonly metrics=computed(()=>Object.entries(this.page.data()??{})
   .filter(([,value])=>value===null||['string','number','boolean'].includes(typeof value))
   .filter(([key])=>!/(^id$|Id$)/.test(key))
