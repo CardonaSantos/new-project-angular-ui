@@ -9,7 +9,9 @@ const listing=(view:string,title:string)=>({
 const create=(view:string,label:string,path:string)=>({
  path,title:label+' — Gastro Core',data:{breadcrumb:label,view},
  canDeactivate:[gcUnsavedChangesGuard],
- loadComponent:()=>import('./pages/inventory-detail-page').then(m=>m.GcInventoryDetailPage)
+ loadComponent:()=>view==='article'
+    ?import('./pages/inventory-article-page').then(m=>m.GcInventoryArticlePage)
+    :import('./pages/inventory-document-create-page').then(m=>m.GcInventoryDocumentCreatePage)
 });
 export const INVENTORY_ROUTES:Routes=[
  {path:'',pathMatch:'full',redirectTo:'summary'},
