@@ -25,6 +25,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/account/gc-account-security-page').then(m => m.GcAccountSecurityPage),
       },
       {
+        path: 'organization',
+        canActivate: [gcSessionGuard],
+        loadChildren: () =>
+          import('./features/organization/organization.routes').then(m => m.ORGANIZATION_ROUTES),
+      },
+      {
         path: 'workspace', title: 'Inicio — Gastro Core',
         data: { breadcrumb: 'Inicio' },
         canActivate: [gcSessionGuard],
