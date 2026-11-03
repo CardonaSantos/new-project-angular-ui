@@ -32,9 +32,10 @@ import { GcOrganizationNav } from '../organization-nav';
     @if (isNew || branch.data()) {
       <section class="gc-org-card gc-org-narrow">
         <form class="gc-org-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-          <div class="gc-org-row"><h2>Información</h2>
-            @if (!isNew) { <span class="gc-org-status">{{ branch.data()?.activa ? 'Activa' : 'Inactiva' }}</span> }
-          </div>
+          @if (!isNew) {
+            <p class="gc-org-status">Estado: {{ branch.data()?.activa ? 'Activa' : 'Inactiva' }}</p>
+          }
+          <fieldset class="gc-org-section"><legend>1. Identificación</legend>
           <div class="gc-org-grid">
             <div class="gc-org-field">
               <label for="br-code">Código</label>
@@ -56,6 +57,9 @@ import { GcOrganizationNav } from '../organization-nav';
                 <small id="br-name-error" class="gc-org-error">Introduce un nombre.</small>
               }
             </div>
+          </div></fieldset>
+          <fieldset class="gc-org-section"><legend>2. Contacto y ubicación</legend>
+          <div class="gc-org-grid">
             <div class="gc-org-field">
               <label for="br-phone">Teléfono</label>
               <input id="br-phone" type="tel" formControlName="telefono" maxlength="35"
@@ -76,7 +80,7 @@ import { GcOrganizationNav } from '../organization-nav';
               <textarea id="br-address" formControlName="direccion" maxlength="300" rows="2"
                 placeholder="Ej. Zona 1, calle principal"></textarea>
             </div>
-          </div>
+          </div></fieldset>
           @if (saveError()) { <p class="gc-org-alert" role="alert">{{ saveError() }}</p> }
           <div class="gc-org-actions">
             <button gcButton type="submit" [disabled]="!canManage() || !form.dirty || action.busy()">
@@ -92,6 +96,7 @@ import { GcOrganizationNav } from '../organization-nav';
         <section class="gc-org-card gc-org-narrow">
           <div class="gc-org-row"><h2>Configuración</h2></div>
           <form [formGroup]="settings" class="gc-org-form" (ngSubmit)="saveConfig()" novalidate>
+            <fieldset class="gc-org-section"><legend>1. Operación</legend>
             <div class="gc-org-grid">
               <div class="gc-org-field">
                 <label for="br-cutoff">Corte operativo</label>
@@ -108,7 +113,8 @@ import { GcOrganizationNav } from '../organization-nav';
                   <small class="gc-org-error">Usa un código de tres letras.</small>
                 }
               </div>
-            </div>
+            </div></fieldset>
+            <fieldset class="gc-org-section"><legend>2. Políticas de operación</legend>
             <div class="gc-org-switches">
               <label class="gc-org-switch"><input type="checkbox" formControlName="exigeCobroAntesPreparar" />
                 Exigir cobro antes de preparar</label>
@@ -116,8 +122,7 @@ import { GcOrganizationNav } from '../organization-nav';
                 Permitir stock negativo</label>
               <label class="gc-org-switch"><input type="checkbox" formControlName="permiteOrdenesQR" />
                 Permitir órdenes QR</label>
-            </div>
-            @if (configError()) { <p class="gc-org-alert" role="alert">{{ configError() }}</p> }
+            </div></fieldset>
             <div class="gc-org-actions">
               <button gcButton type="submit" [disabled]="!canManage() || !settings.dirty || configAction.busy()">
                 {{ configAction.busy() ? 'Guardando…' : 'Guardar configuración' }}
@@ -143,21 +148,20 @@ import { GcOrganizationNav } from '../organization-nav';
           @if (form.dirty || settings.dirty) {
             <p class="gc-org-muted">Guarda los cambios pendientes antes de modificar el estado.</p>
           }
-          <div class="gc-org-field">
-            <label for="br-reason">Motivo</label>
-            <input id="br-reason" placeholder="Ej. Remodelación del local"
-              [value]="reason()" (input)="reason.set($any($event.target).value)"
-              maxlength="500" aria-describedby="br-reason-help" />
-            <small id="br-reason-help">Mínimo 3 caracteres.</small>
-          </div>
-          @if (statusError()) { <p class="gc-org-alert" role="alert">{{ statusError() }}</p> }
-          <div class="gc-org-actions">
+          <div class="gc-org-inline-action">
+            <div class="gc-org-field">
+              <label for="br-reason">Motivo</label>
+              <input id="br-reason" placeholder="Ej. Remodelación del local"
+                [value]="reason()" (input)="reason.set($any($event.target).value)"
+                maxlength="500" />
+            </div>
             <button type="button" gcButton [variant]="branch.data()?.activa ? 'danger' : 'secondary'"
               [disabled]="!canManage() || statusAction.busy() || form.dirty || settings.dirty || reason().trim().length < 3"
               (click)="changeStatus()">
               {{ branch.data()?.activa ? 'Desactivar sucursal' : 'Activar sucursal' }}
             </button>
           </div>
+          @if (statusError()) { <p class="gc-org-alert" role="alert">{{ statusError() }}</p> }
         </section>
       }
     }
