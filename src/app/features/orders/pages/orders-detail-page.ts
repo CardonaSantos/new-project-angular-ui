@@ -44,7 +44,9 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
     }
     @if(o.estado==='ABIERTA'&&access.canManage()){
      <div class="ord-actions">
-      <button type="button" (click)="send()" [disabled]="actionBusy()">Enviar pendientes a cocina</button>
+      @if(hasPendingLines()){
+       <button type="button" (click)="send()" [disabled]="actionBusy()">Enviar a cocina</button>
+      }
       <button type="button" (click)="close()" [disabled]="actionBusy()||!readyToClose()">Cerrar pedido</button>
       <button class="ord-danger" type="button" (click)="beginCancel()" [disabled]="actionBusy()">Cancelar pedido</button>
      </div>
@@ -215,10 +217,12 @@ export class GcOrdersDetailPage implements OnInit {
   const accounts=this.order()?.cuentasComoOrden??[];
   return !accounts.length||accounts.some(a=>!parseApiDecimal(a.pagado).equals(parseApiDecimal(a.total)));
  });
+ protected readonly hasPendingLines=computed(()=>this.order()?.ordenLineasComoOrden.some(
+  line=>!line.canceladaEn&&
+   parseApiDecimal(line.cantidadEnviada).lessThan(parseApiDecimal(line.cantidad)))??false);
  protected readonly readyToClose=computed(()=>{
   const o=this.order();if(!o||o.estado!=='ABIERTA'||this.hasPendingPayment())return false;
-  if(o.ordenLineasComoOrden.some(line=>!line.canceladaEn&&
-   parseApiDecimal(line.cantidadEnviada).lessThan(parseApiDecimal(line.cantidad))))return false;
+  if(this.hasPendingLines())return false;
   return !(o.comandasComoOrden??[]).some(t=>t.estado==='PENDIENTE'||t.estado==='PREPARANDO');
  });
  protected readonly options=computed(()=>{
@@ -255,7 +259,7 @@ export class GcOrdersDetailPage implements OnInit {
  }
  protected async send(){
   const o=this.order();if(!o)return;
-  const approved=await this.dialog.confirm({title:'Enviar a cocina',message:'Enviar los productos pendientes a preparación?',confirmText:'Enviar'});
+  const approved=await this.dialog.confirm({title:'Enviar a cocina',message:'¿Enviar los productos pendientes a cocina?',confirmText:'Enviar'});
   if(!approved)return;
   const key=this.keyFor('send',{id:o.id});
   await this.perform(()=>firstValueFrom(this.api.send(o.id,key)));
