@@ -1,4 +1,5 @@
 @use '@angular/material' as mat;
+@import '@ng-select/ng-select/themes/default.theme.css';
 
 :root {
   /* Fallback tokens before Angular bootstraps the runtime theme manager. */
@@ -183,9 +184,7 @@ a { color: var(--gc-primary); }
   color: var(--gc-on-surface);
 }
 
-/* ng-select's default base provides input and dropdown geometry.
-   Cappuccino theme tokens below determine actual appearance. */
-@import '@ng-select/ng-select/themes/default.theme.css';
+
 
 gc-search-select{display:block;min-width:0}
 .gc-select-field{display:grid;gap:.28rem;min-width:0}
