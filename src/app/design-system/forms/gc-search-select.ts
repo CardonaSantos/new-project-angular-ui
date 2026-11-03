@@ -59,8 +59,8 @@ export class GcSearchSelect implements ControlValueAccessor {
  private readonly formBound=signal(false);
  private readonly formValue=signal('');
  private readonly formDisabled=signal(false);
- private onControlChange:(value:string)=>void=()=>{};
- private onControlTouched:()=>void=()=>{};
+ private onControlChange:(value:string)=>void=()=>undefined;
+ private onControlTouched:()=>void=()=>undefined;
  protected readonly displayValue=computed(()=>this.formBound()?this.formValue():this.value());
  protected readonly isDisabled=computed(()=>this.disabled()||this.formDisabled());
  protected readonly matchAny=()=>true;
