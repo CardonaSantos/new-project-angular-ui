@@ -44,3 +44,14 @@
 @media(max-width:640px){.gc-u-grid{grid-template-columns:1fr}.gc-u-actions{align-items:stretch;flex-direction:column}.gc-u-actions button,.gc-u-actions a{width:100%}}
 
 .gc-u-avatar-cell{flex-wrap:nowrap;justify-content:flex-start;gap:.7rem;min-width:10rem;overflow-wrap:anywhere}
+
+/* Operator-friendly controls: two-column filters and sectioned forms. */
+.gc-u-toolbar.gc-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem .9rem;align-items:end}
+.gc-u-toolbar.gc-filter-grid>*{min-width:0;max-width:100%;width:100%}
+.gc-u-toolbar.gc-filter-grid>button{width:auto;justify-self:start}
+.gc-u-section{min-width:0;margin:0;padding:.85rem;border:1px solid var(--gc-outline-variant);
+ border-radius:.7rem;display:grid;gap:.75rem}
+.gc-u-section>legend{font-size:.94rem;font-weight:700;padding:0 .4rem}
+.gc-u-section>.gc-u-grid{min-width:0}
+.gc-u-section>gc-search-select{min-width:0}
+@media(max-width:640px){.gc-u-toolbar.gc-filter-grid{grid-template-columns:minmax(0,1fr)}}

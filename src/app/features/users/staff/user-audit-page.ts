@@ -14,10 +14,11 @@ import {GcDataTable,type GcTableColumn,type GcTableRow} from '../../../design-sy
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {UsersApi} from '../data-access/users.api';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import type {ActivityItem,Audit,Page,StaffOverview} from '../data-access/users.models';
 @Component({
  selector:'gc-user-audit-page',
- imports:[DatePipe,GcPageHeader,GcPagination,GcErrorState,GcButtonDirective,GcDataTable],
+ imports:[DatePipe,GcPageHeader,GcPagination,GcErrorState,GcButtonDirective,GcDataTable,GcSearchSelect],
  template:`
  <div class="gc-u-page">
   <gc-page-header title="Auditoría y actividad"/>
@@ -43,12 +44,9 @@ import type {ActivityItem,Audit,Page,StaffOverview} from '../data-access/users.m
   </section>
   <section class="gc-u-card gc-u-page">
    <h2>Actividad</h2>
-   <div class="gc-u-field"><label for="audit-kind">Tipo de actividad</label>
-    <select id="audit-kind" [value]="kind()" (change)="kind.set($any($event.target).value);refreshActivity()">
-     <option value="">Todos</option>
-     @for(k of kinds;track k){<option [value]="k">{{k}}</option>}
-    </select>
-   </div>
+   <gc-search-select id="audit-kind" label="Tipo de actividad" [items]="kindChoices"
+     [value]="kind()" placeholder="Todos" [searchable]="false"
+     (valueChange)="kind.set($event);refreshActivity()"/>
    @if(activity.status()==='error'){<gc-error-state [message]="activityError()" (retry)="refreshActivity()"/>}
    @else{
     <gc-data-table [rows]="activityRows()" [columns]="activityColumns" [loading]="activity.busy()"/>
@@ -89,6 +87,10 @@ export class GcUserAuditPage implements OnInit {
  protected readonly from=signal('');protected readonly to=signal('');
  protected readonly kind=signal('');
  protected readonly kinds=['ORDEN','PAGO','CAJA','ENTREGA','INVENTARIO'];
+ protected readonly kindChoices=[
+  {id:'ORDEN',label:'Órdenes'},{id:'PAGO',label:'Pagos'},{id:'CAJA',label:'Caja'},
+  {id:'ENTREGA',label:'Entregas'},{id:'INVENTARIO',label:'Inventario'}
+ ];
  protected readonly activityIndex=signal(0);protected readonly auditIndex=signal(0);
  protected readonly activityColumns:GcTableColumn[]=[
   {key:'kind',label:'Tipo'},{key:'label',label:'Actividad'},

@@ -18,11 +18,12 @@ import {UsersApi} from '../data-access/users.api';
 import {UsersAccess} from '../data-access/users-access';
 import type {Page,UserRecord} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcUserAvatar} from '../../../design-system/profile/gc-user-avatar';
 @Component({
  selector:'gc-users-page',
  imports:[RouterLink,GcPageHeader,GcButtonDirective,GcUsersNav,GcDataTable,GcTableCellDirective,
-  GcTableToolbar,GcFilterBar,GcPagination,GcStatusBadge,GcErrorState,GcUserAvatar],
+  GcTableToolbar,GcFilterBar,GcPagination,GcStatusBadge,GcErrorState,GcUserAvatar,GcSearchSelect],
  template:`
  <div class="gc-u-page">
   <gc-page-header title="Usuarios">
@@ -30,17 +31,14 @@ import {GcUserAvatar} from '../../../design-system/profile/gc-user-avatar';
   </gc-page-header>
   <gc-users-nav/>
   <section class="gc-u-card gc-u-page">
-   <form class="gc-u-toolbar" (submit)="searchNow($event)">
+   <form class="gc-u-toolbar gc-filter-grid" (submit)="searchNow($event)">
     <gc-table-toolbar [query]="query()" searchLabel="Buscar usuarios" (queryChange)="query.set($event)"/>
     <gc-filter-bar filterId="user-active" label="Estado" [options]="statuses" [value]="state()"
       (valueChange)="state.set($event);searchNow()"/>
-    <div class="gc-u-field">
-     <label for="user-branch">Sucursal</label>
-     <select id="user-branch" [value]="branchId()" (change)="branchId.set($any($event.target).value);searchNow()">
-      @if(access.canGlobal('users.read')){<option value="">Todas</option>}
-      @for(item of branch.branches();track item.id){<option [value]="item.id">{{item.nombre}}</option>}
-     </select>
-    </div>
+    <gc-search-select id="user-branch" label="Sucursal" [items]="branchChoices()"
+     [value]="branchId()" [clearable]="access.canGlobal('users.read')"
+     [placeholder]="access.canGlobal('users.read')?'Todas':'Seleccionar sucursal'"
+     (valueChange)="branchId.set($event);searchNow()"/>
     <button gcButton variant="outline" type="submit">Buscar</button>
    </form>
    @if(!access.canRead()){<p role="alert">No tienes acceso a usuarios.</p>}
@@ -75,6 +73,7 @@ export class GcUsersPage implements OnInit {
  protected readonly query=signal('');
  protected readonly state=signal('all');
  protected readonly branchId=signal('');
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly index=signal(0);
  protected readonly size=signal(10);
  protected readonly statuses=[{value:'all',label:'Todos'},{value:'true',label:'Activos'},{value:'false',label:'Inactivos'}];
