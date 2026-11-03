@@ -1,4 +1,4 @@
-import {Component,effect,inject,signal} from '@angular/core';
+import {Component,computed,effect,inject,signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
@@ -8,19 +8,18 @@ import {RecipesAccess} from '../data-access/recipes-access';
 import type {ProductionReport} from '../data-access/recipes.models';
 import {inclusiveBranchPeriod} from '../data-access/production-period';
 import {GcRecipesNav} from '../recipes-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 
 @Component({
- selector:'gc-recipes-production-report-page',imports:[GcRecipesNav],
+ selector:'gc-recipes-production-report-page',imports:[GcRecipesNav,GcSearchSelect],
  template:`<main class="rec-page">
  <gc-recipes-nav/>
  <section class="rec-card">
   <div class="rec-top"><h2>Reporte de producción</h2></div>
-  <div class="rec-filters">
-   <label class="rec-field">Sucursal
-    <select [value]="branchId()" (change)="branchId.set($any($event.target).value)">
-     <option value="">Seleccionar sucursal</option>
-     @for(b of branch.branches();track b.id){<option [value]="b.id" [selected]="b.id===branchId()">{{b.nombre}}</option>}
-    </select></label>
+  <div class="rec-filters" role="group" aria-label="Filtros del reporte de producción">
+   <gc-search-select id="production-report-branch" label="Sucursal" [items]="branchChoices()"
+    [value]="branchId()" placeholder="Seleccionar sucursal" [clearable]="false"
+    (valueChange)="branchId.set($event)"/>
    <label class="rec-field">Desde <input type="date" [value]="from()" (change)="from.set($any($event.target).value)"/></label>
    <label class="rec-field">Hasta (incluido) <input type="date" [value]="to()" (change)="to.set($any($event.target).value)"/></label>
    <button type="button" [disabled]="busy()||!branchId()" (click)="load()">Consultar</button>
@@ -52,6 +51,7 @@ import {GcRecipesNav} from '../recipes-nav';
 })
 export class GcRecipesProductionReportPage {
  protected readonly branch=inject(GcBranchContext);
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly access=inject(RecipesAccess);
  private readonly api=inject(RecipesApi);
  protected readonly branchId=signal('');

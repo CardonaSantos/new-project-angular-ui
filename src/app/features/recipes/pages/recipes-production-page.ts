@@ -10,23 +10,21 @@ import {RecipesAccess} from '../data-access/recipes-access';
 import type {RecipePage,ProductionListItem} from '../data-access/recipes.models';
 import {inclusiveBranchPeriod} from '../data-access/production-period';
 import {GcRecipesNav} from '../recipes-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 
 @Component({
- selector:'gc-recipes-production-page',imports:[GcRecipesNav,RouterLink],
+ selector:'gc-recipes-production-page',imports:[GcRecipesNav,RouterLink,GcSearchSelect],
  template:`<main class="rec-page">
   <gc-recipes-nav/>
   <section class="rec-card">
    <div class="rec-top"><h2>Producciones</h2>
     @if(access.canProduce()){<a routerLink="/recipes/production/new" class="rec-button rec-primary">Registrar producción</a>}
    </div>
-   <p class="rec-note">Consulta las preparaciones realizadas, las que esperan confirmación y las canceladas.</p>
-   <div class="rec-filters">
-    <label class="rec-field">Sucursal
-     <select [value]="branchId()" (change)="branchId.set($any($event.target).value);page.set(1)">
-      <option value="">Seleccionar sucursal</option>
-      @for(b of branch.branches();track b.id){<option [value]="b.id" [selected]="b.id===branchId()">{{b.nombre}}</option>}
-     </select>
-    </label>
+
+   <div class="rec-filters" role="group" aria-label="Filtros de producción">
+    <gc-search-select id="production-filter-branch" label="Sucursal" [items]="branchChoices()"
+     [value]="branchId()" placeholder="Seleccionar sucursal" [clearable]="false"
+     (valueChange)="branchId.set($event);page.set(1)"/>
     <label class="rec-field">Desde
      <input type="date" [value]="from()" (change)="from.set($any($event.target).value);page.set(1)"/>
     </label>
@@ -64,6 +62,7 @@ import {GcRecipesNav} from '../recipes-nav';
 })
 export class GcRecipesProductionPage {
  protected readonly branch=inject(GcBranchContext);
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly access=inject(RecipesAccess);
  private readonly api=inject(RecipesApi);
  protected readonly branchId=signal('');

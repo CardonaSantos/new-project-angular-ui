@@ -7,29 +7,27 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {RecipesApi} from '../data-access/recipes.api';
 import {RecipesAccess} from '../data-access/recipes-access';
 import {GcRecipesNav} from '../recipes-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {recipeDestination,recipeKind,recipePublished,readableQuantity} from '../data-access/recipes-presentation';
 import type {RecipeKind,RecipePage,RecipeRecord} from '../data-access/recipes.models';
 
 @Component({
- selector:'gc-recipes-list-page',imports:[GcRecipesNav,RouterLink],
+ selector:'gc-recipes-list-page',imports:[GcRecipesNav,RouterLink,GcSearchSelect],
  template:`<main class="rec-page">
   <gc-recipes-nav/>
   <section class="rec-card">
    <div class="rec-top"><h2>Recetas</h2>
     @if(access.canManage()){<a class="rec-button rec-primary" routerLink="/recipes/list/new">Nueva receta</a>}
    </div>
-   <div class="rec-filters">
+   <div class="rec-filters" role="group" aria-label="Filtros de recetas">
     <label class="rec-field">Buscar por nombre
      <input [value]="search()" maxlength="120" placeholder="Buscar receta"
       (input)="search.set($any($event.target).value)" (keydown.enter)="$event.preventDefault();apply()"/>
     </label>
     <button type="button" (click)="apply()">Buscar</button>
-    <label class="rec-field">Tipo
-     <select [value]="kind()" (change)="updateQuery({tipo:$any($event.target).value||null,page:null})">
-      <option value="">Todas</option><option value="VENTA">Productos de la carta</option>
-      <option value="PRODUCCION">Preparaciones de inventario</option>
-     </select>
-    </label>
+    <gc-search-select id="recipes-filter-kind" label="Tipo" [items]="kindChoices"
+     [value]="kind()" placeholder="Todas" [searchable]="false"
+     (valueChange)="updateQuery({tipo:$event||null,page:null})"/>
    </div>
    @if(state.busy()){<p role="status" class="rec-muted">Cargando recetas…</p>}
    @if(state.status()==='error'){
@@ -67,6 +65,9 @@ export class GcRecipesListPage {
  private readonly query=toSignal(this.route.queryParamMap,{initialValue:this.route.snapshot.queryParamMap});
  protected readonly state=new GcPageState<RecipePage<RecipeRecord>>();
  protected readonly search=signal('');
+ protected readonly kindChoices=[
+  {id:'VENTA',label:'Productos de la carta'},{id:'PRODUCCION',label:'Preparaciones de inventario'}
+ ];
  protected readonly currentPage=computed(()=>Math.max(1,Number(this.query().get('page')??'1')||1));
  protected readonly kind=computed(()=>this.query().get('tipo')??'');
  protected readonly destination=recipeDestination;

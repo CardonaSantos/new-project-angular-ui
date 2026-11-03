@@ -40,17 +40,16 @@ interface IngredientForm {
      @if(page.data();as item){<span>{{item.activa?'Activa':'Inactiva'}}</span>}
     </div>
     <form class="rec-form" (submit)="saveRecipe($event)">
+     <div class="rec-section"><h3>1. Identificación y destino</h3>
+      <div class="rec-form">
      <label class="rec-field">Nombre
       <input [value]="name()" (input)="name.set($any($event.target).value)"
        [disabled]="!access.canManage()" required maxlength="160" minlength="3"/>
      </label>
      @if(isNew){
-      <label class="rec-field">¿Para qué se utiliza?
-       <select [value]="kind()" (change)="changeKind($any($event.target).value)" [disabled]="!access.canManage()">
-        <option value="VENTA">Producto de la carta</option>
-        <option value="PRODUCCION">Preparación de inventario</option>
-       </select>
-      </label>
+      <gc-search-select class="rec-wide" id="recipe-kind" label="¿Para qué se utiliza?"
+       [value]="kind()" [items]="kindChoices" [searchable]="false" [clearable]="false"
+       [disabled]="!access.canManage()" (valueChange)="changeKind($event)"/>
       @if(kind()==='VENTA'){
 
        <gc-search-select class="rec-wide" id="recipe-variant" label="Presentación"
@@ -71,6 +70,8 @@ interface IngredientForm {
         (change)="active.set($any($event.target).checked)"/> Receta activa</label>
       }
      }
+      </div>
+     </div>
      @if(formError()){<p role="alert" class="rec-alert rec-wide">{{formError()}}</p>}
      @if(!isNew&&access.canManage()){
       <div class="rec-actions rec-wide">
@@ -121,6 +122,7 @@ interface IngredientForm {
       <h2>{{isNew?'Ingredientes de la receta':formulaVersionId()?'Fórmula en borrador':'Nueva fórmula'}}</h2>
       @if(!isNew){<button type="button" (click)="discardFormula()" [disabled]="busy()">Cerrar</button>}
      </div>
+     <div class="rec-section"><h3>Rendimiento de la fórmula</h3>
      <div class="rec-form">
       <gc-inventory-picker id="yield-unit" kind="unit" label="Unidad de rendimiento"
        [unitDimension]="kind()==='VENTA'?'UNIDAD':''"
@@ -136,6 +138,7 @@ interface IngredientForm {
          (input)="shelfLife.set($any($event.target).value)" [disabled]="!access.canManage()"/>
        </label>
       }
+     </div>
      </div>
      <div class="rec-top"><h3>Ingredientes</h3>
       @if(access.canManage()){<button type="button" (click)="addIngredient()" [disabled]="busy()||ingredients().length>=100">
@@ -216,6 +219,10 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected readonly page=new GcPageState<RecipeRecord>();
  protected readonly name=signal('');
  protected readonly kind=signal<RecipeKind>('VENTA');
+ protected readonly kindChoices=[
+  {id:'VENTA',label:'Producto de la carta'},
+  {id:'PRODUCCION',label:'Preparación de inventario'}
+ ];
  protected readonly active=signal(true);
  protected readonly targetId=signal('');
  protected readonly variantSearch=signal('');

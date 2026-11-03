@@ -27,16 +27,11 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
    <div class="rec-top"><h2>Reglas de empaque</h2>
     @if(access.canManage()){<button class="rec-primary" type="button" (click)="createNew()">Nueva regla</button>}
    </div>
-   <p class="rec-note">Define los materiales que se utilizan al servir o entregar productos: vasos, tapas, bolsas y servilletas.</p>
+
    <div class="rec-filters">
-    <label class="rec-field">Sucursal
-     <select [value]="filterBranch()" (change)="chooseFilter($any($event.target).value)">
-      <option value="">Todas las sucursales</option>
-      @for(branch of context.branches();track branch.id){
-       <option [value]="branch.id" [selected]="filterBranch()===branch.id">{{branch.nombre}}</option>
-      }
-     </select>
-    </label>
+    <gc-search-select id="packaging-filter-branch" label="Sucursal" [items]="branchChoices()"
+     [value]="filterBranch()" placeholder="Todas las sucursales"
+     (valueChange)="chooseFilter($event)"/>
     <label class="rec-field">Buscar regla
      <input [value]="search()" maxlength="120" (input)="search.set($any($event.target).value)"/>
     </label>
@@ -63,28 +58,21 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
     <div class="rec-top"><h2>{{selected()?'Editar regla':'Nueva regla'}}</h2>
      <button type="button" (click)="close()" [disabled]="busy()">Cerrar</button>
     </div>
+    <div class="rec-section"><h3>1. Datos y alcance de la regla</h3>
     <div class="rec-form">
      <label class="rec-field">Nombre
       <input [value]="name()" maxlength="120" required [disabled]="!access.canManage()"
        (input)="name.set($any($event.target).value)" placeholder="Empaque para café caliente"/>
      </label>
-     <label class="rec-field">Tipo de entrega
-      <select [value]="mode()" [disabled]="!access.canManage()" (change)="mode.set($any($event.target).value)">
-       @for(item of modes;track item.value){<option [value]="item.value" [selected]="mode()===item.value">{{item.label}}</option>}
-      </select>
-     </label>
-     <label class="rec-field">Se aplica a
-      <select [value]="scope()" [disabled]="!access.canManage()" (change)="setScope($any($event.target).value)">
-       <option value="ORDEN" [selected]="scope()==='ORDEN'">Todo el pedido</option>
-       <option value="ARTICULO" [selected]="scope()==='ARTICULO'">Una presentación específica</option>
-      </select>
-     </label>
-     <label class="rec-field">Sucursal
-      <select [value]="branchId()" [disabled]="!access.canManage()" (change)="branchId.set($any($event.target).value)">
-       <option value="" [selected]="!branchId()">Todas las sucursales</option>
-       @for(b of context.branches();track b.id){<option [value]="b.id" [selected]="branchId()===b.id">{{b.nombre}}</option>}
-      </select>
-     </label>
+     <gc-search-select id="packaging-mode" label="Tipo de entrega" [items]="modeChoices"
+      [value]="mode()" [searchable]="false" [clearable]="false"
+      [disabled]="!access.canManage()" (valueChange)="setMode($event)"/>
+     <gc-search-select id="packaging-scope" label="Se aplica a" [items]="scopeChoices"
+      [value]="scope()" [searchable]="false" [clearable]="false"
+      [disabled]="!access.canManage()" (valueChange)="setScope($event)"/>
+     <gc-search-select id="packaging-edit-branch" label="Sucursal" [items]="branchChoices()"
+      [value]="branchId()" placeholder="Todas las sucursales"
+      [disabled]="!access.canManage()" (valueChange)="branchId.set($event)"/>
      @if(scope()==='ARTICULO'){
 
       <gc-search-select class="rec-wide" id="packaging-variant" label="Presentación"
@@ -93,7 +81,9 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
        (searchChange)="queueVariantSearch($event)" (valueChange)="variantId.set($event)"/>
      }
     </div>
-    <div class="rec-top"><h3>Materiales</h3>
+    </div>
+    <div class="rec-section">
+    <div class="rec-top"><h3>2. Materiales</h3>
      @if(access.canManage()){<button type="button" (click)="addMaterial()" [disabled]="materials().length>=100">
       Agregar material</button>}
     </div>
@@ -112,6 +102,7 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
       @if(access.canManage()){<button type="button" (click)="removeMaterial(i)">Quitar material</button>}
      </div>
     } @empty {<p class="rec-muted">Agrega al menos un material a la regla.</p>}
+    </div>
     @for(text of validation();track text){<p class="rec-alert" role="alert">{{text}}</p>}
     @if(saveError()){<p class="rec-alert" role="alert">{{saveError()}}</p>}
     @if(access.canManage()){
@@ -149,6 +140,12 @@ export class GcRecipesPackagingPage implements OnInit,GcDirtyAware {
  protected readonly scope=signal<PackagingScope>('ORDEN');
  protected readonly mode=signal<PackagingMode>('PARA_LLEVAR');
  protected readonly modes=PACKAGING_MODES;
+ protected readonly modeChoices=this.modes.map(m=>({id:m.value,label:m.label}));
+ protected readonly scopeChoices=[
+  {id:'ORDEN',label:'Todo el pedido'},{id:'ARTICULO',label:'Una presentación específica'}
+ ];
+ protected readonly branchChoices=computed(()=>this.context.branches().map(b=>({id:b.id,label:b.nombre})));
+ protected setMode(value:string){this.mode.set(value as PackagingMode)}
  protected readonly branchId=signal('');
  protected readonly variantSearch=signal('');
  protected readonly variantChoices=computed(()=>this.availableVariants().map(v=>({

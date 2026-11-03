@@ -5,6 +5,7 @@ import {InventoryApi} from '../../inventory/data-access/inventory.api';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import type {Dimension} from '../../inventory/data-access/inventory.models';
 import {GcRecipesNav} from '../recipes-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {RecipesAccess} from '../data-access/recipes-access';
 import {RecipesApi} from '../data-access/recipes.api';
 import {EFFECTS,type ModifierEffect,type ModifierComposition,type ModifierPhysicalInput} from '../data-access/recipes.models';
@@ -20,7 +21,7 @@ interface ExtraLine {
  sustituyeArticuloId:string;sustituyeLabel:string;
 }
 @Component({
- selector:'gc-recipes-extras-page',imports:[GcRecipesNav,GcInventoryPicker],
+ selector:'gc-recipes-extras-page',imports:[GcRecipesNav,GcInventoryPicker,GcSearchSelect],
  template:`<main class="rec-page">
   <gc-recipes-nav/>
   <section class="rec-card">
@@ -57,18 +58,15 @@ interface ExtraLine {
    <section class="rec-card">
     <div class="rec-top"><h2>{{mod.nombre}}</h2>
      <span class="rec-muted">{{lines().length}} ingredientes configurados</span></div>
-    <p class="rec-note">Configura únicamente los cambios que realiza este extra sobre la receta normal.</p>
+
+    <div class="rec-section"><h3>1. Composición física</h3>
     @for(item of lines();track item.key;let i=$index){
      <div class="rec-line">
+      <strong>Ajuste {{i+1}}</strong>
       <div class="rec-line-grid">
-       <label class="rec-field">Acción sobre la preparación
-        <select [value]="item.efecto" [disabled]="!access.canManage()"
-         (change)="changeLine(i,{efecto:$any($event.target).value})">
-         @for(option of effects;track option.value){
-          <option [value]="option.value" [selected]="option.value===item.efecto">{{option.label}}</option>
-         }
-        </select>
-       </label>
+       <gc-search-select [id]="'extra-effect-'+item.key" label="Acción sobre la preparación"
+        [items]="effectChoices" [value]="item.efecto" [searchable]="false" [clearable]="false"
+        [disabled]="!access.canManage()" (valueChange)="setEffect(i,$event)"/>
        <gc-inventory-picker [id]="'extra-article-'+item.key" kind="article" label="Ingrediente"
         [value]="item.articuloId" [selectedLabel]="item.articuloLabel"
         [disabled]="!access.canManage()" (valueChange)="changeArticle(i,$event)"/>
@@ -89,6 +87,7 @@ interface ExtraLine {
       @if(access.canManage()){<button type="button" (click)="removeLine(i)">Quitar ingrediente</button>}
      </div>
     } @empty {<p class="rec-muted">Este extra todavía no cambia ingredientes. Agrega uno para configurarlo.</p>}
+    </div>
     @for(message of validation();track message){<p class="rec-alert" role="alert">{{message}}</p>}
     @if(error()){<p class="rec-alert" role="alert">{{error()}}</p>}
     @if(access.canManage()){
@@ -119,6 +118,8 @@ export class GcRecipesExtrasPage implements OnInit,GcDirtyAware{
  protected readonly selected=signal<ModifierComposition|null>(null);
  protected readonly lines=signal<ExtraLine[]>([]);
  protected readonly effects=EFFECTS;
+ protected readonly effectChoices=this.effects.map(e=>({id:e.value,label:e.label}));
+ protected setEffect(index:number,value:string){this.changeLine(index,{efecto:value as ModifierEffect})}
  protected readonly busy=signal(false);
  protected readonly error=signal<string|null>(null);
  private original='';
