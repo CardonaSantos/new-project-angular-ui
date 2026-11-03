@@ -47,3 +47,42 @@ Los controles compartidos y Organización quedan reservados para la entrega 3.
 - [ ] Validación de rol booleano `activo`, permisos de lectura/escritura, estados de carga/error
 
 No fusionar PR #20 antes del cierre y aceptación de la entrega 1 (PR #19).
+
+## R2 — Auditoría integral de formularios (2026-11-03)
+**Base:** entrega R1 en PR #20, con los 28 selects migrados. Esta revisión continúa en la misma rama/PR, no incluye Organización ni cambios del backend.
+
+### Catálogo: formularios y vistas operativas
+- Categorías: búsqueda + botón en una misma celda de filtro, selector de estado a su lado; edición de categoría en sección y cambio de estado con motivo y acción en la misma fila.
+- Extras: filtro grupo/búsqueda compacto; formularios de grupo y extra seccionados; información de ayuda reducida a reglas útiles.
+- Productos: identificación, descripción de carta y presentaciones; los productos inventariables muestran una sección específica de relación con Inventario.
+- Presentaciones: extras asociados en cuadrícula de dos columnas; configuración de disponibilidad por sucursal con motivo y pausa alineados.
+- Menús: editor de secciones con buscadores integrados; horarios en cuadrícula Día/Desde/Hasta/acción (dos columnas al reducir ancho, una en móvil). Se compactaron textos explicativos repetidos.
+- Precios: filtros y registro de vigencia seccionado, eliminando el aviso redundante de zona horaria. Se conserva la regla de vigencias sin superposición.
+- Listados, vista previa, resumen y reportes: se respetan selectores de sucursal, filtros a dos columnas y espacio para la tabla.
+
+### Usuarios: formularios y vistas operativas
+- Crear/editar usuarios: identificación y contacto seccionados; al editar, preferencias en una segunda sección. Asignación de rol con campos y botón de acción en la misma sección.
+- Estado del usuario: motivo y botón de activar/desactivar en una misma fila adaptable.
+- Seguridad: motivo y restablecimiento alineados; permanece visible el aviso de contraseña de un solo uso y las acciones de revocación.
+- Auditoría: dos fechas y acción en una sola fila amplia; tipo de actividad con anchura contenida, sin robar espacio a la tabla.
+- Roles: búsqueda del listado compacta; formularios de alcance y descripción conservados; permisos agrupados en dos columnas con scrolling interno, una columna en pantallas estrechas.
+- Perfil personal: sección de preferencias/contacto y fotografía, preservando validaciones y acciones de subida.
+- Reportes y listas de personal: filtros responsivos en dos columnas.
+
+### Convenciones de aceptación
+1. Controles dentro de columnas con `min-width:0`, texto seleccionado truncado, dropdown con etiquetas completas.
+2. Máximo dos columnas de formulario para nombres largos, salvo horarios con cuatro elementos claramente diferenciados cuando hay ancho suficiente.
+3. Un solo campo busca/selecciona cada entidad; el buscador de una tabla sí puede quedar independiente.
+4. Labels directos; texto explicativo únicamente para reglas operativas, permisos o efectos importantes.
+5. Acciones al lado del campo correspondiente o debajo de su sección; no compartir un `id` con controles repetidos.
+6. No cambiar métodos del backend ni DTO, roles o validaciones de negocio.
+
+### Validación de R2
+- [ ] `npm ci`
+- [ ] `npm run lint`
+- [ ] `npm run build`
+- [ ] `npm test -- --watch=false`
+- [ ] Firefox local: ancho 1366, 1024, 640 y móvil; nombres largos, foco, dropdown, formularios de productos/menús/roles, cargadores de fotos y motivo/estado.
+- [ ] Verificar persistencia de configuraciones reales antes de fusionar.
+
+**PR #20 debe permanecer en draft y apuntar a PR #19 (`refactor/searchable-selects-20261103`) tras validar CI.**
