@@ -61,3 +61,16 @@
 .inv-section>legend{font-size:.94rem;font-weight:700;padding:0 .45rem;color:var(--gc-on-surface)}
 .inv-section>.inv-muted{margin:0}
 @media(max-width:650px){.inv-section{padding:.65rem}}
+
+/* The inventory table filters use the shared two-column filter grid.
+   Specificity overrides the legacy .inv-toolbar flex rule. */
+.inv-toolbar.gc-filter-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.7rem .85rem;align-items:end;
+}
+.inv-toolbar.gc-filter-grid > *{min-width:0;max-width:100%;width:100%}
+.inv-toolbar.gc-filter-grid > button{width:auto;justify-self:start}
+.inv-toolbar.gc-filter-grid .inv-field:not(:first-child){min-width:0}
+@media(max-width:640px){
+ .inv-toolbar.gc-filter-grid{grid-template-columns:minmax(0,1fr)}
+}
