@@ -108,11 +108,11 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
        </table></div>
        @if(access.canMenus()){
         <div class="cat-toolbar gc-filter-grid">
-         <gc-search-select id="menu-product-search" label="Producto" [items]="productChoices()"
+         <gc-search-select [id]="'menu-product-'+section.key" label="Producto" [items]="productChoices()"
           [value]="productId()" [remote]="true" [loading]="lookingUp()"
           placeholder="Buscar producto…" (searchChange)="queueProductSearch($event)"
           (valueChange)="chooseProduct($event)"/>
-         <gc-search-select id="menu-variant-search" label="Presentación" [items]="variantChoices()"
+         <gc-search-select [id]="'menu-variant-'+section.key" label="Presentación" [items]="variantChoices()"
           [value]="variantId()" [remote]="true" [disabled]="!productId()"
           placeholder="Buscar presentación…" (searchChange)="queueVariantSearch($event)"
           (valueChange)="chooseVariant($event)"/>
