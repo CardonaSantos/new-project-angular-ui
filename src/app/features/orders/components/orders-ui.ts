@@ -1,7 +1,7 @@
-import {Component,input,output} from '@angular/core';
+import {Component,computed,input,output} from '@angular/core';
 import type {CatalogProjectedItem} from '../../catalog/data-access/catalog.models';
 import type {KitchenTicket,OrderState,TicketState} from '../data-access/orders.models';
-import {money,qtyText,statusText} from '../data-access/orders.helpers';
+import {kitchenStage,money,qtyText,statusText} from '../data-access/orders.helpers';
 import type {PosCartEntry} from './pos-cart.models';
 
 /** Interactive product choice, optimized for mouse and touch. */
@@ -80,25 +80,40 @@ export class GcOrderStatus{
 }
 
 @Component({
- selector:'gc-kitchen-ticket',imports:[GcOrderStatus],template:`
- <article class="ord-ticket">
+ selector:'gc-kitchen-ticket',imports:[],template:`
+ <article class="ord-ticket" [class.ord-ticket--delivered]="stage().kind==='delivered'"
+   [class.ord-ticket--cancelled]="stage().kind==='cancelled'">
+  <button class="ord-ticket-open" type="button" (click)="open.emit()"
+   [attr.aria-label]="'Ver detalle de comanda '+ticket().numero"></button>
   <div class="ord-ticket-head">
-   <div><strong>Comanda {{ticket().numero}}</strong><small>Orden {{ticket().orden?.numero}}</small></div>
-   <gc-order-status [state]="ticket().estado"/>
+   <div><strong>Comanda {{ticket().numero}}</strong>
+    <small>Pedido {{ticket().orden?.numero}}</small></div>
+   <span class="ord-ticket-badge" [class.ord-ticket-badge--ready]="stage().kind==='ready'"
+     [class.ord-ticket-badge--delivered]="stage().kind==='delivered'"
+     [class.ord-ticket-badge--cancelled]="stage().kind==='cancelled'"
+     [class.ord-ticket-badge--working]="stage().kind==='working'">{{stage().label}}</span>
   </div>
-  <small>{{ticket().estacion?.nombre??'Cocina'}} · {{ticket().orden?.ocupacionMesa?.mesa?.numero??'Sin mesa'}}</small>
-  @for(line of ticket().comandaLineasComoComanda;track line.id){
-   <div class="ord-kitchen-line">
-    <strong>{{qtyText(line.cantidad)}} × {{line.ordenLinea?.nombreSnapshot??line.ordenLinea?.variante?.producto?.nombre??'Producto'}}</strong>
-    @if(line.ordenLinea?.notasCocina){<small>{{line.ordenLinea?.notasCocina}}</small>}
-    @if(line.listaEn){<small>Lista</small>}
-    @else if(line.cantidadPreparada!=='0'){<small>En preparación: {{qtyText(line.cantidadPreparada)}}</small>}
-   </div>
-  }
-  <ng-content/>
+  <small>{{ticket().estacion?.nombre??'Cocina'}} · {{ticket().orden?.ocupacionMesa?.mesa?.numero?
+    'Mesa '+ticket().orden?.ocupacionMesa?.mesa?.numero:'Sin mesa'}}</small>
+  <div class="ord-ticket-items">
+   @for(line of ticket().comandaLineasComoComanda;track line.id){
+    @if(!line.canceladaEn){
+     <div class="ord-kitchen-line">
+      <strong>{{qtyText(line.cantidad)}} × {{line.ordenLinea?.nombreSnapshot??
+       line.ordenLinea?.variante?.producto?.nombre??'Producto'}}</strong>
+      @if(line.ordenLinea?.notasCocina){<small>{{line.ordenLinea?.notasCocina}}</small>}
+      @if(line.entregadaEn){<small>Entregada</small>}
+      @else if(line.listaEn){<small>Lista para entregar</small>}
+     </div>
+    }
+   }
+  </div>
+  <div class="ord-ticket-actions"><ng-content/></div>
  </article>`
 })
 export class GcKitchenTicket{
  readonly ticket=input.required<KitchenTicket>();
+ readonly open=output<void>();
  protected readonly qtyText=qtyText;
+ protected readonly stage=computed(()=>kitchenStage(this.ticket()));
 }
