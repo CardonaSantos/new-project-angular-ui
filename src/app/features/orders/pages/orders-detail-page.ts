@@ -184,7 +184,14 @@ export class GcOrdersDetailPage implements OnInit {
  protected readonly addQty=signal('1');protected readonly addDiscount=signal('0');
  protected readonly addNotes=signal('');protected readonly sendAdded=signal(true);
  private readonly extras=signal<Record<string,string[]>>({});
- private pendingKey='';
+ private pendingOperation:{signature:string;key:string}|null=null;
+ /** Reuse the key only for the identical mutation; a different action or payload must get a new one. */
+ private keyFor(action:string,payload:unknown):string{
+  const signature=action+':'+JSON.stringify(payload);
+  if(this.pendingOperation?.signature!==signature)
+   this.pendingOperation={signature,key:operationKey(action)};
+  return this.pendingOperation.key;
+ }
  protected readonly activeLines=computed(()=>this.order()?.ordenLineasComoOrden.filter(x=>!x.canceladaEn)??[]);
  protected readonly options=computed(()=>{
   const items:CatalogProjectedItem[]=[];
@@ -214,7 +221,7 @@ export class GcOrdersDetailPage implements OnInit {
  private async perform(action:()=>Promise<OrderDetail>){
   if(this.actionBusy())return;
   this.actionBusy.set(true);this.error.set(null);
-  try{const o=await action();this.order.set(o);this.observations.set(o.observaciones??'');this.pendingKey=''}
+  try{const o=await action();this.order.set(o);this.observations.set(o.observaciones??'');this.pendingOperation=null}
   catch(e){this.error.set(gcErrorMessage(e))}
   finally{this.actionBusy.set(false)}
  }
@@ -222,8 +229,8 @@ export class GcOrdersDetailPage implements OnInit {
   const o=this.order();if(!o)return;
   const approved=await this.dialog.confirm({title:'Enviar a cocina',message:'Enviar los productos pendientes a preparación?',confirmText:'Enviar'});
   if(!approved)return;
-  if(!this.pendingKey)this.pendingKey=operationKey('send');
-  await this.perform(()=>firstValueFrom(this.api.send(o.id,this.pendingKey)));
+  const key=this.keyFor('send',{id:o.id});
+  await this.perform(()=>firstValueFrom(this.api.send(o.id,key)));
  }
  protected async close(){
   const o=this.order();if(!o)return;
@@ -243,10 +250,10 @@ export class GcOrdersDetailPage implements OnInit {
   const current=this.extras()[group.grupoId]??[];
   if(checked&&group.maximo!==null&&current.length>=group.maximo){this.error.set('Límite de opciones alcanzado en '+group.grupo);return}
   this.extras.update(x=>({...x,[group.grupoId]:checked?[...current,id]:current.filter(v=>v!==id)}));
-  this.pendingKey='';
+  this.pendingOperation=null;
  }
  protected pickVariant(id:string){
-  this.variantId.set(id);this.extras.set({});this.pendingKey='';this.error.set(null);
+  this.variantId.set(id);this.extras.set({});this.pendingOperation=null;this.error.set(null);
  }
  protected async addLine(){
   const o=this.order(),item=this.selectedItem();if(!o||!item)return;
@@ -260,23 +267,25 @@ export class GcOrdersDetailPage implements OnInit {
    }
    modifierIds.push(...ids);
   }
-  if(!this.pendingKey)this.pendingKey=operationKey('line-add');
-  await this.perform(()=>firstValueFrom(this.api.addLines(o.id,{
+  const payload={
    lineas:[{varianteId:item.variante.id,cantidad:qty,modificadores:modifierIds.map(modificadorId=>({modificadorId})),
     ...(this.access.canDiscount()&&this.addDiscount().trim()?{descuento:this.addDiscount().trim()}:{}),
     ...(this.addNotes().trim()?{notasCocina:this.addNotes().trim()}:{} )}],
-   enviarCocina:this.sendAdded(),claveOperacion:this.pendingKey
-  })));
+   enviarCocina:this.sendAdded()
+  };
+  const key=this.keyFor('line-add',{id:o.id,...payload});
+  await this.perform(()=>firstValueFrom(this.api.addLines(o.id,{...payload,claveOperacion:key})));
   if(!this.error()){this.variantId.set('');this.extras.set({});this.addQty.set('1');this.addNotes.set('')}
  }
  protected async saveLine(){
   const o=this.order(),line=this.editItem();if(!o||!line)return;
   const qty=safeQuantity(this.editQty());if(!qty){this.error.set('La cantidad no es válida.');return}
-  if(!this.pendingKey)this.pendingKey=operationKey('line-edit');
-  await this.perform(()=>firstValueFrom(this.api.editLine(o.id,line.id,{
-   cantidad:qty,notasCocina:this.editNotes().trim(),claveOperacion:this.pendingKey,
+  const payload={
+   cantidad:qty,notasCocina:this.editNotes().trim(),
    ...(this.access.canDiscount()?{descuento:this.editDiscount().trim()}:{} )
-  })));
+  };
+  const key=this.keyFor('line-edit',{id:o.id,lineId:line.id,...payload});
+  await this.perform(()=>firstValueFrom(this.api.editLine(o.id,line.id,{...payload,claveOperacion:key})));
   if(!this.error())this.editItem.set(null);
  }
  protected setClassification(value:string){
