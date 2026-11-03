@@ -51,7 +51,7 @@ export class GcPosProduct {
   } @empty {<p class="ord-muted">Elige productos para empezar.</p>}
   <div class="ord-cart-footer">
    <div><span>Importe estimado</span><strong>{{money(total(),currency())}}</strong></div>
-   <small>El total definitivo lo confirma el servidor.</small>
+
   </div>
  </section>`
 })
