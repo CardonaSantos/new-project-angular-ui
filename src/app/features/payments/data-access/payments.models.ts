@@ -1,7 +1,7 @@
 /** PAY-A contracts from backend main, 2026-11-03. Amounts remain decimal strings. */
 export type PaymentMethod='EFECTIVO'|'TARJETA'|'TRANSFERENCIA'|'OTRO';
 export type AttemptState='PENDIENTE'|'CONFIRMADO'|'CANCELADO';
-export type Page<T>={data:T[];meta:{page:number;limit:number;total:number;totalPages:number}};
+export interface Page<T>{data:T[];meta:{page:number;limit:number;total:number;totalPages:number}}
 export interface CashRegister{id:string;sucursalId:string;codigo:string;nombre:string;activa:boolean}
 export interface CashMovement{id:string;turnoId:string;tipo:'INGRESO'|'EGRESO';monto:string;motivo:string;creadoEn:string}
 export interface CashShift{
