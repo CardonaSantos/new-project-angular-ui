@@ -8,7 +8,7 @@ import {OrdersAccess} from './data-access/orders-access';
   @if(access.canRead()){<a routerLink="/orders/list" routerLinkActive="active" ariaCurrentWhenActive="page">Órdenes</a>}
   @if(access.canTablesRead()){<a routerLink="/orders/tables" routerLinkActive="active" ariaCurrentWhenActive="page">Mesas</a>}
   @if(access.canKitchenRead()){<a routerLink="/orders/kitchen" routerLinkActive="active" ariaCurrentWhenActive="page">Cocina</a>}
-  @if(access.canTablesManage()||access.canKitchenManage()){
+  @if(access.canKitchenManage()&&access.canKitchenRead()){
    <a routerLink="/orders/settings" routerLinkActive="active" ariaCurrentWhenActive="page">Configuración</a>}
  </nav>`,
 })
