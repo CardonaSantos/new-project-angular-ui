@@ -12,6 +12,7 @@ import {GcOrdersNav} from '../orders-nav';
 import {GcOrderStatus} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
+import {PaymentsAccess} from '../../payments/data-access/payments-access';
 import {CANCELLATION_CLASSES,type CancellationClass,type OrderDetail, type OrderLine} from '../data-access/orders.models';
 import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} from '../data-access/orders.helpers';
 
@@ -41,6 +42,13 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
       @if(hasPendingPayment()){<strong>Falta cobrar {{money(unpaidAmount())}}</strong>}
       @else {<strong>Cuenta pagada</strong>}
      </p>
+    }
+    @if(o.estado==='ABIERTA'&&paymentsAccess.canRead()&&paymentsAccess.canCollect()){
+     <div class="ord-actions pay-order-actions">
+      <a class="ord-primary" [routerLink]="['/payments/order',o.id]">
+       {{hasPendingPayment()?'Cobrar cuenta':'Ver cobros'}}
+      </a>
+     </div>
     }
     @if(o.estado==='ABIERTA'&&access.canManage()){
      <div class="ord-actions">
@@ -181,6 +189,7 @@ export class GcOrdersDetailPage implements OnInit {
  private readonly dialog=inject(ConfirmDialogService);
  protected readonly branch=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
+ protected readonly paymentsAccess=inject(PaymentsAccess);
  protected readonly money=money;protected readonly qtyText=qtyText;
  protected readonly ticketStatus=(state:'PENDIENTE'|'PREPARANDO'|'LISTA'|'CANCELADA')=>
   state==='LISTA'?'Lista para entregar':statusText(state);
