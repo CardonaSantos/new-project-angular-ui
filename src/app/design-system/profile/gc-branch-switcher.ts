@@ -1,27 +1,29 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { GcAuthFacade } from '../../core/auth/demo-auth.facade';
+import { GcSearchSelect } from '../forms/gc-search-select';
 
 @Component({
-  selector: 'gc-branch-switcher',
-  template: `
-    @if (auth.authenticated()) {
-      <label class="switcher">
-        <span>Sucursal</span>
-        <select aria-label="Sucursal activa" [value]="auth.branchId() ?? ''"
-          (change)="auth.switchBranch($any($event.target).value)">
-          @for (branch of auth.identity()?.branches ?? []; track branch.id) {
-            <option [value]="branch.id">{{ branch.name }}</option>
-          }
-        </select>
-      </label>
-    }
-  `,
-  styles: [ `
-    .switcher { display:flex; align-items:center; gap:.45rem; font-size:.8rem; }
-    select { min-height:2.5rem; max-width:12.5rem; color:var(--gc-on-surface); background:var(--gc-surface); border:1px solid var(--gc-outline-variant); border-radius:.5rem; padding:.2rem .4rem; }
-    @media(max-width:650px) { .switcher span { display:none; } select { max-width:8.5rem; } }
-  ` ],
+ selector:'gc-branch-switcher',
+ imports:[GcSearchSelect],
+ template:`
+  @if(auth.authenticated()){
+   <gc-search-select id="gc-demo-branch" label="Sucursal" [items]="choices()"
+    [value]="auth.branchId()??''" [clearable]="false"
+    (valueChange)="auth.switchBranch($event)"/>
+  }
+ `,
+ styles:[`
+  :host{display:block;min-width:0;width:min(12.5rem,100%)}
+  gc-search-select{display:block;min-width:0;width:100%}
+  @media(max-width:650px){
+   :host{width:8.5rem}
+   gc-search-select .gc-select-field>label{
+    position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap
+   }
+  }
+ `],
 })
 export class GcBranchSwitcher {
-  protected readonly auth = inject(GcAuthFacade);
+ protected readonly auth=inject(GcAuthFacade);
+ protected readonly choices=computed(()=> (this.auth.identity()?.branches??[]).map(b=>({id:b.id,label:b.name})));
 }
