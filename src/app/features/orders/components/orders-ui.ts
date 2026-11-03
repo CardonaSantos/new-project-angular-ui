@@ -1,7 +1,8 @@
 import {Component,computed,input,output} from '@angular/core';
+import {DatePipe} from '@angular/common';
 import type {CatalogProjectedItem} from '../../catalog/data-access/catalog.models';
 import type {KitchenTicket,OrderState,TicketState} from '../data-access/orders.models';
-import {kitchenStage,money,qtyText,statusText} from '../data-access/orders.helpers';
+import {kitchenReadyAt,kitchenStage,money,qtyText,statusText} from '../data-access/orders.helpers';
 import type {PosCartEntry} from './pos-cart.models';
 
 /** Interactive product choice, optimized for mouse and touch. */
@@ -80,7 +81,7 @@ export class GcOrderStatus{
 }
 
 @Component({
- selector:'gc-kitchen-ticket',imports:[],template:`
+ selector:'gc-kitchen-ticket',imports:[DatePipe],template:`
  <article class="ord-ticket" [class.ord-ticket--delivered]="stage().kind==='delivered'"
    [class.ord-ticket--cancelled]="stage().kind==='cancelled'">
   <button class="ord-ticket-open" type="button" (click)="open.emit()"
@@ -95,6 +96,10 @@ export class GcOrderStatus{
   </div>
   <small>{{ticket().estacion?.nombre??'Cocina'}} · {{ticket().orden?.ocupacionMesa?.mesa?.numero?
     'Mesa '+ticket().orden?.ocupacionMesa?.mesa?.numero:'Sin mesa'}}</small>
+  <small class="ord-ticket-time">
+   @if(ticket().estado==='LISTA'){Lista desde {{readyAt()|date:'HH:mm'}}}
+   @else {Pedido recibido {{ticket().enviadaEn|date:'HH:mm'}}}
+  </small>
   <div class="ord-ticket-items">
    @for(line of ticket().comandaLineasComoComanda;track line.id){
     @if(!line.canceladaEn){
@@ -116,4 +121,5 @@ export class GcKitchenTicket{
  readonly open=output<void>();
  protected readonly qtyText=qtyText;
  protected readonly stage=computed(()=>kitchenStage(this.ticket()));
+ protected readonly readyAt=computed(()=>kitchenReadyAt(this.ticket()));
 }
