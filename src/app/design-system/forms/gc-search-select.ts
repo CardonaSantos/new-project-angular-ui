@@ -42,7 +42,7 @@ export interface GcSelectOption {
 export class GcSearchSelect {
  readonly id=input.required<string>();
  readonly label=input.required<string>();
- readonly items=input<readonly GcSelectOption[]>([]);
+ readonly items=input<GcSelectOption[]>([]);
  readonly value=input<string>('');
  readonly placeholder=input('Buscar o seleccionar…');
  readonly searchable=input(true);

@@ -56,3 +56,8 @@
 .inv-report-master-grid .inv-kv{gap:.75rem}
 .inv-report-ok{padding:.75rem 1rem;border:1px solid var(--gc-outline-variant);
  border-radius:.65rem;background:var(--gc-surface-container);font-weight:600}
+
+.inv-section{min-width:0;border:1px solid var(--gc-outline-variant);border-radius:.65rem;padding:.85rem;display:grid;gap:.7rem;margin:0}
+.inv-section>legend{font-size:.94rem;font-weight:700;padding:0 .45rem;color:var(--gc-on-surface)}
+.inv-section>.inv-muted{margin:0}
+@media(max-width:650px){.inv-section{padding:.65rem}}

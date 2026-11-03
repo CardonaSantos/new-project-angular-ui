@@ -1,4 +1,7 @@
 import {Component,computed,inject,signal} from '@angular/core';
+import {Subject,debounceTime,distinctUntilChanged} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
@@ -14,50 +17,39 @@ import type {RecipeOption,PackagingMode,RecipeStockPreview} from '../data-access
 import {PACKAGING_MODES} from '../data-access/recipes.models';
 import {GcRecipesNav} from '../recipes-nav';
 @Component({
- selector:'gc-recipes-check-page',imports:[GcRecipesNav,GcInventoryPicker],
+ selector:'gc-recipes-check-page',imports:[GcRecipesNav,GcInventoryPicker,GcSearchSelect],
  template:`<main class="rec-page"><gc-recipes-nav/>
  <section class="rec-card">
   <div class="rec-top"><h2>Comprobar ingredientes de la carta</h2></div>
   <p class="rec-note">Comprueba cuántos ingredientes se necesitarían para preparar un producto, incluidos los extras y los materiales de entrega. No registra un pedido ni descuenta existencias.</p>
-  <div class="rec-form">
-   <label class="rec-field">Sucursal
-    <select [value]="branchId()" (change)="chooseBranch($any($event.target).value)">
-     <option value="">Seleccionar sucursal</option>
-     @for(b of branches.branches();track b.id){<option [value]="b.id" [selected]="b.id===branchId()">{{b.nombre}}</option>}
-    </select>
-   </label>
-   <div class="rec-wide rec-form">
-    <label class="rec-field">Buscar producto
-     <input [value]="search()" (input)="search.set($any($event.target).value)" maxlength="100"
-      (keydown.enter)="$event.preventDefault();loadRecipes()"/>
-    </label>
-    <button type="button" [disabled]="busy()" (click)="loadRecipes()">Buscar</button>
-    <label class="rec-field">Producto y presentación
-     <select [value]="recipeId()" (change)="chooseRecipe($any($event.target).value)">
-      <option value="">Seleccionar una receta publicada</option>
-      @for(r of recipes();track r.id){
-       <option [value]="r.id" [selected]="recipeId()===r.id">{{r.label}}{{r.destino?.presentacion?' · '+r.destino.presentacion:''}}</option>
-      }
-     </select>
-    </label>
+
+  <div class="rec-section">
+   <h3>1. Producto y sucursal</h3>
+   <div class="rec-form">
+    <gc-search-select id="check-branch" label="Sucursal" [items]="branchChoices()"
+     [value]="branchId()" [clearable]="false" (valueChange)="chooseBranch($event)"/>
+    <gc-search-select id="check-recipe" label="Producto y presentación"
+     [items]="recipeChoices()" [value]="recipeId()" [remote]="true"
+     [loading]="searchBusy()" placeholder="Buscar receta publicada…"
+     (searchChange)="queueRecipeSearch($event)" (valueChange)="chooseRecipe($event)"/>
    </div>
-   <label class="rec-field">Unidades a preparar
-    <input inputmode="decimal" [value]="amount()" (input)="amount.set($any($event.target).value);clear()"/>
-   </label>
-   <label class="rec-field">Forma de entrega
-    <select [value]="mode()" (change)="mode.set($any($event.target).value);clear()">
-     @for(m of modes;track m.value){<option [value]="m.value" [selected]="mode()===m.value">{{m.label}}</option>}
-    </select>
-   </label>
-   <label class="rec-field">Almacén
-    <select [value]="warehouseId()" (change)="warehouseId.set($any($event.target).value);locationId.set('');clear()">
-     <option value="">Seleccionar almacén</option>
-     @for(w of warehouses();track w.id){<option [value]="w.id" [selected]="warehouseId()===w.id">{{w.nombre}}</option>}
-    </select>
-   </label>
-   <gc-inventory-picker id="quote-location" kind="location" label="Ubicación de ingredientes"
-    [warehouseId]="warehouseId()" [branchId]="branchId()" [value]="locationId()"
-    (valueChange)="locationId.set($event);clear()"/>
+  </div>
+  <div class="rec-section">
+   <h3>2. Cantidad y origen de los ingredientes</h3>
+   <div class="rec-form">
+    <label class="rec-field">Unidades a preparar
+     <input inputmode="decimal" [value]="amount()" (input)="amount.set($any($event.target).value);clear()"/>
+    </label>
+    <gc-search-select id="check-mode" label="Forma de entrega" [items]="modeChoices"
+     [value]="mode()" [searchable]="false" [clearable]="false"
+     (valueChange)="setMode($event)"/>
+    <gc-search-select id="check-warehouse" label="Almacén" [items]="warehouseChoices()"
+     [value]="warehouseId()" [disabled]="!branchId()"
+     (valueChange)="warehouseId.set($event);locationId.set('');clear()"/>
+    <gc-inventory-picker id="quote-location" kind="location" label="Ubicación de ingredientes"
+     [warehouseId]="warehouseId()" [branchId]="branchId()" [value]="locationId()"
+     [disabled]="!warehouseId()" (valueChange)="locationId.set($event);clear()"/>
+   </div>
   </div>
   @if(groups().length){
    <h3>Extras</h3>
@@ -122,6 +114,21 @@ export class GcRecipesCheckPage {
  private readonly inventory=inject(InventoryApi);
  private readonly catalog=inject(CatalogApi);
  protected readonly recipes=signal<RecipeOption[]>([]);
+ protected readonly recipeChoices=computed(()=>this.recipes().map(r=>({id:r.id,
+  label:r.label+(r.destino?.presentacion?' · '+r.destino.presentacion:'')})));
+ protected readonly branchChoices=computed(()=>this.branches.branches().map(b=>({id:b.id,label:b.nombre})));
+ protected readonly warehouseChoices=computed(()=>this.warehouses().map(w=>({id:w.id,label:w.nombre})));
+ protected readonly modeChoices=PACKAGING_MODES.map(m=>({id:m.value,label:m.label}));
+ protected readonly searchBusy=signal(false);
+ private readonly recipeSearchTerms=new Subject<string>();
+ private recipeQueryGeneration=0;
+ constructor(){
+  this.recipeSearchTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{this.search.set(term);void this.loadRecipes()});
+  void this.loadRecipes();
+ }
+ protected queueRecipeSearch(value:string){this.recipeSearchTerms.next(value)}
+ protected setMode(value:string){this.mode.set(value as PackagingMode);this.clear()}
  protected readonly recipeId=signal('');
  protected readonly search=signal('');
  protected readonly branchId=signal('');
@@ -156,12 +163,15 @@ export class GcRecipesCheckPage {
   }catch(e){if(gen===this.generation)this.error.set(gcErrorMessage(e))}
  }
  protected async loadRecipes(){
-  this.error.set(null);
+  const g=++this.recipeQueryGeneration;
+  this.searchBusy.set(true);this.error.set(null);
   try{
    const r=await firstValueFrom(this.api.options({tipo:'VENTA',search:this.search().trim(),limit:50}));
+   if(g!==this.recipeQueryGeneration)return;
    const previous=this.recipes().find(x=>x.id===this.recipeId());
    this.recipes.set(previous&&!r.data.some(x=>x.id===previous.id)?[previous,...r.data]:r.data);
-  }catch(e){this.error.set(gcErrorMessage(e))}
+  }catch(e){if(g===this.recipeQueryGeneration)this.error.set(gcErrorMessage(e))}
+  finally{if(g===this.recipeQueryGeneration)this.searchBusy.set(false)}
  }
  protected async chooseRecipe(id:string){
   this.recipeId.set(id);this.selectedExtras.set([]);this.groups.set([]);this.clear();

@@ -1,6 +1,8 @@
 import {Component,computed,inject,OnInit,signal} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
-import {firstValueFrom} from 'rxjs';
+import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
@@ -24,7 +26,7 @@ interface IngredientForm {
 }
 @Component({
  selector:'gc-recipes-detail-page',
- imports:[RouterLink,GcRecipesNav,GcInventoryPicker],
+ imports:[RouterLink,GcRecipesNav,GcInventoryPicker,GcSearchSelect],
  template:`<main class="rec-page">
   <gc-recipes-nav/><a class="rec-link" routerLink="/recipes/list">Volver a recetas</a>
   @if(page.busy()){<p role="status" class="rec-muted">Consultando receta…</p>}
@@ -50,20 +52,11 @@ interface IngredientForm {
        </select>
       </label>
       @if(kind()==='VENTA'){
-       <div class="rec-wide rec-form">
-        <label class="rec-field">Buscar producto o presentación
-         <input [value]="variantSearch()" maxlength="100" (input)="variantSearch.set($any($event.target).value)"
-          (keydown.enter)="$event.preventDefault();findVariants()"/>
-        </label><button type="button" (click)="findVariants()">Buscar</button>
-        <label class="rec-field">Presentación
-         <select [value]="targetId()" (change)="chooseVariant($any($event.target).value)">
-          <option value="" [selected]="!targetId()">Seleccionar presentación</option>
-          @for(v of visibleVariants();track v.id){
-           <option [value]="v.id" [selected]="v.id===targetId()">{{v.label??(v.producto?.nombre+' · '+v.nombre)}}</option>
-          }
-         </select>
-        </label>
-       </div>
+
+       <gc-search-select class="rec-wide" id="recipe-variant" label="Presentación"
+        [items]="variantChoices()" [value]="targetId()" [remote]="true"
+        placeholder="Buscar producto o presentación…"
+        (searchChange)="queueVariantSearch($event)" (valueChange)="chooseVariant($event)"/>
        @if(moreVariants()){<p class="rec-muted rec-wide">Busca por el nombre para encontrar más presentaciones.</p>}
       } @else {
        <gc-inventory-picker class="rec-wide" id="recipe-result" kind="article"
@@ -234,6 +227,16 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
   return all;
  });
  protected readonly moreVariants=signal(false);
+ protected readonly variantChoices=computed(()=>this.visibleVariants().map(v=>({
+  id:v.id,label:v.label??(v.producto?.nombre+' · '+v.nombre)
+ })));
+ private readonly variantSearchTerms=new Subject<string>();
+ private variantQueryGeneration=0;
+ constructor(){
+  this.variantSearchTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{this.variantSearch.set(term);void this.findVariants()});
+ }
+ protected queueVariantSearch(value:string){this.variantSearchTerms.next(value)}
  protected readonly editingFormula=signal(false);
  protected readonly formulaVersionId=signal<string|null>(null);
  protected readonly viewingVersion=signal<RecipeVersion|null>(null);
@@ -312,11 +315,13 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
   }catch(e){this.formError.set(gcErrorMessage(e))}
  }
  protected async findVariants(){
+  const g=++this.variantQueryGeneration;
   try{
    const result=await firstValueFrom(this.catalog.variantOptions({search:this.variantSearch().trim(),limit:50}));
+   if(g!==this.variantQueryGeneration)return;
    const options=result.data.filter(x=>x.activo&&x.producto?.tipo==='PREPARADO');
    this.variants.set(options);this.moreVariants.set(result.meta.hasMore);
-  }catch(e){this.formError.set(gcErrorMessage(e))}
+  }catch(e){if(g===this.variantQueryGeneration)this.formError.set(gcErrorMessage(e))}
  }
  protected async saveRecipe(event:Event){
   event.preventDefault();

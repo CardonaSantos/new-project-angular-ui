@@ -39,3 +39,9 @@
 .rec-version{border:1px solid var(--gc-outline-variant);border-radius:.55rem;padding:.65rem;display:grid;gap:.4rem}
 .rec-link{color:var(--gc-primary);font-weight:650;text-decoration:none}
 @media(max-width:700px){.rec-form{grid-template-columns:1fr}.rec-table{min-width:600px}}
+
+.rec-section{grid-column:1/-1;display:grid;gap:.7rem;border:1px solid var(--gc-outline-variant);border-radius:.65rem;padding:.85rem;min-width:0}
+.rec-section h3{font-size:.94rem;color:var(--gc-on-surface);font-weight:700;margin:0}
+.rec-section .rec-form{min-width:0}
+.rec-section>.rec-note{margin:0}
+@media(max-width:650px){.rec-section{padding:.65rem}}

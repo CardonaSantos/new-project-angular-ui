@@ -1,6 +1,8 @@
 import {Component,computed,effect,inject,signal} from '@angular/core';
 import {Router,RouterLink} from '@angular/router';
-import {firstValueFrom} from 'rxjs';
+import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {InventoryApi} from '../../inventory/data-access/inventory.api';
@@ -14,58 +16,52 @@ import {RecipesApi} from '../data-access/recipes.api';
 import type {RecipeOption,RecipeStockPreview,ProductionInput} from '../data-access/recipes.models';
 import {GcRecipesNav} from '../recipes-nav';
 @Component({
- selector:'gc-recipes-production-form-page',imports:[GcRecipesNav,RouterLink,GcInventoryPicker],
+ selector:'gc-recipes-production-form-page',imports:[GcRecipesNav,RouterLink,GcInventoryPicker,GcSearchSelect],
  template:`<main class="rec-page">
   <gc-recipes-nav/><a class="rec-link" routerLink="/recipes/production">Volver al historial</a>
   <section class="rec-card">
    <h2>Registrar producción</h2>
    <p class="rec-note">Prepara un lote para el inventario. Puedes guardarlo para revisar o confirmarlo directamente.</p>
-   <div class="rec-form">
-    <label class="rec-field">Sucursal
-     <select [value]="branchId()" (change)="chooseBranch($any($event.target).value)" [disabled]="locked()||busy()">
-      <option value="">Seleccionar sucursal</option>
-      @for(b of branch.branches();track b.id){
-       <option [value]="b.id" [selected]="b.id===branchId()">{{b.nombre}}</option>
-      }
-     </select>
-    </label>
-    <div class="rec-wide rec-form">
-     <label class="rec-field">Buscar preparación
-      <input [value]="search()" (input)="search.set($any($event.target).value)" maxlength="100"
-       (keydown.enter)="$event.preventDefault();searchRecipes()" [disabled]="locked()||busy()"/>
-     </label>
-     <button type="button" (click)="searchRecipes()" [disabled]="locked()||busy()">Buscar</button>
-     <label class="rec-field">Preparación
-      <select [value]="recipeId()" (change)="chooseRecipe($any($event.target).value)" [disabled]="locked()||busy()">
-       <option value="">Seleccionar una receta publicada</option>
-       @for(r of visibleRecipes();track r.id){<option [value]="r.id" [selected]="r.id===recipeId()">
-        {{r.label}}{{r.destino?.nombre?' · '+r.destino.nombre:''}}</option>}
-      </select>
-     </label>
+
+   <div class="rec-section">
+    <h3>1. Preparación a producir</h3>
+    <div class="rec-form">
+     <gc-search-select id="production-branch" label="Sucursal" [items]="branchChoices()"
+      [value]="branchId()" [clearable]="false" [disabled]="locked()||busy()"
+      (valueChange)="chooseBranch($event)"/>
+     <gc-search-select id="production-recipe" label="Preparación publicada"
+      [items]="recipeChoices()" [value]="recipeId()" [remote]="true"
+      [loading]="searchBusy()" [disabled]="locked()||busy()"
+      placeholder="Buscar preparación…"
+      (searchChange)="queueRecipeSearch($event)" (valueChange)="chooseRecipe($event)"/>
     </div>
     @if(selectedRecipe();as r){
-     <p class="rec-note rec-wide">La fórmula publicada rinde {{quantity(r.rendimiento?.cantidad,r.rendimiento?.unidad?.codigo)}}. Solo se utilizan versiones publicadas y activas.</p>
+     <p class="rec-note">La fórmula publicada rinde {{quantity(r.rendimiento?.cantidad,r.rendimiento?.unidad?.codigo)}}. Solo se utilizan versiones publicadas y activas.</p>
     }
-    <label class="rec-field">Cantidad a producir
-     <input [value]="amount()" (input)="amount.set($any($event.target).value);clearPreview()"
-      [disabled]="locked()||busy()" inputmode="decimal" placeholder="1000"/>
-    </label>
-    <label class="rec-field">Almacén
-     <select [value]="warehouseId()" (change)="chooseWarehouse($any($event.target).value)" [disabled]="locked()||busy()">
-      <option value="">Seleccionar almacén</option>
-      @for(w of warehouses();track w.id){<option [value]="w.id" [selected]="w.id===warehouseId()">{{w.nombre}}</option>}
-     </select>
-    </label>
-    <gc-inventory-picker id="production-destination" label="Ubicación donde guardar el producto"
-     kind="location" [warehouseId]="warehouseId()" [branchId]="branchId()"
-     [value]="destinationId()" [disabled]="locked()||busy()" (valueChange)="destinationId.set($event);clearPreview()"/>
-    <gc-inventory-picker id="production-origin" label="Ubicación desde la que consumir ingredientes"
-     kind="location" [warehouseId]="warehouseId()" [branchId]="branchId()"
-     [value]="originId()" [disabled]="locked()||busy()" (valueChange)="originId.set($event);clearPreview()"/>
-    <label class="rec-field">Vencimiento (cuando corresponda)
-     <input type="date" [value]="expiry()" (change)="expiry.set($any($event.target).value)"
-      [disabled]="locked()||busy()"/>
-    </label>
+   </div>
+   <div class="rec-section">
+    <h3>2. Cantidad y ubicación física</h3>
+    <div class="rec-form">
+     <label class="rec-field">Cantidad a producir
+      <input [value]="amount()" (input)="amount.set($any($event.target).value);clearPreview()"
+       [disabled]="locked()||busy()" inputmode="decimal" placeholder="1000"/>
+     </label>
+     <gc-search-select id="production-warehouse" label="Almacén" [items]="warehouseChoices()"
+      [value]="warehouseId()" [disabled]="locked()||busy()||!branchId()"
+      (valueChange)="chooseWarehouse($event)"/>
+     <gc-inventory-picker id="production-destination" label="Ubicación donde guardar el producto"
+      kind="location" [warehouseId]="warehouseId()" [branchId]="branchId()"
+      [value]="destinationId()" [disabled]="locked()||busy()||!warehouseId()"
+      (valueChange)="destinationId.set($event);clearPreview()"/>
+     <gc-inventory-picker id="production-origin" label="Ubicación desde la que consumir ingredientes"
+      kind="location" [warehouseId]="warehouseId()" [branchId]="branchId()"
+      [value]="originId()" [disabled]="locked()||busy()||!warehouseId()"
+      (valueChange)="originId.set($event);clearPreview()"/>
+     <label class="rec-field">Vencimiento (cuando corresponda)
+      <input type="date" [value]="expiry()" (change)="expiry.set($any($event.target).value)"
+       [disabled]="locked()||busy()"/>
+     </label>
+    </div>
    </div>
    <p class="rec-note">La cantidad se registra en la unidad base del artículo producido. Si dejas el origen vacío, se utilizará la ubicación de destino.</p>
    @if(!access.canProduce()){<p class="rec-alert">No tienes permiso para registrar producción en esta sucursal.</p>}
@@ -126,6 +122,14 @@ export class GcRecipesProductionFormPage implements GcDirtyAware {
  protected readonly branchId=signal('');
  protected readonly recipeId=signal('');
  protected readonly recipes=signal<RecipeOption[]>([]);
+ protected readonly recipeChoices=computed(()=>this.recipes().map(r=>({id:r.id,
+  label:r.label+(r.destino?.nombre?' · '+r.destino.nombre:'')})));
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
+ protected readonly warehouseChoices=computed(()=>this.warehouses().map(w=>({id:w.id,label:w.nombre})));
+ protected readonly searchBusy=signal(false);
+ private readonly recipeSearchTerms=new Subject<string>();
+ private recipeQueryGeneration=0;
+ protected queueRecipeSearch(value:string){this.recipeSearchTerms.next(value)}
  protected readonly selectedRecipe=computed(()=>this.recipes().find(x=>x.id===this.recipeId())??null);
  protected readonly visibleRecipes=computed(()=>this.recipes());
  protected readonly search=signal('');
@@ -151,10 +155,15 @@ export class GcRecipesProductionFormPage implements GcDirtyAware {
    !this.destinationId()||!this.warehouseId())return false;
   try{return parseApiDecimal(this.amount()).gt(0)}catch{return false}
  });
- constructor(){effect(()=>{
-  const selected=this.branch.branchId();
-  if(selected&&!this.branchId())void this.chooseBranch(selected);
- })}
+ constructor(){
+  effect(()=>{
+   const selected=this.branch.branchId();
+   if(selected&&!this.branchId())void this.chooseBranch(selected);
+  });
+  this.recipeSearchTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{this.search.set(term);void this.searchRecipes()});
+  void this.searchRecipes();
+ }
  hasUnsavedChanges(){return !this.saved&&!!(this.recipeId()||this.destinationId()||this.originId()||this.expiry()||this.pending)}
  protected clearPreview(){this.preview.set(null)}
  protected async chooseBranch(id:string){
@@ -172,11 +181,15 @@ export class GcRecipesProductionFormPage implements GcDirtyAware {
   this.warehouseId.set(id);this.destinationId.set('');this.originId.set('');this.clearPreview();
  }
  protected async searchRecipes(){
+  const g=++this.recipeQueryGeneration;
+  this.searchBusy.set(true);
   try{
    const r=await firstValueFrom(this.api.options({tipo:'PRODUCCION',search:this.search().trim(),limit:50}));
+   if(g!==this.recipeQueryGeneration)return;
    const selected=this.selectedRecipe();
    this.recipes.set(selected&&!r.data.some(x=>x.id===selected.id)?[selected,...r.data]:r.data);
-  }catch(e){this.error.set(gcErrorMessage(e))}
+  }catch(e){if(g===this.recipeQueryGeneration)this.error.set(gcErrorMessage(e))}
+  finally{if(g===this.recipeQueryGeneration)this.searchBusy.set(false)}
  }
  protected chooseRecipe(id:string){
   this.recipeId.set(id);this.clearPreview();this.error.set(null);

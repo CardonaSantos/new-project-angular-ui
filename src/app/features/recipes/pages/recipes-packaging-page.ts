@@ -1,5 +1,7 @@
 import {Component,computed,inject,OnInit,signal} from '@angular/core';
-import {firstValueFrom} from 'rxjs';
+import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
@@ -18,7 +20,7 @@ import {PACKAGING_MODES,type PackagingMode,type PackagingScope,type PackagingRul
 interface Material {key:number;articuloId:string;nombre:string;cantidad:string;unidad:string}
 @Component({
  selector:'gc-recipes-packaging-page',
- imports:[GcRecipesNav,GcInventoryPicker],
+ imports:[GcRecipesNav,GcInventoryPicker,GcSearchSelect],
  template:`<main class="rec-page">
   <gc-recipes-nav/>
   <section class="rec-card">
@@ -84,22 +86,11 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
       </select>
      </label>
      @if(scope()==='ARTICULO'){
-      <div class="rec-wide rec-form">
-       <label class="rec-field">Buscar presentación
-        <input [value]="variantSearch()" maxlength="100"
-         (input)="variantSearch.set($any($event.target).value)"
-         (keydown.enter)="$event.preventDefault();findVariants()"/>
-       </label>
-       <button type="button" (click)="findVariants()">Buscar</button>
-       <label class="rec-field">Presentación
-        <select [value]="variantId()" (change)="variantId.set($any($event.target).value)"
-         [disabled]="!access.canManage()">
-         <option value="" [selected]="!variantId()">Seleccionar presentación</option>
-         @for(v of availableVariants();track v.id){<option [value]="v.id" [selected]="v.id===variantId()">
-          {{v.label??(v.producto?.nombre+' · '+v.nombre)}}</option>}
-        </select>
-       </label>
-      </div>
+
+      <gc-search-select class="rec-wide" id="packaging-variant" label="Presentación"
+       [items]="variantChoices()" [value]="variantId()" [remote]="true"
+       [disabled]="!access.canManage()" placeholder="Buscar presentación…"
+       (searchChange)="queueVariantSearch($event)" (valueChange)="variantId.set($event)"/>
      }
     </div>
     <div class="rec-top"><h3>Materiales</h3>
@@ -160,6 +151,16 @@ export class GcRecipesPackagingPage implements OnInit,GcDirtyAware {
  protected readonly modes=PACKAGING_MODES;
  protected readonly branchId=signal('');
  protected readonly variantSearch=signal('');
+ protected readonly variantChoices=computed(()=>this.availableVariants().map(v=>({
+  id:v.id,label:v.label??(v.producto?.nombre+' · '+v.nombre)
+ })));
+ private readonly variantSearchTerms=new Subject<string>();
+ private variantQueryGeneration=0;
+ constructor(){
+  this.variantSearchTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{this.variantSearch.set(term);void this.findVariants()});
+ }
+ protected queueVariantSearch(value:string){this.variantSearchTerms.next(value)}
  protected readonly variantId=signal('');
  protected readonly variants=signal<CatalogVariant[]>([]);
  protected readonly materials=signal<Material[]>([]);
@@ -239,10 +240,11 @@ export class GcRecipesPackagingPage implements OnInit,GcDirtyAware {
  protected setScope(value:string){this.scope.set(value==='ARTICULO'?'ARTICULO':'ORDEN');
   if(this.scope()==='ORDEN')this.variantId.set('')}
  protected async findVariants(){
+  const g=++this.variantQueryGeneration;
   try{
    const data=await firstValueFrom(this.catalog.variantOptions({search:this.variantSearch().trim(),limit:50}));
-   this.variants.set(data.data);
-  }catch(e){this.saveError.set(gcErrorMessage(e))}
+   if(g===this.variantQueryGeneration)this.variants.set(data.data);
+  }catch(e){if(g===this.variantQueryGeneration)this.saveError.set(gcErrorMessage(e))}
  }
  protected addMaterial(){this.materials.update(v=>[...v,{
   key:++this.nextKey,articuloId:'',nombre:'',cantidad:'1',unidad:''
