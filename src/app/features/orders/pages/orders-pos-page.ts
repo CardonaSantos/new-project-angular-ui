@@ -125,11 +125,11 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
     }
     @if(submitError()){
      <p role="alert" class="ord-alert">{{submitError()}}</p>
-     @if(submitError().includes('receta publicada')){
+     @if(submitError()?.includes('receta publicada')){
       <a routerLink="/recipes/list">Revisar recetas publicadas</a>
-     } @else if(submitError().includes('precio vigente')){
+     } @else if(submitError()?.includes('precio vigente')){
       <a routerLink="/catalog/prices">Revisar precios</a>
-     } @else if(submitError().includes('estación de cocina')){
+     } @else if(submitError()?.includes('estación de cocina')){
       <a routerLink="/orders/settings">Configurar cocina</a>
      }
     }
