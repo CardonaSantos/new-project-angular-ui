@@ -1,4 +1,5 @@
 import {Component,computed,effect,inject,signal} from '@angular/core';
+import {DatePipe} from '@angular/common';
 import {RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -13,7 +14,7 @@ import {ORDER_MODES,ORDER_STATES,type OrderMode,type OrderState,type OrderSummar
 import {money,modeText} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-list-page',
- imports:[RouterLink,GcOrdersNav,GcSearchSelect,GcErrorState,GcOrderStatus],
+ imports:[RouterLink,DatePipe,GcOrdersNav,GcSearchSelect,GcErrorState,GcOrderStatus],
  template:`
  <main class="ord-page"><gc-orders-nav/>
   <section class="ord-card">

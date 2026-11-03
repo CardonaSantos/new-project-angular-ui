@@ -1,4 +1,5 @@
 import {Component,computed,inject,OnInit,signal} from '@angular/core';
+import {DatePipe} from '@angular/common';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -16,7 +17,7 @@ import {money,operationKey,qtyText,safeQuantity} from '../data-access/orders.hel
 
 @Component({
  selector:'gc-orders-detail-page',
- imports:[RouterLink,GcOrdersNav,GcOrderStatus,GcSearchSelect],
+ imports:[RouterLink,DatePipe,GcOrdersNav,GcOrderStatus,GcSearchSelect],
  template:`
  <main class="ord-page"><gc-orders-nav/>
   <div class="ord-heading"><div><a routerLink="/orders/list">← Órdenes</a>
@@ -55,7 +56,7 @@ import {money,operationKey,qtyText,safeQuantity} from '../data-access/orders.hel
         <strong>{{money(line.subtotal)}}</strong></div>
        <small>{{qtyText(line.cantidad)}} unidades · {{money(line.precioUnitario)}} c/u</small>
        @if(line.ordenLineaModificadoresComoOrdenLinea?.length){
-        <small>{{line.ordenLineaModificadoresComoOrdenLinea?.map?extraNames(line):''}}</small>
+        <small>{{extraNames(line)}}</small>
        }
        @if(line.notasCocina){<small>Para cocina: {{line.notasCocina}}</small>}
        @if(line.canceladaEn){<span>Cancelada</span>}
