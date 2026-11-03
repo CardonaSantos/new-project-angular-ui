@@ -195,6 +195,9 @@ export class GcOrdersKitchenPage{
   if(!this.error()){this.startKeys.delete(id);this.partial.update(x=>({...x,[id]:''}))}
  }
  protected async markReady(id:string){
+  if(!await this.confirm.confirm({title:'Marcar producto listo',
+   message:'Si quedan unidades por preparar, se descontarán sus ingredientes al marcarlas listas.',
+   confirmText:'Marcar listo'}))return;
   await this.mutate(()=>firstValueFrom(this.api.readyLine(id)));
  }
  protected async deliver(id:string){

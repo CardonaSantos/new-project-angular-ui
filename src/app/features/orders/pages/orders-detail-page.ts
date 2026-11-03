@@ -13,7 +13,7 @@ import {GcOrderStatus} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import {CANCELLATION_CLASSES,type CancellationClass,type OrderDetail, type OrderLine} from '../data-access/orders.models';
-import {money,operationKey,qtyText,safeQuantity} from '../data-access/orders.helpers';
+import {money,operationKey,qtyText,safeQuantity,statusText} from '../data-access/orders.helpers';
 
 @Component({
  selector:'gc-orders-detail-page',
@@ -76,7 +76,7 @@ import {money,operationKey,qtyText,safeQuantity} from '../data-access/orders.hel
     @if(o.comandasComoOrden?.length){
      <h3>Preparación</h3>
      <div class="ord-small-list">@for(ticket of o.comandasComoOrden??[];track ticket.id){
-      <span>Comanda {{ticket.numero}} · {{ticket.estado}}</span>
+      <span>Comanda {{ticket.numero}} · {{ticketStatus(ticket.estado)}}</span>
      }</div>
     }
    </section>
@@ -169,6 +169,7 @@ export class GcOrdersDetailPage implements OnInit {
  protected readonly branch=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
  protected readonly money=money;protected readonly qtyText=qtyText;
+ protected readonly ticketStatus=statusText;
  protected readonly cancellationChoices=CANCELLATION_CLASSES;
  protected readonly order=signal<OrderDetail|null>(null);
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
