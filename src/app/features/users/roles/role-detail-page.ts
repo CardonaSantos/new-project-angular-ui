@@ -63,8 +63,10 @@ import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
    @if(!isNew&&role.data()){
     <section class="gc-u-card gc-u-page">
      <div class="gc-u-row"><h2>Permisos</h2><span class="gc-u-muted">{{selected().length}} seleccionados</span></div>
+     <div class="gc-u-permission-grid">
      @for(group of groups();track group.module){
-      <section><h3>{{group.module}}</h3>
+      <section class="gc-u-permission-group" [attr.aria-label]="group.module">
+       <h3>{{group.module}}</h3>
        <div class="gc-u-check-list">
         @for(p of group.permissions;track p.codigo){
          <label class="gc-u-check">
@@ -76,6 +78,7 @@ import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
        </div>
       </section>
      }
+     </div>
      @if(permissionError()){<p role="alert" class="gc-u-alert">{{permissionError()}}</p>}
      <div class="gc-u-actions"><button gcButton type="button"
        [disabled]="!access.canGlobal('roles.manage')||role.data()?.codigo==='SUPER_ADMIN'||form.dirty||!permissionDirty()||permissionAction.busy()"

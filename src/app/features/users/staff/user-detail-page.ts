@@ -43,7 +43,7 @@ import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
   } @else if(isNew||page.data();as user) {
    <section class="gc-u-card gc-u-page">
     <form class="gc-u-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-     <fieldset class="gc-u-section"><legend>1. Datos personales</legend>
+     <fieldset class="gc-u-section"><legend>1. Identificación y contacto</legend>
      <div class="gc-u-grid">
       <div class="gc-u-field"><label for="usr-name">Nombre</label>
        <input id="usr-name" formControlName="nombre" maxlength="100" placeholder="Ej. María"
@@ -61,14 +61,18 @@ import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
       <div class="gc-u-field"><label for="usr-phone">Teléfono</label>
        <input id="usr-phone" formControlName="telefono" type="tel" maxlength="30" placeholder="Ej. 5555 5555"/>
       </div>
-      @if(!isNew){
-       <div class="gc-u-field"><label for="usr-lang">Idioma</label>
-        <input id="usr-lang" formControlName="idioma" maxlength="16" placeholder="Ej. es-GT"/></div>
-       <div class="gc-u-field"><label for="usr-zone">Zona horaria</label>
-        <input id="usr-zone" formControlName="zonaHoraria" maxlength="64" placeholder="Ej. America/Guatemala"/></div>
-      }
      </div>
      </fieldset>
+     @if(!isNew){
+      <fieldset class="gc-u-section"><legend>2. Preferencias</legend>
+       <div class="gc-u-grid">
+        <div class="gc-u-field"><label for="usr-lang">Idioma</label>
+         <input id="usr-lang" formControlName="idioma" maxlength="16" placeholder="Ej. es-GT"/></div>
+        <div class="gc-u-field"><label for="usr-zone">Zona horaria</label>
+         <input id="usr-zone" formControlName="zonaHoraria" maxlength="64" placeholder="Ej. America/Guatemala"/></div>
+       </div>
+      </fieldset>
+     }
      @if(saveError()){<p role="alert" class="gc-u-alert">{{saveError()}}</p>}
      <div class="gc-u-actions">
       <button gcButton type="submit" [disabled]="!access.isGlobalAdmin()||form.invalid||(!isNew&&!form.dirty)||saveAction.busy()">
@@ -99,11 +103,11 @@ import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
          (valueChange)="assignmentBranch.set($event)"/>
        }
       </div>
-      </fieldset>
       @if(assignmentError()){<p class="gc-u-alert" role="alert">{{assignmentError()}}</p>}
       <div class="gc-u-actions"><button gcButton type="button"
         [disabled]="!roleId()||(selectedRoleScope()==='SUCURSAL'&&!assignmentBranch())||assignmentAction.busy()||form.dirty"
         (click)="addAssignment()">Asignar rol</button></div>
+      </fieldset>
      }
     </section>
     <section class="gc-u-card gc-u-page">
@@ -127,15 +131,16 @@ import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
      <section class="gc-u-card gc-u-page">
       <h2>Estado de la cuenta</h2>
       <p class="gc-u-muted">{{user.account.activo?'Activa':'Inactiva'}}</p>
-      <div class="gc-u-field gc-u-reason"><label for="user-status-reason">Motivo</label>
-       <input id="user-status-reason" [value]="reason()" (input)="reason.set($any($event.target).value)"
-        maxlength="500" placeholder="Ej. Finalización de contrato"/>
+      <div class="gc-u-inline-action">
+       <div class="gc-u-field"><label for="user-status-reason">Motivo</label>
+        <input id="user-status-reason" [value]="reason()" (input)="reason.set($any($event.target).value)"
+         maxlength="500" placeholder="Ej. Finalización de contrato"/>
+       </div>
+       <button type="button" gcButton [variant]="user.account.activo?'danger':'secondary'"
+        [disabled]="reason().trim().length<3||statusAction.busy()||form.dirty"
+        (click)="changeStatus()">{{user.account.activo?'Desactivar usuario':'Activar usuario'}}</button>
       </div>
       @if(statusError()){<p class="gc-u-alert" role="alert">{{statusError()}}</p>}
-      <div class="gc-u-actions"><button type="button" gcButton
-       [variant]="user.account.activo?'danger':'secondary'"
-       [disabled]="reason().trim().length<3||statusAction.busy()||form.dirty"
-       (click)="changeStatus()">{{user.account.activo?'Desactivar usuario':'Activar usuario'}}</button></div>
      </section>
     }
     <nav class="gc-u-card gc-u-actions" aria-label="Más opciones de usuario">

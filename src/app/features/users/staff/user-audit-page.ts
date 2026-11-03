@@ -24,7 +24,7 @@ import type {ActivityItem,Audit,Page,StaffOverview} from '../data-access/users.m
   <gc-page-header title="Auditoría y actividad"/>
   <section class="gc-u-card gc-u-page">
    <h2>Resumen operativo</h2>
-   <div class="gc-u-toolbar">
+   <div class="gc-u-audit-filters" role="group" aria-label="Período de actividad">
     <div class="gc-u-field"><label for="audit-from">Desde</label>
      <input id="audit-from" type="date" [value]="from()" (change)="from.set($any($event.target).value)"/></div>
     <div class="gc-u-field"><label for="audit-to">Hasta (sin incluir)</label>
@@ -44,7 +44,7 @@ import type {ActivityItem,Audit,Page,StaffOverview} from '../data-access/users.m
   </section>
   <section class="gc-u-card gc-u-page">
    <h2>Actividad</h2>
-   <gc-search-select id="audit-kind" label="Tipo de actividad" [items]="kindChoices"
+   <gc-search-select class="gc-u-filter-compact" id="audit-kind" label="Tipo de actividad" [items]="kindChoices"
      [value]="kind()" placeholder="Todos" [searchable]="false"
      (valueChange)="kind.set($event);refreshActivity()"/>
    @if(activity.status()==='error'){<gc-error-state [message]="activityError()" (retry)="refreshActivity()"/>}

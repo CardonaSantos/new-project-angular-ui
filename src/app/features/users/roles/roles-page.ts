@@ -27,7 +27,7 @@ import type {Role,Page} from '../data-access/users.models';
   </gc-page-header>
   <gc-users-nav/>
   <section class="gc-u-card gc-u-page">
-   <form class="gc-u-toolbar" (submit)="searchNow($event)">
+   <form class="gc-u-toolbar gc-u-search-inline" (submit)="searchNow($event)">
     <gc-table-toolbar searchLabel="Buscar roles" [query]="search()" (queryChange)="search.set($event)"/>
     <button type="submit" gcButton variant="outline">Buscar</button>
    </form>

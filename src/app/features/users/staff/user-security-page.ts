@@ -23,11 +23,14 @@ import type {Page,Session} from '../data-access/users.models';
   <gc-page-header title="Sesiones y contraseña"/>
   <section class="gc-u-card gc-u-page">
    <h2>Restablecer contraseña</h2>
-   <div class="gc-u-field gc-u-reason">
-    <label for="security-reason">Motivo</label>
-    <input id="security-reason" [value]="reason()" (input)="reason.set($any($event.target).value)"
-       placeholder="Ej. Solicitud del empleado" maxlength="500"/>
-    <small>Mínimo 3 caracteres.</small>
+   <div class="gc-u-inline-action">
+    <div class="gc-u-field">
+     <label for="security-reason">Motivo</label>
+     <input id="security-reason" [value]="reason()" (input)="reason.set($any($event.target).value)"
+        placeholder="Ej. Solicitud del empleado" maxlength="500"/>
+    </div>
+    <button type="button" gcButton [disabled]="reason().trim().length<3||reset.busy()||isSelf()||!!resetSecret()"
+     (click)="resetPassword()">Restablecer contraseña</button>
    </div>
    @if(resetSecret()){
     <div class="gc-u-secret" role="status">
@@ -41,10 +44,6 @@ import type {Page,Session} from '../data-access/users.models';
     </div>
    }
    @if(resetError()){<p class="gc-u-alert" role="alert">{{resetError()}}</p>}
-   <div class="gc-u-actions">
-    <button type="button" gcButton [disabled]="reason().trim().length<3||reset.busy()||isSelf()||!!resetSecret()"
-      (click)="resetPassword()">Restablecer contraseña</button>
-   </div>
   </section>
   <section class="gc-u-card gc-u-page">
    <div class="gc-u-row"><h2>Sesiones</h2><button type="button" gcButton variant="outline"
