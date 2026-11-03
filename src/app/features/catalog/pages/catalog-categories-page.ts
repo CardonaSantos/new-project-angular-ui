@@ -28,11 +28,13 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     }
    </div>
    <div class="cat-toolbar gc-filter-grid">
-    <label class="cat-field">Buscar categoría
-     <input [value]="search()" maxlength="120" (input)="search.set($any($event.target).value)"
-      (keyup.enter)="applySearch()"/>
-    </label>
-    <button type="button" (click)="applySearch()">Buscar</button>
+    <div class="cat-search-action">
+     <label class="cat-field">Buscar categoría
+      <input [value]="search()" maxlength="120" (input)="search.set($any($event.target).value)"
+       (keyup.enter)="applySearch()"/>
+     </label>
+     <button type="button" (click)="applySearch()">Buscar</button>
+    </div>
     <gc-search-select id="cat-category-state" label="Estado" [items]="stateChoices" [value]="state()"
      [searchable]="false" placeholder="Todas" (valueChange)="changeState($event)"/>
    </div>
@@ -88,11 +90,13 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     <section class="cat-card">
      <h2>Estado de la categoría</h2>
      <p class="cat-muted">Desactivar puede impedir usarla en nuevos productos. Se verifican sus relaciones.</p>
-     <label class="cat-field">Motivo del cambio
-      <input [value]="reason()" maxlength="500" (input)="reason.set($any($event.target).value)"/>
-     </label>
-     <button type="button" (click)="toggleStatus()" [disabled]="saving()||reason().trim().length<3">
-      {{entry.activa?'Desactivar':'Reactivar'}} categoría</button>
+     <div class="cat-inline-form">
+      <label class="cat-field">Motivo del cambio
+       <input [value]="reason()" maxlength="500" (input)="reason.set($any($event.target).value)"/>
+      </label>
+      <button type="button" (click)="toggleStatus()" [disabled]="saving()||reason().trim().length<3">
+       {{entry.activa?'Desactivar':'Reactivar'}} categoría</button>
+     </div>
     </section>
    }
   }

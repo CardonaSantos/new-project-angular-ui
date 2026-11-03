@@ -74,7 +74,6 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     <section class="cat-card">
      <div class="cat-row"><h2>Presentaciones y tamaños</h2>
       <span class="cat-muted">{{variants().length}} presentaciones</span></div>
-     <p class="cat-muted">Agrega opciones como pequeño, mediano o grande. Cada una puede tener su propio precio y extras.</p>
      <div class="cat-table-wrap"><table class="cat-table"><thead><tr>
       <th>Presentación</th><th>Artículo de inventario</th><th>Estado</th><th>Acción</th>
      </tr></thead><tbody>
@@ -104,19 +103,20 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
         <input type="number" min="0" step="1" [value]="variantOrder()" (input)="variantOrder.set(+$any($event.target).value)"
          [disabled]="!access.canManage()"/>
        </label>
-       @if(product.tipo==='INVENTARIABLE'){
-        @if(editVariant()?.articuloInventario?.nombre){<p class="cat-muted">Artículo asociado: {{editVariant()?.articuloInventario?.nombre}}</p>}
-        <gc-inventory-picker id="catalog-linked-article" label="Artículo físico de Inventario"
-         kind="article" [value]="articleId()"
-         [selectedLabel]="editVariant()?.articuloInventario?.nombre??''"
-         (valueChange)="articleId.set($event)"
-         [disabled]="!access.canManage()"/>
-       }
        @if(editVariant()){
         <label class="cat-check"><input type="checkbox" [checked]="variantActive()"
          (change)="variantActive.set($any($event.target).checked)" [disabled]="!access.canManage()"/> Presentación activa</label>
        }
        </div>
+       @if(product.tipo==='INVENTARIABLE'){
+        <div class="cat-form-section"><h3>2. Inventario asociado</h3>
+         <gc-inventory-picker id="catalog-linked-article" label="Artículo físico de Inventario"
+          kind="article" [value]="articleId()"
+          [selectedLabel]="editVariant()?.articuloInventario?.nombre??''"
+          (valueChange)="articleId.set($event)"
+          [disabled]="!access.canManage()"/>
+        </div>
+       }
        @if(variantError()){<p role="alert" class="cat-alert">{{variantError()}}</p>}
        <div class="cat-actions">
         @if(access.canManage()){<button class="cat-primary" [disabled]="busy()||!variantName().trim()" type="submit">
@@ -127,10 +127,9 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       @if(editVariant();as v){
        <hr/>
        <h2>Extras disponibles para {{v.nombre}}</h2>
-       <p class="cat-muted">Elige qué opciones adicionales estarán disponibles para esta presentación.</p>
-       <div class="cat-form">
+       <div class="cat-extra-config">
         @for(link of links();track link.grupoId){
-         <div class="cat-row">
+         <div class="cat-extra-group-row">
           <strong>{{groupName(link.grupoId)}}</strong>
           <label class="cat-check"><input type="checkbox" [checked]="link.obligatorio"
            [disabled]="!access.canManage()" (change)="toggleRequired(link.grupoId,$any($event.target).checked)"/> Obligatorio</label>
@@ -155,14 +154,16 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
          <label class="cat-check"><input type="checkbox" [checked]="branchEnabled()"
           (change)="branchEnabled.set($any($event.target).checked)" [disabled]="!access.canManageBranch()"/>
           Habilitada para vender en esta sucursal</label>
-         <label class="cat-field">Pausa hasta (opcional, hora de este equipo)
-          <input type="datetime-local" [value]="branchPause()" (input)="branchPause.set($any($event.target).value)"
-           [disabled]="!access.canManageBranch()"/>
-         </label>
-         <label class="cat-field">Motivo (opcional)
-          <input [value]="branchReason()" (input)="branchReason.set($any($event.target).value)" maxlength="500"
-           [disabled]="!access.canManageBranch()"/>
-         </label>
+         <div class="cat-inline-grid">
+          <label class="cat-field">Pausa hasta (opcional, hora local)
+           <input type="datetime-local" [value]="branchPause()" (input)="branchPause.set($any($event.target).value)"
+            [disabled]="!access.canManageBranch()"/>
+          </label>
+          <label class="cat-field">Motivo (opcional)
+           <input [value]="branchReason()" (input)="branchReason.set($any($event.target).value)" maxlength="500"
+            [disabled]="!access.canManageBranch()"/>
+          </label>
+         </div>
          <button type="button" [disabled]="!access.canManageBranch()||busy()" (click)="saveBranch()">
           Guardar disponibilidad</button>
         </section>
@@ -172,7 +173,6 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     }
     <section class="cat-card">
      <h2>Revisión del producto</h2>
-     <p class="cat-muted">Comprueba qué falta para mostrar este producto en la carta de la sucursal.</p>
      @if(readiness();as r){
       <strong>{{r.lista?'Listo para publicar':'Requiere atención'}}</strong>
       @for(v of r.variantes;track v.varianteId){
@@ -183,11 +183,13 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     <section class="cat-card">
      <h2>Estado del producto</h2>
      <strong>{{product.activo?'Activo':'Inactivo'}}</strong>
-     <label class="cat-field">Motivo del cambio
-      <input [value]="reason()" maxlength="500" (input)="reason.set($any($event.target).value)" [disabled]="!access.canManage()"/>
-     </label>
-     @if(access.canManage()){<button type="button" [disabled]="busy()||reason().trim().length<3" (click)="changeStatus()">
-      {{product.activo?'Desactivar':'Reactivar'}} producto</button>}
+     <div class="cat-inline-form">
+      <label class="cat-field">Motivo del cambio
+       <input [value]="reason()" maxlength="500" (input)="reason.set($any($event.target).value)" [disabled]="!access.canManage()"/>
+      </label>
+      @if(access.canManage()){<button type="button" [disabled]="busy()||reason().trim().length<3" (click)="changeStatus()">
+       {{product.activo?'Desactivar':'Reactivar'}} producto</button>}
+     </div>
     </section>
    }
   }

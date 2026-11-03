@@ -32,7 +32,7 @@ function positivePrice(raw:string):string{
     <gc-search-select id="price-branch" label="Sucursal" [items]="branchChoices()"
      [value]="branchId()" [clearable]="false" (valueChange)="selectBranch($event)"/>
    </div>
-   <p class="cat-muted">Los precios son específicos de cada sucursal. Un precio nuevo conserva el historial anterior y no modifica las ventas ya registradas.</p>
+   <p class="cat-muted">Los precios se registran por sucursal sin alterar las ventas anteriores.</p>
    <div class="cat-toolbar gc-filter-grid">
     <gc-search-select id="price-mode" label="Tipo de precio" [items]="modeChoices"
      [value]="mode()" [searchable]="false" [clearable]="false" (valueChange)="setMode($event)"/>
@@ -72,7 +72,7 @@ function positivePrice(raw:string):string{
    @if(access.canPrices()){
     <section class="cat-card">
      <h2>Programar un nuevo precio</h2>
-     <p class="cat-muted">El importe nuevo se registra con fecha de inicio. Si ya existe otro precio para esas fechas, tendrás que elegir un período diferente.</p>
+     <p class="cat-muted">No se permiten períodos de vigencia superpuestos.</p>
      <form class="cat-form" (submit)="save($event)">
       <div class="cat-form-section"><h3>1. Importe y vigencia</h3>
       <label>Precio en quetzales
@@ -86,7 +86,6 @@ function positivePrice(raw:string):string{
        <input type="datetime-local" [value]="to()" (input)="to.set($any($event.target).value)"/>
       </label>
       </div>
-      <p class="cat-muted">La fecha usa la zona horaria de este equipo.</p>
       <button type="submit" class="cat-primary" [disabled]="loading()||!amount()||!from()">Registrar precio</button>
      </form>
     </section>

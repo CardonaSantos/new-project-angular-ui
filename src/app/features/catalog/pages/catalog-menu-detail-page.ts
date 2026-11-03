@@ -59,7 +59,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
    </section>
    <section class="cat-card">
     <h2>Sucursales del menú</h2>
-    <p class="cat-muted">Selecciona las sucursales donde se utilizará esta carta. Los precios se validan para cada una antes de publicar.</p>
+    <p class="cat-muted">Los precios se validan por sucursal al publicar.</p>
     <div class="cat-choice-grid">
      @for(branch of branchContext.branches();track branch.id){
       <label class="cat-check"><input type="checkbox" [checked]="draft().branches.includes(branch.id)"
@@ -67,7 +67,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
        {{branch.nombre}}</label>
      }
     </div>
-    @if(isNew){<p class="cat-muted">Guarda el nuevo menú para comenzar a configurar sus secciones y horarios.</p>}
+    @if(isNew){<p class="cat-muted">Guarda el menú para configurar secciones y horarios.</p>}
    </section>
    @if(!isNew&&page.data()){
     <section class="cat-card">
@@ -107,7 +107,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
         </tbody>
        </table></div>
        @if(access.canMenus()){
-        <div class="cat-toolbar gc-filter-grid">
+        <div class="cat-toolbar gc-filter-grid" role="group" [attr.aria-label]="'Agregar presentación a '+section.nombre">
          <gc-search-select [id]="'menu-product-'+section.key" label="Producto" [items]="productChoices()"
           [value]="productId()" [remote]="true" [loading]="lookingUp()"
           placeholder="Buscar producto…" (searchChange)="queueProductSearch($event)"
@@ -128,9 +128,9 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
      <div class="cat-row"><h2>Horarios de presentación</h2>
       @if(access.canMenus()){<button type="button" (click)="addSchedule()">Agregar horario</button>}
      </div>
-     <p class="cat-muted">Sin horarios, el menú puede mostrarse todo el día. Los horarios se interpretan en la zona horaria de cada sucursal.</p>
+     <p class="cat-muted">Sin horarios: disponible todo el día. Se utiliza la zona horaria de cada sucursal.</p>
      @for(item of draft().schedule;track $index;let i=$index){
-      <div class="cat-toolbar gc-filter-grid">
+      <div class="cat-schedule-grid">
        <gc-search-select [id]="'menu-day-'+i" label="Día" [items]="dayChoices"
         [value]="''+item.diaSemana" [searchable]="false" [clearable]="false"
         [disabled]="!access.canMenus()" (valueChange)="setDay(i,+$event)"/>
@@ -142,7 +142,8 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
         <input type="time" [value]="item.hasta" [disabled]="!access.canMenus()"
          (change)="setTime(i,'hasta',$any($event.target).value)"/>
        </label>
-       @if(access.canMenus()){<button type="button" (click)="removeSchedule(i)">Quitar</button>}
+       @if(access.canMenus()){<button type="button" [attr.aria-label]="'Quitar horario '+(i+1)"
+        (click)="removeSchedule(i)">Quitar</button>}
       </div>
      } @empty {<p class="cat-muted">Sin restricción horaria.</p>}
     </section>
@@ -174,7 +175,6 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
       }
      }
      @if(publishError()){<p class="cat-alert" role="alert">{{publishError()}}</p>}
-     <p class="cat-muted">Utiliza «Vista de la carta» para comprobar cómo la verán en cada sucursal.</p>
     </section>
    }
   }

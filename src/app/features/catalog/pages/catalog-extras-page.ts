@@ -22,7 +22,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
    <div class="cat-row"><h2>Grupos de extras</h2>
     @if(access.canManage()){<button class="cat-primary" type="button" (click)="newGroup()">Nuevo grupo</button>}
    </div>
-   <p class="cat-muted">Define elecciones como «Tipo de leche» o «Adicionales». Mínimo y máximo indican cuántas opciones puede elegir el cliente.</p>
+   <p class="cat-muted">El mínimo y máximo indican cuántas opciones puede elegir el cliente.</p>
    <div class="cat-table-wrap"><table class="cat-table">
     <thead><tr><th>Grupo</th><th>Elección mínima</th><th>Elección máxima</th><th>Opciones</th><th>Estado</th><th>Acción</th></tr></thead>
     <tbody>
@@ -78,10 +78,12 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
    <div class="cat-toolbar gc-filter-grid">
     <gc-search-select id="cat-extra-filter-group" label="Filtrar por grupo" [items]="filterGroupChoices()"
      [value]="filterGroup()" placeholder="Todos los grupos" (valueChange)="setFilter($event)"/>
-    <label class="cat-field">Buscar extra
-     <input [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="loadModifiers()"/>
-    </label>
-    <button type="button" (click)="loadModifiers()">Buscar</button>
+    <div class="cat-search-action">
+     <label class="cat-field">Buscar extra
+      <input [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="loadModifiers()"/>
+     </label>
+     <button type="button" (click)="loadModifiers()">Buscar</button>
+    </div>
    </div>
    @if(modifiers.busy()){<p role="status" class="cat-muted">Cargando extras…</p>}
    @if(modifiers.status()==='error'){<gc-error-state [message]="error()" (retry)="loadModifiers()"/>}
@@ -127,7 +129,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <label class="cat-check"><input type="checkbox" [checked]="modifierActive()"
        (change)="modifierActive.set($any($event.target).checked)"/> Opción activa</label>
      }
-     <p class="cat-muted">El precio de este extra puede cambiar por sucursal. Configúralo en «Precios».</p>
+     <p class="cat-muted">Los precios específicos por sucursal se configuran en «Precios».</p>
      </div>
      @if(modifierError()){<p role="alert" class="cat-alert">{{modifierError()}}</p>}
      <div class="cat-actions">
