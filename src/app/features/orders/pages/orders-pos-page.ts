@@ -14,6 +14,7 @@ import {GcPosProduct,GcPosCart} from '../components/orders-ui';
 import {asOrderLine,type PosCartEntry} from '../components/pos-cart.models';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
+import {PaymentsAccess} from '../../payments/data-access/payments-access';
 import {OrdersPreferences} from '../data-access/orders-preferences';
 import {ORDER_MODES,type OrderMode,type TableRecord} from '../data-access/orders.models';
 import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpers';
@@ -35,7 +36,11 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
  @if(error()){<div role="alert" class="ord-alert">{{error()}}
    <button type="button" (click)="reload()">Reintentar</button></div>}
  @if(success()){<div role="status" class="ord-success">
-  {{success()}} <a [routerLink]="['/orders/list',createdId()]">Abrir pedido</a>
+  {{success()}}
+  <a [routerLink]="['/orders/list',createdId()]">Abrir pedido</a>
+  @if(paymentsAccess.canRead()&&paymentsAccess.canCollect()){
+   <a [routerLink]="['/payments/order',createdId()]">Cobrar ahora</a>
+  }
  </div>}
  @if(prefs.view()==='tables'&&showTablePicker()){
   <section class="ord-card">
@@ -192,6 +197,7 @@ export class GcOrdersPosPage{
  private readonly activatedRoute=inject(ActivatedRoute);
  protected readonly context=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
+ protected readonly paymentsAccess=inject(PaymentsAccess);
  protected readonly prefs=inject(OrdersPreferences);
  private readonly searchInput=viewChild<ElementRef<HTMLInputElement>>('productSearch');
  protected readonly modes=computed(()=>

@@ -10,6 +10,7 @@ import {GcOrdersNav} from '../orders-nav';
 import {GcOrderStatus} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
+import {PaymentsAccess} from '../../payments/data-access/payments-access';
 import {ORDER_MODES,ORDER_STATES,type OrderMode,type OrderState,type OrderSummary} from '../data-access/orders.models';
 import {money,modeText} from '../data-access/orders.helpers';
 @Component({
@@ -48,7 +49,12 @@ import {money,modeText} from '../data-access/orders.helpers';
       <tr><td><strong>{{item.numero}}</strong></td><td>{{modeText(item.modalidad)}}</td>
        <td>{{item.abiertaEn|date:'dd/MM/yyyy HH:mm'}}</td>
        <td>{{money(item.total)}}</td><td><gc-order-status [state]="item.estado"/></td>
-       <td><a [routerLink]="['/orders/list',item.id]">Ver pedido</a></td></tr>
+       <td><div class="ord-actions">
+        <a [routerLink]="['/orders/list',item.id]">Ver pedido</a>
+        @if(item.estado==='ABIERTA'&&paymentsAccess.canRead()&&paymentsAccess.canCollect()){
+         <a [routerLink]="['/payments/order',item.id]">Cobrar</a>
+        }
+       </div></td></tr>
      } @empty {<tr><td colspan="6">No hay órdenes para los filtros seleccionados.</td></tr>}
      </tbody>
     </table></div>
@@ -65,6 +71,7 @@ import {money,modeText} from '../data-access/orders.helpers';
 })
 export class GcOrdersListPage{
  protected readonly access=inject(OrdersAccess);
+ protected readonly paymentsAccess=inject(PaymentsAccess);
  private readonly api=inject(OrdersApi);
  private readonly context=inject(GcBranchContext);
  protected readonly branches=computed(()=>this.context.branches().map(b=>({id:b.id,label:b.nombre})));
