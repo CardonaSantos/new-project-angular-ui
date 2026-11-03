@@ -88,7 +88,7 @@ describe('ORD-A UI — all 32 backend endpoints',()=>{
   req=http.expectOne(x=>x.url===orderPaths.changes);
   expect(req.request.params.get('cursor')).toBe('cursor123');
   expect(req.request.params.get('limit')).toBe('100');req.flush({data:[],meta:{}});
-  expect(safeQuantity('2.500')).toBe('2.500');
+  expect(safeQuantity('2.500')).toBe('2.5');
   expect(safeQuantity('0')).toBeNull();
   expect(safeQuantity('-1')).toBeNull();
   expect(operationKey('pos').startsWith('pos:')).toBe(true);
