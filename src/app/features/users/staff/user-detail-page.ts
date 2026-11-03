@@ -100,7 +100,7 @@ import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
        }
       </div>
       </fieldset>
-      @if(assignmentError()){<p class="gc-u-alert" role="alert">{{assignmentError()}}</p>
+      @if(assignmentError()){<p class="gc-u-alert" role="alert">{{assignmentError()}}</p>}
       <div class="gc-u-actions"><button gcButton type="button"
         [disabled]="!roleId()||(selectedRoleScope()==='SUCURSAL'&&!assignmentBranch())||assignmentAction.busy()||form.dirty"
         (click)="addAssignment()">Asignar rol</button></div>
