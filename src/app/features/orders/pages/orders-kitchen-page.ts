@@ -72,7 +72,8 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../
   }
  </section>
  @if(selected();as ticket){
-  <div class="ord-overlay" (click)="closeDetails()"></div>
+  <button type="button" class="ord-overlay" (click)="closeDetails()"
+   aria-label="Cerrar detalle de comanda"></button>
   <section class="ord-customizer ord-kitchen-dialog" role="dialog" aria-modal="true"
    aria-labelledby="kitchen-dialog-title" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
    <div class="ord-heading">
