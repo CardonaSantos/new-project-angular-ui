@@ -3,7 +3,7 @@ on:
   push:
     branches: [main, chore/angular-foundation]
   pull_request:
-    branches: [main]
+    branches: [main, refactor/organization-design-system-selects-20261103]
 
 jobs:
   validate:
