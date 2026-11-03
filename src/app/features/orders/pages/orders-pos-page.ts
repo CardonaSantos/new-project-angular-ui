@@ -1,0 +1,363 @@
+import {Component,computed,effect,ElementRef,HostListener,inject,signal,viewChild} from '@angular/core';
+import {Router,RouterLink} from '@angular/router';
+import {firstValueFrom} from 'rxjs';
+import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {gcErrorMessage} from '../../../core/http/api-error';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
+import {CatalogApi} from '../../catalog/data-access/catalog.api';
+import type {CatalogBranchMenu,CatalogProjectedGroup,CatalogProjectedItem} from '../../catalog/data-access/catalog.models';
+import {BranchesApi} from '../../organization/data-access/organization-api';
+import type {BranchConfig} from '../../organization/data-access/organization.models';
+import {sumDecimals,parseApiDecimal} from '../../../shared/formatting';
+import {GcOrdersNav} from '../orders-nav';
+import {GcPosProduct,GcPosCart} from '../components/orders-ui';
+import {asOrderLine,type PosCartEntry} from '../components/pos-cart.models';
+import {OrdersApi} from '../data-access/orders.api';
+import {OrdersAccess} from '../data-access/orders-access';
+import {OrdersPreferences} from '../data-access/orders-preferences';
+import {ORDER_MODES,type OrderMode,type TableRecord} from '../data-access/orders.models';
+import {money,operationKey} from '../data-access/orders.helpers';
+
+@Component({
+ selector:'gc-orders-pos-page',
+ imports:[RouterLink,GcOrdersNav,GcSearchSelect,GcPosProduct,GcPosCart],
+ template:`
+ <main class="ord-page ord-pos"><gc-orders-nav/>
+ <div class="ord-heading">
+  <div><h1>Punto de venta</h1><p>{{context.active()?.nombre??'Selecciona una sucursal'}}</p></div>
+  <div class="ord-view-switch" role="group" aria-label="Modo de atención">
+   <button type="button" [class.active]="prefs.view()==='counter'"
+    [attr.aria-pressed]="prefs.view()==='counter'" (click)="setView('counter')">Mostrador</button>
+   <button type="button" [class.active]="prefs.view()==='tables'"
+    [attr.aria-pressed]="prefs.view()==='tables'" (click)="setView('tables')">Mesas</button>
+  </div>
+ </div>
+ @if(error()){<div role="alert" class="ord-alert">{{error()}}
+   <button type="button" (click)="reload()">Reintentar</button></div>}
+ @if(success()){<div role="status" class="ord-success">
+  {{success()}} <a [routerLink]="['/orders/list',createdId()]">Abrir pedido</a>
+ </div>}
+ @if(prefs.view()==='tables'){
+  <section class="ord-card">
+   <div class="ord-heading"><h2>Mesas de la sucursal</h2>
+    <button type="button" (click)="loadTables()">Actualizar mesas</button></div>
+   @if(!access.canTablesRead()){<p>No tienes acceso al listado de mesas.</p>}
+   @else{
+    <div class="ord-table-grid">
+     @for(table of tables();track table.id){
+      <button class="ord-table-tile" type="button" [disabled]="!table.activa" (click)="chooseTable(table)">
+       <strong>Mesa {{table.numero}}</strong><small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
+       <span [class.ord-occupied]="!!table.ocupacion">{{table.ocupacion?'Ocupada':'Disponible'}}</span>
+      </button>
+     } @empty {<p>No hay mesas registradas. Puedes configurarlas en la sección Mesas.</p>}
+    </div>
+   }
+   <div class="ord-actions"><a routerLink="/orders/tables">Ver todas las mesas</a>
+    @if(selectedTable()){<span>Pedido para mesa {{selectedTable()?.numero}}</span>
+     <button type="button" (click)="selectedTable.set(null);mode.set('MOSTRADOR')">Quitar mesa</button>}
+   </div>
+  </section>
+ }
+ <div class="ord-pos-layout">
+  <section class="ord-catalog" aria-label="Catálogo de productos">
+   <div class="ord-toolbar">
+    <label>Buscar producto
+     <input #productSearch type="search" [value]="query()" (input)="query.set($any($event.target).value)"
+      placeholder="Nombre o presentación" autocomplete="off"/>
+    </label>
+    <div class="ord-actions">
+     <button type="button" [class.active]="prefs.productLayout()==='visual'"
+      [attr.aria-pressed]="prefs.productLayout()==='visual'"
+      (click)="prefs.setLayout('visual')">Tarjetas</button>
+     <button type="button" [class.active]="prefs.productLayout()==='compact'"
+      [attr.aria-pressed]="prefs.productLayout()==='compact'"
+      (click)="prefs.setLayout('compact')">Lista</button>
+     <button type="button" (click)="reload()" [disabled]="busy()">Actualizar</button>
+    </div>
+   </div>
+   <div class="ord-category-list" role="group" aria-label="Categorías">
+    <button type="button" [class.active]="category()===''" (click)="category.set('')">Todos</button>
+    @for(c of categories();track c){<button type="button" [class.active]="category()===c"
+      (click)="category.set(c)">{{c}}</button>}
+   </div>
+   @if(busy()){<p role="status" class="ord-muted">Cargando carta…</p>}
+   @else if(!menu()?.menus?.length){<p class="ord-empty">No hay carta publicada para esta sucursal y horario.</p>}
+   <div class="ord-products" [class.ord-products--compact]="prefs.productLayout()==='compact'">
+    @for(item of filtered();track item.id){
+     <gc-pos-product [item]="item" [compact]="prefs.productLayout()==='compact'"
+      (choose)="pick($event)"/>
+    } @empty {
+     @if(!busy()&&menu()?.menus?.length){<p class="ord-empty">No se encontraron productos.</p>}
+    }
+   </div>
+  </section>
+  <aside class="ord-checkout" [class.ord-checkout--open]="cartOpen()" aria-label="Resumen del pedido">
+   <div class="ord-cart-close"><button type="button" (click)="cartOpen.set(false)">Cerrar pedido</button></div>
+   <gc-pos-cart [items]="cart()" [total]="total()" [currency]="currency()"
+    (quantity)="changeQty($event)" (remove)="remove($event)"/>
+   <div class="ord-checkout-options">
+    <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes"
+     [value]="mode()" [clearable]="false" [searchable]="false"
+     (valueChange)="chooseMode($event)"/>
+    @if(mode()==='MESA'){
+     <gc-search-select id="pos-table" label="Mesa" [items]="tableChoices()"
+      [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()"
+      placeholder="Seleccionar mesa" (valueChange)="selectTableId($event)"/>
+    }
+    <label>Observaciones del pedido
+     <textarea rows="2" maxlength="500" [value]="observations()"
+      placeholder="Opcional" (input)="observations.set($any($event.target).value);invalidateKey()"></textarea>
+    </label>
+    <label class="ord-check-row">
+     <input type="checkbox" [checked]="sendKitchen()" (change)="sendKitchen.set($any($event.target).checked);invalidateKey()"/>
+     Enviar a cocina al confirmar
+    </label>
+    @if(config()?.exigeCobroAntesPreparar){
+     <p class="ord-note">Esta sucursal exige cobrar antes de preparar. La orden quedará pendiente hasta registrar el pago.</p>
+    } @else if(!config()){
+     <p class="ord-note">La preparación seguirá las reglas vigentes de la sucursal.</p>
+    }
+    @if(submitError()){<p role="alert" class="ord-alert">{{submitError()}}</p>}
+    <button class="ord-primary ord-confirm" type="button"
+     [disabled]="submitting()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&!selectedTable())"
+     (click)="submit()">{{submitting()?'Confirmando…':'Confirmar pedido'}}</button>
+   </div>
+  </aside>
+ </div>
+ @if(cart().length){<button class="ord-mobile-cart" type="button" (click)="cartOpen.set(true)">
+  Ver pedido · {{cart().length}} productos · {{money(total(),currency())}}
+ </button>}
+ @if(configuring();as item){
+  <div class="ord-overlay" role="presentation" (click)="configureClose()"></div>
+  <section class="ord-customizer" role="dialog" aria-modal="true" aria-labelledby="configure-title">
+   <div class="ord-heading"><h2 id="configure-title">{{item.variante.producto?.nombre??item.variante.nombre}}</h2>
+    <button type="button" (click)="configureClose()" aria-label="Cerrar">×</button></div>
+   <p class="ord-muted">{{item.variante.nombre}} · {{money(item.precio,item.moneda)}}</p>
+   @for(group of item.gruposModificadores;track group.grupoId){
+    <fieldset class="ord-choice-group">
+     <legend>{{group.grupo}} <small>Elige {{group.minimo}} {{group.maximo===null?'o más': 'a '+group.maximo}}</small></legend>
+     @for(extra of group.opciones;track extra.id){
+      <label class="ord-extra">
+       <input type="checkbox" [checked]="extraSelected(group.grupoId,extra.id)"
+        (change)="toggleExtra(group,extra.id,$any($event.target).checked)"/>
+       <span>{{extra.nombre}}</span><small>+{{money(extra.recargo,item.moneda)}}</small>
+      </label>
+     }
+    </fieldset>
+   }
+   <div class="ord-form-grid">
+    <label>Cantidad
+     <input type="number" min="1" max="999" step="1" inputmode="numeric" [value]="customQty()"
+      (input)="customQty.set($any($event.target).valueAsNumber||1)"/>
+    </label>
+    @if(access.canDiscount()){<label>Descuento por línea
+     <input type="text" inputmode="decimal" [value]="customDiscount()"
+      (input)="customDiscount.set($any($event.target).value)" placeholder="0.00"/>
+    </label>}
+   </div>
+   <label>Nota para cocina
+    <textarea rows="2" maxlength="300" [value]="customNotes()"
+     (input)="customNotes.set($any($event.target).value)" placeholder="Opcional"></textarea>
+   </label>
+   @if(configError()){<p class="ord-alert" role="alert">{{configError()}}</p>}
+   <div class="ord-actions ord-custom-actions">
+    <button type="button" (click)="configureClose()">Cancelar</button>
+    <button type="button" class="ord-primary" (click)="addConfigured()">Agregar al pedido</button>
+   </div>
+  </section>
+ }
+ </main>`
+})
+export class GcOrdersPosPage{
+ private readonly api=inject(OrdersApi);
+ private readonly catalog=inject(CatalogApi);
+ private readonly branchesApi=inject(BranchesApi);
+ private readonly router=inject(Router);
+ protected readonly context=inject(GcBranchContext);
+ protected readonly access=inject(OrdersAccess);
+ protected readonly prefs=inject(OrdersPreferences);
+ private readonly searchInput=viewChild<ElementRef<HTMLInputElement>>('productSearch');
+ protected readonly modes=ORDER_MODES;
+ protected readonly menu=signal<CatalogBranchMenu|null>(null);
+ protected readonly tables=signal<TableRecord[]>([]);
+ protected readonly config=signal<BranchConfig|null>(null);
+ protected readonly query=signal('');
+ protected readonly category=signal('');
+ protected readonly cart=signal<PosCartEntry[]>([]);
+ protected readonly busy=signal(false);
+ protected readonly error=signal<string|null>(null);
+ protected readonly submitError=signal<string|null>(null);
+ protected readonly success=signal('');
+ protected readonly createdId=signal('');
+ protected readonly observations=signal('');
+ protected readonly mode=signal<OrderMode>('MOSTRADOR');
+ protected readonly selectedTable=signal<TableRecord|null>(null);
+ protected readonly sendKitchen=signal(true);
+ protected readonly submitting=signal(false);
+ protected readonly cartOpen=signal(false);
+ protected readonly configuring=signal<CatalogProjectedItem|null>(null);
+ protected readonly customQty=signal(1);
+ protected readonly customNotes=signal('');
+ protected readonly customDiscount=signal('0');
+ protected readonly configError=signal('');
+ private readonly selectedExtras=signal<Record<string,string[]>>({});
+ private operationId='';
+ private loadingGeneration=0;
+ protected readonly money=money;
+ protected readonly categories=computed(()=>{
+  const categories=new Set<string>();
+  for(const menu of this.menu()?.menus??[])for(const section of menu.secciones)categories.add(section.nombre);
+  return [...categories];
+ });
+ protected readonly filtered=computed(()=>{
+  const search=this.query().trim().toLocaleLowerCase('es');
+  const list:CatalogProjectedItem[]=[];
+  const ids=new Set<string>();
+  for(const menu of this.menu()?.menus??[])for(const section of menu.secciones){
+   if(this.category()&&section.nombre!==this.category())continue;
+   for(const item of section.items){
+    const names=[item.variante.producto?.nombre,item.variante.nombre,item.variante.sku].join(' ').toLocaleLowerCase('es');
+    if(search&&!names.includes(search))continue;
+    if(!ids.has(item.id)){list.push(item);ids.add(item.id)}
+   }
+  }
+  return list;
+ });
+ protected readonly tableChoices=computed(()=>this.tables().filter(x=>x.activa).map(t=>({
+  id:t.id,label:t.sala.nombre+' · Mesa '+t.numero+(t.ocupacion?' (ocupada)':'')
+ })));
+ protected readonly total=computed(()=>{
+  const amounts=this.cart().map(line=>parseApiDecimal(line.price).mul(line.quantity).minus(line.discount||'0').toFixed());
+  return sumDecimals(amounts);
+ });
+ protected readonly currency=computed(()=>this.cart()[0]?.currency??this.config()?.moneda??'GTQ');
+ constructor(){effect(()=>{
+  const branch=this.context.branchId();
+  this.prefs.load();
+  if(branch){this.selectedTable.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);this.invalidateKey();void this.reload()}
+ })}
+ hasUnsavedChanges():boolean{return this.cart().length>0}
+ @HostListener('document:keydown',['$event'])
+ protected keydown(event:KeyboardEvent){
+  const t=event.target as HTMLElement|null;
+  if((event.key==='/'||event.key==='F2')&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&
+   !['INPUT','TEXTAREA','SELECT'].includes(t?.tagName??'')){
+    event.preventDefault();this.searchInput()?.nativeElement.focus();
+  }
+  if(event.key==='Escape'&&this.configuring())this.configureClose();
+ }
+ protected setView(mode:'counter'|'tables'){
+  this.prefs.setView(mode);
+  if(mode==='tables')void this.loadTables();
+ }
+ protected chooseMode(value:string){
+  const v=ORDER_MODES.find(x=>x.id===value)?.id??'MOSTRADOR';
+  this.mode.set(v);if(v!=='MESA')this.selectedTable.set(null);
+  this.invalidateKey();
+ }
+ protected async reload(){
+  const branch=this.context.branchId();if(!branch)return;
+  const gen=++this.loadingGeneration;this.busy.set(true);this.error.set(null);
+  try{
+   const result=await firstValueFrom(this.catalog.branchMenu(branch));
+   if(gen===this.loadingGeneration){this.menu.set(result);this.category.set('')}
+  }catch(e){if(gen===this.loadingGeneration)this.error.set(gcErrorMessage(e))}
+  finally{if(gen===this.loadingGeneration)this.busy.set(false)}
+  try{const c=await firstValueFrom(this.branchesApi.config(branch));if(gen===this.loadingGeneration)this.config.set(c)}
+  catch{if(gen===this.loadingGeneration)this.config.set(null)}
+  if(this.prefs.view()==='tables')void this.loadTables();
+ }
+ protected async loadTables(){
+  const branch=this.context.branchId();
+  if(!branch||!this.access.canTablesRead())return;
+  try{this.tables.set(await firstValueFrom(this.api.tables(branch)))}
+  catch(e){this.error.set(gcErrorMessage(e))}
+ }
+ protected chooseTable(t:TableRecord){
+  const existing=t.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA');
+  if(existing){void this.router.navigate(['/orders/list',existing.id]);return}
+  this.selectedTable.set(t);this.mode.set('MESA');this.invalidateKey();
+  this.prefs.setView('counter');
+ }
+ protected selectTableId(id:string){
+  const t=this.tables().find(x=>x.id===id)||null;
+  this.selectedTable.set(t);this.invalidateKey();
+ }
+ protected pick(item:CatalogProjectedItem){
+  this.configError.set('');
+  if(item.gruposModificadores.length){
+   this.configuring.set(item);this.selectedExtras.set({});this.customQty.set(1);
+   this.customNotes.set('');this.customDiscount.set('0');return;
+  }
+  this.addLine(item,1,[],[],'','0');
+ }
+ protected extraSelected(group:string,id:string){
+  return (this.selectedExtras()[group]??[]).includes(id);
+ }
+ protected toggleExtra(group:CatalogProjectedGroup,id:string,checked:boolean){
+  const current=this.selectedExtras()[group.grupoId]??[];
+  if(checked&&group.maximo!==null&&current.length>=group.maximo){this.configError.set('Ya seleccionaste el máximo de este grupo.');return}
+  this.configError.set('');
+  const next=checked?[...current,id]:current.filter(x=>x!==id);
+  this.selectedExtras.update(x=>({...x,[group.grupoId]:next}));
+ }
+ protected configureClose(){this.configuring.set(null);this.configError.set('')}
+ protected addConfigured(){
+  const item=this.configuring();if(!item)return;
+  const qty=Math.trunc(this.customQty());
+  if(!Number.isFinite(qty)||qty<1||qty>999){this.configError.set('Escribe una cantidad válida entre 1 y 999.');return}
+  const modifierIds:string[]=[];const labels:string[]=[];const extraPrices:string[]=[];
+  for(const group of item.gruposModificadores){
+   const ids=this.selectedExtras()[group.grupoId]??[];
+   if(ids.length<group.minimo||(group.maximo!==null&&ids.length>group.maximo)){
+    this.configError.set('Revisa las opciones obligatorias de '+group.grupo+'.');return;
+   }
+   for(const id of ids){const choice=group.opciones.find(x=>x.id===id);
+    if(!choice){this.configError.set('Una opción ya no está disponible.');return}
+    modifierIds.push(id);labels.push(choice.nombre);extraPrices.push(choice.recargo);
+   }
+  }
+  const discount=this.customDiscount().trim()||'0';
+  try{const amount=parseApiDecimal(discount);if(amount.lt(0)||amount.decimalPlaces()>2||
+    amount.gt(parseApiDecimal(sumDecimals([item.precio,...extraPrices])).mul(qty))){
+   this.configError.set('El descuento no es válido para este producto.');return;
+  }}catch{this.configError.set('Escribe un descuento válido.');return}
+  this.addLine(item,qty,modifierIds,labels,this.customNotes(),discount,extraPrices);
+  this.configureClose();
+ }
+ private addLine(item:CatalogProjectedItem,qty:number,mods:string[],extras:string[],notes:string,discount:string,extraPrices:string[]=[]){
+  if(this.cart().length>=100){this.submitError.set('El pedido admite hasta 100 líneas.');return}
+  this.cart.update(list=>[...list,{key:operationKey('item'),variantId:item.variante.id,
+   name:item.variante.producto?.nombre??item.variante.nombre,variant:item.variante.nombre,
+   price:sumDecimals([item.precio,...extraPrices]),currency:item.moneda,quantity:qty,
+   modifierIds:mods,extras,notes:notes.trim().slice(0,300),discount}]);
+  this.invalidateKey();this.submitError.set('');
+ }
+ protected changeQty(change:{key:string;delta:number}){
+  this.cart.update(lines=>lines.map(x=>x.key===change.key?
+   {...x,quantity:Math.min(999,Math.max(1,x.quantity+change.delta))}:x));
+  this.invalidateKey();
+ }
+ protected remove(id:string){this.cart.update(lines=>lines.filter(x=>x.key!==id));this.invalidateKey()}
+ protected invalidateKey(){this.operationId=''}
+ protected async submit(){
+  const branch=this.context.branchId();if(!branch||this.submitting()||!this.cart().length)return;
+  if(this.mode()==='MESA'&&!this.selectedTable()){this.submitError.set('Selecciona una mesa.');return}
+  if(!this.operationId)this.operationId=operationKey('pos');
+  const dto={
+   sucursalId:branch,modalidad:this.mode(),origen:this.mode()==='MESA'?'MESERO' as const:'CAJA' as const,
+   ...(this.mode()==='MESA'&&this.selectedTable()?{mesaId:this.selectedTable()!.id}:{}),
+   ...(this.observations().trim()?{observaciones:this.observations().trim()}:{}),
+   lineas:this.cart().map(asOrderLine),enviarCocina:this.sendKitchen(),claveOperacion:this.operationId
+  };
+  this.submitting.set(true);this.submitError.set('');
+  try{
+   const data=await firstValueFrom(this.api.create(dto));
+   this.createdId.set(data.id);this.success.set('Orden '+data.numero+' creada.');
+   this.cart.set([]);this.observations.set('');this.selectedTable.set(null);
+   this.mode.set('MOSTRADOR');this.operationId='';this.cartOpen.set(false);
+   if(this.prefs.view()==='tables')void this.loadTables();
+  }catch(e){this.submitError.set(gcErrorMessage(e))}
+  finally{this.submitting.set(false)}
+ }
+}
