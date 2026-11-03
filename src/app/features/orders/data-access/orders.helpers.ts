@@ -52,3 +52,46 @@ export const orderFriendlyError=(error:unknown):string=>{
   return 'Esta solicitud ya se utilizó con otros datos. Revisa el pedido antes de volver a confirmar.';
  return message;
 };
+
+/** Prioritize orders needing service, then tables, then elapsed waiting time.
+ * Only sorts tickets returned by the backend for the current page. */
+export type KitchenQueueView='active'|'ready'|'cancelled'|'all';
+const ticketTime=(value:string|null|undefined):number=>{
+ const result=value?Date.parse(value):NaN;
+ return Number.isFinite(result)?result:0;
+};
+export const kitchenReadyAt=(ticket:KitchenTicket):string=>{
+ const active=ticket.comandaLineasComoComanda.filter(x=>!x.canceladaEn);
+ const last=Math.max(0,...active.map(x=>ticketTime(x.listaEn)));
+ return last?new Date(last).toISOString():ticket.enviadaEn;
+};
+const kitchenLastDeliveredAt=(ticket:KitchenTicket):number=>Math.max(0,
+ ...ticket.comandaLineasComoComanda.map(x=>ticketTime(x.entregadaEn)));
+export const sortKitchenQueue=(tickets:readonly KitchenTicket[],view:KitchenQueueView):KitchenTicket[]=>{
+ const priority=(ticket:KitchenTicket):number=>{
+  const state=kitchenStage(ticket).kind;
+  if(view==='ready')return state==='ready'?0:1;
+  if(view==='all'){
+   if(state==='pending'||state==='working')return 0;
+   if(state==='ready')return 1;
+   return state==='delivered'?2:3;
+  }
+  return 0;
+ };
+ const isTable=(ticket:KitchenTicket)=>Boolean(ticket.orden?.ocupacionMesa?.mesa?.numero);
+ return [...tickets].sort((a,b)=>{
+  const group=priority(a)-priority(b);
+  if(group)return group;
+  // A table waiting to receive a prepared order comes before a takeaway ticket.
+  // A history item must never push a still-undelivered order down the board.
+  const kindA=kitchenStage(a).kind,kindB=kitchenStage(b).kind;
+  const pendingA=kindA!=='delivered'&&kindA!=='cancelled';
+  const pendingB=kindB!=='delivered'&&kindB!=='cancelled';
+  if(pendingA&&pendingB&&isTable(a)!==isTable(b))return isTable(a)?-1:1;
+  if(kindA==='delivered'&&kindB==='delivered')
+   return kitchenLastDeliveredAt(b)-kitchenLastDeliveredAt(a);
+  if(view==='ready'||(view==='all'&&kindA==='ready'&&kindB==='ready'))
+   return ticketTime(kitchenReadyAt(a))-ticketTime(kitchenReadyAt(b));
+  return ticketTime(a.enviadaEn)-ticketTime(b.enviadaEn);
+ });
+};
