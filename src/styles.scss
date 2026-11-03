@@ -182,3 +182,45 @@ a { color: var(--gc-primary); }
   min-height: 44px;
   color: var(--gc-on-surface);
 }
+
+/* ng-select's default base provides input and dropdown geometry.
+   Cappuccino theme tokens below determine actual appearance. */
+@import '@ng-select/ng-select/themes/default.theme.css';
+
+gc-search-select{display:block;min-width:0}
+.gc-select-field{display:grid;gap:.28rem;min-width:0}
+.gc-select-field>label{color:var(--gc-on-surface);font-size:.875rem;font-weight:600}
+ng-select.gc-select-control .ng-select-container{
+ min-height:var(--gc-control-height);height:auto;padding:0 .2rem;
+ background:var(--gc-surface);color:var(--gc-on-surface);
+ border:1px solid var(--gc-outline);border-radius:.6rem;
+}
+ng-select.gc-select-control.ng-select-focused:not(.ng-select-opened)>.ng-select-container,
+ng-select.gc-select-control.ng-select-opened>.ng-select-container{
+ border-color:var(--gc-primary);box-shadow:0 0 0 2px var(--gc-primary-container);
+}
+ng-select.gc-select-control .ng-select-container .ng-value-container .ng-input>input{
+ color:var(--gc-on-surface);min-height:1.6rem;
+}
+ng-select.gc-select-control .ng-value-container .ng-placeholder{color:var(--gc-on-surface-variant)}
+ng-select.gc-select-control .ng-arrow-wrapper .ng-arrow{border-top-color:var(--gc-on-surface-variant)}
+ng-select.gc-select-control .ng-clear-wrapper .ng-clear{color:var(--gc-on-surface-variant)}
+ng-select.gc-select-control.ng-select-disabled .ng-select-container{opacity:.55;cursor:not-allowed}
+.ng-dropdown-panel.gc-select-control{
+ background:var(--gc-surface-container-low);color:var(--gc-on-surface);
+ border:1px solid var(--gc-outline);border-radius:.55rem;
+ box-shadow:0 10px 28px rgb(0 0 0 / .20);
+ overflow:hidden;
+}
+.ng-dropdown-panel.gc-select-control .ng-dropdown-panel-items .ng-option{
+ background:var(--gc-surface-container-low);color:var(--gc-on-surface);
+ padding:.65rem .8rem;white-space:normal;
+}
+.ng-dropdown-panel.gc-select-control .ng-dropdown-panel-items .ng-option.ng-option-marked{
+ background:var(--gc-primary-container);color:var(--gc-on-primary-container);
+}
+.ng-dropdown-panel.gc-select-control .ng-dropdown-panel-items .ng-option.ng-option-selected{
+ font-weight:650;color:var(--gc-primary);
+}
+.gc-select-field small{font-size:.8rem;color:var(--gc-on-surface-variant)}
+.gc-select-field .gc-select-error{color:var(--gc-error)}

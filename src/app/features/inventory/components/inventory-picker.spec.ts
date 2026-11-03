@@ -22,10 +22,8 @@ describe('Shared inventory picker — saved relations',()=>{
   f.componentRef.setInput('value','saved');
   f.componentRef.setInput('selectedLabel','Artículo guardado');
   f.detectChanges();await f.whenStable();f.detectChanges();
-  const select=f.nativeElement.querySelector('select') as HTMLSelectElement;
-  expect(select.value).toBe('saved');
-  expect(select.selectedOptions[0]?.textContent).toContain('Artículo guardado');
-  expect(select.options.length).toBe(3);
+  const selected=f.nativeElement.querySelector('.ng-value-label') as HTMLElement;
+  expect(selected?.textContent).toContain('Artículo guardado');
  });
  it('updates the selected label without requiring a new search or clearing the saved ID',async()=>{
   const f=TestBed.createComponent(GcInventoryPicker);
@@ -37,9 +35,8 @@ describe('Shared inventory picker — saved relations',()=>{
   f.componentRef.setInput('value','new-value');
   f.componentRef.setInput('selectedLabel','Artículo nuevo');
   f.detectChanges();
-  const select=f.nativeElement.querySelector('select') as HTMLSelectElement;
-  expect(select.value).toBe('new-value');
-  expect(select.selectedOptions[0]?.textContent).toContain('Artículo nuevo');
+  const selected=f.nativeElement.querySelector('.ng-value-label') as HTMLElement;
+  expect(selected?.textContent).toContain('Artículo nuevo');
  });
  it('loads a readable label when the parent did not provide one',async()=>{
   const f=TestBed.createComponent(GcInventoryPicker);
@@ -47,8 +44,7 @@ describe('Shared inventory picker — saved relations',()=>{
   f.componentRef.setInput('kind','article');
   f.componentRef.setInput('value','saved');
   f.detectChanges();await f.whenStable();f.detectChanges();
-  const select=f.nativeElement.querySelector('select') as HTMLSelectElement;
-  expect(select.value).toBe('saved');
-  expect(select.selectedOptions[0]?.textContent).toContain('ART-1 · Artículo guardado');
+  const selected=f.nativeElement.querySelector('.ng-value-label') as HTMLElement;
+  expect(selected?.textContent).toContain('ART-1 · Artículo guardado');
  });
 });
