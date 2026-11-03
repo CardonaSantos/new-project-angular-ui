@@ -1,6 +1,7 @@
 import {Component,computed,inject,signal,OnInit} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
-import {firstValueFrom} from 'rxjs';
+import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
@@ -10,6 +11,7 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {catalogUiError} from '../data-access/catalog-ui-copy';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
 import {WEEKDAYS,menuDraft,menuLayout,menuValidation,isMenuVersionConflict,menuStatus,
@@ -17,7 +19,7 @@ import {WEEKDAYS,menuDraft,menuLayout,menuValidation,isMenuVersionConflict,menuS
 import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/catalog.models';
 
 @Component({
- selector:'gc-catalog-menu-detail-page',imports:[RouterLink,GcCatalogNav,GcErrorState],
+ selector:'gc-catalog-menu-detail-page',imports:[RouterLink,GcCatalogNav,GcErrorState,GcSearchSelect],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
@@ -30,6 +32,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
      @if(page.data();as menu){<span class="cat-muted">{{status(menu)}}</span>}
     </div>
     <form class="cat-form" (submit)="saveBasics($event)">
+     <div class="cat-form-section"><h3>1. Identificación del menú</h3>
      <label>Código
       <input [value]="code()" (input)="code.set($any($event.target).value)" [disabled]="!isNew||!access.canMenus()"
        pattern="[A-Za-z][A-Za-z0-9_-]*" maxlength="50" required placeholder="MENU-CAFE"/>
@@ -46,7 +49,8 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
       <label class="cat-check"><input type="checkbox" [checked]="active()"
        [disabled]="!access.canMenus()" (change)="active.set($any($event.target).checked)"/> Menú activo</label>
      }
-     @if(errorText()){<p class="cat-alert" role="alert">{{errorText()}}</p>}
+     </div>
+     @if(errorText()){<p class="cat-alert" role="alert">{{errorText()}}</p>
      <div class="cat-actions">
       @if(access.canMenus()){<button type="submit" class="cat-primary" [disabled]="busy()||!name().trim()||(isNew&&!validCode())">
        {{busy()?'Guardando…':'Guardar datos generales'}}</button>}
@@ -70,7 +74,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
      <div class="cat-row"><h2>Secciones y productos</h2>
       @if(access.canMenus()){<button type="button" (click)="addSection()">Agregar sección</button>}
      </div>
-     <p class="cat-muted">Organiza las secciones y las presentaciones de cada producto.</p>
+ 
      @for(section of draft().sections;track section.key;let i=$index){
       <div class="cat-section-card">
        <div class="cat-row">
@@ -103,24 +107,15 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
         </tbody>
        </table></div>
        @if(access.canMenus()){
-        <div class="cat-toolbar">
-         <label class="cat-field">Buscar productos
-          <input [value]="search()" maxlength="120" placeholder="Café, latte…"
-           (input)="search.set($any($event.target).value)" (keyup.enter)="findProducts()"/>
-         </label>
-         <button type="button" (click)="findProducts()" [disabled]="lookingUp()">Buscar</button>
-         <label class="cat-field">Producto
-          <select [value]="productId()" (change)="chooseProduct($any($event.target).value)">
-           <option value="">Seleccionar producto</option>
-           @for(product of products();track product.id){<option [value]="product.id" [selected]="product.id===productId()">{{product.nombre}}</option>}
-          </select>
-         </label>
-         <label class="cat-field">Presentación
-          <select [value]="variantId()" (change)="variantId.set($any($event.target).value)">
-           <option value="">Seleccionar presentación</option>
-           @for(variant of variants();track variant.id){<option [value]="variant.id" [selected]="variant.id===variantId()">{{variant.nombre}}</option>}
-          </select>
-         </label>
+        <div class="cat-toolbar gc-filter-grid">
+         <gc-search-select id="menu-product-search" label="Producto" [items]="productChoices()"
+          [value]="productId()" [remote]="true" [loading]="lookingUp()"
+          placeholder="Buscar producto…" (searchChange)="queueProductSearch($event)"
+          (valueChange)="chooseProduct($event)"/>
+         <gc-search-select id="menu-variant-search" label="Presentación" [items]="variantChoices()"
+          [value]="variantId()" [remote]="true" [disabled]="!productId()"
+          placeholder="Buscar presentación…" (searchChange)="queueVariantSearch($event)"
+          (valueChange)="chooseVariant($event)"/>
          <button type="button" (click)="appendItem(i)" [disabled]="!variantId()">Agregar presentación</button>
         </div>
         @if(optionsMore()){<p class="cat-muted">Hay más resultados: especifica mejor el nombre del producto.</p>}
@@ -135,12 +130,10 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
      </div>
      <p class="cat-muted">Sin horarios, el menú puede mostrarse todo el día. Los horarios se interpretan en la zona horaria de cada sucursal.</p>
      @for(item of draft().schedule;track $index;let i=$index){
-      <div class="cat-toolbar">
-       <label class="cat-field">Día
-        <select [value]="item.diaSemana" [disabled]="!access.canMenus()" (change)="setDay(i,+$any($event.target).value)">
-         @for(day of days;track $index){<option [value]="$index">{{day}}</option>}
-        </select>
-       </label>
+      <div class="cat-toolbar gc-filter-grid">
+       <gc-search-select [id]="'menu-day-'+i" label="Día" [items]="dayChoices"
+        [value]="''+item.diaSemana" [searchable]="false" [clearable]="false"
+        [disabled]="!access.canMenus()" (valueChange)="setDay(i,+$event)"/>
        <label class="cat-field">Desde
         <input type="time" [value]="item.desde" [disabled]="!access.canMenus()"
          (change)="setTime(i,'desde',$any($event.target).value)"/>
@@ -211,6 +204,36 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
  protected readonly publishError=signal<string|null>(null);
  protected readonly conflict=signal(false);
  protected readonly days=WEEKDAYS;
+ protected readonly dayChoices=this.days.map((day,i)=>({id:String(i),label:day}));
+ private readonly productTerms=new Subject<string>();
+ private readonly variantTerms=new Subject<string>();
+ private productGeneration=0;
+ private variantGeneration=0;
+ protected readonly variantSearch=signal('');
+ protected readonly selectedProductOption=signal<{id:string;label:string}|null>(null);
+ protected readonly selectedVariantOption=signal<{id:string;label:string}|null>(null);
+ protected readonly productChoices=computed(()=>{
+  const items=this.products().map(x=>({id:x.id,label:x.nombre}));
+  const current=this.selectedProductOption();
+  return current&&!items.some(x=>x.id===current.id)?[current,...items]:items;
+ });
+ protected readonly variantChoices=computed(()=>{
+  const items=this.variants().map(x=>({id:x.id,label:x.label??x.nombre}));
+  const current=this.selectedVariantOption();
+  return current&&!items.some(x=>x.id===current.id)?[current,...items]:items;
+ });
+ protected queueProductSearch(term:string){this.productTerms.next(term)}
+ protected queueVariantSearch(term:string){this.variantTerms.next(term)}
+ protected chooseVariant(id:string){
+  this.selectedVariantOption.set(this.variantChoices().find(x=>x.id===id)??null);
+  this.variantId.set(id);
+ }
+ constructor(){
+  this.productTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{this.search.set(term);void this.findProducts()});
+  this.variantTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{this.variantSearch.set(term);void this.findVariants()});
+ }
  protected readonly search=signal('');
  protected readonly products=signal<CatalogProduct[]>([]);
  protected readonly variants=signal<CatalogVariant[]>([]);
@@ -316,20 +339,34 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
   this.draft.update(d=>({...d,schedule:d.schedule.map((t,i)=>i===index?{...t,...patch}:t)}));
  }
  protected async findProducts(){
-  if(!this.access.canRead()||this.lookingUp())return;
+  if(!this.access.canRead())return;
+  const gen=++this.productGeneration;
   this.lookingUp.set(true);this.lookupError.set(null);
   try{
-   const r=await firstValueFrom(this.api.productOptions({search:this.search().trim(),limit:50}));
-   this.products.set(r.data);this.optionsMore.set(r.meta.hasMore);
-  }catch(e){this.lookupError.set(gcErrorMessage(e))}finally{this.lookingUp.set(false)}
+   const result=await firstValueFrom(this.api.productOptions({search:this.search().trim(),limit:50}));
+   if(gen!==this.productGeneration)return;
+   this.products.set(result.data);this.optionsMore.set(result.meta.hasMore);
+  }catch(e){if(gen===this.productGeneration)this.lookupError.set(gcErrorMessage(e))}
+  finally{if(gen===this.productGeneration)this.lookingUp.set(false)}
  }
  protected async chooseProduct(id:string){
-  this.productId.set(id);this.variantId.set('');this.variants.set([]);
-  if(!id)return;this.lookingUp.set(true);this.lookupError.set(null);
+  this.selectedProductOption.set(this.productChoices().find(x=>x.id===id)??null);
+  this.productId.set(id);this.variantId.set('');this.selectedVariantOption.set(null);
+  this.variantSearch.set('');this.variants.set([]);
+  if(id)await this.findVariants();
+ }
+ protected async findVariants(){
+  const id=this.productId();if(!id)return;
+  const gen=++this.variantGeneration;
+  this.lookingUp.set(true);this.lookupError.set(null);
   try{
-   const r=await firstValueFrom(this.api.variantOptions({productoId:id,limit:50}));
-   this.variants.set(r.data);this.optionsMore.set(r.meta.hasMore);
-  }catch(e){this.lookupError.set(gcErrorMessage(e))}finally{this.lookingUp.set(false)}
+   const result=await firstValueFrom(this.api.variantOptions({
+    productoId:id,search:this.variantSearch().trim(),limit:50
+   }));
+   if(gen!==this.variantGeneration||this.productId()!==id)return;
+   this.variants.set(result.data);this.optionsMore.set(result.meta.hasMore);
+  }catch(e){if(gen===this.variantGeneration)this.lookupError.set(gcErrorMessage(e))}
+  finally{if(gen===this.variantGeneration)this.lookingUp.set(false)}
  }
  protected async saveLayout(){
   const current=this.page.data();
