@@ -103,7 +103,7 @@ import {money,operationKey} from '../data-access/orders.helpers';
     [disabled]="submitting()"
     (quantity)="changeQty($event)" (remove)="remove($event)"/>
    <div class="ord-checkout-options">
-    <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes"
+    <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes()"
      [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()"
      (valueChange)="chooseMode($event)"/>
     @if(mode()==='MESA'){
@@ -186,7 +186,8 @@ export class GcOrdersPosPage{
  protected readonly access=inject(OrdersAccess);
  protected readonly prefs=inject(OrdersPreferences);
  private readonly searchInput=viewChild<ElementRef<HTMLInputElement>>('productSearch');
- protected readonly modes=ORDER_MODES;
+ protected readonly modes=computed(()=>
+  ORDER_MODES.filter(m=>m.id!=='MESA'||this.access.canTablesRead()));
  protected readonly menu=signal<CatalogBranchMenu|null>(null);
  protected readonly tables=signal<TableRecord[]>([]);
  protected readonly config=signal<BranchConfig|null>(null);
