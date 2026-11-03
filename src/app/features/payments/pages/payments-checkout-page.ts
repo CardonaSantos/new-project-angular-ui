@@ -348,8 +348,19 @@ export class GcPaymentsCheckoutPage implements OnInit{
  }
  protected addPart(){
   if(this.parts().length>=10)return;
-  const amountLeft=parseApiDecimal(this.available()).minus(parseApiDecimal(this.partsTotal()));
-  this.parts.update(p=>[...p,{metodo:'EFECTIVO',monto:amountLeft.gt(0)?amountLeft.toFixed(2):'0.00'}]);
+  const remaining=parseApiDecimal(this.available()).minus(parseApiDecimal(this.partsTotal()));
+  if(remaining.lte(0)&&this.parts().length===1){
+   const existing=this.parts()[0],n=parseApiDecimal(amount(existing.monto)??'0');
+   if(n.gt(0)){
+    const first=n.div(2).toDecimalPlaces(2,1).toFixed(2);
+    const second=n.minus(parseApiDecimal(first)).toFixed(2);
+    this.parts.set([{...existing,monto:first,...(existing.metodo==='EFECTIVO'?{efectivoRecibido:first}:{})},
+     {metodo:'EFECTIVO',monto:second,efectivoRecibido:second}]);
+    this.invalidate();return;
+   }
+  }
+  const left=remaining.gt(0)?remaining.toFixed(2):'0.00';
+  this.parts.update(p=>[...p,{metodo:'EFECTIVO',monto:left,efectivoRecibido:left}]);
   this.invalidate();
  }
  protected removePart(index:number){this.parts.update(p=>p.filter((_,i)=>i!==index));this.invalidate()}
@@ -452,14 +463,22 @@ export class GcPaymentsCheckoutPage implements OnInit{
   },action==='confirm'?'Transferencia verificada.':'Intento cancelado.');
   if(ok)this.attemptAction.set('');
  }
+ private refundable(payment:PaymentRecord){
+  const paid=parseApiDecimal(payment.monto);
+  const returned=(payment.reembolsoPagosComoPago??[]).reduce((n,r)=>n.plus(parseApiDecimal(r.monto)),
+   parseApiDecimal('0'));
+  const left=paid.minus(returned);return left.gt(0)?left.toFixed(2):'0.00';
+ }
  protected startRefund(payment:PaymentRecord){
-  this.refundPayment.set(payment);this.refundAmount.set(payment.monto);
+  this.refundPayment.set(payment);this.refundAmount.set(this.refundable(payment));
   this.refundReason.set('');this.refundReference.set('');
  }
  protected async refund(){
   const p=this.refundPayment(),a=positive(this.refundAmount()),why=this.refundReason().trim();
   if(!p||!a||why.length<5)return;
-  if(parseApiDecimal(a).gt(parseApiDecimal(p.monto))){this.error.set('El importe supera el pago.');return}
+  if(parseApiDecimal(a).gt(parseApiDecimal(this.refundable(p)))){
+   this.error.set('El importe supera la cantidad que queda por devolver.');return;
+  }
   if(p.metodo!=='EFECTIVO'&&!this.refundReference().trim()){
    this.error.set('Ingresa la referencia verificada de la devolución.');return;
   }
