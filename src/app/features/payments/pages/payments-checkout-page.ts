@@ -56,6 +56,9 @@ import {parseApiDecimal} from '../../../shared/formatting';
      <div class="pay-balance">
       <span>Saldo pendiente</span><strong>{{money(account.saldo)}}</strong>
      </div>
+     @if(parseApiDecimalSafe(account.reembolsado)){
+      <p class="ord-note">Devoluciones registradas: {{money(account.reembolsado)}}</p>
+     }
      @if(hasPendingAttempt()){
       <p class="pay-warn">Hay pagos por confirmar. Se reservó {{money(pendingAmount())}} del saldo.</p>
      }
@@ -185,8 +188,11 @@ import {parseApiDecimal} from '../../../shared/formatting';
         <div class="pay-history-row">
          <div><strong>{{methodLabel(payment.metodo)}} · {{money(payment.monto)}}</strong>
           @if(payment.vuelto){<small>Vuelto: {{money(payment.vuelto)}}</small>}
+          @if(payment.reembolsoPagosComoPago?.length){
+           <small>Ya devuelto: {{money(refundedSum(payment))}}</small>
+          }
          </div>
-         @if(access.canRefund()){
+         @if(access.canRefund()&&parsePositive(refundable(payment))){
           <button type="button" [disabled]="working()" (click)="startRefund(payment)">Devolver</button>
          }
         </div>
@@ -308,6 +314,7 @@ export class GcPaymentsCheckoutPage implements OnInit{
  ngOnInit(){void this.load()}
  private get id(){return this.route.snapshot.paramMap.get('id')??''}
  protected parsePositive=positive;
+ protected parseApiDecimalSafe=(v:string)=>parseApiDecimal(v).gt(0);
  private idem(kind:string,payload:unknown){
   const sig=kind+':'+JSON.stringify(payload);
   if(this.key?.signature!==sig)this.key={signature:sig,value:operationKey(kind)};
@@ -468,7 +475,11 @@ export class GcPaymentsCheckoutPage implements OnInit{
   },action==='confirm'?'Transferencia verificada.':'Intento cancelado.');
   if(ok)this.attemptAction.set('');
  }
- private refundable(payment:PaymentRecord){
+ protected refundedSum(payment:PaymentRecord){
+  return (payment.reembolsoPagosComoPago??[]).reduce((n,r)=>n.plus(parseApiDecimal(r.monto)),
+   parseApiDecimal('0')).toFixed(2);
+ }
+ protected refundable(payment:PaymentRecord){
   const paid=parseApiDecimal(payment.monto);
   const returned=(payment.reembolsoPagosComoPago??[]).reduce((n,r)=>n.plus(parseApiDecimal(r.monto)),
    parseApiDecimal('0'));
