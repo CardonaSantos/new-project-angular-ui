@@ -371,3 +371,11 @@ ng-select.gc-select-control .ng-select-container .ng-clear-wrapper{
  .cat-extra-group-row{grid-template-columns:minmax(0,1fr) auto}
  .cat-extra-group-row>button{grid-column:1/-1;justify-self:start}
 }
+
+/* Shared branch selectors: visually hidden accessible labels, compact header. */
+.gc-branch-selector .gc-select-field>label{
+ position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+ overflow:hidden;white-space:nowrap;clip-path:inset(50%);border:0;
+}
+.gc-branch-selector gc-search-select,
+.gc-branch-selector ng-select.gc-select-control{min-width:0;max-width:100%;width:100%}
