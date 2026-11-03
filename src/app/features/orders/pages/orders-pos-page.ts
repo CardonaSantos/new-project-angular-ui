@@ -38,7 +38,7 @@ import {money,operationKey} from '../data-access/orders.helpers';
  @if(success()){<div role="status" class="ord-success">
   {{success()}} <a [routerLink]="['/orders/list',createdId()]">Abrir pedido</a>
  </div>}
- @if(prefs.view()==='tables'){
+ @if(prefs.view()==='tables'&&showTablePicker()){
   <section class="ord-card">
    <div class="ord-heading"><h2>Mesas de la sucursal</h2>
     <button type="button" (click)="loadTables()">Actualizar mesas</button></div>
@@ -55,9 +55,14 @@ import {money,operationKey} from '../data-access/orders.helpers';
    }
    <div class="ord-actions"><a routerLink="/orders/tables">Ver todas las mesas</a>
     @if(selectedTable()){<span>Pedido para mesa {{selectedTable()?.numero}}</span>
-     <button type="button" (click)="selectedTable.set(null);mode.set('MOSTRADOR')">Quitar mesa</button>}
+     <button type="button" (click)="selectedTable.set(null);mode.set('MOSTRADOR');invalidateKey()">Quitar mesa</button>}
    </div>
   </section>
+ }
+ @if(prefs.view()==='tables'&&!showTablePicker()&&selectedTable()){
+  <div class="ord-actions"><span>Atendiendo mesa {{selectedTable()?.numero}}</span>
+   <button type="button" (click)="showTablePicker.set(true)">Cambiar mesa</button>
+  </div>
  }
  <div class="ord-pos-layout">
   <section class="ord-catalog" aria-label="Catálogo de productos">
@@ -199,6 +204,7 @@ export class GcOrdersPosPage{
  protected readonly sendKitchen=signal(true);
  protected readonly submitting=signal(false);
  protected readonly cartOpen=signal(false);
+ protected readonly showTablePicker=signal(true);
  protected readonly configuring=signal<CatalogProjectedItem|null>(null);
  protected readonly customQty=signal(1);
  protected readonly customNotes=signal('');
@@ -254,6 +260,7 @@ export class GcOrdersPosPage{
  protected setView(mode:'counter'|'tables'){
   if(this.submitting())return;
   this.prefs.setView(mode);
+  this.showTablePicker.set(mode==='tables');
   if(mode==='tables')void this.loadTables();
  }
  protected chooseMode(value:string){
@@ -295,7 +302,7 @@ export class GcOrdersPosPage{
   const existing=t.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA');
   if(existing){void this.router.navigate(['/orders/list',existing.id]);return}
   this.selectedTable.set(t);this.mode.set('MESA');this.invalidateKey();
-  this.prefs.setView('counter');
+  this.showTablePicker.set(false);
  }
  protected selectTableId(id:string){
   if(this.submitting())return;
@@ -379,6 +386,7 @@ export class GcOrdersPosPage{
    this.createdId.set(data.id);this.success.set('Orden '+data.numero+' creada.');
    this.cart.set([]);this.observations.set('');this.selectedTable.set(null);
    this.mode.set('MOSTRADOR');this.operationId='';this.cartOpen.set(false);
+   this.showTablePicker.set(this.prefs.view()==='tables');
    if(this.prefs.view()==='tables')void this.loadTables();
   }catch(e){this.submitError.set(gcErrorMessage(e))}
   finally{this.submitting.set(false)}
