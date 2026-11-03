@@ -38,7 +38,7 @@ export const checkParts=(parts:PaymentPart[],available:string):string|null=>{
 export const paymentError=(e:unknown)=>{
  const msg=gcErrorMessage(e);
  if(/turno de otro cajero/i.test(msg))return 'Selecciona un turno de caja a tu nombre.';
- if(/Turno cerrado|turno inexistente/i.test(msg))return 'Tu turno de caja ya no está abierto. Actualiza la caja.';
+ if(/Turno cerrado|turno inexistente/i.test(msg))return 'Tu turno de caja está cerrado. Abre un turno para continuar.';
  if(/fuera de fecha operativa|período.*cerrado/i.test(msg))return 'El turno o día de caja ya cerró. Abre un turno válido.';
  if(/Solo se divide cuenta principal/i.test(msg))return 'La cuenta ya tiene movimientos. Solo puedes dividirla antes del primer pago.';
  if(/todas las cuentas deben estar exactamente pagadas/i.test(msg))
