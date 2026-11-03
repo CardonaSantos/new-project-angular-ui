@@ -68,11 +68,11 @@ describe('PAY-A HTTP — 20 real routes',()=>{
  });
  it('scopes requests to branches and paginates without changing IDs',()=>{
   api.shifts('branch-test',2,15).subscribe();
-  let req=http.expectOne(paymentPaths.shifts);
+  let req=http.expectOne(r=>r.url===paymentPaths.shifts);
   expect(req.request.params.get('sucursalId')).toBe('branch-test');
   expect(req.request.params.get('page')).toBe('2');
   expect(req.request.params.get('limit')).toBe('15');req.flush({});
-  api.registers('branch-test').subscribe();req=http.expectOne(paymentPaths.registers);
+  api.registers('branch-test').subscribe();req=http.expectOne(r=>r.url===paymentPaths.registers);
   expect(req.request.params.get('sucursalId')).toBe('branch-test');req.flush({});
   expect(paymentPaths.account('a/b')).toBe('/api/accounts/a%2Fb');
  });
