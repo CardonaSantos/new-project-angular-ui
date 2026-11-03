@@ -4,24 +4,20 @@ import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
 import {PRODUCT_KINDS,type CatalogPriceCoverage,type CatalogSummary} from '../data-access/catalog.models';
 
 @Component({
- selector:'gc-catalog-reports-page',imports:[GcCatalogNav,GcErrorState],
+ selector:'gc-catalog-reports-page',imports:[GcCatalogNav,GcErrorState,GcSearchSelect],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
   <section class="cat-card">
    <div class="cat-row"><h2>Estado de precios y productos</h2>
-    <label class="cat-field">Sucursal
-     <select [value]="branchId()" (change)="chooseBranch($any($event.target).value)">
-      @for(branch of context.branches();track branch.id){
-       <option [value]="branch.id" [selected]="branch.id===branchId()">{{branch.nombre}}</option>
-      }
-     </select>
-    </label>
+    <gc-search-select id="catalog-report-branch" label="Sucursal" [items]="branchChoices()"
+     [value]="branchId()" [clearable]="false" (valueChange)="chooseBranch($event)"/>
    </div>
    <div class="cat-toolbar">
     <label class="cat-field">Consultar cobertura en fecha
@@ -85,6 +81,7 @@ import {PRODUCT_KINDS,type CatalogPriceCoverage,type CatalogSummary} from '../da
 export class GcCatalogReportsPage implements OnInit{
  protected readonly access=inject(CatalogAccess);
  protected readonly context=inject(GcBranchContext);
+ protected readonly branchChoices=computed(()=>this.context.branches().map(b=>({id:b.id,label:b.nombre})));
  private readonly api=inject(CatalogApi);
  protected readonly branchId=signal('');
  protected readonly queryDate=signal('');
