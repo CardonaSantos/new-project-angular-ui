@@ -15,7 +15,7 @@ import {money} from '../data-access/orders.helpers';
  template:`
  <main class="ord-page"><gc-orders-nav/>
  <div class="ord-heading">
-  <div><h1>Mesas y salas</h1><p>Elige una mesa para tomar o continuar un pedido.</p></div>
+  <h1>Mesas y salas</h1>
   <button type="button" (click)="load()" [disabled]="busy()">Actualizar</button>
  </div>
  @if(error()){<p class="ord-alert" role="alert">{{error()}}</p>}
@@ -31,7 +31,10 @@ import {money} from '../data-access/orders.helpers';
   <div class="ord-table-grid">
    @for(table of visibleTables();track table.id){
     <article class="ord-table-card">
-     <div class="ord-heading"><strong>Mesa {{table.numero}}</strong><span>{{table.ocupacion?'Ocupada':'Disponible'}}</span></div>
+     <div class="ord-heading"><strong>Mesa {{table.numero}}</strong>
+      <span class="ord-ticket-badge" [class.ord-ticket-badge--ready]="!table.ocupacion"
+       [class.ord-ticket-badge--working]="!!table.ocupacion">
+       {{table.ocupacion?'Ocupada':'Disponible'}}</span></div>
      <small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
      @if(table.ocupacion){
       @for(o of table.ocupacion.ordenesComoOcupacionMesa??[];track o.id){
@@ -53,8 +56,9 @@ import {money} from '../data-access/orders.helpers';
   </div>
  </section>
  @if(access.canTablesManage()){
- <section class="ord-card">
-  <h2>Administrar salas</h2>
+ <details class="ord-card ord-management" [open]="managementOpen()">
+  <summary>Administrar salas y mesas</summary>
+  <h2>Salas</h2>
   <div class="ord-small-list">
    @for(room of rooms();track room.id){
     <div class="ord-setting-row">
@@ -99,7 +103,7 @@ import {money} from '../data-access/orders.helpers';
      <button type="button" (click)="toggleTable()" [disabled]="actionBusy()"> {{editingTable()?.activa?'Desactivar':'Activar'}} mesa </button>}
    </div>
   </fieldset>
- </section>
+ </details>
  }
  </main>`
 })
@@ -110,6 +114,7 @@ export class GcOrdersTablesPage{
  protected readonly money=money;
  protected readonly rooms=signal<Room[]>([]);protected readonly tables=signal<TableRecord[]>([]);
  protected readonly selectedRoom=signal('');protected readonly busy=signal(false);
+ protected readonly managementOpen=signal(false);
  protected readonly actionBusy=signal(false);protected readonly error=signal<string|null>(null);
  protected readonly roomId=signal('');protected readonly roomName=signal('');
  protected readonly tableId=signal('');protected readonly tableRoom=signal('');
@@ -139,7 +144,8 @@ export class GcOrdersTablesPage{
    confirmText:'Liberar'}))return;
   await this.mutate(async()=>{await firstValueFrom(this.api.closeOccupancy(id))});
  }
- protected editRoom(room:Room){this.roomId.set(room.id);this.roomName.set(room.nombre)}
+ protected editRoom(room:Room){this.managementOpen.set(true);
+  this.roomId.set(room.id);this.roomName.set(room.nombre)}
  protected async toggleRoom(room:Room){
   if(room.activa&&!await this.confirm.confirm({title:'Desactivar sala',message:'No podrá desactivarse una sala con mesas ocupadas.',danger:true,confirmText:'Desactivar'}))return;
   await this.mutate(async()=>{await firstValueFrom(this.api.updateRoom(room.id,{activa:!room.activa}))});
@@ -153,6 +159,7 @@ export class GcOrdersTablesPage{
   });
  }
  protected editTable(table:TableRecord){
+  this.managementOpen.set(true);
   this.tableId.set(table.id);this.tableRoom.set(table.sala.id);
   this.tableNumber.set(table.numero);this.capacity.set(table.capacidad);
  }

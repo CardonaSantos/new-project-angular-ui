@@ -3,7 +3,6 @@ import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
-import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
 import type {CatalogBranchMenu,CatalogProjectedGroup,CatalogProjectedItem} from '../../catalog/data-access/catalog.models';
@@ -17,7 +16,7 @@ import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import {OrdersPreferences} from '../data-access/orders-preferences';
 import {ORDER_MODES,type OrderMode,type TableRecord} from '../data-access/orders.models';
-import {money,operationKey} from '../data-access/orders.helpers';
+import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpers';
 
 @Component({
  selector:'gc-orders-pos-page',
@@ -25,7 +24,7 @@ import {money,operationKey} from '../data-access/orders.helpers';
  template:`
  <main class="ord-page ord-pos"><gc-orders-nav/>
  <div class="ord-heading">
-  <div><h1>Punto de venta</h1><p>{{context.active()?.nombre??'Selecciona una sucursal'}}</p></div>
+  <h1>Punto de venta</h1>
   <div class="ord-view-switch" role="group" aria-label="Modo de atención">
    <button type="button" [class.active]="prefs.view()==='counter'"
     [attr.aria-pressed]="prefs.view()==='counter'" (click)="setView('counter')">Mostrador</button>
@@ -124,7 +123,16 @@ import {money,operationKey} from '../data-access/orders.helpers';
     } @else if(!config()){
      <p class="ord-note">La preparación seguirá las reglas vigentes de la sucursal.</p>
     }
-    @if(submitError()){<p role="alert" class="ord-alert">{{submitError()}}</p>}
+    @if(submitError()){
+     <p role="alert" class="ord-alert">{{submitError()}}</p>
+     @if(submitError().includes('receta publicada')){
+      <a routerLink="/recipes/list">Revisar recetas publicadas</a>
+     } @else if(submitError().includes('precio vigente')){
+      <a routerLink="/catalog/prices">Revisar precios</a>
+     } @else if(submitError().includes('estación de cocina')){
+      <a routerLink="/orders/settings">Configurar cocina</a>
+     }
+    }
     <button class="ord-primary ord-confirm" type="button"
      [disabled]="submitting()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&!selectedTable())"
      (click)="submit()">{{submitting()?'Confirmando…':'Confirmar pedido'}}</button>
@@ -277,7 +285,7 @@ export class GcOrdersPosPage{
   try{
    const result=await firstValueFrom(this.catalog.branchMenu(branch));
    if(gen===this.loadingGeneration){this.menu.set(result);this.category.set('')}
-  }catch(e){if(gen===this.loadingGeneration)this.error.set(gcErrorMessage(e))}
+  }catch(e){if(gen===this.loadingGeneration)this.error.set(orderFriendlyError(e))}
   finally{if(gen===this.loadingGeneration)this.busy.set(false)}
   try{const c=await firstValueFrom(this.branchesApi.config(branch));if(gen===this.loadingGeneration)this.config.set(c)}
   catch{if(gen===this.loadingGeneration)this.config.set(null)}
@@ -296,7 +304,7 @@ export class GcOrdersPosPage{
     if(selected)this.chooseTable(selected);
     else this.error.set('La mesa seleccionada no está disponible.');
    }
-  }catch(e){this.error.set(gcErrorMessage(e))}
+  }catch(e){this.error.set(orderFriendlyError(e))}
  }
  protected chooseTable(t:TableRecord){
   if(this.submitting())return;
@@ -389,7 +397,7 @@ export class GcOrdersPosPage{
    this.mode.set('MOSTRADOR');this.operationId='';this.cartOpen.set(false);
    this.showTablePicker.set(this.prefs.view()==='tables');
    if(this.prefs.view()==='tables')void this.loadTables();
-  }catch(e){this.submitError.set(gcErrorMessage(e))}
+  }catch(e){this.submitError.set(orderFriendlyError(e))}
   finally{this.submitting.set(false)}
  }
 }

@@ -18,14 +18,17 @@ import {money,modeText} from '../data-access/orders.helpers';
  template:`
  <main class="ord-page"><gc-orders-nav/>
   <section class="ord-card">
-   <div class="ord-heading"><div><h1>Órdenes</h1><p>Consulta y continúa los pedidos registrados.</p></div>
+   <div class="ord-heading"><h1>Órdenes</h1>
     @if(access.canCreate()){<a class="ord-primary" routerLink="/orders/pos">Nueva orden</a>}
    </div>
-   <div class="ord-filter-grid">
-    <label>Buscar por número
-     <input [value]="search()" (input)="search.set($any($event.target).value)"
-      (keyup.enter)="apply()" placeholder="Ej. ORD-…" maxlength="100"/>
-    </label>
+   <div class="ord-filter-grid ord-order-filters">
+    <div class="ord-search-action">
+     <label>Buscar por número
+      <input [value]="search()" (input)="search.set($any($event.target).value)"
+       (keyup.enter)="apply()" placeholder="Ej. ORD-…" maxlength="100"/>
+     </label>
+     <button type="button" (click)="apply()" [disabled]="busy()">Buscar</button>
+    </div>
     <gc-search-select id="order-list-branch" label="Sucursal" [items]="branches()"
      [value]="branchId()" [clearable]="false" (valueChange)="chooseBranch($event)"/>
     <gc-search-select id="order-list-status" label="Estado" [items]="states"
@@ -35,7 +38,6 @@ import {money,modeText} from '../data-access/orders.helpers';
      [value]="mode()" placeholder="Todos" [searchable]="false"
      (valueChange)="setMode($event)"/>
    </div>
-   <div class="ord-actions"><button type="button" (click)="apply()" [disabled]="busy()">Buscar</button></div>
    @if(busy()){<p role="status">Consultando pedidos…</p>}
    @if(error()){<gc-error-state [message]="error()!" (retry)="load()"/>}
    @if(!busy()&&!error()){
