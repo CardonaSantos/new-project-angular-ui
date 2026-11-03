@@ -3,7 +3,7 @@ import {DatePipe} from '@angular/common';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
-import {gcErrorMessage} from '../../../core/http/api-error';
+import {parseApiDecimal} from '../../../shared/formatting';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
@@ -13,7 +13,7 @@ import {GcOrderStatus} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import {CANCELLATION_CLASSES,type CancellationClass,type OrderDetail, type OrderLine} from '../data-access/orders.models';
-import {money,operationKey,qtyText,safeQuantity,statusText} from '../data-access/orders.helpers';
+import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} from '../data-access/orders.helpers';
 
 @Component({
  selector:'gc-orders-detail-page',
@@ -37,14 +37,22 @@ import {money,operationKey,qtyText,safeQuantity,statusText} from '../data-access
     </div>
     @if(o.ocupacionMesa?.mesa){<p class="ord-muted">Mesa {{o.ocupacionMesa?.mesa?.numero}} · {{o.ocupacionMesa?.mesa?.sala?.nombre}}</p>}
     @if(o.cuentasComoOrden.length){
-     <p class="ord-note">Cuenta: {{money(o.cuentasComoOrden[0].pagado)}} pagados de {{money(o.cuentasComoOrden[0].total)}}.</p>
+     <p class="ord-note">
+      @if(hasPendingPayment()){<strong>Falta cobrar {{money(unpaidAmount())}}</strong>}
+      @else {<strong>Cuenta pagada</strong>}
+     </p>
     }
     @if(o.estado==='ABIERTA'&&access.canManage()){
      <div class="ord-actions">
       <button type="button" (click)="send()" [disabled]="actionBusy()">Enviar pendientes a cocina</button>
-      <button type="button" (click)="close()" [disabled]="actionBusy()">Cerrar pedido</button>
+      <button type="button" (click)="close()" [disabled]="actionBusy()||!readyToClose()">Cerrar pedido</button>
       <button class="ord-danger" type="button" (click)="beginCancel()" [disabled]="actionBusy()">Cancelar pedido</button>
      </div>
+     @if(hasPendingPayment()){
+      <p class="ord-note">Este pedido sigue pendiente de cobro.</p>
+     } @else if(!readyToClose()){
+      <p class="ord-note">Aún hay productos pendientes de enviar o preparar.</p>
+     }
     }
    </section>
    <section class="ord-card">
@@ -78,6 +86,9 @@ import {money,operationKey,qtyText,safeQuantity,statusText} from '../data-access
      <div class="ord-small-list">@for(ticket of o.comandasComoOrden??[];track ticket.id){
       <span>Comanda {{ticket.numero}} · {{ticketStatus(ticket.estado)}}</span>
      }</div>
+     @if(access.canKitchenRead()){
+      <div class="ord-actions"><a routerLink="/orders/kitchen">Ver preparación y entrega en Cocina</a></div>
+     }
     }
    </section>
    @if(o.estado==='ABIERTA'&&access.canManage()){
@@ -169,7 +180,8 @@ export class GcOrdersDetailPage implements OnInit {
  protected readonly branch=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
  protected readonly money=money;protected readonly qtyText=qtyText;
- protected readonly ticketStatus=statusText;
+ protected readonly ticketStatus=(state:'PENDIENTE'|'PREPARANDO'|'LISTA'|'CANCELADA')=>
+  state==='LISTA'?'Lista para entregar':statusText(state);
  protected readonly cancellationChoices=CANCELLATION_CLASSES;
  protected readonly order=signal<OrderDetail|null>(null);
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
@@ -193,6 +205,22 @@ export class GcOrdersDetailPage implements OnInit {
   return this.pendingOperation.key;
  }
  protected readonly activeLines=computed(()=>this.order()?.ordenLineasComoOrden.filter(x=>!x.canceladaEn)??[]);
+ protected readonly unpaidAmount=computed(()=>{
+  const accounts=this.order()?.cuentasComoOrden??[];
+  const due=accounts.reduce((sum,a)=>sum.plus(
+   parseApiDecimal(a.total).minus(parseApiDecimal(a.pagado))),parseApiDecimal('0'));
+  return due.greaterThan(0)?due.toFixed(2):'0.00';
+ });
+ protected readonly hasPendingPayment=computed(()=>{
+  const accounts=this.order()?.cuentasComoOrden??[];
+  return !accounts.length||accounts.some(a=>!parseApiDecimal(a.pagado).equals(parseApiDecimal(a.total)));
+ });
+ protected readonly readyToClose=computed(()=>{
+  const o=this.order();if(!o||o.estado!=='ABIERTA'||this.hasPendingPayment())return false;
+  if(o.ordenLineasComoOrden.some(line=>!line.canceladaEn&&
+   parseApiDecimal(line.cantidadEnviada).lessThan(parseApiDecimal(line.cantidad))))return false;
+  return !(o.comandasComoOrden??[]).some(t=>t.estado==='PENDIENTE'||t.estado==='PREPARANDO');
+ });
  protected readonly options=computed(()=>{
   const items:CatalogProjectedItem[]=[];
   for(const menu of this.menu()?.menus??[])for(const section of menu.secciones)items.push(...section.items);
@@ -215,14 +243,14 @@ export class GcOrdersDetailPage implements OnInit {
    this.observations.set(o.observaciones??'');
    try{this.menu.set(await firstValueFrom(this.catalog.branchMenu(o.sucursalId)))}
    catch{this.menu.set(null)}
-  }catch(e){this.error.set(gcErrorMessage(e))}
+  }catch(e){this.error.set(orderFriendlyError(e))}
   finally{this.busy.set(false)}
  }
  private async perform(action:()=>Promise<OrderDetail>){
   if(this.actionBusy())return;
   this.actionBusy.set(true);this.error.set(null);
   try{const o=await action();this.order.set(o);this.observations.set(o.observaciones??'');this.pendingOperation=null}
-  catch(e){this.error.set(gcErrorMessage(e))}
+  catch(e){this.error.set(orderFriendlyError(e))}
   finally{this.actionBusy.set(false)}
  }
  protected async send(){
@@ -234,8 +262,11 @@ export class GcOrdersDetailPage implements OnInit {
  }
  protected async close(){
   const o=this.order();if(!o)return;
+  if(!this.readyToClose())return;
   if(!await this.dialog.confirm({title:'Cerrar pedido',
-   message:'El servidor verificará que la cuenta esté pagada y la preparación finalizada.',
+   message:o.ocupacionMesa?.mesa
+    ?'¿Finalizar este pedido y liberar la mesa?'
+    :'¿Finalizar este pedido?',
    confirmText:'Cerrar pedido'}))return;
   await this.perform(()=>firstValueFrom(this.api.close(o.id)));
  }
