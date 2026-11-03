@@ -445,10 +445,11 @@ export class GcPaymentsCheckoutPage implements OnInit{
     '¿Cancelar este intento de pago?',confirmText:'Confirmar'}))return;
   const body={motivo:reason,...(action==='confirm'?{turnoId:shift!.id}:{})};
   const key=this.idem('attempt-'+action,{id,...body});
-  const ok=await this.operate(()=>firstValueFrom(action==='confirm'
-   ?this.api.confirmAttempt(id,{turnoId:shift!.id,motivo:reason,claveOperacion:key})
-   :this.api.cancelAttempt(id,{motivo:reason,claveOperacion:key})),
-   action==='confirm'?'Transferencia verificada.':'Intento cancelado.');
+  const ok=await this.operate(async()=>{
+   if(action==='confirm')
+    return firstValueFrom(this.api.confirmAttempt(id,{turnoId:shift!.id,motivo:reason,claveOperacion:key}));
+   return firstValueFrom(this.api.cancelAttempt(id,{motivo:reason,claveOperacion:key}));
+  },action==='confirm'?'Transferencia verificada.':'Intento cancelado.');
   if(ok)this.attemptAction.set('');
  }
  protected startRefund(payment:PaymentRecord){
