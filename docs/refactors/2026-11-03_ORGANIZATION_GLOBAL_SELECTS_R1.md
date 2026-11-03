@@ -31,8 +31,8 @@ Cadena: PR #19 Inventario/Recetas -> PR #20 Catálogo/Usuarios -> entrega 3.
 | `forms/gc-form-wizard.ts` | Foco de campos inválidos incluye la entrada de `GcSearchSelect`. |
 
 ## Criterios de validación
-- [ ] `npm ci`, `npm run lint`, `npm run build`, `npm test -- --watch=false`.
-- [ ] Sin `<select>` nativo en las pantallas de los cinco módulos y tres controles globales.
+- [x] `npm ci`, `npm run lint`, `npm run build`, `npm test -- --watch=false` (CI #41691518786).
+- [x] Sin `<select>` nativo en Organización (5 páginas) ni en los tres componentes globales auditados; los cuatro módulos anteriores se validaron en sus PR respectivos.
 - [ ] Validar selector de sucursal en cabecera: no desborda y recupera selección si falla el cambio.
 - [ ] Validar dispositivo KDS: tipo -> estación; si cambia sucursal se borra estación anterior.
 - [ ] Validar creación/edición de empresa, sucursal y dispositivo con permisos reales.
@@ -40,3 +40,9 @@ Cadena: PR #19 Inventario/Recetas -> PR #20 Catálogo/Usuarios -> entrega 3.
 - [ ] Revisar Firefox en claro/oscuro y tamaños desktop/móvil.
 
 El PR permanece en draft hasta pruebas locales del operador.
+## Validación automática de entrega 3
+- CI: https://github.com/CardonaSantos/new-project-angular-ui/actions/runs/41691518786
+- Lint: aprobado
+- Build: aprobado
+- Tests:  Test Files  50 passed (50) |       Tests  159 passed (159)
+- Pendiente validación visual y funcional real con datos del operador; no fusionar todavía.
