@@ -8,6 +8,7 @@ import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcCatalogGallery} from '../components/catalog-gallery';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
@@ -16,7 +17,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 
 @Component({
  selector:'gc-catalog-categories-page',
- imports:[GcCatalogNav,GcErrorState,GcCatalogGallery],
+ imports:[GcCatalogNav,GcErrorState,GcCatalogGallery,GcSearchSelect],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
@@ -26,17 +27,14 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
      <button class="cat-primary" type="button" (click)="newCategory()">Nueva categoría</button>
     }
    </div>
-   <div class="cat-toolbar">
+   <div class="cat-toolbar gc-filter-grid">
     <label class="cat-field">Buscar categoría
      <input [value]="search()" maxlength="120" (input)="search.set($any($event.target).value)"
       (keyup.enter)="applySearch()"/>
     </label>
     <button type="button" (click)="applySearch()">Buscar</button>
-    <label class="cat-field">Estado
-     <select [value]="state()" (change)="changeState($any($event.target).value)">
-      <option value="">Todas</option><option value="true">Activas</option><option value="false">Inactivas</option>
-     </select>
-    </label>
+    <gc-search-select id="cat-category-state" label="Estado" [items]="stateChoices" [value]="state()"
+     [searchable]="false" placeholder="Todas" (valueChange)="changeState($event)"/>
    </div>
    @if(page.busy()){<p role="status" class="cat-muted">Consultando categorías…</p>}
    @if(page.status()==='error'){<gc-error-state [message]="error()" (retry)="reload()"/>}
@@ -66,21 +64,17 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
    <section class="cat-card">
     <h2>{{creating()?'Nueva categoría':'Editar categoría'}}</h2>
     <form class="cat-form" (submit)="save($event)">
+     <div class="cat-form-section"><h3>1. Identificación y jerarquía</h3>
      <label>Nombre
       <input [value]="name()" maxlength="130" required (input)="name.set($any($event.target).value)"/>
      </label>
-     <label>Categoría superior
-      <select [value]="parent()" (change)="parent.set($any($event.target).value)">
-       <option value="" [selected]="!parent()">Sin categoría superior</option>
-       @for(item of parents();track item.id){
-        <option [value]="item.id" [selected]="item.id===parent()">{{item.nombre}}{{item.activa?'':' (inactiva)'}}</option>
-       }
-      </select>
-     </label>
+     <gc-search-select id="cat-category-parent" label="Categoría superior" [items]="parentChoices()"
+      [value]="parent()" placeholder="Sin categoría superior" (valueChange)="parent.set($event)"/>
      <label>Orden de presentación
       <input type="number" min="0" step="1" [value]="order()" (input)="order.set(+$any($event.target).value)"/>
      </label>
-     @if(saveError()){<p role="alert" class="cat-alert">{{saveError()}}</p>}
+     </div>
+     @if(saveError()){<p role="alert" class="cat-alert">{{saveError()}}</p>
      <div class="cat-actions">
       <button class="cat-primary" type="submit" [disabled]="saving()||!name().trim()||order()<0">
        {{saving()?'Guardando…':'Guardar categoría'}}</button>
@@ -126,6 +120,10 @@ export class GcCatalogCategoriesPage implements GcDirtyAware{
  protected readonly saveError=signal<string|null>(null);
  protected readonly currentPage=computed(()=>Math.max(1,Number(this.query().get('page')||1)||1));
  protected readonly state=computed(()=>this.query().get('activo')??'');
+ protected readonly stateChoices=[{id:'true',label:'Activas'},{id:'false',label:'Inactivas'}];
+ protected readonly parentChoices=computed(()=>this.parents().map(x=>({
+  id:x.id,label:x.nombre+(x.activa?'':' (inactiva)')
+ })));
  protected readonly parents=computed(()=>{
   const current=this.editing(),selectedId=this.parent();
   const options=this.tree().filter(x=>(x.activa||x.id===selectedId)&&x.id!==current?.id);

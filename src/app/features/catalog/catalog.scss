@@ -98,3 +98,23 @@
 .cat-search-inline{display:flex;gap:.35rem;align-items:center}
 .cat-search-inline>input{flex:1}
 .cat-search-inline>button{flex:0 0 auto}
+
+/* Form sections follow the validated Inventory/Recipes UX. */
+.cat-form-section{
+ grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.75rem 1rem;min-width:0;padding:.85rem;
+ border:1px solid var(--gc-outline-variant);border-radius:.7rem;
+}
+.cat-form-section>h3{grid-column:1/-1;margin:0;font-size:.94rem;font-weight:700}
+.cat-form-section>label{display:grid;gap:.3rem;min-width:0;font-size:.86rem;font-weight:600}
+.cat-form-section>gc-search-select{min-width:0}
+.cat-form-section>.cat-wide{grid-column:1/-1}
+.cat-toolbar.gc-filter-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.7rem .85rem;align-items:end;
+}
+.cat-toolbar.gc-filter-grid>.cat-field{flex:none;min-width:0;width:100%}
+.cat-toolbar.gc-filter-grid>button{width:auto;justify-self:start}
+@media(max-width:650px){
+ .cat-toolbar.gc-filter-grid,.cat-form-section{grid-template-columns:minmax(0,1fr)}
+}

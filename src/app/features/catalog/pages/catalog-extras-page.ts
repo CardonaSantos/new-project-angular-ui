@@ -6,6 +6,7 @@ import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
 import type {CatalogGroup,CatalogModifier,CatalogPage} from '../data-access/catalog.models';
@@ -13,7 +14,7 @@ import {toApiDecimal,formatCurrency} from '../../../shared/formatting';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 
 @Component({
- selector:'gc-catalog-extras-page',imports:[GcCatalogNav,GcErrorState],
+ selector:'gc-catalog-extras-page',imports:[GcCatalogNav,GcErrorState,GcSearchSelect],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
@@ -47,6 +48,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
    <section class="cat-card">
     <h2>{{newGroupMode()?'Nuevo grupo':'Configurar grupo'}}</h2>
     <form class="cat-form" (submit)="saveGroup($event)">
+     <div class="cat-form-section"><h3>1. Configuración del grupo</h3>
      <label>Nombre
       <input [value]="groupName()" (input)="groupName.set($any($event.target).value)" required maxlength="130"/>
      </label>
@@ -60,6 +62,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <label class="cat-check"><input type="checkbox" [checked]="groupActive()" (change)="groupActive.set($any($event.target).checked)"/>
        Grupo activo</label>
      }
+     </div>
      <div class="cat-actions">
       <button class="cat-primary" type="submit" [disabled]="busy()||!validGroup()">Guardar grupo</button>
       <button type="button" (click)="closeGroup()">Cerrar</button>
@@ -72,13 +75,9 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     @if(access.canManage()){<button type="button" class="cat-primary" (click)="newModifier()" [disabled]="!groups().length">
      Nuevo extra</button>}
    </div>
-   <div class="cat-toolbar">
-    <label class="cat-field">Filtrar por grupo
-     <select [value]="filterGroup()" (change)="setFilter($any($event.target).value)">
-      <option value="">Todos los grupos</option>
-      @for(g of groups();track g.id){<option [value]="g.id" [selected]="g.id===modifierGroup()">{{g.nombre}}</option>}
-     </select>
-    </label>
+   <div class="cat-toolbar gc-filter-grid">
+    <gc-search-select id="cat-extra-filter-group" label="Filtrar por grupo" [items]="filterGroupChoices()"
+     [value]="filterGroup()" placeholder="Todos los grupos" (valueChange)="setFilter($event)"/>
     <label class="cat-field">Buscar extra
      <input [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="loadModifiers()"/>
     </label>
@@ -111,13 +110,10 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
    <section class="cat-card">
     <h2>{{newModifierMode()?'Nuevo extra':'Editar extra'}}</h2>
     <form class="cat-form" (submit)="saveModifier($event)">
-     <label>Grupo de extras
-      <select [value]="modifierGroup()" (change)="modifierGroup.set($any($event.target).value)"
-       [disabled]="!!selectedModifier()">
-       <option value="">Seleccionar grupo</option>
-       @for(g of groups();track g.id){@if(g.activo||g.id===modifierGroup()){<option [value]="g.id">{{g.nombre}}</option>}}
-      </select>
-     </label>
+     <div class="cat-form-section"><h3>1. Identificación y precio</h3>
+     <gc-search-select id="cat-extra-group" label="Grupo de extras" [items]="modifierGroupChoices()"
+      [value]="modifierGroup()" placeholder="Seleccionar grupo" [disabled]="!!selectedModifier()"
+      (valueChange)="modifierGroup.set($event)"/>
      <label>Nombre de la opción
       <input [value]="modifierName()" maxlength="130" (input)="modifierName.set($any($event.target).value)" required/>
      </label>
@@ -132,7 +128,8 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        (change)="modifierActive.set($any($event.target).checked)"/> Opción activa</label>
      }
      <p class="cat-muted">El precio de este extra puede cambiar por sucursal. Configúralo en «Precios».</p>
-     @if(modifierError()){<p role="alert" class="cat-alert">{{modifierError()}}</p>}
+     </div>
+     @if(modifierError()){<p role="alert" class="cat-alert">{{modifierError()}}</p>
      <div class="cat-actions">
       <button class="cat-primary" type="submit" [disabled]="busy()||!modifierGroup()||!modifierName().trim()">
        {{busy()?'Guardando…':'Guardar extra'}}</button>
@@ -150,6 +147,8 @@ export class GcCatalogExtrasPage implements GcDirtyAware{
  private readonly notice=inject(GcNotificationService);
  private readonly confirm=inject(ConfirmDialogService);
  protected readonly groups=signal<CatalogGroup[]>([]);
+ protected readonly filterGroupChoices=computed(()=>this.groups().map(g=>({id:g.id,label:g.nombre})));
+ protected readonly modifierGroupChoices=computed(()=>this.groups().filter(g=>g.activo||g.id===this.modifierGroup()).map(g=>({id:g.id,label:g.nombre})));
  protected readonly groupTotal=signal(0);
  protected readonly groupPage=signal(1);
  protected readonly groupBusy=signal(false);

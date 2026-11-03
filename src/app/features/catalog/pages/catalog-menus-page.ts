@@ -7,6 +7,7 @@ import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
 import {menuStatus} from '../data-access/catalog-menu-editor';
@@ -14,7 +15,7 @@ import type {CatalogMenu,CatalogPage} from '../data-access/catalog.models';
 
 @Component({
  selector:'gc-catalog-menus-page',
- imports:[RouterLink,GcCatalogNav,GcErrorState],
+ imports:[RouterLink,GcCatalogNav,GcErrorState,GcSearchSelect],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
@@ -24,25 +25,18 @@ import type {CatalogMenu,CatalogPage} from '../data-access/catalog.models';
     @if(access.canMenus()){<a class="cat-primary" routerLink="/catalog/menus/new">Nuevo menú</a>}
    </div>
    <p class="cat-muted">Organiza las cartas de tus sucursales, con sus productos, secciones y horarios.</p>
-   <div class="cat-toolbar">
+   <div class="cat-toolbar gc-filter-grid">
     <label class="cat-field">Buscar menú
      <input [value]="search()" maxlength="120" placeholder="Nombre o código"
       (input)="search.set($any($event.target).value)" (keyup.enter)="apply()"/>
     </label>
     <button type="button" (click)="apply()">Buscar</button>
-    <label class="cat-field">Sucursal
-     <select [value]="branchId()" (change)="patch({sucursalId:$any($event.target).value||null,page:null})">
-      <option value="">Todas las autorizadas</option>
-      @for(branch of context.branches();track branch.id){
-       <option [value]="branch.id" [selected]="branch.id===branchId()">{{branch.nombre}}</option>
-      }
-     </select>
-    </label>
-    <label class="cat-field">Estado
-     <select [value]="state()" (change)="patch({activo:$any($event.target).value||null,page:null})">
-      <option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option>
-     </select>
-    </label>
+    <gc-search-select id="cat-menu-filter-branch" label="Sucursal" [items]="branchChoices()"
+     [value]="branchId()" placeholder="Todas las autorizadas"
+     (valueChange)="patch({sucursalId:$event||null,page:null})"/>
+    <gc-search-select id="cat-menu-filter-state" label="Estado" [items]="stateChoices"
+     [value]="state()" placeholder="Todos" [searchable]="false"
+     (valueChange)="patch({activo:$event||null,page:null})"/>
    </div>
    @if(page.busy()){<p role="status" class="cat-muted">Consultando menús…</p>}
    @if(page.status()==='error'){<gc-error-state [message]="error()" (retry)="reload()"/>}
@@ -84,6 +78,8 @@ export class GcCatalogMenusPage {
  protected readonly branchId=computed(()=>this.query().get('sucursalId')??'');
  protected readonly state=computed(()=>this.query().get('activo')??'');
  protected readonly status=menuStatus;
+ protected readonly branchChoices=computed(()=>this.context.branches().map(b=>({id:b.id,label:b.nombre})));
+ protected readonly stateChoices=[{id:'true',label:'Activos'},{id:'false',label:'Inactivos'}];
  constructor(){effect(()=>{
   const q=this.query(),page=this.numberPage(),sucursalId=this.branchId(),activo=this.state();
   const search=q.get('search')??'';this.search.set(search);
