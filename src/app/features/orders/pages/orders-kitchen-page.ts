@@ -1,87 +1,129 @@
-import {Component,computed,effect,inject,signal} from '@angular/core';
+import {Component,computed,effect,HostListener,inject,signal} from '@angular/core';
+import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {firstValueFrom,interval} from 'rxjs';
 import {parseApiDecimal} from '../../../shared/formatting';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
-import {gcErrorMessage} from '../../../core/http/api-error';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcOrdersNav} from '../orders-nav';
 import {GcKitchenTicket} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
-import {TICKET_STATES,type KitchenTicket,type Station,type TicketState} from '../data-access/orders.models';
-import {operationKey,qtyText} from '../data-access/orders.helpers';
+import type {KitchenTicket,Station} from '../data-access/orders.models';
+import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../data-access/orders.helpers';
 @Component({
- selector:'gc-orders-kitchen-page',imports:[GcOrdersNav,GcSearchSelect,GcKitchenTicket],
+ selector:'gc-orders-kitchen-page',imports:[GcOrdersNav,GcSearchSelect,GcKitchenTicket,CdkTrapFocus],
  template:`
- <main class="ord-page ord-kitchen">
- <gc-orders-nav/>
- <div class="ord-heading"><div><h1>Cocina</h1><p>Comandas pendientes y en preparación.</p></div>
+ <main class="ord-page ord-kitchen"><gc-orders-nav/>
+ <div class="ord-heading ord-kitchen-heading">
+  <h1>Comandas de cocina</h1>
   <div class="ord-actions"><span class="ord-note">Actualización automática</span>
    <button type="button" (click)="reload()" [disabled]="busy()">Actualizar</button></div>
  </div>
- <section class="ord-card">
-  <div class="ord-filter-grid">
+ <section class="ord-card ord-kitchen-workspace">
+  <div class="ord-kitchen-filters">
    <gc-search-select id="kitchen-branch" label="Sucursal" [items]="branches()"
     [value]="branchId()" [clearable]="false" (valueChange)="selectBranch($event)"/>
    <gc-search-select id="kitchen-station" label="Estación" [items]="stationOptions()"
-    [value]="stationId()" placeholder="Todas las estaciones" (valueChange)="stationId.set($event);reload()"/>
-   <gc-search-select id="kitchen-status" label="Estado" [items]="states"
-    [value]="state()" [searchable]="false" placeholder="Todos"
-    (valueChange)="setState($event)"/>
+    [value]="stationId()" placeholder="Todas las estaciones"
+    (valueChange)="stationId.set($event);page.set(1);reload()"/>
   </div>
-  @if(error()){<p class="ord-alert" role="alert">{{error()}}</p>}
+  <div class="ord-kitchen-tabs" role="group" aria-label="Mostrar comandas">
+   <button type="button" [class.active]="view()==='active'"
+    [attr.aria-pressed]="view()==='active'" (click)="setView('active')">Por preparar</button>
+   <button type="button" [class.active]="view()==='ready'"
+    [attr.aria-pressed]="view()==='ready'" (click)="setView('ready')">Listas y entregadas</button>
+   <button type="button" [class.active]="view()==='cancelled'"
+    [attr.aria-pressed]="view()==='cancelled'" (click)="setView('cancelled')">Canceladas</button>
+   <button type="button" [class.active]="view()==='all'"
+    [attr.aria-pressed]="view()==='all'" (click)="setView('all')">Todas</button>
+  </div>
+  @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
   @if(busy()){<p role="status" class="ord-muted">Consultando cocina…</p>}
-  <div class="ord-kitchen-board">
+  <div class="ord-kitchen-board" aria-label="Comandas">
    @for(ticket of tickets();track ticket.id){
-    <gc-kitchen-ticket [ticket]="ticket">
+    <gc-kitchen-ticket [ticket]="ticket" (open)="inspect(ticket)">
      @if(access.canKitchenManage()&&ticket.estado!=='CANCELADA'){
-      <div class="ord-actions ord-ticket-actions">
-       @if(ticket.estado==='PENDIENTE'){
-        <button type="button" [disabled]="actionBusy()" (click)="start(ticket)">Iniciar preparación</button>}
-       @if(ticket.estado!=='LISTA'){
-        <button type="button" class="ord-primary" [disabled]="actionBusy()" (click)="ready(ticket)">Marcar comanda lista</button>}
-       <button type="button" [disabled]="actionBusy()" (click)="inspect(ticket)">Ver líneas</button>
-      </div>
-     } @else {<button type="button" (click)="inspect(ticket)">Ver detalle</button>}
+      @if(ticket.estado==='PENDIENTE'){
+       <button type="button" [disabled]="actionBusy()" (click)="start(ticket)">Comenzar preparación</button>
+      }
+      @if(ticket.estado==='PENDIENTE'||ticket.estado==='PREPARANDO'){
+       <button type="button" class="ord-primary" [disabled]="actionBusy()" (click)="ready(ticket)">Marcar lista</button>
+      }
+      @if(ticket.estado==='LISTA'&&stage(ticket).kind!=='delivered'){
+       <button type="button" class="ord-primary" (click)="inspect(ticket)">Ver y entregar</button>
+      }
+     }
     </gc-kitchen-ticket>
-   } @empty {<p class="ord-empty">No hay comandas con los filtros seleccionados.</p>}
+   } @empty {
+    @if(!busy()&&!error()){<p class="ord-empty">{{view()==='active'?
+     'No hay comandas pendientes de preparación.':'No hay comandas con estos filtros.'}}</p>}
+   }
   </div>
-  <div class="ord-pagination">
-   <span>{{total()}} comandas · Página {{page()}} de {{pages()||1}}</span>
-   <div class="ord-actions"><button type="button" [disabled]="page()<=1||busy()" (click)="changePage(-1)">Anterior</button>
-    <button type="button" [disabled]="page()>=pages()||busy()" (click)="changePage(1)">Siguiente</button></div>
-  </div>
+  @if(total()>0){
+   <div class="ord-pagination">
+    <span>{{total()}} comandas · Página {{page()}} de {{pages()||1}}</span>
+    <div class="ord-actions">
+     <button type="button" [disabled]="page()<=1||busy()" (click)="changePage(-1)">Anterior</button>
+     <button type="button" [disabled]="page()>=pages()||busy()" (click)="changePage(1)">Siguiente</button>
+    </div>
+   </div>
+  }
  </section>
  @if(selected();as ticket){
-  <section class="ord-card ord-ticket-detail">
-   <div class="ord-heading"><h2>Comanda {{ticket.numero}}</h2><button type="button" (click)="selected.set(null)">Cerrar detalle</button></div>
-   <p>{{ticket.estacion?.nombre??'Cocina'}} · Orden {{ticket.orden?.numero??''}}</p>
-   @for(line of ticket.comandaLineasComoComanda;track line.id){
-    <div class="ord-order-line">
-     <strong>{{qtyText(line.cantidad)}} × {{line.ordenLinea?.nombreSnapshot??line.ordenLinea?.variante?.producto?.nombre}}</strong>
-     @if(line.ordenLinea?.notasCocina){<p>Indicaciones: {{line.ordenLinea?.notasCocina}}</p>}
-     <small>{{line.listaEn?'Lista':line.canceladaEn?'Cancelada':'Por preparar: '+remaining(line.cantidad,line.cantidadPreparada)}}</small>
-     @if(access.canKitchenManage()&&!line.canceladaEn){
-      <div class="ord-actions">
-       @if(!line.listaEn){
-        <label class="ord-partial">Cantidad a preparar
-         <input type="text" inputmode="decimal" [value]="partial()[line.id]??remaining(line.cantidad,line.cantidadPreparada)"
-          (input)="setPartial(line.id,$any($event.target).value)"/>
-        </label>
-        <button type="button" [disabled]="actionBusy()"
-         (click)="startLine(line.id,line.cantidad,line.cantidadPreparada)">Iniciar cantidad</button>
-        <button type="button" class="ord-primary" [disabled]="actionBusy()" (click)="markReady(line.id)">Lista</button>
-       }
-       @if(line.listaEn&&!line.entregadaEn){
-        <button type="button" class="ord-primary" [disabled]="actionBusy()"
-         (click)="deliver(line.id)">Entregar producto</button>
-       }
-      </div>
-     }
+  <div class="ord-overlay" (click)="closeDetails()"></div>
+  <section class="ord-customizer ord-kitchen-dialog" role="dialog" aria-modal="true"
+   aria-labelledby="kitchen-dialog-title" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
+   <div class="ord-heading">
+    <div><h2 id="kitchen-dialog-title">Comanda {{ticket.numero}}</h2>
+     <span class="ord-ticket-badge" [class.ord-ticket-badge--ready]="stage(ticket).kind==='ready'"
+      [class.ord-ticket-badge--delivered]="stage(ticket).kind==='delivered'">{{stage(ticket).label}}</span>
     </div>
-   }
+    <button type="button" (click)="closeDetails()" [disabled]="actionBusy()">Cerrar</button>
+   </div>
+   <div class="ord-ticket-detail-meta">
+    <span><strong>Pedido:</strong> {{ticket.orden?.numero}}</span>
+    <span><strong>Atención:</strong>
+     {{ticket.orden?modeText(ticket.orden.modalidad):'Sin definir'}}
+     @if(ticket.orden?.ocupacionMesa?.mesa?.numero){· Mesa {{ticket.orden?.ocupacionMesa?.mesa?.numero}}
+    }</span>
+    <span><strong>Estación:</strong> {{ticket.estacion?.nombre??'Sin estación'}}</span>
+   </div>
+   @if(ticket.orden?.observaciones){<p class="ord-note">Nota del pedido: {{ticket.orden?.observaciones}}</p>}
+   @if(error()){<p class="ord-alert" role="alert">{{error()}}</p>}
+   <div class="ord-kitchen-dialog-lines">
+    @for(line of ticket.comandaLineasComoComanda;track line.id){
+     <article class="ord-order-line">
+      <div class="ord-line-title">
+       <strong>{{qtyText(line.cantidad)}} × {{line.ordenLinea?.nombreSnapshot??
+        line.ordenLinea?.variante?.producto?.nombre??'Producto'}}</strong>
+       <span class="ord-ticket-badge">{{line.canceladaEn?'Cancelada':
+        line.entregadaEn?'Entregada':line.listaEn?'Lista para entregar':'En preparación'}}</span>
+      </div>
+      @if(line.ordenLinea?.notasCocina){<p class="ord-note">Nota para cocina: {{line.ordenLinea?.notasCocina}}</p>}
+      @if(access.canKitchenManage()&&!line.canceladaEn){
+       <div class="ord-actions">
+        @if(!line.listaEn){
+         <label class="ord-partial">Cantidad a preparar
+          <input type="text" inputmode="decimal"
+           [value]="partial()[line.id]??remaining(line.cantidad,line.cantidadPreparada)"
+           (input)="setPartial(line.id,$any($event.target).value)"/>
+         </label>
+         <button type="button" [disabled]="actionBusy()"
+          (click)="startLine(line.id,line.cantidad,line.cantidadPreparada)">Preparar cantidad</button>
+         <button type="button" class="ord-primary" [disabled]="actionBusy()"
+          (click)="markReady(line.id)">Marcar lista</button>
+        } @else if(!line.entregadaEn){
+         <button type="button" class="ord-primary" [disabled]="actionBusy()"
+          (click)="deliver(line.id)">Confirmar entrega</button>
+        }
+       </div>
+      }
+     </article>
+    }
+   </div>
+   <p class="ord-note">Lista = preparada para servir. La entrega se registra por separado.</p>
   </section>
  }
  </main>`
@@ -91,17 +133,19 @@ export class GcOrdersKitchenPage{
  private readonly confirm=inject(ConfirmDialogService);
  private readonly branch=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
- protected readonly states=TICKET_STATES;
  protected readonly branches=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly stationOptions=computed(()=>this.stations().filter(x=>x.activa).map(s=>({id:s.id,label:s.nombre})));
  protected readonly branchId=signal('');protected readonly stationId=signal('');
- protected readonly state=signal<TicketState|''>('');protected readonly stations=signal<Station[]>([]);
+ protected readonly view=signal<'active'|'ready'|'cancelled'|'all'>('active');
+ protected readonly stations=signal<Station[]>([]);
  protected readonly tickets=signal<KitchenTicket[]>([]);protected readonly selected=signal<KitchenTicket|null>(null);
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly page=signal(1);protected readonly total=signal(0);protected readonly pages=signal(0);
  protected readonly partial=signal<Record<string,string>>({});
  protected readonly qtyText=qtyText;
+ protected readonly modeText=modeText;
+ protected readonly stage=kitchenStage;
  private cursor='';private querying=false;private generation=0;private startKeys=new Map<string,{quantity:string;key:string}>();
  constructor(){
   effect(()=>{
@@ -112,24 +156,36 @@ export class GcOrdersKitchenPage{
    if(typeof document!=='undefined'&&!document.hidden&&this.branchId()&&!this.busy())void this.poll();
   });
  }
- protected setState(v:string){
-  this.state.set(TICKET_STATES.find(x=>x.id===v)?.id??'');this.page.set(1);void this.reload();
+ protected setView(v:'active'|'ready'|'cancelled'|'all'){
+  this.view.set(v);this.page.set(1);void this.reload();
  }
+ protected closeDetails(){if(!this.actionBusy())this.selected.set(null)}
+ @HostListener('document:keydown.escape')
+ protected dismissByEscape(){this.closeDetails()}
  protected selectBranch(id:string){this.branchId.set(id);this.cursor='';this.stationId.set('');void this.reload()}
  protected changePage(d:number){this.page.update(x=>x+d);void this.reload()}
  protected async reload(){
   const branch=this.branchId();if(!branch||!this.access.canKitchenRead())return;
   const gen=++this.generation;this.busy.set(true);this.error.set(null);
   try{
-   const [stations,page]=await Promise.all([
+   const base={sucursalId:branch,estacionId:this.stationId()||undefined,
+    page:this.page(),limit:30};
+   const requested=this.view();
+   const queries=requested==='active'
+    ?[this.api.tickets({...base,estado:'PENDIENTE'}),this.api.tickets({...base,estado:'PREPARANDO'})]
+    :[this.api.tickets({...base,...(requested==='ready'?{estado:'LISTA' as const}:
+       requested==='cancelled'?{estado:'CANCELADA' as const}:{})})];
+   const [stations,results]=await Promise.all([
     firstValueFrom(this.api.stations(branch)),
-    firstValueFrom(this.api.tickets({sucursalId:branch,estacionId:this.stationId()||undefined,
-     estado:this.state()||undefined,page:this.page(),limit:30}))
+    Promise.all(queries.map(q=>firstValueFrom(q)))
    ]);
    if(gen!==this.generation)return;
-   this.stations.set(stations);this.tickets.set(page.data);
-   this.total.set(page.meta.total);this.pages.set(page.meta.totalPages);
-  }catch(e){if(gen===this.generation)this.error.set(gcErrorMessage(e))}
+   const combined=results.flatMap(r=>r.data).sort(
+    (a,b)=>new Date(a.enviadaEn).getTime()-new Date(b.enviadaEn).getTime());
+   this.stations.set(stations);this.tickets.set(combined);
+   this.total.set(results.reduce((sum,r)=>sum+r.meta.total,0));
+   this.pages.set(Math.max(0,...results.map(r=>r.meta.totalPages)));
+  }catch(e){if(gen===this.generation)this.error.set(orderFriendlyError(e))}
   finally{if(gen===this.generation)this.busy.set(false)}
  }
  private async poll(){
@@ -151,14 +207,16 @@ export class GcOrdersKitchenPage{
   this.actionBusy.set(true);this.error.set(null);
   try{
    const updated=await call();
-   this.selected.set(updated);await this.reload();
-  }catch(e){this.error.set(gcErrorMessage(e))}
+   if(this.selected()?.id===updated.id)this.selected.set(updated);
+   await this.reload();
+  }catch(e){this.error.set(orderFriendlyError(e))}
   finally{this.actionBusy.set(false)}
  }
  protected async inspect(t:KitchenTicket){
   this.error.set(null);
+  this.selected.set(t);
   try{this.selected.set(await firstValueFrom(this.api.ticket(t.id)))}
-  catch(e){this.error.set(gcErrorMessage(e))}
+  catch(e){this.error.set(orderFriendlyError(e))}
  }
  protected async start(t:KitchenTicket){
   if(!await this.confirm.confirm({title:'Iniciar preparación',
@@ -167,9 +225,9 @@ export class GcOrdersKitchenPage{
   await this.mutate(()=>firstValueFrom(this.api.startTicket(t.id)));
  }
  protected async ready(t:KitchenTicket){
-  if(!await this.confirm.confirm({title:'Marcar comanda lista',
-   message:'Los productos pendientes pueden consumir inventario al prepararse.',
-   confirmText:'Marcar lista'}))return;
+  if(!await this.confirm.confirm({title:'Confirmar comanda lista',
+   message:'Se marcará como preparada, NO entregada. Si quedan ingredientes por consumir, esta acción puede descontarlos del inventario.',
+   confirmText:'Sí, está lista'}))return;
   await this.mutate(()=>firstValueFrom(this.api.readyTicket(t.id)));
  }
  protected remaining(total:string,done:string){
@@ -195,12 +253,15 @@ export class GcOrdersKitchenPage{
   if(!this.error()){this.startKeys.delete(id);this.partial.update(x=>({...x,[id]:''}))}
  }
  protected async markReady(id:string){
-  if(!await this.confirm.confirm({title:'Marcar producto listo',
-   message:'Si quedan unidades por preparar, se descontarán sus ingredientes al marcarlas listas.',
-   confirmText:'Marcar listo'}))return;
+  if(!await this.confirm.confirm({title:'Confirmar producto listo',
+   message:'Se marcará como preparado, NO entregado. Si quedan ingredientes pendientes, esta acción puede descontarlos.',
+   confirmText:'Sí, está listo'}))return;
   await this.mutate(()=>firstValueFrom(this.api.readyLine(id)));
  }
  protected async deliver(id:string){
+  if(!await this.confirm.confirm({title:'Confirmar entrega',
+   message:'¿Este producto ya fue entregado al cliente o al personal que lo servirá?',
+   confirmText:'Sí, fue entregado'}))return;
   await this.mutate(()=>firstValueFrom(this.api.deliverLine(id)));
  }
 }
