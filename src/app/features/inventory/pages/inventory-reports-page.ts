@@ -9,6 +9,7 @@ import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcInventoryNav} from '../inventory-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {InventoryApi} from '../data-access/inventory.api';
 import {InventoryUrlState} from '../data-access/inventory-url-state';
 
@@ -45,7 +46,7 @@ function valueText(value:unknown,key:string):string {
 @Component({
  selector:'gc-inventory-reports-page',
  providers:[InventoryUrlState],
- imports:[GcPageHeader,GcButtonDirective,GcErrorState,GcInventoryNav,GcDataTable],
+ imports:[GcPageHeader,GcButtonDirective,GcErrorState,GcInventoryNav,GcDataTable,GcSearchSelect],
  template:`
  <div class="inv-page">
   <gc-page-header title="Reportes de inventario"/>
@@ -60,12 +61,8 @@ function valueText(value:unknown,key:string):string {
       }
      }
     </nav>
-    <div class="inv-field"><label for="inv-report-branch">Sucursal</label>
-     <select id="inv-report-branch" [value]="url.filters().sucursalId"
-      (change)="selectBranch($any($event.target).value)">
-      @for(item of branch.branches();track item.id){<option [value]="item.id">{{item.nombre}}</option>}
-     </select>
-    </div>
+    <gc-search-select id="inv-report-branch" label="Sucursal" [items]="branchChoices()"
+      [value]="url.filters().sucursalId" [clearable]="false" (valueChange)="selectBranch($event)"/>
    </div>
    @if(page.busy()&&!page.data()){<p role="status" class="inv-muted">Calculando reporte…</p>}
    @else if(page.busy()){<p role="status" class="inv-muted">Actualizando reporte…</p>}
@@ -173,6 +170,7 @@ function valueText(value:unknown,key:string):string {
 })
 export class GcInventoryReportsPage {
  protected readonly branch=inject(GcBranchContext);
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly url=inject(InventoryUrlState);
  private readonly api=inject(InventoryApi);
  protected readonly access=inject(OrganizationAccess);

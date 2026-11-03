@@ -16,7 +16,7 @@ interface Choice {id:string;label:string}
  <gc-search-select [id]="id()" [label]="label()" [items]="visibleItems()"
   [value]="value()" [disabled]="pickerDisabled()" [loading]="loading()"
   [remote]="kind()!=='lot'" [clearable]="true"
-  [placeholder]="prerequisite()||'Buscar por nombre o código…'"
+  [placeholder]="prerequisite()||placeholder()||'Buscar por nombre o código…'"
   [hint]="prerequisite()||(more()?'Refina la búsqueda para encontrar más resultados.':'')"
   [error]="error()??''"
   (valueChange)="select($event)" (searchChange)="onSearch($event)"/>
@@ -26,6 +26,7 @@ interface Choice {id:string;label:string}
 export class GcInventoryPicker {
  readonly id=input.required<string>();
  readonly label=input('Artículo');
+ readonly placeholder=input('');
  readonly kind=input.required<InventoryPickerKind>();
  readonly value=input('');
  /** Saved readable name when the current value is outside the options page. */

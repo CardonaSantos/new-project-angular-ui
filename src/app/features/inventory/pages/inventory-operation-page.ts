@@ -31,7 +31,6 @@ type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
    <form class="inv-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
     <fieldset class="inv-section">
      <legend>1. Contexto del movimiento</legend>
-     <p class="inv-muted">Indica qué movimiento se registrará y en qué sucursal.</p>
      <div class="inv-grid">
       <gc-search-select id="manual-type" label="Operación" [items]="operationChoices"
        [value]="kind()" [searchable]="false" [clearable]="false"
@@ -43,7 +42,6 @@ type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
     </fieldset>
     <fieldset class="inv-section">
      <legend>2. Artículo y ubicación</legend>
-     <p class="inv-muted">Busca directamente en cada selector; almacenes, ubicaciones y lotes dependen de la selección previa.</p>
      <div class="inv-grid">
       <gc-inventory-picker id="manual-art" label="Artículo" kind="article" [value]="articleId()"
        (valueChange)="articleId.set($event);lotId.set('');newRequestKey()"/>
