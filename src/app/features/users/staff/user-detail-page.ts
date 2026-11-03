@@ -1,5 +1,5 @@
 
-import {Component,inject,OnInit,signal,viewChild} from '@angular/core';
+import {Component,computed,inject,OnInit,signal,viewChild} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {ReactiveFormsModule,FormControl,FormGroup,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
@@ -18,11 +18,12 @@ import {UsersApi,RolesApi,MediaApi} from '../data-access/users.api';
 import {UsersAccess} from '../data-access/users-access';
 import type {UserRecord,Role,UserUpdate,CredentialsIssued} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcUserAvatar} from '../../../design-system/profile/gc-user-avatar';
 import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
 @Component({
  selector:'gc-user-detail-page',
- imports:[ReactiveFormsModule,RouterLink,GcPageHeader,GcButtonDirective,GcUsersNav,GcFileUpload,GcErrorState,GcUserAvatar],
+ imports:[ReactiveFormsModule,RouterLink,GcPageHeader,GcButtonDirective,GcUsersNav,GcFileUpload,GcErrorState,GcUserAvatar,GcSearchSelect],
  template:`
  <div class="gc-u-page gc-u-narrow">
   <gc-page-header [title]="isNew?'Nuevo usuario':(page.data()?.profile?.nombreCompleto??'Usuario')"/>
@@ -42,7 +43,7 @@ import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
   } @else if(isNew||page.data();as user) {
    <section class="gc-u-card gc-u-page">
     <form class="gc-u-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-     <h2>Datos personales</h2>
+     <fieldset class="gc-u-section"><legend>1. Datos personales</legend>
      <div class="gc-u-grid">
       <div class="gc-u-field"><label for="usr-name">Nombre</label>
        <input id="usr-name" formControlName="nombre" maxlength="100" placeholder="Ej. María"
@@ -67,7 +68,8 @@ import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
         <input id="usr-zone" formControlName="zonaHoraria" maxlength="64" placeholder="Ej. America/Guatemala"/></div>
       }
      </div>
-     @if(saveError()){<p role="alert" class="gc-u-alert">{{saveError()}}</p>}
+     </fieldset>
+     @if(saveError()){<p role="alert" class="gc-u-alert">{{saveError()}}</p>
      <div class="gc-u-actions">
       <button gcButton type="submit" [disabled]="!access.isGlobalAdmin()||form.invalid||(!isNew&&!form.dirty)||saveAction.busy()">
        {{saveAction.busy()?'Guardando…':(isNew?'Crear usuario':'Guardar cambios')}}</button>
@@ -87,23 +89,18 @@ import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
       </div>
      } @empty{<p class="gc-u-muted">Sin roles asignados.</p>}
      @if(access.canGlobal('users.roles.assign')&&user.id!==session.user()?.id){
+      <fieldset class="gc-u-section"><legend>Asignar un rol</legend>
       <div class="gc-u-grid">
-       <div class="gc-u-field"><label for="assign-role">Rol</label>
-        <select id="assign-role" [value]="roleId()" (change)="selectRole($any($event.target).value)">
-         <option value="">Seleccionar rol</option>
-         @for(role of roles();track role.id){<option [value]="role.id">{{role.nombre}}</option>}
-        </select>
-       </div>
+       <gc-search-select id="assign-role" label="Rol" [items]="roleChoices()"
+        [value]="roleId()" placeholder="Buscar rol…" (valueChange)="selectRole($event)"/>
        @if(selectedRoleScope()==='SUCURSAL'){
-        <div class="gc-u-field"><label for="assign-branch">Sucursal</label>
-         <select id="assign-branch" [value]="assignmentBranch()" (change)="assignmentBranch.set($any($event.target).value)">
-          <option value="">Seleccionar sucursal</option>
-          @for(b of branch.branches();track b.id){<option [value]="b.id">{{b.nombre}}</option>}
-         </select>
-        </div>
+        <gc-search-select id="assign-branch" label="Sucursal" [items]="branchChoices()"
+         [value]="assignmentBranch()" placeholder="Seleccionar sucursal"
+         (valueChange)="assignmentBranch.set($event)"/>
        }
       </div>
-      @if(assignmentError()){<p class="gc-u-alert" role="alert">{{assignmentError()}}</p>}
+      </fieldset>
+      @if(assignmentError()){<p class="gc-u-alert" role="alert">{{assignmentError()}}</p>
       <div class="gc-u-actions"><button gcButton type="button"
         [disabled]="!roleId()||(selectedRoleScope()==='SUCURSAL'&&!assignmentBranch())||assignmentAction.busy()||form.dirty"
         (click)="addAssignment()">Asignar rol</button></div>
@@ -172,6 +169,8 @@ export class GcUserDetailPage implements OnInit {
  protected readonly assignmentAction=new GcConfirmedAction();
  protected readonly photoAction=new GcConfirmedAction();
  protected readonly roles=signal<Role[]>([]);
+ protected readonly roleChoices=computed(()=>this.roles().map(role=>({id:role.id,label:role.nombre})));
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly roleId=signal('');
  protected readonly assignmentBranch=signal('');
  protected readonly selectedRoleScope=signal<'GLOBAL'|'SUCURSAL'>('SUCURSAL');
