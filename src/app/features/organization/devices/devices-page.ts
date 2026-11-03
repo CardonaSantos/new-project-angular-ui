@@ -18,11 +18,12 @@ import { DevicesApi } from '../data-access/organization-api';
 import { DEVICE_TYPES, deviceLabel } from '../data-access/organization.models';
 import type { Device, DeviceType, Paged } from '../data-access/organization.models';
 import { GcOrganizationNav } from '../organization-nav';
+import { GcSearchSelect } from '../../../design-system/forms/gc-search-select';
 
 @Component({
   selector:'gc-devices-page',
   imports:[RouterLink,GcPageHeader,GcButtonDirective,GcDataTable,GcTableCellDirective,
-    GcTableToolbar,GcFilterBar,GcPagination,GcStatusBadge,GcErrorState,GcOrganizationNav],
+    GcTableToolbar,GcFilterBar,GcPagination,GcStatusBadge,GcErrorState,GcOrganizationNav,GcSearchSelect],
   template:`
   <div class="gc-org-page">
     <gc-page-header title="Dispositivos">
@@ -32,24 +33,19 @@ import { GcOrganizationNav } from '../organization-nav';
     </gc-page-header>
     <gc-organization-nav />
     <section class="gc-org-card gc-org-page">
-      <form class="gc-org-toolbar" (submit)="applySearch($event)">
-        <gc-table-toolbar searchLabel="Buscar dispositivos" [query]="search()"
-          (queryChange)="search.set($event)"/>
-        <div class="gc-org-field">
-          <label for="dv-branch-filter">Sucursal</label>
-          <select id="dv-branch-filter" [value]="branchFilter()"
-            (change)="setBranch($any($event.target).value)">
-            <option value="">Todas</option>
-            @for (item of branch.branches(); track item.id) {
-              <option [value]="item.id">{{ item.nombre }}</option>
-            }
-          </select>
+      <form class="gc-org-toolbar gc-org-filter-grid" (submit)="applySearch($event)">
+        <div class="gc-org-search-action">
+          <gc-table-toolbar searchLabel="Buscar dispositivos" [query]="search()"
+            (queryChange)="search.set($event)"/>
+          <button gcButton variant="outline" type="submit">Buscar</button>
         </div>
+        <gc-search-select id="dv-branch-filter" label="Sucursal" [items]="branchChoices()"
+          [value]="branchFilter()" placeholder="Todas las sucursales"
+          (valueChange)="setBranch($event)"/>
         <gc-filter-bar filterId="dv-type-filter" label="Tipo" [options]="types"
           [value]="typeFilter()" (valueChange)="setType($event)"/>
         <gc-filter-bar filterId="dv-active-filter" label="Estado" [options]="statuses"
           [value]="statusFilter()" (valueChange)="setStatus($event)"/>
-        <button gcButton variant="outline" type="submit">Buscar</button>
       </form>
       @if (page.status()==='error') {
         <gc-error-state [message]="errorMessage()" (retry)="reload()"/>
@@ -78,6 +74,7 @@ export class GcDevicesPage implements OnInit {
   private readonly api=inject(DevicesApi);
   protected readonly search=signal('');
   protected readonly branchFilter=signal('');
+  protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
   protected readonly typeFilter=signal('');
   protected readonly statusFilter=signal('all');
   protected readonly pageIndex=signal(0);
