@@ -41,11 +41,11 @@ export class GcPosProduct {
     @if(item.notes){<small>Nota: {{item.notes}}</small>}
     <div class="ord-cart-buttons">
      <button type="button" [attr.aria-label]="'Quitar una unidad de '+item.name"
-      (click)="quantity.emit({key:item.key,delta:-1})">−</button>
+      [disabled]="disabled()" (click)="quantity.emit({key:item.key,delta:-1})">−</button>
      <span aria-live="polite">{{item.quantity}}</span>
      <button type="button" [attr.aria-label]="'Agregar una unidad de '+item.name"
-      (click)="quantity.emit({key:item.key,delta:1})">+</button>
-     <button type="button" class="ord-link" (click)="remove.emit(item.key)">Quitar</button>
+      [disabled]="disabled()" (click)="quantity.emit({key:item.key,delta:1})">+</button>
+     <button type="button" class="ord-link" [disabled]="disabled()" (click)="remove.emit(item.key)">Quitar</button>
     </div>
    </div>
   } @empty {<p class="ord-muted">Elige productos para empezar.</p>}
@@ -59,6 +59,7 @@ export class GcPosCart{
  readonly items=input.required<PosCartEntry[]>();
  readonly total=input.required<string>();
  readonly currency=input('GTQ');
+ readonly disabled=input(false);
  readonly quantity=output<{key:string;delta:number}>();
  readonly remove=output<string>();
  protected readonly money=money;

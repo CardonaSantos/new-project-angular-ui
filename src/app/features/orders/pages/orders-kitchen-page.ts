@@ -1,6 +1,7 @@
 import {Component,computed,effect,inject,signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {firstValueFrom,interval} from 'rxjs';
+import {parseApiDecimal} from '../../../shared/formatting';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
@@ -172,7 +173,7 @@ export class GcOrdersKitchenPage{
   await this.mutate(()=>firstValueFrom(this.api.readyTicket(t.id)));
  }
  protected remaining(total:string,done:string){
-  try{return (Number(total)-Number(done)).toFixed(3).replace(/\.?0+$/,'')}
+  try{return parseApiDecimal(total).minus(parseApiDecimal(done)).toFixed(3).replace(/\.?0+$/,'')}
   catch{return total}
  }
  protected setPartial(id:string,q:string){
@@ -180,9 +181,13 @@ export class GcOrdersKitchenPage{
  }
  protected async startLine(id:string,total:string,prepared:string){
   const q=this.partial()[id]??this.remaining(total,prepared);
-  const count=Number(q);if(!Number.isFinite(count)||count<=0||count>Number(total)-Number(prepared)){
-   this.error.set('La cantidad supera la pendiente de preparar.');return;
-  }
+  try{
+   const count=parseApiDecimal(q);
+   if(count.lte(0)||count.decimalPlaces()>3||count.gt(
+    parseApiDecimal(total).minus(parseApiDecimal(prepared)))){
+    this.error.set('La cantidad supera la pendiente de preparar.');return;
+   }
+  }catch{this.error.set('Introduce una cantidad válida.');return}
   const existing=this.startKeys.get(id);
   const key=existing?.quantity===q?existing.key:operationKey('kitchen-line');
   this.startKeys.set(id,{quantity:q,key});

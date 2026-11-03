@@ -1,5 +1,6 @@
 import {Component,computed,effect,ElementRef,HostListener,inject,signal,viewChild} from '@angular/core';
-import {Router,RouterLink} from '@angular/router';
+import {ActivatedRoute,Router,RouterLink} from '@angular/router';
+import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
@@ -20,7 +21,7 @@ import {money,operationKey} from '../data-access/orders.helpers';
 
 @Component({
  selector:'gc-orders-pos-page',
- imports:[RouterLink,GcOrdersNav,GcSearchSelect,GcPosProduct,GcPosCart],
+ imports:[RouterLink,CdkTrapFocus,GcOrdersNav,GcSearchSelect,GcPosProduct,GcPosCart],
  template:`
  <main class="ord-page ord-pos"><gc-orders-nav/>
  <div class="ord-heading">
@@ -94,22 +95,23 @@ import {money,operationKey} from '../data-access/orders.helpers';
   <aside class="ord-checkout" [class.ord-checkout--open]="cartOpen()" aria-label="Resumen del pedido">
    <div class="ord-cart-close"><button type="button" (click)="cartOpen.set(false)">Cerrar pedido</button></div>
    <gc-pos-cart [items]="cart()" [total]="total()" [currency]="currency()"
+    [disabled]="submitting()"
     (quantity)="changeQty($event)" (remove)="remove($event)"/>
    <div class="ord-checkout-options">
     <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes"
-     [value]="mode()" [clearable]="false" [searchable]="false"
+     [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()"
      (valueChange)="chooseMode($event)"/>
     @if(mode()==='MESA'){
      <gc-search-select id="pos-table" label="Mesa" [items]="tableChoices()"
-      [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()"
+      [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()"
       placeholder="Seleccionar mesa" (valueChange)="selectTableId($event)"/>
     }
     <label>Observaciones del pedido
-     <textarea rows="2" maxlength="500" [value]="observations()"
+     <textarea rows="2" maxlength="500" [value]="observations()" [disabled]="submitting()"
       placeholder="Opcional" (input)="observations.set($any($event.target).value);invalidateKey()"></textarea>
     </label>
     <label class="ord-check-row">
-     <input type="checkbox" [checked]="sendKitchen()" (change)="sendKitchen.set($any($event.target).checked);invalidateKey()"/>
+     <input type="checkbox" [checked]="sendKitchen()" [disabled]="submitting()" (change)="sendKitchen.set($any($event.target).checked);invalidateKey()"/>
      Enviar a cocina al confirmar
     </label>
     @if(config()?.exigeCobroAntesPreparar){
@@ -129,7 +131,8 @@ import {money,operationKey} from '../data-access/orders.helpers';
  </button>}
  @if(configuring();as item){
   <div class="ord-overlay" role="presentation" (click)="configureClose()"></div>
-  <section class="ord-customizer" role="dialog" aria-modal="true" aria-labelledby="configure-title">
+  <section class="ord-customizer" role="dialog" aria-modal="true"
+   cdkTrapFocus [cdkTrapFocusAutoCapture]="true" aria-labelledby="configure-title">
    <div class="ord-heading"><h2 id="configure-title">{{item.variante.producto?.nombre??item.variante.nombre}}</h2>
     <button type="button" (click)="configureClose()" aria-label="Cerrar">×</button></div>
    <p class="ord-muted">{{item.variante.nombre}} · {{money(item.precio,item.moneda)}}</p>
@@ -173,6 +176,7 @@ export class GcOrdersPosPage{
  private readonly catalog=inject(CatalogApi);
  private readonly branchesApi=inject(BranchesApi);
  private readonly router=inject(Router);
+ private readonly activatedRoute=inject(ActivatedRoute);
  protected readonly context=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
  protected readonly prefs=inject(OrdersPreferences);
@@ -203,6 +207,7 @@ export class GcOrdersPosPage{
  private readonly selectedExtras=signal<Record<string,string[]>>({});
  private operationId='';
  private loadingGeneration=0;
+ private pendingTableFromUrl=this.activatedRoute.snapshot.queryParamMap.get('mesaId')??'';
  protected readonly money=money;
  protected readonly categories=computed(()=>{
   const categories=new Set<string>();
@@ -247,12 +252,15 @@ export class GcOrdersPosPage{
   if(event.key==='Escape'&&this.configuring())this.configureClose();
  }
  protected setView(mode:'counter'|'tables'){
+  if(this.submitting())return;
   this.prefs.setView(mode);
   if(mode==='tables')void this.loadTables();
  }
  protected chooseMode(value:string){
+  if(this.submitting())return;
   const v=ORDER_MODES.find(x=>x.id===value)?.id??'MOSTRADOR';
   this.mode.set(v);if(v!=='MESA')this.selectedTable.set(null);
+  if(v==='MESA'&&!this.tables().length)void this.loadTables();
   this.invalidateKey();
  }
  protected async reload(){
@@ -265,25 +273,38 @@ export class GcOrdersPosPage{
   finally{if(gen===this.loadingGeneration)this.busy.set(false)}
   try{const c=await firstValueFrom(this.branchesApi.config(branch));if(gen===this.loadingGeneration)this.config.set(c)}
   catch{if(gen===this.loadingGeneration)this.config.set(null)}
-  if(this.prefs.view()==='tables')void this.loadTables();
+  if(this.prefs.view()==='tables'||this.pendingTableFromUrl)void this.loadTables();
  }
  protected async loadTables(){
   const branch=this.context.branchId();
   if(!branch||!this.access.canTablesRead())return;
-  try{this.tables.set(await firstValueFrom(this.api.tables(branch)))}
-  catch(e){this.error.set(gcErrorMessage(e))}
+  try{
+   const tables=await firstValueFrom(this.api.tables(branch));
+   if(branch!==this.context.branchId())return;
+   this.tables.set(tables);
+   if(this.pendingTableFromUrl){
+    const selected=tables.find(x=>x.id===this.pendingTableFromUrl&&x.activa);
+    this.pendingTableFromUrl='';
+    if(selected)this.chooseTable(selected);
+    else this.error.set('La mesa seleccionada no está disponible.');
+   }
+  }catch(e){this.error.set(gcErrorMessage(e))}
  }
  protected chooseTable(t:TableRecord){
+  if(this.submitting())return;
   const existing=t.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA');
   if(existing){void this.router.navigate(['/orders/list',existing.id]);return}
   this.selectedTable.set(t);this.mode.set('MESA');this.invalidateKey();
   this.prefs.setView('counter');
  }
  protected selectTableId(id:string){
+  if(this.submitting())return;
   const t=this.tables().find(x=>x.id===id)||null;
-  this.selectedTable.set(t);this.invalidateKey();
+  if(t){this.chooseTable(t);return}
+  this.selectedTable.set(null);this.invalidateKey();
  }
  protected pick(item:CatalogProjectedItem){
+  if(this.submitting())return;
   this.configError.set('');
   if(item.gruposModificadores.length){
    this.configuring.set(item);this.selectedExtras.set({});this.customQty.set(1);
@@ -303,6 +324,7 @@ export class GcOrdersPosPage{
  }
  protected configureClose(){this.configuring.set(null);this.configError.set('')}
  protected addConfigured(){
+  if(this.submitting())return;
   const item=this.configuring();if(!item)return;
   const qty=Math.trunc(this.customQty());
   if(!Number.isFinite(qty)||qty<1||qty>999){this.configError.set('Escribe una cantidad válida entre 1 y 999.');return}
@@ -334,12 +356,13 @@ export class GcOrdersPosPage{
   this.invalidateKey();this.submitError.set('');
  }
  protected changeQty(change:{key:string;delta:number}){
+  if(this.submitting())return;
   this.cart.update(lines=>lines.map(x=>x.key===change.key?
    {...x,quantity:Math.min(999,Math.max(1,x.quantity+change.delta))}:x));
   this.invalidateKey();
  }
- protected remove(id:string){this.cart.update(lines=>lines.filter(x=>x.key!==id));this.invalidateKey()}
- protected invalidateKey(){this.operationId=''}
+ protected remove(id:string){if(this.submitting())return;this.cart.update(lines=>lines.filter(x=>x.key!==id));this.invalidateKey()}
+ protected invalidateKey(){if(!this.submitting())this.operationId=''}
  protected async submit(){
   const branch=this.context.branchId();if(!branch||this.submitting()||!this.cart().length)return;
   if(this.mode()==='MESA'&&!this.selectedTable()){this.submitError.set('Selecciona una mesa.');return}

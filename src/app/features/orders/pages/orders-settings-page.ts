@@ -134,6 +134,7 @@ export class GcOrdersSettingsPage{
  protected readonly categoryChoices=computed(()=>this.categories().map(c=>({id:c.id,label:c.label})));
  protected readonly variantSearch=new Subject<string>();protected readonly categorySearch=new Subject<string>();
  private readonly locationSearch=new Subject<string>();private generation=0;
+ private locationGeneration=0;private variantGeneration=0;private categoryGeneration=0;
  constructor(){
   effect(()=>{if(this.branch.branchId())void this.load()});
   this.locationSearch.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
@@ -155,18 +156,24 @@ export class GcOrdersSettingsPage{
  protected queueLocation(s:string){this.locationSearch.next(s)}
  private async loadLocations(search:string){
   const branch=this.branch.branchId();if(!branch)return;
+  const gen=++this.locationGeneration;
   try{const r=await firstValueFrom(this.inventory.locationOptions({sucursalId:branch,search,limit:50}));
+   if(gen!==this.locationGeneration||branch!==this.branch.branchId())return;
    const previous=this.locations().find(x=>x.id===this.locationId());
    this.locations.set(previous&&!r.data.some(x=>x.id===previous.id)?[previous,...r.data.map(x=>({id:x.id,label:x.label??x.nombre}))]:r.data.map(x=>({id:x.id,label:x.label??x.nombre})));
   }catch{/* Inventory permissions may differ from kitchen permissions. */}
  }
  private async loadVariants(search:string){
+  const gen=++this.variantGeneration;
   try{const r=await firstValueFrom(this.catalog.variantOptions({search,limit:50}));
+   if(gen!==this.variantGeneration)return;
    this.variants.set(r.data.filter(v=>v.producto?.tipo==='PREPARADO'));
   }catch{/* Catalog read is optional for kitchen managers. */}
  }
  private async loadCategories(search:string){
+  const gen=++this.categoryGeneration;
   try{const r=await firstValueFrom(this.catalog.categoryOptions({search,limit:50}));
+   if(gen!==this.categoryGeneration)return;
    this.categories.set(r.data);
   }catch{/* Catalog read is optional for kitchen managers. */}
  }
