@@ -545,3 +545,77 @@ gc-kitchen-ticket{display:block;min-width:0}
 }
 @media(pointer:coarse){.ord-page button{min-height:44px}.ord-extra{min-height:44px}.ord-product{min-height:9rem!important}}
 @media(prefers-reduced-motion:reduce){.ord-page *{scroll-behavior:auto;transition:none}}
+
+
+/* ORD-A R2 — dense workstation filters, no excessive form rows. */
+.ord-page{gap:.72rem}
+.ord-page .ord-heading h1{font-size:1.16rem;line-height:1.35}
+.ord-page .ord-heading{gap:.5rem}
+.ord-page .ord-card{padding:clamp(.72rem,1.25vw,1rem)}
+.ord-page .ord-actions{gap:.5rem .65rem}
+.ord-page .ord-nav a{padding:.62rem .68rem}
+.ord-order-filters{grid-template-columns:repeat(4,minmax(0,1fr));align-items:end}
+.ord-search-action{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:.45rem;min-width:0}
+.ord-search-action>*{min-width:0}
+.ord-search-action>button{min-height:var(--gc-control-height,40px)}
+.ord-management>summary{cursor:pointer;font-weight:650;list-style-position:inside;padding:.3rem 0}
+.ord-management[open]>summary{margin-bottom:.8rem}
+.ord-management h2{margin:.55rem 0}
+.ord-kitchen-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem .9rem;align-items:end}
+.ord-kitchen-filters>*{min-width:0}
+.ord-kitchen-tabs{display:flex;align-items:center;gap:.35rem;overflow-x:auto;min-width:0;
+ padding:.6rem 0 .35rem;scrollbar-width:thin}
+.ord-kitchen-tabs>button{min-height:38px;white-space:nowrap;flex:0 0 auto}
+.ord-kitchen-board{padding-top:.55rem}
+.ord-kitchen-workspace{padding:clamp(.65rem,1vw,.9rem)}
+.ord-kitchen-heading .ord-note{font-size:.75rem}
+.ord-ticket{position:relative;gap:.4rem;padding:.73rem;box-shadow:none}
+.ord-ticket--delivered{opacity:.83}
+.ord-ticket--cancelled{opacity:.65}
+.ord-ticket>.ord-ticket-head,.ord-ticket>.ord-ticket-items,.ord-ticket>small{pointer-events:none}
+.ord-page button.ord-ticket-open{display:block;position:absolute;inset:0;z-index:1;
+ width:100%;height:100%;min-height:0;opacity:0;padding:0;margin:0;border:0;cursor:pointer}
+.ord-ticket:focus-within{outline:2px solid var(--gc-primary);outline-offset:2px}
+.ord-ticket-actions{position:relative;z-index:2;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.2rem}
+.ord-ticket-actions button{font-size:.82rem}
+.ord-ticket-items{display:grid;gap:.3rem;max-height:13rem;overflow:hidden}
+.ord-kitchen-line{display:grid;gap:.1rem;padding:.4rem 0;border-top:1px solid var(--gc-outline-variant)}
+.ord-kitchen-line strong{font-size:.88rem}
+.ord-ticket-badge{display:inline-flex;align-items:center;justify-content:center;
+ max-width:100%;font-size:.74rem;border:1px solid var(--gc-outline-variant);
+ color:var(--gc-on-surface-variant);padding:.2rem .45rem;border-radius:1rem;
+ font-weight:650;white-space:nowrap}
+.ord-ticket-badge--working{border-color:var(--gc-primary);color:var(--gc-primary)}
+.ord-ticket-badge--ready{border-color:var(--gc-primary);color:var(--gc-on-surface)}
+.ord-ticket-badge--delivered{border-color:var(--gc-success);color:var(--gc-success)}
+.ord-ticket-badge--cancelled{border-color:var(--gc-error);color:var(--gc-error)}
+.ord-kitchen-dialog{width:min(49rem,calc(100vw - 1.5rem));max-height:min(92dvh,940px);
+ padding:clamp(.8rem,1.8vw,1.25rem);gap:.7rem}
+.ord-kitchen-dialog .ord-heading h2{margin:0 0 .3rem}
+.ord-kitchen-dialog-lines{display:grid;gap:.55rem;min-width:0}
+.ord-ticket-detail-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.4rem .85rem;border:1px solid var(--gc-outline-variant);border-radius:.65rem;
+ padding:.65rem;font-size:.87rem}
+.ord-ticket-detail-meta>*{min-width:0;overflow-wrap:anywhere}
+.ord-kitchen-dialog .ord-order-line{padding:.72rem}
+.ord-kitchen-dialog .ord-partial{max-width:10rem}
+@media(max-width:1240px){
+ .ord-order-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:780px){
+ .ord-kitchen-filters{grid-template-columns:minmax(0,1fr)}
+ .ord-kitchen-tabs{flex-wrap:nowrap}
+ .ord-kitchen-dialog{top:auto;bottom:0;left:0;transform:none;
+  width:100%;max-height:94dvh;border-radius:1rem 1rem 0 0}
+ .ord-ticket-detail-meta{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:680px){
+ .ord-order-filters{grid-template-columns:minmax(0,1fr)}
+ .ord-search-action{grid-template-columns:minmax(0,1fr) auto}
+ .ord-kitchen-dialog .ord-order-line .ord-actions{align-items:flex-end}
+ .ord-kitchen-dialog .ord-partial{width:100%;max-width:none}
+}
+@media(pointer:coarse){
+ .ord-kitchen-tabs>button{min-height:44px}
+ .ord-ticket-actions>button{min-height:44px}
+}
