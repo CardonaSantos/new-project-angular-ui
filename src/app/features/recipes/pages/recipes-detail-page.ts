@@ -123,7 +123,7 @@ interface IngredientForm {
       @if(!isNew){<button type="button" (click)="discardFormula()" [disabled]="busy()">Cerrar</button>}
      </div>
      <div class="rec-section"><h3>Rendimiento de la fórmula</h3>
-     <div class="rec-form">
+     <div class="rec-form rec-yield-grid">
       <gc-inventory-picker id="yield-unit" kind="unit" label="Unidad de rendimiento"
        [unitDimension]="kind()==='VENTA'?'UNIDAD':''"
        [value]="unitId()" [selectedLabel]="unitLabel()" (valueChange)="unitId.set($event)"

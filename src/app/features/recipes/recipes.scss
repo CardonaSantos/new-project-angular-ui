@@ -51,3 +51,14 @@
 .rec-line-grid > *{min-width:0;max-width:100%;width:100%}
 .rec-line-grid > .rec-field{flex:none}
 @media(max-width:640px){.rec-line-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* A yield unit may be a long packaged-unit name; reserve space for its
+   selection without squeezing the quantity field. */
+.rec-yield-grid{
+  grid-template-columns:minmax(0,2fr) minmax(0,1fr);
+  align-items:start;
+}
+.rec-yield-grid > *{min-width:0;max-width:100%;width:100%}
+@media(max-width:700px){
+  .rec-yield-grid{grid-template-columns:minmax(0,1fr)}
+}

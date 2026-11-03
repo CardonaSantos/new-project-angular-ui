@@ -293,3 +293,41 @@ ng-select.gc-select-control .ng-select-container .ng-value-container .ng-placeho
 .gc-filter-grid > *{min-width:0;max-width:100%;width:100%}
 .gc-filter-grid > button{width:auto;justify-self:start;align-self:end}
 @media(max-width:640px){.gc-filter-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Prevent the selected label's intrinsic width from expanding a form grid cell.
+   ng-select dropdown panels remain free to show the entire option label. */
+gc-inventory-picker,
+gc-search-select{
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+}
+.gc-select-field{
+  grid-template-columns:minmax(0,1fr);
+  width:100%;
+  max-width:100%;
+}
+ng-select.gc-select-control{
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+}
+ng-select.gc-select-control .ng-select-container{
+  display:flex;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+}
+ng-select.gc-select-control .ng-select-container .ng-value-container{
+  min-width:0;
+  max-width:100%;
+  flex:1 1 0%;
+  overflow:hidden;
+}
+ng-select.gc-select-control .ng-select-container .ng-arrow-wrapper,
+ng-select.gc-select-control .ng-select-container .ng-clear-wrapper{
+  flex-shrink:0;
+}
