@@ -41,7 +41,8 @@ import {parseApiDecimal} from '../../../shared/formatting';
      <div class="pay-account-tabs" role="group" aria-label="Seleccionar cuenta">
       @for(a of accounts();track a.id){
        <button type="button" [class.active]="selectedId()===a.id"
-        [attr.aria-pressed]="selectedId()===a.id" (click)="chooseAccount(a.id)">
+        [attr.aria-pressed]="selectedId()===a.id" [disabled]="working()||loading()"
+        (click)="chooseAccount(a.id)">
         {{a.nombre||'Cuenta '+($index+1)}} · {{money(a.total)}}
        </button>
       }
@@ -67,7 +68,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
        }
       </details>
      }
-     @if(o.estado==='ABIERTA'&&access.canCollect()&&parsePositive(available())&&cash.ownShift();as shift){
+     @if(o.estado==='ABIERTA'&&account.estado==='ABIERTA'&&access.canCollect()&&parsePositive(available())&&cash.ownShift();as shift){
       <fieldset class="ord-section pay-payment-form">
        <legend>1. Registrar cobro</legend>
        @for(part of parts();track $index;let i=$index){
@@ -331,12 +332,15 @@ export class GcPaymentsCheckoutPage implements OnInit{
  }
  private async loadAccount(id:string,reset=true){
   if(!id){this.detail.set(null);return}
-  const account=await firstValueFrom(this.api.account(id));this.detail.set(account);
+  const account=await firstValueFrom(this.api.account(id));
+  if(this.selectedId()!==id)return;
+  this.detail.set(account);
   if(reset){this.invalidate();this.notice.set('')}
   this.parts.set([{metodo:'EFECTIVO',monto:remainder(account),efectivoRecibido:remainder(account)}]);
  }
  protected async chooseAccount(id:string){
-  this.selectedId.set(id);this.error.set('');
+  if(this.working()||this.loading()||id===this.selectedId())return;
+  this.selectedId.set(id);this.detail.set(null);this.error.set('');
   try{await this.loadAccount(id)}catch(e){this.error.set(paymentError(e))}
  }
  protected changeMethod(index:number,method:PaymentMethod){
@@ -388,7 +392,8 @@ export class GcPaymentsCheckoutPage implements OnInit{
  }
  protected async collect(){
   const account=this.detail(),shift=this.cash.ownShift();
-  if(!account||!shift||this.paymentIssue()||this.working())return;
+  if(!account||account.id!==this.selectedId()||account.estado!=='ABIERTA'||
+    !shift||this.paymentIssue()||this.working())return;
   const payments=this.parts().map(p=>({
    metodo:p.metodo,monto:positive(p.monto)!,
    ...(p.metodo==='EFECTIVO'?{efectivoRecibido:amount(p.efectivoRecibido??p.monto)!}:{}),
