@@ -35,6 +35,8 @@ describe('Shared inventory picker — saved relations',()=>{
   f.componentRef.setInput('value','new-value');
   f.componentRef.setInput('selectedLabel','Artículo nuevo');
   f.detectChanges();
+  // NgModel propagates external writes in a scheduled microtask.
+  await f.whenStable();f.detectChanges();
   const selected=f.nativeElement.querySelector('.ng-value-label') as HTMLElement;
   expect(selected?.textContent).toContain('Artículo nuevo');
  });
