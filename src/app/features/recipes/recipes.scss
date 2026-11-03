@@ -45,3 +45,9 @@
 .rec-section .rec-form{min-width:0}
 .rec-section>.rec-note{margin:0}
 @media(max-width:650px){.rec-section{padding:.65rem}}
+
+/* Keep recipe ingredient controls legible; two fields per row. */
+.rec-line-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem 1rem;min-width:0}
+.rec-line-grid > *{min-width:0;max-width:100%;width:100%}
+.rec-line-grid > .rec-field{flex:none}
+@media(max-width:640px){.rec-line-grid{grid-template-columns:minmax(0,1fr)}}

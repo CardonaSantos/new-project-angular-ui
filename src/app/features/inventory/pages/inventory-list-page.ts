@@ -70,7 +70,7 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
      <a gcButton [routerLink]="config.create">{{view==='articles'?'Nuevo artículo':view==='movements'?'Registrar movimiento':view==='counts'?'Nuevo conteo':'Nueva transferencia'}}</a>
     </div>
    }
-   <form class="inv-toolbar" aria-label="Filtros de inventario" (submit)="apply($event)">
+   <form class="inv-toolbar gc-filter-grid" aria-label="Filtros de inventario" (submit)="apply($event)">
     @if(view==='articles'||view==='movements'){
      <div class="inv-field"><label for="inv-search">Buscar artículo</label>
       <input id="inv-search" [value]="search()" (input)="search.set($any($event.target).value)"

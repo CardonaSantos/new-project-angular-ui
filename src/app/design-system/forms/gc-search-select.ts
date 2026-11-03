@@ -23,6 +23,7 @@ export interface GcSelectOption {
    <ng-select class="gc-select-control"
     [labelForId]="id()"
     [items]="items()" bindLabel="label" bindValue="id"
+    [title]="selectedLabel()"
     [ngModel]="displayValue()" [ngModelOptions]="{standalone:true}"
     (ngModelChange)="choose($event)" (blur)="touch()"
     [searchable]="searchable()" [clearable]="clearable()"
@@ -62,6 +63,8 @@ export class GcSearchSelect implements ControlValueAccessor {
  private onControlChange:(value:string)=>void=()=>undefined;
  private onControlTouched:()=>void=()=>undefined;
  protected readonly displayValue=computed(()=>this.formBound()?this.formValue():this.value());
+ protected readonly selectedLabel=computed(()=>
+  this.items().find(option=>option.id===this.displayValue())?.label??'');
  protected readonly isDisabled=computed(()=>this.disabled()||this.formDisabled());
  protected readonly matchAny=()=>true;
  writeValue(value:string|null):void{

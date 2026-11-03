@@ -266,3 +266,30 @@ ng-select.gc-select-control .ng-spinner-loader{border-top-color:var(--gc-primary
  ng-select.gc-select-control>.ng-select-container{min-height:44px}
  .ng-dropdown-panel.gc-select-control .ng-dropdown-panel-items .ng-option{min-height:44px}
 }
+
+/* Single-line selected value, readable full text in the open dropdown. */
+ng-select.gc-select-control.ng-select-single .ng-select-container .ng-value-container{
+ min-width:0;flex:1 1 0%;overflow:hidden;
+}
+ng-select.gc-select-control.ng-select-single .ng-select-container .ng-value-container .ng-value{
+ display:block;min-width:0;max-width:100%;overflow:hidden;
+}
+ng-select.gc-select-control.ng-select-single .ng-select-container .ng-value-container .ng-value .ng-value-label{
+ display:block;min-width:0;width:100%;max-width:100%;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+ng-select.gc-select-control .ng-select-container .ng-value-container .ng-placeholder{
+ max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ng-dropdown-panel.gc-select-control .ng-dropdown-panel-items .ng-option .ng-option-label{
+ white-space:normal;overflow-wrap:anywhere;
+}
+
+/* Reusable filter layout for data tables, not long vertical stacks. */
+.gc-filter-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.7rem .85rem;align-items:end;min-width:0;
+}
+.gc-filter-grid > *{min-width:0;max-width:100%;width:100%}
+.gc-filter-grid > button{width:auto;justify-self:start;align-self:end}
+@media(max-width:640px){.gc-filter-grid{grid-template-columns:minmax(0,1fr)}}
