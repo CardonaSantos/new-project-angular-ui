@@ -49,6 +49,7 @@ import type {UserRecord} from '../data-access/users.models';
          [attr.aria-invalid]="form.controls.zonaHoraria.touched&&form.controls.zonaHoraria.invalid"/>
       </div>
      </div>
+     </fieldset>
      @if(error()){<p role="alert" class="gc-u-alert">{{error()}}</p>}
      <div class="gc-u-actions"><button gcButton type="submit" [disabled]="!form.dirty||form.invalid||saving.busy()">
       {{saving.busy()?'Guardando…':'Guardar cambios'}}</button></div>
