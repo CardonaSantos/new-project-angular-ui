@@ -82,8 +82,7 @@ type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
        placeholder="Describe el motivo del movimiento"></textarea>
      </div>
     </fieldset>
-    <p class="inv-muted">Cada operación genera un registro inmutable de Kardex y una clave de idempotencia. No se modifican saldos manualmente en Angular.</p>
-    @if(error()){<p role="alert" class="inv-alert">{{error()}}</p>}
+        @if(error()){<p role="alert" class="inv-alert">{{error()}}</p>}
     <div class="inv-actions">
      <button type="submit" gcButton [disabled]="action.busy()||form.invalid||!articleId()||!locationId()||!canWrite()">
       {{action.busy()?'Registrando…':'Revisar y registrar'}}

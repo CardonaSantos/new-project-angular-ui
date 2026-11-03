@@ -27,8 +27,7 @@ interface ExtraLine {
   <section class="rec-card">
    <div class="rec-top"><h2>Ingredientes de extras</h2>
     <a class="rec-link" href="/catalog/extras">Administrar extras</a></div>
-   <p class="rec-note">Aquí se definen los ingredientes que se agregan, retiran o cambian cuando alguien elige un extra. Los nombres y precios se administran en Catálogo.</p>
-   <div class="rec-filters">
+      <div class="rec-filters">
     <label class="rec-field">Buscar extra
      <input [value]="search()" (input)="search.set($any($event.target).value)" maxlength="120"
       (keydown.enter)="$event.preventDefault();applySearch()"/>

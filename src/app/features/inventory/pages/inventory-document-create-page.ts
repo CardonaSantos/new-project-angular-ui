@@ -40,8 +40,7 @@ function emptyLine():DocumentLine {
   <form class="inv-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
    <section class="inv-card">
     <h2>1. Origen y destino</h2>
-    <fieldset class="inv-section"><legend>Origen y destino</legend>
-    <div class="inv-grid">
+        <div class="inv-grid">
      <gc-search-select id="document-branch" label="Sucursal de origen" [items]="branchChoices()"
      [value]="url.filters().sucursalId" [clearable]="false" (valueChange)="selectBranch($event)"/>
      <gc-inventory-picker id="document-warehouse" label="Almacén de origen" kind="warehouse"
@@ -60,7 +59,7 @@ function emptyLine():DocumentLine {
        placeholder="Ej. Conteo de cierre o traslado de insumos"
        [attr.aria-invalid]="form.controls.nota.invalid&&form.controls.nota.touched"></textarea>
      @if(form.controls.nota.touched&&form.controls.nota.invalid){<small class="inv-error">Introduce una nota descriptiva.</small>}
-    </div></fieldset>
+    </div>
    </section>
    <section class="inv-card">
     <div class="inv-row"><h2>2. Artículos y cantidades</h2>
