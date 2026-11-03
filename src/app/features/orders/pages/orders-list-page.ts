@@ -30,10 +30,10 @@ import {money,modeText} from '../data-access/orders.helpers';
      [value]="branchId()" [clearable]="false" (valueChange)="chooseBranch($event)"/>
     <gc-search-select id="order-list-status" label="Estado" [items]="states"
      [value]="state()" placeholder="Todos" [searchable]="false"
-     (valueChange)="state.set($event);apply()"/>
+     (valueChange)="setState($event)"/>
     <gc-search-select id="order-list-mode" label="Tipo de pedido" [items]="modes"
      [value]="mode()" placeholder="Todos" [searchable]="false"
-     (valueChange)="mode.set($event);apply()"/>
+     (valueChange)="setMode($event)"/>
    </div>
    <div class="ord-actions"><button type="button" (click)="apply()" [disabled]="busy()">Buscar</button></div>
    @if(busy()){<p role="status">Consultando pedidos…</p>}
@@ -80,6 +80,12 @@ export class GcOrdersListPage{
  })}
  protected chooseBranch(id:string){this.branchId.set(id);this.page.set(1);void this.load()}
  protected apply(){this.page.set(1);void this.load()}
+ protected setState(v:string){
+  this.state.set(ORDER_STATES.find(x=>x.id===v)?.id??'');this.apply();
+ }
+ protected setMode(v:string){
+  this.mode.set(ORDER_MODES.find(x=>x.id===v)?.id??'');this.apply();
+ }
  protected changePage(delta:number){this.page.update(x=>x+delta);void this.load()}
  protected async load(){
   if(!this.branchId()||!this.access.canRead())return;

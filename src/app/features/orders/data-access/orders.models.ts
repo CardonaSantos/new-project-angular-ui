@@ -60,15 +60,15 @@ export interface KitchenTicket{
 }
 export interface OrderListQuery{sucursalId:string;estado?:OrderState;modalidad?:OrderMode;search?:string;page?:number;limit?:number}
 export interface TicketListQuery{sucursalId:string;estacionId?:string;estado?:TicketState;page?:number;limit?:number}
-export const ORDER_MODES:readonly {id:OrderMode;label:string}[]=[
+export const ORDER_MODES:{id:OrderMode;label:string}[]=[
  {id:'MOSTRADOR',label:'En mostrador'},{id:'MESA',label:'Para una mesa'},
  {id:'PARA_LLEVAR',label:'Para llevar'},{id:'DELIVERY',label:'A domicilio'}];
-export const ORDER_STATES:readonly {id:OrderState;label:string}[]=[
+export const ORDER_STATES:{id:OrderState;label:string}[]=[
  {id:'ABIERTA',label:'Abierta'},{id:'CERRADA',label:'Cerrada'},{id:'CANCELADA',label:'Cancelada'}];
-export const TICKET_STATES:readonly {id:TicketState;label:string}[]=[
+export const TICKET_STATES:{id:TicketState;label:string}[]=[
  {id:'PENDIENTE',label:'Pendiente'},{id:'PREPARANDO',label:'Preparando'},
  {id:'LISTA',label:'Lista'},{id:'CANCELADA',label:'Cancelada'}];
-export const CANCELLATION_CLASSES:readonly {id:CancellationClass;label:string}[]=[
+export const CANCELLATION_CLASSES:{id:CancellationClass;label:string}[]=[
  {id:'CORTESIA',label:'Cortesía'},{id:'MERMA_OPERATIVA',label:'Merma operativa'},
  {id:'ERROR_OPERATIVO',label:'Error operativo'},{id:'OTRO',label:'Otro'}];
 export const modeLabel=(value:OrderMode)=>ORDER_MODES.find(x=>x.id===value)?.label??value;

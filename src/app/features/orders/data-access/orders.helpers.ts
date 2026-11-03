@@ -3,7 +3,8 @@ import type {OrderMode,OrderState,TicketState} from './orders.models';
 import {modeLabel,stateLabel} from './orders.models';
 
 export const money=(value:string,currency='GTQ')=>{
- try{return formatCurrency(value,currency)}catch{return value+' '+currency}
+ try{return currency==='GTQ'||currency==='USD'?formatCurrency(value,currency):value+' '+currency}
+ catch{return value+' '+currency}
 };
 export const qtyText=(value:string)=>{
  try{return formatDecimal(value,{maximumFractionDigits:3})}catch{return value}

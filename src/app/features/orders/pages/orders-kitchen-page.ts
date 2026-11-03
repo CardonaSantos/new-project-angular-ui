@@ -28,7 +28,7 @@ import {operationKey,qtyText} from '../data-access/orders.helpers';
     [value]="stationId()" placeholder="Todas las estaciones" (valueChange)="stationId.set($event);reload()"/>
    <gc-search-select id="kitchen-status" label="Estado" [items]="states"
     [value]="state()" [searchable]="false" placeholder="Todos"
-    (valueChange)="state.set($event);reload()"/>
+    (valueChange)="setState($event)"/>
   </div>
   @if(error()){<p class="ord-alert" role="alert">{{error()}}</p>}
   @if(busy()){<p role="status" class="ord-muted">Consultando cocina…</p>}
@@ -110,6 +110,9 @@ export class GcOrdersKitchenPage{
   interval(7000).pipe(takeUntilDestroyed()).subscribe(()=>{
    if(typeof document!=='undefined'&&!document.hidden&&this.branchId()&&!this.busy())void this.poll();
   });
+ }
+ protected setState(v:string){
+  this.state.set(TICKET_STATES.find(x=>x.id===v)?.id??'');this.page.set(1);void this.reload();
  }
  protected selectBranch(id:string){this.branchId.set(id);this.cursor='';this.stationId.set('');void this.reload()}
  protected changePage(d:number){this.page.update(x=>x+d);void this.reload()}

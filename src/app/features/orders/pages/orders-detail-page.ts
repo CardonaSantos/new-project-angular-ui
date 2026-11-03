@@ -149,7 +149,7 @@ import {money,operationKey,qtyText,safeQuantity} from '../data-access/orders.hel
       <gc-search-select id="order-cancel-class" label="Clasificación de cancelación"
        [items]="cancellationChoices" [value]="classification()"
        placeholder="Seleccionar si hubo preparación" [searchable]="false"
-       (valueChange)="classification.set($event)"/>
+       (valueChange)="setClassification($event)"/>
       <p class="ord-note">Los ingredientes ya utilizados no se devuelven automáticamente al inventario.</p>
      }
      <div class="ord-actions"><button class="ord-danger" type="button"
@@ -277,6 +277,9 @@ export class GcOrdersDetailPage implements OnInit {
    ...(this.access.canDiscount()?{descuento:this.editDiscount().trim()}:{} )
   })));
   if(!this.error())this.editItem.set(null);
+ }
+ protected setClassification(value:string){
+  this.classification.set(CANCELLATION_CLASSES.find(x=>x.id===value)?.id??'');
  }
  protected beginCancel(){this.cancelTarget.set('order');this.reason.set('');this.classification.set('')}
  protected beginCancelLine(line:OrderLine){this.cancelTarget.set(line.id);this.reason.set('')}
