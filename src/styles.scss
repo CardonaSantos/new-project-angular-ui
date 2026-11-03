@@ -204,7 +204,7 @@ ng-select.gc-select-control .ng-select-container .ng-value-container .ng-input>i
 ng-select.gc-select-control .ng-value-container .ng-placeholder{color:var(--gc-on-surface-variant)}
 ng-select.gc-select-control .ng-arrow-wrapper .ng-arrow{border-top-color:var(--gc-on-surface-variant)}
 ng-select.gc-select-control .ng-clear-wrapper .ng-clear{color:var(--gc-on-surface-variant)}
-ng-select.gc-select-control.ng-select-disabled .ng-select-container{opacity:.55;cursor:not-allowed}
+ng-select.gc-select-control.ng-select-readonly .ng-select-container{opacity:.55;cursor:not-allowed}
 .ng-dropdown-panel.gc-select-control{
  background:var(--gc-surface-container-low);color:var(--gc-on-surface);
  border:1px solid var(--gc-outline);border-radius:.55rem;

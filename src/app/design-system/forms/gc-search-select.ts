@@ -1,6 +1,6 @@
 
-import {ChangeDetectionStrategy,Component,input,output} from '@angular/core';
-import {FormsModule} from '@angular/forms';
+import {ChangeDetectionStrategy,Component,computed,forwardRef,input,output,signal} from '@angular/core';
+import {ControlValueAccessor,FormsModule,NG_VALUE_ACCESSOR} from '@angular/forms';
 import {NgSelectComponent} from '@ng-select/ng-select';
 
 export interface GcSelectOption {
@@ -16,16 +16,17 @@ export interface GcSelectOption {
  selector:'gc-search-select',
  imports:[FormsModule,NgSelectComponent],
  changeDetection:ChangeDetectionStrategy.OnPush,
+ providers:[{provide:NG_VALUE_ACCESSOR,useExisting:forwardRef(()=>GcSearchSelect),multi:true}],
  template:`
   <div class="gc-select-field">
    <label [for]="id()">{{label()}}</label>
    <ng-select class="gc-select-control"
     [labelForId]="id()"
     [items]="items()" bindLabel="label" bindValue="id"
-    [ngModel]="value()" [ngModelOptions]="{standalone:true}"
-    (ngModelChange)="valueChange.emit($event??'')"
+    [ngModel]="displayValue()" [ngModelOptions]="{standalone:true}"
+    (ngModelChange)="choose($event)" (blur)="touch()"
     [searchable]="searchable()" [clearable]="clearable()"
-    [loading]="loading()" [readonly]="disabled()"
+    [loading]="loading()" [readonly]="isDisabled()"
     [searchFn]="remote()?matchAny:undefined"
     [virtualScroll]="items().length>100"
     [placeholder]="placeholder()"
@@ -39,7 +40,7 @@ export interface GcSelectOption {
   </div>
  `
 })
-export class GcSearchSelect {
+export class GcSearchSelect implements ControlValueAccessor {
  readonly id=input.required<string>();
  readonly label=input.required<string>();
  readonly items=input<GcSelectOption[]>([]);
@@ -55,5 +56,25 @@ export class GcSearchSelect {
  readonly valueChange=output<string>();
  readonly searchChange=output<string>();
  readonly opened=output<void>();
+ private readonly formBound=signal(false);
+ private readonly formValue=signal('');
+ private readonly formDisabled=signal(false);
+ private onControlChange:(value:string)=>void=()=>{};
+ private onControlTouched:()=>void=()=>{};
+ protected readonly displayValue=computed(()=>this.formBound()?this.formValue():this.value());
+ protected readonly isDisabled=computed(()=>this.disabled()||this.formDisabled());
  protected readonly matchAny=()=>true;
+ writeValue(value:string|null):void{
+  this.formBound.set(true);this.formValue.set(value??'');
+ }
+ registerOnChange(callback:(value:string)=>void):void{this.onControlChange=callback}
+ registerOnTouched(callback:()=>void):void{this.onControlTouched=callback}
+ setDisabledState(disabled:boolean):void{this.formDisabled.set(disabled)}
+ protected touch():void{this.onControlTouched()}
+ protected choose(value:string|null):void{
+  const next=value??'';
+  this.formValue.set(next);
+  this.onControlChange(next);
+  this.valueChange.emit(next);
+ }
 }
