@@ -60,7 +60,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        [disabled]="!access.canManage()"/> Mostrar en menú comercial</label>
      }
      </div>
-     @if(saveError()){<p class="cat-alert" role="alert">{{saveError()}}</p>
+     @if(saveError()){<p class="cat-alert" role="alert">{{saveError()}}</p>}
      <div class="cat-actions">
       @if(access.canManage()){<button class="cat-primary" type="submit"
        [disabled]="busy()||!name().trim()||(isNew&&!validCode())">{{busy()?'Guardando…':'Guardar producto'}}</button>}
@@ -117,7 +117,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
          (change)="variantActive.set($any($event.target).checked)" [disabled]="!access.canManage()"/> Presentación activa</label>
        }
        </div>
-       @if(variantError()){<p role="alert" class="cat-alert">{{variantError()}}</p>
+       @if(variantError()){<p role="alert" class="cat-alert">{{variantError()}}</p>}
        <div class="cat-actions">
         @if(access.canManage()){<button class="cat-primary" [disabled]="busy()||!variantName().trim()" type="submit">
          {{busy()?'Guardando…':'Guardar presentación'}}</button>}

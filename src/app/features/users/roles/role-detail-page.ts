@@ -54,7 +54,7 @@ import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
         placeholder="Ej. Personal de caja"></textarea>
      </div>
      </fieldset>
-     @if(error()){<p class="gc-u-alert" role="alert">{{error()}}</p>
+     @if(error()){<p class="gc-u-alert" role="alert">{{error()}}</p>}
      <div class="gc-u-actions"><button gcButton type="submit"
        [disabled]="!access.canGlobal('roles.manage')||role.data()?.codigo==='SUPER_ADMIN'||form.invalid||(!isNew&&!form.dirty)||action.busy()">
        {{action.busy()?'Guardando…':isNew?'Crear rol':'Guardar cambios'}}</button></div>

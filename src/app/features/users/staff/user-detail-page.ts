@@ -69,7 +69,7 @@ import {GcCurrentAvatarStore} from '../../../core/auth/gc-current-avatar.store';
       }
      </div>
      </fieldset>
-     @if(saveError()){<p role="alert" class="gc-u-alert">{{saveError()}}</p>
+     @if(saveError()){<p role="alert" class="gc-u-alert">{{saveError()}}</p>}
      <div class="gc-u-actions">
       <button gcButton type="submit" [disabled]="!access.isGlobalAdmin()||form.invalid||(!isNew&&!form.dirty)||saveAction.busy()">
        {{saveAction.busy()?'Guardando…':(isNew?'Crear usuario':'Guardar cambios')}}</button>

@@ -74,7 +74,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <input type="number" min="0" step="1" [value]="order()" (input)="order.set(+$any($event.target).value)"/>
      </label>
      </div>
-     @if(saveError()){<p role="alert" class="cat-alert">{{saveError()}}</p>
+     @if(saveError()){<p role="alert" class="cat-alert">{{saveError()}}</p>}
      <div class="cat-actions">
       <button class="cat-primary" type="submit" [disabled]="saving()||!name().trim()||order()<0">
        {{saving()?'Guardando…':'Guardar categoría'}}</button>

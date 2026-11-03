@@ -50,7 +50,7 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
        [disabled]="!access.canMenus()" (change)="active.set($any($event.target).checked)"/> Menú activo</label>
      }
      </div>
-     @if(errorText()){<p class="cat-alert" role="alert">{{errorText()}}</p>
+     @if(errorText()){<p class="cat-alert" role="alert">{{errorText()}}</p>}
      <div class="cat-actions">
       @if(access.canMenus()){<button type="submit" class="cat-primary" [disabled]="busy()||!name().trim()||(isNew&&!validCode())">
        {{busy()?'Guardando…':'Guardar datos generales'}}</button>}

@@ -129,7 +129,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
      }
      <p class="cat-muted">El precio de este extra puede cambiar por sucursal. Configúralo en «Precios».</p>
      </div>
-     @if(modifierError()){<p role="alert" class="cat-alert">{{modifierError()}}</p>
+     @if(modifierError()){<p role="alert" class="cat-alert">{{modifierError()}}</p>}
      <div class="cat-actions">
       <button class="cat-primary" type="submit" [disabled]="busy()||!modifierGroup()||!modifierName().trim()">
        {{busy()?'Guardando…':'Guardar extra'}}</button>
