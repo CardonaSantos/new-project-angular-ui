@@ -11,7 +11,7 @@ import {GcKitchenTicket} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import type {KitchenTicket,Station} from '../data-access/orders.models';
-import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../data-access/orders.helpers';
+import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitchenQueue} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-kitchen-page',imports:[GcOrdersNav,GcSearchSelect,GcKitchenTicket,CdkTrapFocus],
  template:`
@@ -33,7 +33,7 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../
    <button type="button" [class.active]="view()==='active'"
     [attr.aria-pressed]="view()==='active'" (click)="setView('active')">Por preparar</button>
    <button type="button" [class.active]="view()==='ready'"
-    [attr.aria-pressed]="view()==='ready'" (click)="setView('ready')">Listas y entregadas</button>
+    [attr.aria-pressed]="view()==='ready'" (click)="setView('ready')">Para entregar e historial</button>
    <button type="button" [class.active]="view()==='cancelled'"
     [attr.aria-pressed]="view()==='cancelled'" (click)="setView('cancelled')">Canceladas</button>
    <button type="button" [class.active]="view()==='all'"
@@ -181,8 +181,7 @@ export class GcOrdersKitchenPage{
     Promise.all(queries.map(q=>firstValueFrom(q)))
    ]);
    if(gen!==this.generation)return;
-   const combined=results.flatMap(r=>r.data).sort(
-    (a,b)=>new Date(a.enviadaEn).getTime()-new Date(b.enviadaEn).getTime());
+   const combined=sortKitchenQueue(results.flatMap(r=>r.data),requested);
    this.stations.set(stations);this.tickets.set(combined);
    this.total.set(results.reduce((sum,r)=>sum+r.meta.total,0));
    this.pages.set(Math.max(0,...results.map(r=>r.meta.totalPages)));
