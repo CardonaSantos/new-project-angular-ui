@@ -14,10 +14,10 @@ interface Choice {id:string;label:string}
  imports:[GcSearchSelect],
  template:`
  <gc-search-select [id]="id()" [label]="label()" [items]="visibleItems()"
-  [value]="value()" [disabled]="disabled()" [loading]="loading()"
+  [value]="value()" [disabled]="pickerDisabled()" [loading]="loading()"
   [remote]="kind()!=='lot'" [clearable]="true"
-  [placeholder]="disabled()?'No disponible':'Buscar por nombre o código…'"
-  [hint]="more()?'Refina la búsqueda para encontrar más resultados.':''"
+  [placeholder]="prerequisite()||'Buscar por nombre o código…'"
+  [hint]="prerequisite()||(more()?'Refina la búsqueda para encontrar más resultados.':'')"
   [error]="error()??''"
   (valueChange)="select($event)" (searchChange)="onSearch($event)"/>
  `,
@@ -38,6 +38,14 @@ export class GcInventoryPicker {
  /** Limits units to the dimension of the ingredient or commercial yield. */
  readonly unitDimension=input<Dimension|''>('');
  readonly disabled=input(false);
+ /** Explain why a dependent field cannot yet be selected. */
+ protected readonly prerequisite=computed(()=>{
+  if(this.kind()==='warehouse'&&!this.branchId())return 'Selecciona primero una sucursal';
+  if(this.kind()==='location'&&!this.warehouseId())return 'Selecciona primero un almacén';
+  if(this.kind()==='lot'&&(!this.articleId()||!this.branchId()))return 'Selecciona primero un artículo y una sucursal';
+  return '';
+ });
+ protected readonly pickerDisabled=computed(()=>this.disabled()||!!this.prerequisite());
  readonly valueChange=output<string>();
  protected readonly search=signal('');
  protected readonly items=signal<Choice[]>([]);
@@ -91,7 +99,9 @@ export class GcInventoryPicker {
   }
  }
  protected select(value:string){this.valueChange.emit(value)}
- protected onSearch(value:string){this.searchQueries.next(value)}
+ protected onSearch(value:string){
+  if(this.kind()!=='lot')this.searchQueries.next(value);
+ }
  private async load(){
   const current=++this.generation;
   this.loading.set(true);this.error.set(null);this.items.set([]);

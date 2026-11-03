@@ -15,6 +15,22 @@ describe('Shared inventory picker — saved relations',()=>{
    providers:[{provide:InventoryApi,useValue:api}]
   });
  });
+ it('renders one searchable combobox rather than three unrelated controls',async()=>{
+  const f=TestBed.createComponent(GcInventoryPicker);
+  f.componentRef.setInput('id','article-picker');
+  f.componentRef.setInput('kind','article');
+  f.detectChanges();await f.whenStable();f.detectChanges();
+  expect(f.nativeElement.querySelector('ng-select')).not.toBeNull();
+  expect(f.nativeElement.querySelector('select')).toBeNull();
+  expect(f.nativeElement.querySelector('button')).toBeNull();
+ });
+ it('explains the prerequisite for a location picker',async()=>{
+  const f=TestBed.createComponent(GcInventoryPicker);
+  f.componentRef.setInput('id','location-picker');
+  f.componentRef.setInput('kind','location');
+  f.detectChanges();await f.whenStable();f.detectChanges();
+  expect(f.nativeElement.textContent).toContain('Selecciona primero un almacén');
+ });
  it('shows and selects the current article even when omitted from the first 50 search results',async()=>{
   const f=TestBed.createComponent(GcInventoryPicker);
   f.componentRef.setInput('id','article-picker');
