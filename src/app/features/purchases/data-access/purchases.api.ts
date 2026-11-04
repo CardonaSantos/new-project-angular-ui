@@ -3,7 +3,7 @@ import {inject,Injectable} from '@angular/core';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
  PurchasePage,PurchaseSupplier,PurchasePresentation,PurchaseOrder,PurchaseOrderInput,
- PurchaseReceipt,PurchaseReceiptInput,PurchaseReceiptSaved,SupplyRequisition
+ PurchaseReceipt,PurchaseReceiptInput,PurchaseReceiptSaved,SupplyRequisition,SupplyAvailability,SupplyTransfer
 } from './purchases.models';
 
 const safe=(id:string)=>encodeURIComponent(id);
@@ -13,6 +13,7 @@ export const purchasePaths={
  orders:'/api/purchases/orders',order:(id:string)=>'/api/purchases/orders/'+safe(id),
  receipts:'/api/purchases/receipts',receipt:(id:string)=>'/api/purchases/receipts/'+safe(id),
  requisitions:'/api/supply/requisitions',requisition:(id:string)=>'/api/supply/requisitions/'+safe(id),
+ transfers:'/api/supply/transfers',transfer:(id:string)=>'/api/supply/transfers/'+safe(id),
 } as const;
 const readOptions={context:gcSilentRequest()};
 const query=(filters:Record<string,string|number|boolean|undefined>)=>{
@@ -95,5 +96,25 @@ export class PurchasesApi {
  }
  requisition(id:string){
   return this.http.get<SupplyRequisition>(purchasePaths.requisition(id),readOptions);
+ }
+ availability(id:string,originWarehouseId:string){
+  return this.http.get<SupplyAvailability>(purchasePaths.requisition(id)+'/availability',
+   query({almacenOrigenId:originWarehouseId}));
+ }
+ sendRequisition(id:string,body:{almacenOrigenId:string;inmediato?:boolean;nota?:string;
+  claveOperacion:string;lineas:{articuloId:string;ubicacionOrigenId:string;
+   ubicacionDestinoId:string;loteId?:string;cantidad:string}[]}){
+  return this.http.post<{id:string;estado:string}>(purchasePaths.requisition(id)+'/send',body);
+ }
+ cancelRequisition(id:string,body:{claveOperacion:string;motivo:string}){
+  return this.http.post<{id:string;estado:string}>(purchasePaths.requisition(id)+'/cancel',body);
+ }
+ purchaseFromRequisition(id:string,body:{claveOperacion:string;orden:PurchaseOrderInput}){
+  return this.http.post<PurchaseOrder>(purchasePaths.requisition(id)+'/purchase-draft',body);
+ }
+ transfer(id:string){return this.http.get<SupplyTransfer>(purchasePaths.transfer(id),readOptions)}
+ receiveTransfer(id:string,body:{claveOperacion:string;observaciones?:string;
+  lineas:{transferenciaLineaId:string;cantidadRecibida:string}[]}){
+  return this.http.post<{id:string;estado:string}>(purchasePaths.transfer(id)+'/receive',body);
  }
 }
