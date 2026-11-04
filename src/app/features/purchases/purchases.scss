@@ -96,3 +96,10 @@
 .pur-choice-grid a span{color:var(--gc-on-surface-variant);font-size:.84rem}
 .pur-choice-grid a:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
 @media(max-width:650px){.pur-choice-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Keep native toggles compact even inside generic input layouts. */
+.pur-page input[type=checkbox]{width:1rem;min-width:1rem;height:1rem;min-height:0;accent-color:var(--gc-primary)}
+.pur-page label:has(>input[type=checkbox]){display:inline-flex;align-items:center;gap:.5rem;
+ min-height:36px;cursor:pointer;max-width:100%}
+.pur-page input:disabled{opacity:.62;cursor:not-allowed}
+.pur-page [role=alert]{overflow-wrap:anywhere}
