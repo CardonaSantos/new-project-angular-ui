@@ -22,13 +22,13 @@ import {gcErrorMessage} from '../../../core/http/api-error';
   <div class="pur-actions">
    <button type="button" class="pur-primary" [disabled]="busy()||name().trim().length<2"
     (click)="save()">{{busy()?'Guardando…':'Crear y seleccionar'}}</button>
-   <button type="button" [disabled]="busy()" (click)="cancel.emit()">Volver</button>
+   <button type="button" [disabled]="busy()" (click)="dismiss.emit()">Volver</button>
   </div>
  </section>`,
  styleUrl:'../purchases.scss'
 })
 export class GcPurchasesCreateSupplier {
- readonly created=output<PurchaseSupplier>();readonly cancel=output<void>();
+ readonly created=output<PurchaseSupplier>();readonly dismiss=output<void>();
  private readonly api=inject(PurchasesApi);private readonly notice=inject(GcNotificationService);
  protected readonly name=signal('');protected readonly tax=signal('');
  protected readonly busy=signal(false);protected readonly error=signal('');
