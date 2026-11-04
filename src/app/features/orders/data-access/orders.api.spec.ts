@@ -77,6 +77,22 @@ describe('ORD-A UI — all 32 backend endpoints',()=>{
   request('POST',orderPaths.lineKitchen('kl1')+'/ready',()=>api.readyLine('kl1'),{});
   request('POST',orderPaths.lineKitchen('kl1')+'/deliver',()=>api.deliverLine('kl1'),{});
  });
+ it('submits order search and page size to NestJS before paginating',()=>{
+  api.list({sucursalId:'branch-1',search:'ORD-104',estado:'ABIERTA',
+   modalidad:'MESA',page:3,limit:50}).subscribe();
+  const req=http.expectOne(x=>x.url===orderPaths.orders);
+  expect(req.request.params.get('sucursalId')).toBe('branch-1');
+  expect(req.request.params.get('search')).toBe('ORD-104');
+  expect(req.request.params.get('estado')).toBe('ABIERTA');
+  expect(req.request.params.get('modalidad')).toBe('MESA');
+  expect(req.request.params.get('page')).toBe('3');
+  expect(req.request.params.get('limit')).toBe('50');
+  req.flush({data:[],meta:{page:3,limit:50,total:0,totalPages:0}});
+  api.list({sucursalId:'branch-1',search:'',page:1,limit:20}).subscribe();
+  const empty=http.expectOne(x=>x.url===orderPaths.orders);
+  expect(empty.request.params.has('search')).toBe(false);
+  empty.flush({data:[],meta:{page:1,limit:20,total:0,totalPages:0}});
+ });
  it('preserves branch queries, type safety and quantities',()=>{
   api.tickets({sucursalId:'b1',estado:'PREPARANDO',estacionId:'s1',limit:15}).subscribe();
   let req=http.expectOne(x=>x.url===orderPaths.tickets);
