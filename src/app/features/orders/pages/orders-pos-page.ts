@@ -49,6 +49,12 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
     @if(paymentsAccess.canRead()&&paymentsAccess.canCollect()){
      <a [routerLink]="['/payments/order',createdId()]">Cobrar ahora</a>
     }
+    @if(access.canKitchenRead()){
+     @for(ticket of createdTickets();track ticket.id){
+      <a [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']">
+       Imprimir comanda {{ticket.numero}}</a>
+     }
+    }
    </div>
   </section>
  }
@@ -144,10 +150,22 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <textarea rows="2" maxlength="500" [value]="observations()" [disabled]="submitting()"
       placeholder="Opcional" (input)="observations.set($any($event.target).value);invalidateKey()"></textarea>
     </label>
-    <label class="ord-check-row">
-     <input type="checkbox" [checked]="sendKitchen()" [disabled]="submitting()" (change)="sendKitchen.set($any($event.target).checked);invalidateKey()"/>
-     Enviar a cocina al confirmar
-    </label>
+    @if(directOnly()){
+     <p class="ord-note" role="status">
+      Venta sin preparación: estos productos no generan comandas.
+      El servidor registrará sus movimientos de inventario al procesarlos.
+     </p>
+    }@else{
+     <label class="ord-check-row">
+      <input type="checkbox" [checked]="sendKitchen()" [disabled]="submitting()"
+       (change)="sendKitchen.set($any($event.target).checked);invalidateKey()"/>
+      Procesar al confirmar (enviar preparados a Cocina y registrar salidas de stock)
+     </label>
+     @if(!sendKitchen()){
+      <p class="ord-note" role="status">Quedarán pendientes de procesar.
+       Para cerrar y registrar la venta, deberás procesarlos desde el detalle del pedido.</p>
+     }
+    }
     @if(config()?.exigeCobroAntesPreparar){
      <p class="ord-note">Esta sucursal exige cobrar antes de preparar. La orden quedará pendiente hasta registrar el pago.</p>
     } @else if(!config()){
@@ -241,10 +259,20 @@ export class GcOrdersPosPage{
  protected readonly submitError=signal<string|null>(null);
  protected readonly success=signal('');
  protected readonly createdId=signal('');
+ protected readonly createdTickets=signal<{id:string;numero:string}[]>([]);
  protected readonly observations=signal('');
  protected readonly mode=signal<OrderMode>('MOSTRADOR');
  protected readonly selectedTable=signal<TableRecord|null>(null);
  protected readonly sendKitchen=signal(true);
+ protected readonly productTypes=computed(()=>new Map(
+  (this.menu()?.menus??[]).flatMap(menu=>menu.secciones.flatMap(section=>
+   section.items.map(item=>[item.variante.id,item.variante.producto?.tipo] as const)
+  ))
+ ));
+ protected readonly directOnly=computed(()=>this.cart().length>0&&this.cart().every(line=>{
+  const type=this.productTypes().get(line.variantId);
+  return type==='INVENTARIABLE'||type==='SERVICIO';
+ }));
  protected readonly submitting=signal(false);
  protected readonly cartOpen=signal(false);
  protected readonly showTablePicker=signal(true);
@@ -436,20 +464,27 @@ export class GcOrdersPosPage{
   const branch=this.context.branchId();if(!branch||this.submitting()||!this.cart().length)return;
   if(this.mode()==='MESA'&&!this.selectedTable()){this.submitError.set('Selecciona una mesa.');return}
   if(!this.operationId)this.operationId=operationKey('pos');
+  // Direct products MUST be sent through the server processing step:
+  // INVENTARIABLE -> inventory consumption, SERVICIO -> sent flag, neither creates KDS tickets.
+  const shouldProcess=this.directOnly()?true:this.sendKitchen();
   const dto={
    sucursalId:branch,modalidad:this.mode(),origen:this.mode()==='MESA'?'MESERO' as const:'CAJA' as const,
    ...(this.mode()==='MESA'&&this.selectedTable()?{mesaId:this.selectedTable()!.id}:{}),
    ...(this.observations().trim()?{observaciones:this.observations().trim()}:{}),
-   lineas:this.cart().map(asOrderLine),enviarCocina:this.sendKitchen(),claveOperacion:this.operationId
+   lineas:this.cart().map(asOrderLine),enviarCocina:shouldProcess,claveOperacion:this.operationId
   };
   this.submitting.set(true);this.submitError.set('');
   try{
    const data=await firstValueFrom(this.api.create(dto));
    this.createdId.set(data.id);
+   this.createdTickets.set((data.comandasComoOrden??[]).map(x=>({id:x.id,numero:x.numero})));
    const kitchenCreated=(data.comandasComoOrden??[]).length>0;
-   const kitchenMessage=kitchenCreated?' · Enviada a Cocina':
-    this.sendKitchen()?' · Pendiente de envío a Cocina según condiciones del negocio':' · No enviada a Cocina';
-   const message='Orden '+data.numero+' creada'+kitchenMessage+'.';
+   const hasUnprocessed=(data.ordenLineasComoOrden??[]).some(line=>
+    parseApiDecimal(line.cantidadEnviada).lt(parseApiDecimal(line.cantidad)));
+   const status=kitchenCreated?' · Enviada a Cocina':
+    hasUnprocessed?' · Pendiente de procesar antes de cerrar':
+    ' · Procesada sin comanda de Cocina';
+   const message='Orden '+data.numero+' creada'+status+'.';
    this.success.set(message);
    this.notices.show(message,'success',7000);
    this.cart.set([]);this.observations.set('');this.selectedTable.set(null);
