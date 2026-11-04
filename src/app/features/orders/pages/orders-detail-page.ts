@@ -109,6 +109,9 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
      <h3>Preparación</h3>
      <div class="ord-small-list">@for(ticket of o.comandasComoOrden??[];track ticket.id){
       <span>Comanda {{ticket.numero}} · {{ticketStatus(ticket.estado)}}</span>
+      @if(access.canKitchenRead()){
+       <a [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']">Imprimir</a>
+      }
      }</div>
      @if(access.canKitchenRead()){
       <div class="ord-actions"><a routerLink="/orders/kitchen">Ver preparación y entrega en Cocina</a></div>
