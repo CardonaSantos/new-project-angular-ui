@@ -43,14 +43,14 @@ const newLine=():OrderEditorLine=>({
     }
     @if(showSupplierCreation()){
      <gc-purchases-create-supplier (created)="supplierCreated($event)"
-      (cancel)="showSupplierCreation.set(false)"/>
+      (dismiss)="showSupplierCreation.set(false)"/>
     }
     <div class="pur-grid">
      <gc-search-select id="pur-order-supplier" label="Proveedor" [items]="supplierChoices()"
       [value]="supplierId()" [remote]="true" [loading]="supplierBusy()"
       (valueChange)="chooseSupplier($event)" (searchChange)="supplierSearch.next($event)"
       placeholder="Buscar proveedor"/>
-     <div class="pur-field"><label>Sucursal</label>
+     <div class="pur-field"><span class="pur-static-label">Sucursal</span>
       <strong>{{context.active()?.nombre??'Sin sucursal'}}</strong>
      </div>
     </div>
@@ -83,7 +83,7 @@ const newLine=():OrderEditorLine=>({
        }
        @if(articleCreationKey()===l.key){
         <gc-purchases-create-article (created)="createdArticle(l.key,$event)"
-         (cancel)="articleCreationKey.set('')"/>
+         (dismiss)="articleCreationKey.set('')"/>
        }
        @if(supplierId()){
         <gc-search-select [id]="'pur-order-pres-'+l.key" label="Presentación de compra"
@@ -100,8 +100,8 @@ const newLine=():OrderEditorLine=>({
          <input [id]="'pur-order-price-'+l.key" inputmode="decimal" [value]="l.precioUnitarioCompra"
           (input)="patch(l.key,'precioUnitarioCompra',$any($event.target).value)"/>
         </div>
-        <div class="pur-field"><label>Factor a unidad base</label>
-         <input [value]="l.factorAUnidadBase" disabled/>
+        <div class="pur-field"><label [for]="'pur-order-factor-'+l.key">Factor a unidad base</label>
+         <input [id]="'pur-order-factor-'+l.key" [value]="l.factorAUnidadBase" disabled/>
         </div>
        </div>
        <details>
