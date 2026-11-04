@@ -275,7 +275,7 @@ export class GcReportsAnalyticsPage{
  protected readonly displayDate=formatCalendarDate;
  protected readonly asText=(value:unknown)=>typeof value==='string'?value:'0';
  protected readonly allowedSources=computed(()=>REPORT_SOURCES.filter(s=>this.access.canSource(s)));
- protected readonly currency=computed(()=>this.overview()?.currency??this.branch.active()?.moneda??'GTQ');
+ protected readonly currency=computed(()=>this.overview()?.currency??this.methods()?.currency??this.expenses()?.currency??this.sourceData()?.currency??'GTQ');
  protected readonly valid=computed(()=>periodValid(this.form()));
  protected readonly methodBars=computed(()=>this.methods()?.data
   .map(x=>({label:this.methodName(x.metodo),amount:x.neto}))??[]);
