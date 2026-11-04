@@ -31,22 +31,22 @@ export class ReportsApi {
   return this.http.get<OperationalDashboard>(REPORT_PATHS.operational,options({sucursalId:branchId}));
  }
  overview(query:ReportFilters){
-  return this.http.get<ReportsOverview>(REPORT_PATHS.overview,options(query));
+  return this.http.get<ReportsOverview>(REPORT_PATHS.overview,options({...query}));
  }
  payments(query:ReportFilters){
-  return this.http.get<PaymentMethodResponse>(REPORT_PATHS.payments,options(query));
+  return this.http.get<PaymentMethodResponse>(REPORT_PATHS.payments,options({...query}));
  }
  expenses(query:ReportFilters){
-  return this.http.get<ExpenseCategoryResponse>(REPORT_PATHS.expenses,options(query));
+  return this.http.get<ExpenseCategoryResponse>(REPORT_PATHS.expenses,options({...query}));
  }
  tickets(query:ReportPageFilters){
-  return this.http.get<ReportPage<ReportTicket>>(REPORT_PATHS.tickets,options(query));
+  return this.http.get<ReportPage<ReportTicket>>(REPORT_PATHS.tickets,options({...query}));
  }
  cashShifts(query:ReportPageFilters){
-  return this.http.get<ReportPage<ReportCashShift>>(REPORT_PATHS.cashShifts,options(query));
+  return this.http.get<ReportPage<ReportCashShift>>(REPORT_PATHS.cashShifts,options({...query}));
  }
  source(source:ReportSource,query:ReportPageFilters){
-  return this.http.get<SourceRecordResponse>(REPORT_PATHS.sources(source),options(query));
+  return this.http.get<SourceRecordResponse>(REPORT_PATHS.sources(source),options({...query}));
  }
  export(source:ReportSource,query:ReportFilters,format:'CSV'|'XLSX'|'PDF'){
   return this.http.get(REPORT_PATHS.exports(source),{
