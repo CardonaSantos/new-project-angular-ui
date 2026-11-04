@@ -1,7 +1,8 @@
 import type {Routes} from '@angular/router';
 import {gcUnsavedChangesGuard} from '../../core/ux/gc-unsaved-changes.guard';
 export const PURCHASES_ROUTES:Routes=[
- {path:'',pathMatch:'full',redirectTo:'quick'},
+ {path:'',pathMatch:'full',title:'Compras y abastecimiento — Gastro Core',
+  loadComponent:()=>import('./pages/purchases-home-page').then(m=>m.GcPurchasesHomePage)},
  {path:'quick',title:'Entrada rápida — Gastro Core',data:{breadcrumb:'Entrada rápida'},
   canDeactivate:[gcUnsavedChangesGuard],
   loadComponent:()=>import('./pages/purchases-quick-page').then(m=>m.GcPurchasesQuickPage)},
