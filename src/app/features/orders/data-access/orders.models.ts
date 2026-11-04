@@ -50,7 +50,7 @@ export interface KitchenRoute{id:string;estacionId:string;varianteId:string|null
 export interface KitchenLine{
  id:string;comandaId:string;ordenLineaId:string;cantidad:string;cantidadPreparada:string;
  listaEn:string|null;entregadaEn:string|null;canceladaEn:string|null;
- ordenLinea?:OrderLine;
+ notasSnapshot?:string|null;ordenLinea?:OrderLine;
 }
 export interface KitchenTicket{
  id:string;numero:string;estado:TicketState;estacionId:string;ordenId:string;enviadaEn:string;
