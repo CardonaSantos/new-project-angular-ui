@@ -39,7 +39,7 @@ const maxLines=25;
    <section class="pur-card">
     <h2>1. Destino</h2>
     <div class="pur-grid pur-quick-destination">
-     <div class="pur-field"><label>Sucursal</label>
+     <div class="pur-field"><span class="pur-static-label">Sucursal</span>
       <strong>{{context.active()?.nombre??'Sin sucursal seleccionada'}}</strong>
      </div>
      <gc-inventory-picker id="pur-quick-warehouse" label="Almacén" kind="warehouse"
@@ -72,7 +72,7 @@ const maxLines=25;
        </div>
        @if(articleCreator()===line.key&&access.canArticleManage()){
         <gc-purchases-create-article (created)="articleCreated(line.key,$event)"
-         (cancel)="articleCreator.set('')"/>
+         (dismiss)="articleCreator.set('')"/>
        }@else{
         <div class="pur-quick-article">
          <gc-inventory-picker [id]="'pur-quick-article-'+line.key"
