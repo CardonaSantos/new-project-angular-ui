@@ -3,7 +3,7 @@ on:
   push:
     branches: [main, chore/angular-foundation]
   pull_request:
-    branches: [main, refactor/organization-design-system-selects-20261103, feat/orders-pos-ui-20261103, feat/payments-cash-ui-20261103]
+    branches: [main, refactor/organization-design-system-selects-20261103, feat/orders-pos-ui-20261103, feat/payments-cash-ui-20261103, refactor/orders-ux-r1-20261104]
 
 jobs:
   validate:
