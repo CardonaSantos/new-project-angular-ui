@@ -28,7 +28,7 @@ import {GcPurchasesNav} from '../purchases-nav';
      [value]="supplierId()" (valueChange)="supplierId.set($event);page.set(1);load()"
      placeholder="Todos los proveedores"/>
     <gc-search-select id="pur-orders-limit" label="Por página" [items]="sizes"
-     [value]="String(limit())" [clearable]="false" [searchable]="false"
+     [value]="limitText()" [clearable]="false" [searchable]="false"
      (valueChange)="setLimit($event)"/>
    </div>
    @if(error()){<p role="alert" class="pur-alert">{{error()}}</p>}
@@ -71,6 +71,7 @@ export class GcPurchasesOrdersPage{
  protected readonly supplierChoices=computed(()=>this.suppliers().map(s=>({id:s.id,label:s.nombre})));
  protected readonly rows=signal<PurchaseOrder[]>([]);
  protected readonly page=signal(1);protected readonly limit=signal(20);
+ protected readonly limitText=computed(()=>String(this.limit()));
  protected readonly total=signal(0);protected readonly pages=signal(0);
  protected readonly sizes=[{id:'10',label:'10'},{id:'20',label:'20'},{id:'50',label:'50'}];
  protected readonly busy=signal(false);protected readonly error=signal('');
