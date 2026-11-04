@@ -383,7 +383,7 @@ export class GcPurchasesReceiptFormPage implements OnInit {
    const source=rows.map(l=>({...blank(),articuloId:l.articuloId,
     ubicacionId:l.ubicacionId,loteId:l.loteId??'',ordenCompraLineaId:l.ordenCompraLineaId??'',
     factorAUnidadBase:l.factorAUnidadBase,precioUnitarioCompra:l.precioUnitarioCompra,
-    cantidadCompra:toApiDecimal(parseApiDecimal(l.cantidadCompra).plus(parseApiDecimal(l.cantidadRechazada??'0'))),
+    cantidadCompra:parseApiDecimal(l.cantidadCompra).plus(parseApiDecimal(l.cantidadRechazada??'0')).toFixed(),
     cantidadRechazada:l.cantidadRechazada??'0',tasaImpuesto:l.tasaImpuesto??'0',
     impuestoRecuperable:l.impuestoRecuperable??false
    }));this.lines.set(source.length?source:[blank()]);
