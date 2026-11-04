@@ -178,6 +178,7 @@ export class GcPurchasesQuickPage {
  private generation=0;private requestKey=newKey();private dirty=false;
  protected readonly ready=computed(()=>
   !!this.branchId()&&!!this.locationId()&&!!this.articleId()&&
+  this.article()?.activo===true&&!this.articleBusy()&&
   (!this.article()?.requiereLote||!!this.lotId())&&
   decimal(this.quantity())!==null&&decimal(this.cost(),true)!==null&&this.reason().trim().length>=5
  );
