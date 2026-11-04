@@ -1,6 +1,6 @@
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {formatCurrency,formatDecimal,parseApiDecimal} from '../../../shared/formatting';
-import type {KitchenTicket,OrderMode,OrderState,TicketState} from './orders.models';
+import type {KitchenTicket,OrderMode,OrderState,TableRecord,TicketState} from './orders.models';
 import {modeLabel,stateLabel} from './orders.models';
 
 export const money=(value:string,currency='GTQ')=>{
@@ -10,6 +10,9 @@ export const money=(value:string,currency='GTQ')=>{
 export const qtyText=(value:string)=>{
  try{return formatDecimal(value,{maximumFractionDigits:3})}catch{return value}
 };
+/** A table occupancy cannot be closed while at least one order is still open. */
+export const openTableOrders=(table:TableRecord)=>
+ (table.ocupacion?.ordenesComoOcupacionMesa??[]).filter(order=>order.estado==='ABIERTA');
 export const modeText=(v:OrderMode)=>modeLabel(v);
 export const statusText=(v:OrderState|TicketState)=>stateLabel(v);
 export const safeQuantity=(v:string):string|null=>{
