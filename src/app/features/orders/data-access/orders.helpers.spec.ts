@@ -1,6 +1,6 @@
 import {GcApiError} from '../../../core/http/api-error';
-import type {KitchenTicket} from './orders.models';
-import {kitchenStage,orderFriendlyError,sortKitchenQueue,kitchenReadyAt} from './orders.helpers';
+import type {KitchenTicket,TableRecord} from './orders.models';
+import {kitchenStage,orderFriendlyError,sortKitchenQueue,kitchenReadyAt,openTableOrders} from './orders.helpers';
 
 describe('Comandas — estado operativo y mensajes',()=>{
  const ticket=(estado:'PENDIENTE'|'PREPARANDO'|'LISTA'|'CANCELADA',
@@ -65,5 +65,28 @@ describe('Prioridad de atención en cocina',()=>{
   const a=make('a','2026-11-03T08:00:00Z',false,true,'2026-11-03T08:10:00Z');
   const b=make('b','2026-11-03T09:00:00Z',true,false,'2026-11-03T09:10:00Z');
   const original=[a,b];sortKitchenQueue(original,'ready');expect(original[0].id).toBe('a');
+ });
+});
+
+describe('Bloqueo de liberación de mesas',()=>{
+ const table=(orders: {id:string;estado:'ABIERTA'|'CERRADA'|'CANCELADA'}[]):TableRecord=>({
+  id:'m1',numero:'1',capacidad:4,activa:true,sala:{id:'s1',nombre:'Principal'},
+  ocupacion:{id:'occ1',mesaId:'m1',cerradaEn:null,
+   ordenesComoOcupacionMesa:orders.map(o=>({...o,numero:o.id,total:'20.00',cerradaEn:null}))}
+ });
+ it('una orden pagada pero ABIERTA sigue impidiendo liberar su ocupación',()=>{
+  expect(openTableOrders(table([{id:'o1',estado:'ABIERTA'}])).map(x=>x.id)).toEqual(['o1']);
+ });
+ it('solo bloquea por ABIERTA, no por pedidos cerrados o cancelados',()=>{
+  const closed=table([{id:'o1',estado:'CERRADA'},{id:'o2',estado:'CANCELADA'}]);
+  expect(openTableOrders(closed)).toEqual([]);
+ });
+ it('detecta varias órdenes abiertas en la misma ocupación',()=>{
+  const mixed=table([{id:'o1',estado:'ABIERTA'},{id:'o2',estado:'CERRADA'},
+   {id:'o3',estado:'ABIERTA'}]);
+  expect(openTableOrders(mixed).map(x=>x.id)).toEqual(['o1','o3']);
+ });
+ it('no bloquea una mesa sin ocupación',()=>{
+  expect(openTableOrders({...table([]),ocupacion:null})).toEqual([]);
  });
 });
