@@ -29,6 +29,7 @@ export interface PurchaseOrderLine extends PurchaseLineInput {
 }
 export interface PurchaseOrder {
  id:string;numero:string;sucursalId:string;proveedorId:string;estado:string;
+ precioIncluyeImpuesto:boolean;
  proveedor:PurchaseSupplier;creadaEn:string;totalEstimado:string;recepcionEstado?:string;
  ordenCompraLineasComoOrdenCompra?:PurchaseOrderLine[];
  lineas?:PurchaseOrderLine[];
@@ -60,6 +61,23 @@ export interface PurchaseReceipt {
 }
 export type PurchaseReceiptSaved={id:string;estado:string;movimientoIds?:string[]};
 export interface SupplyRequisition {
- id:string;numero:string;estado:string;nota?:string;almacenDestinoId:string;
- lineas:{articuloId:string;cantidadSolicitada:string;cantidadAtendida:string;pendiente:string}[];
+ id:string;numero:string;estado:string;estadoVisible?:string;
+ nota?:string|null;almacenDestinoId:string;creadaEn:string;
+ lineas:{id:string;articuloId:string;articulo:{id:string;nombre:string;codigo:string};
+  solicitado:string;recibido:string;enTransito:string;pendiente:string}[];
+ transferencias:{id:string;numero:string;estado:string;almacenOrigenId:string;
+  despachadaEn?:string|null;recibidaEn?:string|null}[];
 }
+export interface SupplyAvailability {
+ requisicionId:string;almacenOrigenId:string;almacenDestinoId:string;nota:string;
+ lineas:Array<SupplyRequisition['lineas'][number] & {
+  disponibleOrigen:string;sugeridoEnviar:string;faltante:string}>;
+}
+export interface SupplyTransfer {
+ id:string;numero:string;estado:string;requisicionId:string;
+ almacenOrigenId:string;almacenDestinoId:string;
+ lineas:{id:string;articuloId:string;ubicacionOrigenId:string;
+  ubicacionDestinoId:string;loteId?:string|null;
+  enviada:string;recibida:string;pendiente:string}[];
+}
+
