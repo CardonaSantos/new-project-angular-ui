@@ -22,5 +22,6 @@ export class PurchasesAccess {
  canSupplyReceive(){return this.can('supply.receive')}
  canSupplyCancel(){return this.can('supply.cancel')}
  canEnter(){return this.canRead()||this.canQuickEntry()||this.canReceiptsCreate()||
+  this.canSupplierManage()||this.canPresentationsManage()||this.canOrdersCreate()||
   this.canSupplyRead()||this.canSupplyRequest()}
 }
