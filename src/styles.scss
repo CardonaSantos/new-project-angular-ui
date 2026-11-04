@@ -936,3 +936,63 @@ gc-kitchen-ticket{display:block;min-width:0}
  .ord-order-list-table tr.ord-order-data-row .ord-actions{justify-content:flex-end}
  .ord-order-list-table .ord-order-empty{display:block;text-align:center}
 }
+
+/* ORD-UI UX R2 bulk: POS, detail dialogs, floor board and kitchen operations. */
+.ord-pos-tables{display:grid;gap:.75rem}
+.ord-pos-table-toolbar{display:flex;align-items:end;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.ord-pos-table-toolbar>label{flex:1 1 16rem;max-width:25rem}
+.ord-pos-table-toolbar>.ord-note{padding-bottom:.45rem;font-variant-numeric:tabular-nums}
+.ord-pos-catalog-meta{display:flex;align-items:center;justify-content:space-between;gap:.65rem;min-height:1.9rem;flex-wrap:wrap}
+.ord-pos-catalog-meta button{min-height:32px!important;padding:.3rem .6rem}
+.ord-pos-cart-tools{justify-content:space-between;margin-bottom:.8rem;align-items:start}
+.ord-pos-cart-tools .ord-note{flex:1;max-width:16rem}
+.ord-pos-cart-tools .ord-danger{margin-left:auto}
+.ord-detail-page .ord-detail-notes{display:grid;gap:.65rem}
+.ord-detail-page .ord-detail-notes>p{overflow-wrap:anywhere}
+.ord-detail-dialog{display:grid;gap:1rem;min-width:0}
+.ord-detail-dialog>.ord-heading{position:sticky;top:0;background:var(--gc-surface-container);
+ z-index:1;padding:.2rem 0 .6rem;border-bottom:1px solid var(--gc-outline-variant)}
+.ord-detail-dialog .ord-actions{justify-content:end;flex-wrap:wrap}
+.ord-detail-dialog .ord-form-grid{min-width:0}
+.ord-tables-page>.ord-heading .ord-actions a{
+ display:inline-flex;align-items:center;min-height:40px;padding:.5rem .75rem;
+ border:1px solid var(--gc-outline);border-radius:.55rem
+}
+.ord-table-stats{margin-bottom:.85rem}
+.ord-table-stats strong{font-variant-numeric:tabular-nums}
+.ord-tables-admin{display:grid;gap:.9rem}
+.ord-tables-admin>.ord-heading{margin-bottom:.2rem}
+.ord-tables-admin>.ord-heading h2{margin:0}
+.ord-tables-admin .ord-setting-row{border-bottom:1px solid var(--gc-outline-variant);padding:.65rem 0}
+.ord-tables-admin .ord-setting-row button{min-width:70px}
+.ord-kitchen-summary{display:flex;align-items:center;gap:.45rem .85rem;flex-wrap:wrap;
+ border-bottom:1px solid var(--gc-outline-variant);padding:.5rem 0 .7rem}
+.ord-kitchen-summary span{font-size:.82rem;display:inline-flex;gap:.3rem}
+.ord-kitchen-summary strong{font-variant-numeric:tabular-nums}
+.ord-kitchen-summary small{font-size:.75rem;color:var(--gc-on-surface-variant)}
+.ord-kitchen-group-heading{grid-column:1/-1;font-size:.96rem;margin:.7rem 0 .1rem;
+ border-bottom:1px solid var(--gc-outline-variant);padding-bottom:.45rem}
+.ord-kitchen-filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ord-settings-tabs{justify-self:start}
+.ord-kitchen-settings{gap:.85rem}
+.ord-kitchen-settings .ord-card{display:grid;gap:.85rem}
+.ord-kitchen-settings .ord-card> .ord-heading h2{margin:0 0 .2rem}
+.ord-kitchen-settings .ord-setting-row{border-bottom:1px solid var(--gc-outline-variant);padding:.55rem 0}
+.ord-settings-editor{margin-top:.4rem}
+@media(max-width:980px){
+ .ord-kitchen-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ord-kitchen-filters gc-search-select:last-child{grid-column:1/-1}
+}
+@media(max-width:650px){
+ .ord-kitchen-filters{grid-template-columns:minmax(0,1fr)}
+ .ord-kitchen-filters gc-search-select:last-child{grid-column:auto}
+ .ord-pos-table-toolbar>label{max-width:none}
+ .ord-tables-admin>.ord-heading{align-items:stretch}
+ .ord-tables-admin>.ord-heading .ord-view-switch{width:100%}
+ .ord-tables-admin>.ord-heading .ord-view-switch button{flex:1}
+ .ord-detail-dialog{width:min(100%,calc(100vw - 1rem));padding:.8rem}
+ .ord-detail-dialog .ord-actions>button{flex:1 1 8rem}
+ .ord-kitchen-summary{gap:.5rem}
+ .ord-kitchen-summary small{width:100%}
+ .ord-kitchen-settings .ord-setting-row{align-items:start;flex-wrap:wrap}
+}
