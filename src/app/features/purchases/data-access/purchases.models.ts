@@ -46,7 +46,7 @@ export interface PurchaseReceiptInput {
  lineas:ReceiptLineInput[];
 }
 export interface ReceiptLine extends ReceiptLineInput {
- id:string;cantidadBase:string;costoTotal:string;
+ id:string;cantidadBase:string;costoTotal:string;precioIncluyeImpuesto?:boolean;
  articulo:{id:string;codigo:string;nombre:string};
  ubicacion:{id:string;nombre:string};lote?:{id:string;codigoLote:string}|null;
  ordenCompraLinea?:PurchaseOrderLine|null;
