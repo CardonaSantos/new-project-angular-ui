@@ -15,6 +15,8 @@ export const ORDERS_ROUTES:Routes=[
   loadComponent:()=>import('./pages/orders-tables-page').then(m=>m.GcOrdersTablesPage)},
  {path:'tables',title:'Mesas — Gastro Core',data:{breadcrumb:'Mesas'},
   loadComponent:()=>import('./pages/orders-tables-page').then(m=>m.GcOrdersTablesPage)},
+ {path:'kitchen/tickets/:id/print',title:'Imprimir comanda — Gastro Core',data:{breadcrumb:'Imprimir comanda'},
+  loadComponent:()=>import('./pages/orders-kitchen-print-page').then(m=>m.GcOrdersKitchenPrintPage)},
  {path:'kitchen',title:'Cocina — Gastro Core',data:{breadcrumb:'Cocina'},
   loadComponent:()=>import('./pages/orders-kitchen-page').then(m=>m.GcOrdersKitchenPage)},
  {path:'settings',title:'Configuración de órdenes — Gastro Core',data:{breadcrumb:'Configuración'},
