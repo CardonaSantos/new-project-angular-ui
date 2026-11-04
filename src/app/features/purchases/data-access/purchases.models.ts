@@ -59,7 +59,7 @@ export interface PurchaseReceipt {
  creadoEn:string;recibidoEn?:string|null;
  recepcionCompraLineasComoRecepcion?:ReceiptLine[];
 }
-export type PurchaseReceiptSaved={id:string;estado:string;movimientoIds?:string[]};
+export interface PurchaseReceiptSaved {id:string;estado:string;movimientoIds?:string[];}
 export interface SupplyRequisition {
  id:string;numero:string;estado:string;estadoVisible?:string;
  nota?:string|null;almacenDestinoId:string;creadaEn:string;
@@ -70,8 +70,8 @@ export interface SupplyRequisition {
 }
 export interface SupplyAvailability {
  requisicionId:string;almacenOrigenId:string;almacenDestinoId:string;nota:string;
- lineas:Array<SupplyRequisition['lineas'][number] & {
-  disponibleOrigen:string;sugeridoEnviar:string;faltante:string}>;
+ lineas:(SupplyRequisition['lineas'][number] & {
+  disponibleOrigen:string;sugeridoEnviar:string;faltante:string})[];
 }
 export interface SupplyTransfer {
  id:string;numero:string;estado:string;requisicionId:string;
