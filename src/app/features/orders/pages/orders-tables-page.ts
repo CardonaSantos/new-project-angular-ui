@@ -46,7 +46,7 @@ import {money} from '../data-access/orders.helpers';
      <div class="ord-heading"><strong>Mesa {{table.numero}}</strong>
       <span class="ord-ticket-badge" [class.ord-ticket-badge--ready]="!table.ocupacion"
        [class.ord-ticket-badge--working]="!!table.ocupacion">
-       {{table.ocupacion?'Ocupada':'Disponible'}}</span></div>
+       {{!table.activa?'Inactiva':table.ocupacion?'Ocupada':'Disponible'}}</span></div>
      <small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
      @if(table.ocupacion){
       @for(o of table.ocupacion.ordenesComoOcupacionMesa??[];track o.id){
