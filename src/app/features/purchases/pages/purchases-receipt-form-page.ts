@@ -55,7 +55,7 @@ const blank=():ReceiptEditorLine=>({
     }
     @if(showSupplierCreation()){
      <gc-purchases-create-supplier (created)="supplierCreated($event)"
-      (cancel)="showSupplierCreation.set(false)"/>
+      (dismiss)="showSupplierCreation.set(false)"/>
     }
     <div class="pur-grid">
      <gc-search-select id="pur-form-supplier" label="Proveedor"
@@ -108,7 +108,7 @@ const blank=():ReceiptEditorLine=>({
        }
        @if(articleCreationKey()===line.key){
         <gc-purchases-create-article (created)="createdArticle(line.key,$event)"
-         (cancel)="articleCreationKey.set('')"/>
+         (dismiss)="articleCreationKey.set('')"/>
        }
        <div class="pur-grid">
         <gc-inventory-picker [id]="'pur-receipt-loc-'+line.key" kind="location"
@@ -454,7 +454,7 @@ export class GcPurchasesReceiptFormPage implements OnInit {
    confirmText:'Guardar e ingresar'}))return;
   const payload=this.payload();
   this.busy.set(true);this.error.set('');
-  let savedId=this.editId;
+  let savedId:string;
   try{
    const result=this.editId
     ?await firstValueFrom(this.api.editReceipt(this.editId,payload))
