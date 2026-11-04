@@ -44,7 +44,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
       [disabled]="busy()"/>
     </label>
     <gc-search-select id="sales-limit" label="Filas por página" [items]="pageSizes"
-     [value]="String(limit())" [clearable]="false" [searchable]="false"
+     [value]="limitText()" [clearable]="false" [searchable]="false"
      (valueChange)="changeLimit($event)"/>
    </div>
    <div class="pay-sales-filter-actions">
@@ -117,6 +117,7 @@ export class GcPaymentsSalesPage{
  protected readonly total=signal(0);
  protected readonly pages=signal(0);
  protected readonly limit=signal(20);
+ protected readonly limitText=computed(()=>String(this.limit()));
  protected readonly search=signal('');
  protected readonly from=signal('');
  protected readonly to=signal('');
