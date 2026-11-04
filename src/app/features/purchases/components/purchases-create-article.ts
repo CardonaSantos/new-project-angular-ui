@@ -38,13 +38,13 @@ import {firstValueFrom} from 'rxjs';
   <div class="pur-actions">
    <button class="pur-primary" type="button" [disabled]="busy()||!name().trim()||!unitId()"
     (click)="save()">{{busy()?'Creando…':'Crear y seleccionar'}}</button>
-   <button type="button" [disabled]="busy()" (click)="cancel.emit()">Volver</button>
+   <button type="button" [disabled]="busy()" (click)="dismiss.emit()">Volver</button>
   </div>
  </section>`,
  styleUrl:'../purchases.scss'
 })
 export class GcPurchasesCreateArticle {
- readonly created=output<Article>();readonly cancel=output<void>();
+ readonly created=output<Article>();readonly dismiss=output<void>();
  private readonly api=inject(InventoryApi);
  private readonly notice=inject(GcNotificationService);
  protected readonly name=signal('');protected readonly code=signal('');
