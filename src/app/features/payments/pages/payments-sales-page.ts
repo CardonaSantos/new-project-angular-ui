@@ -1,4 +1,5 @@
 import {DatePipe} from '@angular/common';
+import {RouterLink} from '@angular/router';
 import {Component,computed,effect,inject,signal,untracked} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {firstValueFrom} from 'rxjs';
@@ -14,7 +15,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
 
 @Component({
  selector:'gc-payments-sales-page',
- imports:[DatePipe,GcPaymentsNav,GcSearchSelect],
+ imports:[DatePipe,RouterLink,GcPaymentsNav,GcSearchSelect],
  template:`
  <main class="ord-page pay-page pay-sales-page">
   <gc-payments-nav/>
@@ -80,9 +81,14 @@ import {parseApiDecimal} from '../../../shared/formatting';
          <td data-label="Venta"><strong class="pay-sales-number" [title]="s.numero">{{s.numero}}</strong></td>
          <td data-label="Pedido"><span [title]="s.cuenta?.orden?.numero??''">{{s.cuenta?.orden?.numero??'—'}}</span></td>
          <td data-label="Total" class="pay-sales-money">{{money(s.total)}}</td>
-         <td data-label="Detalle"><button type="button" (click)="inspect(s.id)"
-           [disabled]="busy()||detailBusy()"
-           [attr.aria-label]="'Ver detalle de venta '+s.numero">Ver detalle</button></td>
+         <td data-label="Detalle">
+          <div class="ord-actions">
+           <button type="button" (click)="inspect(s.id)"
+            [disabled]="busy()||detailBusy()"
+            [attr.aria-label]="'Ver detalle de venta '+s.numero">Ver detalle</button>
+           <a [routerLink]="['/payments/sales',s.id,'receipt']">Imprimir</a>
+          </div>
+         </td>
         </tr>
        } @empty {
         @if(!busy()){
