@@ -16,14 +16,27 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
 @Component({
  selector:'gc-orders-settings-page',imports:[GcOrdersNav,GcSearchSelect],
  template:`
- <main class="ord-page"><gc-orders-nav/>
+ <main class="ord-page ord-kitchen-settings"><gc-orders-nav/>
  <div class="ord-heading"><div><h1>Configuración de cocina</h1>
   <p>Organiza estaciones y asigna los productos que se preparan en cada una.</p></div>
   <button type="button" (click)="load()" [disabled]="busy()">Actualizar</button></div>
  @if(error()){<p class="ord-alert" role="alert">{{error()}}</p>}
  @if(busy()){<p role="status">Cargando configuración…</p>}
+ <div class="ord-view-switch ord-settings-tabs" role="group" aria-label="Apartado de configuración">
+  <button type="button" [class.active]="section()==='stations'"
+   [attr.aria-pressed]="section()==='stations'" (click)="section.set('stations')">Estaciones</button>
+  <button type="button" [class.active]="section()==='routes'"
+   [attr.aria-pressed]="section()==='routes'" (click)="section.set('routes')">Rutas de preparación</button>
+ </div>
+ @if(section()==='stations'){
  <section class="ord-card">
-  <h2>Estaciones de preparación</h2>
+  <div class="ord-heading"><div><h2>Estaciones de preparación</h2>
+    <p class="ord-note">{{stations().length}} estaciones · {{missingLocations()}} sin ubicación de ingredientes</p></div>
+   @if(access.canKitchenManage()){
+    <button type="button" class="ord-primary" (click)="beginStation()" [disabled]="actionBusy()">
+     Nueva estación</button>
+   }
+  </div>
   <div class="ord-small-list">
    @for(st of stations();track st.id){
     <div class="ord-setting-row">
@@ -40,8 +53,8 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
     </div>
    } @empty {<p>No hay estaciones configuradas.</p>}
   </div>
-  @if(access.canKitchenManage()){
-   <fieldset class="ord-section"><legend>{{editStationId()?'Editar estación':'Nueva estación'}}</legend>
+  @if(access.canKitchenManage()&&stationForm()){
+   <fieldset class="ord-section ord-settings-editor"><legend>{{editStationId()?'Editar estación':'Nueva estación'}}</legend>
     <div class="ord-form-grid">
      <label>Nombre
       <input [value]="stationName()" maxlength="100" (input)="stationName.set($any($event.target).value)"
@@ -60,9 +73,17 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
    </fieldset>
   }
  </section>
+ }
+ @if(section()==='routes'){
  <section class="ord-card">
-  <h2>Rutas de preparación</h2>
-  <p class="ord-muted">Si hay varias estaciones, indica dónde se prepara cada producto o categoría.</p>
+  <div class="ord-heading">
+   <div><h2>Rutas de preparación</h2>
+    <p class="ord-note">{{routes().length}} rutas · Indica dónde se prepara cada producto o categoría.</p></div>
+   @if(access.canKitchenManage()){
+    <button type="button" class="ord-primary" (click)="beginRoute()" [disabled]="actionBusy()">
+     Nueva ruta</button>
+   }
+  </div>
   <div class="ord-small-list">
    @for(route of routes();track route.id){
     <div class="ord-setting-row">
@@ -76,8 +97,8 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
     </div>
    } @empty {<p>No hay rutas específicas. Una sola estación activa puede ser utilizada de forma predeterminada.</p>}
   </div>
-  @if(access.canKitchenManage()){
-   <fieldset class="ord-section"><legend>{{editRouteId()?'Editar ruta':'Asignar preparación'}}</legend>
+  @if(access.canKitchenManage()&&routeForm()){
+   <fieldset class="ord-section ord-settings-editor"><legend>{{editRouteId()?'Editar ruta':'Asignar preparación'}}</legend>
     <div class="ord-form-grid">
      <gc-search-select id="route-station" label="Estación" [items]="stationChoices()"
       [value]="routeStationId()" placeholder="Seleccionar estación"
@@ -110,6 +131,7 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
    </fieldset>
   }
  </section>
+ }
  </main>`
 })
 export class GcOrdersSettingsPage{
@@ -118,6 +140,9 @@ export class GcOrdersSettingsPage{
  private readonly dialog=inject(ConfirmDialogService);
  protected readonly branch=inject(GcBranchContext);protected readonly access=inject(OrdersAccess);
  protected readonly stations=signal<Station[]>([]);protected readonly routes=signal<KitchenRoute[]>([]);
+ protected readonly section=signal<'stations'|'routes'>('stations');
+ protected readonly stationForm=signal(false);protected readonly routeForm=signal(false);
+ protected readonly missingLocations=computed(()=>this.stations().filter(s=>s.activa&&!s.ubicacionConsumoId).length);
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly stationName=signal('');protected readonly editStationId=signal('');
@@ -128,7 +153,7 @@ export class GcOrdersSettingsPage{
  protected readonly variants=signal<CatalogVariant[]>([]);
  protected readonly categories=signal<CatalogCategoryOption[]>([]);
  protected readonly targetKinds=[{id:'variant',label:'Presentación'},{id:'category',label:'Categoría'}];
- protected readonly stationChoices=computed(()=>this.stations().filter(s=>s.activa).map(s=>({id:s.id,label:s.nombre})));
+ protected readonly stationChoices=computed(()=>this.stations().filter(s=>s.activa||s.id===this.routeStationId()).map(s=>({id:s.id,label:s.nombre})));
  protected readonly locationOptions=computed(()=>this.locations());
  protected readonly variantChoices=computed(()=>this.variants().map(v=>({id:v.id,label:v.label??v.nombre})));
  protected readonly categoryChoices=computed(()=>this.categories().map(c=>({id:c.id,label:c.label})));
@@ -183,13 +208,19 @@ export class GcOrdersSettingsPage{
   catch(e){this.error.set(gcErrorMessage(e))}
   finally{this.actionBusy.set(false)}
  }
+ protected beginStation(){
+  this.clearStation();this.stationForm.set(true);this.section.set('stations');
+ }
  protected editStation(s:Station){
+  this.section.set('stations');this.stationForm.set(true);
   this.editStationId.set(s.id);this.stationName.set(s.nombre);
   this.locationId.set(s.ubicacionConsumoId??'');
   if(s.ubicacionConsumo&&!this.locations().some(x=>x.id===s.ubicacionConsumo!.id))
    this.locations.update(a=>[{id:s.ubicacionConsumo!.id,label:s.ubicacionConsumo!.nombre},...a]);
  }
- protected clearStation(){this.editStationId.set('');this.stationName.set('');this.locationId.set('')}
+ protected clearStation(){
+  this.editStationId.set('');this.stationName.set('');this.locationId.set('');this.stationForm.set(false);
+ }
  protected async saveStation(){
   const branch=this.branch.branchId(),name=this.stationName().trim();if(!branch||name.length<2)return;
   await this.mutate(async()=>{
@@ -210,10 +241,17 @@ export class GcOrdersSettingsPage{
   await this.mutate(async()=>{await firstValueFrom(this.api.updateStation(s.id,{activa:!s.activa}))});
  }
  protected setTargetKind(v:string){this.targetKind.set(v==='category'?'category':'variant');this.targetId.set('')}
+ protected beginRoute(){
+  this.resetRoute();this.routeForm.set(true);this.section.set('routes');
+ }
  protected editRoute(r:KitchenRoute){
+  this.section.set('routes');this.routeForm.set(true);
   this.editRouteId.set(r.id);this.routeStationId.set(r.estacionId);this.priority.set(r.prioridad);
  }
- protected resetRoute(){this.editRouteId.set('');this.routeStationId.set('');this.targetId.set('');this.priority.set(100)}
+ protected resetRoute(){
+  this.editRouteId.set('');this.routeStationId.set('');this.targetId.set('');
+  this.priority.set(100);this.routeForm.set(false);
+ }
  protected async saveRoute(){
   if(!this.routeStationId()||(!this.editRouteId()&&!this.targetId()))return;
   await this.mutate(async()=>{
