@@ -52,8 +52,8 @@ import {printableKitchenLines,kitchenModifierNames} from '../printing/thermal-pr
        @for(modifier of modifiers(line.ordenLinea?.ordenLineaModificadoresComoOrdenLinea);track $index){
         <span class="gc-thermal-mod">+ {{modifier}}</span>
        }
-       @if(line.ordenLinea?.notasCocina||line.ordenLinea?.notasSnapshot){
-        <p class="gc-thermal-line-note">Nota: {{line.ordenLinea?.notasCocina??line.ordenLinea?.notasSnapshot}}</p>
+       @if(line.ordenLinea?.notasCocina||line.notasSnapshot){
+        <p class="gc-thermal-line-note">Nota: {{line.ordenLinea?.notasCocina??line.notasSnapshot}}</p>
        }
       </article>
      }@empty{<p>No hay líneas activas en esta comanda.</p>}
