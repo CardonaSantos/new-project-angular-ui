@@ -8,6 +8,7 @@ export interface CashShift{
  id:string;cajaId:string;cajeroId:string;fondoInicial:string;fechaOperativa:string;
  abiertaEn:string;cerradaEn:string|null;efectivoCalculado?:string;
  efectivoEsperado?:string|null;efectivoContado?:string|null;diferencia?:string|null;
+ notaCierre?:string|null;
  caja?:CashRegister;movimientoCajasComoTurno?:CashMovement[];
 }
 export interface AccountLine{id:string;cuentaId:string;ordenLineaId:string;cantidadAsignada:string;
@@ -26,8 +27,12 @@ export interface PaymentAttempt{
 export interface SaleRecord{
  id:string;numero:string;cuentaId:string;sucursalId:string;total:string;
  cerradaEn:string;descuentoTotal:string;
- ventaLineasComoVenta?:{id:string;nombreSnapshot?:string;cantidad:string;subtotal:string}[];
+ ventaLineasComoVenta?:{id:string;descripcion:string;cantidad:string;subtotal:string;
+  precioUnitario:string;descuento:string}[];
  cuenta?:{id:string;orden?:{id:string;numero:string;modalidad:string;estado:string}};
+}
+export interface SalesFilters{
+ search?:string;desde?:string;hasta?:string;minTotal?:string;maxTotal?:string;
 }
 export interface AccountDetail{
  id:string;ordenId:string;sucursalId:string;estado:string;total:string;pagado:string;

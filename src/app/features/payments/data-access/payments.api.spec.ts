@@ -76,4 +76,24 @@ describe('PAY-A HTTP — 20 real routes',()=>{
   expect(req.request.params.get('sucursalId')).toBe('branch-test');req.flush({});
   expect(paymentPaths.account('a/b')).toBe('/api/accounts/a%2Fb');
  });
+ it('sends filters to backend before server-side pagination, without sending empty fields',()=>{
+  api.sales('branch-1',3,50,{search:'ORD-12',desde:'2026-11-01',
+   hasta:'2026-11-04',minTotal:'10.00',maxTotal:'90.00'}).subscribe();
+  const r=http.expectOne(q=>q.url===paymentPaths.sales);
+  expect(r.request.params.get('sucursalId')).toBe('branch-1');
+  expect(r.request.params.get('page')).toBe('3');
+  expect(r.request.params.get('limit')).toBe('50');
+  expect(r.request.params.get('search')).toBe('ORD-12');
+  expect(r.request.params.get('desde')).toBe('2026-11-01');
+  expect(r.request.params.get('hasta')).toBe('2026-11-04');
+  expect(r.request.params.get('minTotal')).toBe('10.00');
+  expect(r.request.params.get('maxTotal')).toBe('90.00');
+  r.flush({data:[],meta:{page:3,limit:50,total:0,totalPages:0}});
+  api.sales('branch-1',1,20,{search:'',desde:'',hasta:''}).subscribe();
+  const empty=http.expectOne(q=>q.url===paymentPaths.sales);
+  expect(empty.request.params.has('search')).toBe(false);
+  expect(empty.request.params.has('desde')).toBe(false);
+  empty.flush({data:[],meta:{page:1,limit:20,total:0,totalPages:0}});
+ });
+
 });

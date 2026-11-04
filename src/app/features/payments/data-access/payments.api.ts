@@ -3,7 +3,7 @@ import {inject,Injectable} from '@angular/core';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
  AccountDetail,AccountSplitInput,AccountSummary,CashRegister,CashShift,CollectInput,
- Page,PaymentSummary,RefundInput,SaleRecord
+ Page,PaymentSummary,RefundInput,SaleRecord,SalesFilters
 } from './payments.models';
 export const paymentPaths={
  registers:'/api/cash/registers',register:(id:string)=>'/api/cash/registers/'+encodeURIComponent(id),
@@ -71,8 +71,9 @@ export class PaymentsApi{
   return this.http.post<{id:string}>(paymentPaths.payment(id)+'/refund',body,opts);
  }
  // Sales & reports: 3 endpoints
- sales(branch:string,page=1,limit=20){
-  return this.http.get<Page<SaleRecord>>(paymentPaths.sales,query({sucursalId:branch,page,limit}));
+ sales(branch:string,page=1,limit=20,filters:SalesFilters={}){
+  return this.http.get<Page<SaleRecord>>(paymentPaths.sales,
+   query({sucursalId:branch,page,limit,...filters}));
  }
  sale(id:string){return this.http.get<SaleRecord>(paymentPaths.sale(id),opts)}
  summary(branch:string){return this.http.get<PaymentSummary>(paymentPaths.summary,query({sucursalId:branch}))}
