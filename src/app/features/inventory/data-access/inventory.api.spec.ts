@@ -52,6 +52,19 @@ describe('Inventory API — NestJS contract',()=>{
   expect(req.request.method).toBe('POST');expect(req.request.body).toEqual(body);
   req.flush({id:'m1'});
  });
+ it('sends the full quick-intake list as one atomic request, never separate writes',()=>{
+  const body={claveOperacion:'INV:BULK:001',motivo:'Compra de insumos',lineas:[
+   {articuloId:'milk',ubicacionId:'bar',cantidad:'12',costoUnitario:'8.50'},
+   {articuloId:'coffee',ubicacionId:'bar',cantidad:'5',costoUnitario:'48.75',loteId:'lot1'}
+  ]};
+  api.inboundBatch(body).subscribe();
+  const req=http.expectOne('/api/inventory/operations/inbound/batch');
+  expect(req.request.method).toBe('POST');
+  expect(req.request.body).toEqual(body);
+  http.expectNone('/api/inventory/operations/inbound');
+  req.flush({claveOperacion:body.claveOperacion,numeroLineas:2,sucursalId:'branch1',
+   movimientos:[{movementId:'m1'},{movementId:'m2'}]});
+ });
  it('submits transfer and count documents only with their nested lines',()=>{
   api.createCount({almacenId:'w1',nota:'Conteo semanal',lineas:[
    {articuloId:'a1',ubicacionId:'l1',cantidadContada:'12.000000'}
