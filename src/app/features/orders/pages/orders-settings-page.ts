@@ -68,7 +68,7 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
     <div class="ord-actions"><button class="ord-primary" type="button"
      [disabled]="actionBusy()||stationName().trim().length<2" (click)="saveStation()">
      {{editStationId()?'Guardar estación':'Crear estación'}}</button>
-     @if(editStationId()){<button type="button" (click)="clearStation()">Cancelar</button>}
+     <button type="button" (click)="clearStation()" [disabled]="actionBusy()">Cancelar</button>
     </div>
    </fieldset>
   }
@@ -126,7 +126,7 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
      <button type="button" class="ord-primary"
       [disabled]="actionBusy()||!routeStationId()||(!editRouteId()&&!targetId())||priority()<0||priority()>1000"
       (click)="saveRoute()">{{editRouteId()?'Guardar ruta':'Asignar ruta'}}</button>
-     @if(editRouteId()){<button type="button" (click)="resetRoute()">Cancelar</button>}
+     <button type="button" (click)="resetRoute()" [disabled]="actionBusy()">Cancelar</button>
     </div>
    </fieldset>
   }
