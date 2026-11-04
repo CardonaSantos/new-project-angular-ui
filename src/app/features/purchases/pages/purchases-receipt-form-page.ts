@@ -10,7 +10,7 @@ import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {InventoryApi} from '../../inventory/data-access/inventory.api';
 import type {Article} from '../../inventory/data-access/inventory.models';
-import {parseApiDecimal,toApiDecimal} from '../../../shared/formatting';
+import {parseApiDecimal} from '../../../shared/formatting';
 import {PurchasesApi} from '../data-access/purchases.api';
 import {PurchasesAccess} from '../data-access/purchases-access';
 import {decimal,newKey} from '../data-access/purchases.helpers';
