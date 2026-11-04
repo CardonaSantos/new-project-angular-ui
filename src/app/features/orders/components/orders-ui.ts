@@ -1,9 +1,28 @@
 import {Component,computed,input,output} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import type {CatalogProjectedItem} from '../../catalog/data-access/catalog.models';
-import type {KitchenTicket,OrderState,TicketState} from '../data-access/orders.models';
+import type {KitchenTicket,OrderLineModifier,OrderState,TicketState} from '../data-access/orders.models';
 import {kitchenReadyAt,kitchenStage,money,qtyText,statusText} from '../data-access/orders.helpers';
 import type {PosCartEntry} from './pos-cart.models';
+
+/** Modifier snapshots are saved with each order line; render them without any catalog lookups. */
+@Component({
+ selector:'gc-kitchen-modifiers',
+ template:`
+ @if(modifiers()?.length){
+  <div class="ord-kitchen-modifiers">
+   <span class="ord-kitchen-modifiers-title">Personalización</span>
+   <ul>
+    @for(mod of modifiers()??[];track mod.id){
+     <li>@if(mod.cantidad>1){<strong>{{mod.cantidad}} × </strong>}{{mod.nombreSnapshot}}</li>
+    }
+   </ul>
+  </div>
+ }`
+})
+export class GcKitchenModifiers {
+ readonly modifiers=input<readonly OrderLineModifier[]|undefined>([]);
+}
 
 /** Interactive product choice, optimized for mouse and touch. */
 @Component({
@@ -81,7 +100,7 @@ export class GcOrderStatus{
 }
 
 @Component({
- selector:'gc-kitchen-ticket',imports:[DatePipe],template:`
+ selector:'gc-kitchen-ticket',imports:[DatePipe,GcKitchenModifiers],template:`
  <article class="ord-ticket" [class.ord-ticket--delivered]="stage().kind==='delivered'"
    [class.ord-ticket--cancelled]="stage().kind==='cancelled'">
   <button class="ord-ticket-open" type="button" (click)="open.emit()"
@@ -106,7 +125,8 @@ export class GcOrderStatus{
      <div class="ord-kitchen-line">
       <strong>{{qtyText(line.cantidad)}} × {{line.ordenLinea?.nombreSnapshot??
        line.ordenLinea?.variante?.producto?.nombre??'Producto'}}</strong>
-      @if(line.ordenLinea?.notasCocina){<small>{{line.ordenLinea?.notasCocina}}</small>}
+      <gc-kitchen-modifiers [modifiers]="line.ordenLinea?.ordenLineaModificadoresComoOrdenLinea"/>
+      @if(line.ordenLinea?.notasCocina){<small>Nota: {{line.ordenLinea?.notasCocina}}</small>}
       @if(line.entregadaEn){<small>Entregada</small>}
       @else if(line.listaEn){<small>Lista para entregar</small>}
      </div>
