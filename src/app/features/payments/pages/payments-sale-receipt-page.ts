@@ -1,4 +1,4 @@
-import {Component,computed,inject,signal,effect,untracked} from '@angular/core';
+import {Component,inject,signal,effect,untracked} from '@angular/core';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
