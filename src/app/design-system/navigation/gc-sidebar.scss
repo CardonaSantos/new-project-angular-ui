@@ -26,3 +26,6 @@ nav a.gc-active { background:var(--gc-primary-container); color:var(--gc-on-prim
 @media (max-width:820px) {
   .gc-sidebar { min-height:100dvh; }
 }
+
+.gc-nav-icon{display:block;width:1.15rem;height:1.15rem;flex:none;stroke-width:1.9}
+nav a:focus-visible{outline:2px solid var(--gc-primary);outline-offset:-2px}
