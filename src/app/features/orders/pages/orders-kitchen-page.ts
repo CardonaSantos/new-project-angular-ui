@@ -7,13 +7,13 @@ import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcOrdersNav} from '../orders-nav';
-import {GcKitchenTicket} from '../components/orders-ui';
+import {GcKitchenTicket,GcKitchenModifiers} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import type {KitchenTicket,Station} from '../data-access/orders.models';
 import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitchenQueue} from '../data-access/orders.helpers';
 @Component({
- selector:'gc-orders-kitchen-page',imports:[GcOrdersNav,GcSearchSelect,GcKitchenTicket,CdkTrapFocus],
+ selector:'gc-orders-kitchen-page',imports:[GcOrdersNav,GcSearchSelect,GcKitchenTicket,GcKitchenModifiers,CdkTrapFocus],
  template:`
  <main class="ord-page ord-kitchen"><gc-orders-nav/>
  <div class="ord-heading ord-kitchen-heading">
@@ -125,6 +125,7 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
        <span class="ord-ticket-badge">{{line.canceladaEn?'Cancelada':
         line.entregadaEn?'Entregada':line.listaEn?'Lista para entregar':'En preparación'}}</span>
       </div>
+      <gc-kitchen-modifiers [modifiers]="line.ordenLinea?.ordenLineaModificadoresComoOrdenLinea"/>
       @if(line.ordenLinea?.notasCocina){<p class="ord-note">Nota para cocina: {{line.ordenLinea?.notasCocina}}</p>}
       @if(access.canKitchenManage()&&!line.canceladaEn){
        <div class="ord-actions">
