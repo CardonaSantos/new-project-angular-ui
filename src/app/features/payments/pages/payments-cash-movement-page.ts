@@ -8,7 +8,7 @@ import {GcPaymentsNav} from '../payments-nav';
 import {CashContext} from '../data-access/cash-context';
 import {PaymentsApi} from '../data-access/payments.api';
 import {PaymentsAccess} from '../data-access/payments-access';
-import {amount,money,positive,operationKey,paymentError} from '../data-access/payments.helpers';
+import {money,positive,operationKey,paymentError} from '../data-access/payments.helpers';
 @Component({
  selector:'gc-payments-cash-movement-page',
  imports:[RouterLink,GcSearchSelect,GcPaymentsNav],
