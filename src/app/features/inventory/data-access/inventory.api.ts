@@ -9,7 +9,7 @@ import type {
  InventoryPage,InventoryOptions,Article,ArticleCreate,ArticleUpdate,Unit,Dimension,Conversion,
  Warehouse,Location,InventoryLot,InventoryMovement,StockPosition,StockSummary,CountListItem,CountDetail,
  TransferListItem,TransferDetail,CountCreate,TransferCreate,ManualPosting,BranchFilters,InventoryKind,
- CountStatus,TransferStatus
+ CountStatus,TransferStatus,BatchInboundInput,BatchInboundResult
 } from './inventory.models';
 
 export function inventoryParams(input:object):HttpParams{
