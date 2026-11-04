@@ -1,5 +1,6 @@
-import {Component,computed,inject,OnInit,signal} from '@angular/core';
+import {Component,computed,HostListener,inject,OnInit,signal} from '@angular/core';
 import {DatePipe} from '@angular/common';
+import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -18,12 +19,15 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
 
 @Component({
  selector:'gc-orders-detail-page',
- imports:[RouterLink,DatePipe,GcOrdersNav,GcOrderStatus,GcSearchSelect],
+ imports:[RouterLink,DatePipe,CdkTrapFocus,GcOrdersNav,GcOrderStatus,GcSearchSelect],
  template:`
- <main class="ord-page"><gc-orders-nav/>
+ <main class="ord-page ord-detail-page"><gc-orders-nav/>
   <div class="ord-heading"><div><a routerLink="/orders/list">← Órdenes</a>
    <h1>Pedido {{order()?.numero??''}}</h1></div>
-   @if(order();as o){<gc-order-status [state]="o.estado"/>}
+   <div class="ord-actions">
+    @if(order();as o){<gc-order-status [state]="o.estado"/>}
+    <button type="button" (click)="load()" [disabled]="busy()||actionBusy()">Actualizar</button>
+   </div>
   </div>
   @if(busy()){<p role="status">Cargando pedido…</p>}
   @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>
@@ -66,7 +70,13 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
     }
    </section>
    <section class="ord-card">
-    <h2>Productos del pedido</h2>
+    <div class="ord-heading"><h2>Productos del pedido</h2>
+     @if(o.estado==='ABIERTA'&&access.canManage()){
+      <button type="button" class="ord-primary" (click)="showAdd.update(v=>!v)">
+       {{showAdd()?'Cerrar productos':'Agregar productos'}}
+      </button>
+     }
+    </div>
     <div class="ord-order-lines">
      @for(line of o.ordenLineasComoOrden;track line.id){
       <article class="ord-order-line" [class.ord-faded]="line.canceladaEn">
@@ -81,7 +91,7 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
        @else if(o.estado==='ABIERTA'&&access.canManage()){
         <div class="ord-actions">
          @if(!sent(line)){
-          <button type="button" [disabled]="actionBusy()" (click)="editItem.set(line);editQty.set(line.cantidad);editNotes.set(line.notasCocina??'');editDiscount.set(line.descuento)">
+          <button type="button" [disabled]="actionBusy()" (click)="beginEditLine(line)">
            Editar
           </button>
          }
@@ -102,8 +112,10 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
     }
    </section>
    @if(o.estado==='ABIERTA'&&access.canManage()){
-    <section class="ord-card">
-     <h2>Agregar productos</h2>
+    @if(showAdd()){
+    <section class="ord-card ord-detail-secondary" id="order-add-products">
+     <div class="ord-heading"><h2>Agregar productos</h2>
+      <button type="button" (click)="showAdd.set(false)" [disabled]="actionBusy()">Cerrar</button></div>
      <p class="ord-muted">Solo se enviarán a cocina los productos nuevos que no se hayan enviado antes.</p>
      <gc-search-select id="detail-menu-variant" label="Producto y presentación"
       [items]="variantChoices()" [value]="variantId()" placeholder="Buscar producto"
@@ -134,18 +146,33 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
        (click)="addLine()">Agregar al pedido</button></div>
      }
     </section>
-    <section class="ord-card">
-     <h2>Notas del pedido</h2>
+    }
+    <section class="ord-card ord-detail-notes">
+     <div class="ord-heading"><h2>Notas del pedido</h2>
+      <button type="button" (click)="showNotes.update(v=>!v)">
+       {{showNotes()?'Ocultar edición':'Editar notas'}}
+      </button>
+     </div>
+     @if(!showNotes()){<p class="ord-note">{{o.observaciones||'Sin observaciones adicionales.'}}</p>}
+     @if(showNotes()){
      <label>Observaciones
       <textarea rows="2" maxlength="500" [value]="observations()"
        (input)="observations.set($any($event.target).value)"></textarea>
      </label>
-     <div class="ord-actions"><button type="button" [disabled]="actionBusy()" (click)="saveNotes()">Guardar notas</button></div>
+     <div class="ord-actions"><button type="button" class="ord-primary" [disabled]="actionBusy()" (click)="saveNotes()">Guardar notas</button>
+      <button type="button" (click)="showNotes.set(false);observations.set(o.observaciones??'')" [disabled]="actionBusy()">Descartar cambios</button>
+     </div>
+     }
     </section>
    }
    @if(editItem();as line){
-    <section class="ord-card">
-     <h2>Editar {{line.nombreSnapshot}}</h2>
+    <button type="button" class="ord-overlay" (click)="closeEdit()"
+     aria-label="Cerrar edición de producto" [disabled]="actionBusy()"></button>
+    <section class="ord-customizer ord-detail-dialog" role="dialog" aria-modal="true"
+     aria-labelledby="order-edit-title" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
+     <div class="ord-heading"><h2 id="order-edit-title">Editar {{line.nombreSnapshot}}</h2>
+      <button type="button" (click)="closeEdit()" [disabled]="actionBusy()">Cerrar</button>
+     </div>
      <div class="ord-form-grid">
       <label>Cantidad <input [value]="editQty()" (input)="editQty.set($any($event.target).value)"
        inputmode="decimal"/></label>
@@ -155,13 +182,19 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
      </div>
      <label>Nota para cocina <textarea rows="2" maxlength="300" [value]="editNotes()"
       (input)="editNotes.set($any($event.target).value)"></textarea></label>
-     <div class="ord-actions"><button type="button" [disabled]="actionBusy()" (click)="saveLine()">Guardar línea</button>
-      <button type="button" (click)="editItem.set(null)">Volver</button></div>
+     <div class="ord-actions"><button type="button" class="ord-primary" [disabled]="actionBusy()" (click)="saveLine()">Guardar cambios</button>
+      <button type="button" (click)="closeEdit()" [disabled]="actionBusy()">Descartar</button></div>
     </section>
    }
    @if(cancelTarget()){
-    <section class="ord-card">
-     <h2>{{cancelTarget()==='order'?'Cancelar pedido':'Cancelar producto'}}</h2>
+    <button type="button" class="ord-overlay" [disabled]="actionBusy()"
+     (click)="closeCancel()" aria-label="Cerrar cancelación"></button>
+    <section class="ord-customizer ord-detail-dialog" role="dialog" aria-modal="true"
+     aria-labelledby="order-cancel-title" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
+     <div class="ord-heading">
+      <h2 id="order-cancel-title">{{cancelTarget()==='order'?'Cancelar pedido':'Cancelar producto'}}</h2>
+      <button type="button" (click)="closeCancel()" [disabled]="actionBusy()">Cerrar</button>
+     </div>
      <label>Motivo (al menos 5 caracteres)
       <textarea rows="2" maxlength="500" [value]="reason()"
        (input)="reason.set($any($event.target).value)"></textarea>
@@ -176,7 +209,7 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
      <div class="ord-actions"><button class="ord-danger" type="button"
       [disabled]="reason().trim().length<5||actionBusy()" (click)="confirmCancel()">
       Confirmar cancelación</button>
-      <button type="button" (click)="cancelTarget.set('')">Volver</button></div>
+      <button type="button" (click)="closeCancel()" [disabled]="actionBusy()">Volver</button></div>
     </section>
    }
   }
@@ -198,6 +231,7 @@ export class GcOrdersDetailPage implements OnInit {
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly observations=signal('');
+ protected readonly showAdd=signal(false);protected readonly showNotes=signal(false);
  protected readonly editItem=signal<OrderLine|null>(null);
  protected readonly editQty=signal('1');protected readonly editDiscount=signal('0');protected readonly editNotes=signal('');
  protected readonly cancelTarget=signal('');protected readonly reason=signal('');
@@ -208,6 +242,7 @@ export class GcOrdersDetailPage implements OnInit {
  protected readonly addNotes=signal('');protected readonly sendAdded=signal(true);
  private readonly extras=signal<Record<string,string[]>>({});
  private pendingOperation:{signature:string;key:string}|null=null;
+ private loadGeneration=0;
  /** Reuse the key only for the identical mutation; a different action or payload must get a new one. */
  private keyFor(action:string,payload:unknown):string{
   const signature=action+':'+JSON.stringify(payload);
@@ -244,20 +279,38 @@ export class GcOrdersDetailPage implements OnInit {
  })));
  protected readonly selectedItem=computed(()=>this.options().find(x=>x.variante.id===this.variantId())??null);
  ngOnInit(){void this.load()}
+ @HostListener('document:keydown.escape')
+ protected dismissDialog(){
+  if(this.actionBusy())return;
+  if(this.cancelTarget())this.closeCancel();
+  else if(this.editItem())this.closeEdit();
+ }
+ protected closeEdit(){if(!this.actionBusy())this.editItem.set(null)}
+ protected closeCancel(){if(!this.actionBusy())this.cancelTarget.set('')}
+ protected beginEditLine(line:OrderLine){
+  if(this.actionBusy())return;
+  this.cancelTarget.set('');
+  this.editItem.set(line);this.editQty.set(line.cantidad);
+  this.editNotes.set(line.notasCocina??'');this.editDiscount.set(line.descuento);
+ }
  protected extraNames(line:OrderLine){
   return (line.ordenLineaModificadoresComoOrdenLinea??[]).map(x=>x.nombreSnapshot).join(', ');
  }
  protected sent(line:OrderLine){return Number(line.cantidadEnviada)>0}
  protected async load(){
   const id=this.route.snapshot.paramMap.get('id');if(!id)return;
+  const generation=++this.loadGeneration;
   this.busy.set(true);this.error.set(null);
   try{
-   const o=await firstValueFrom(this.api.detail(id));this.order.set(o);
-   this.observations.set(o.observaciones??'');
-   try{this.menu.set(await firstValueFrom(this.catalog.branchMenu(o.sucursalId)))}
-   catch{this.menu.set(null)}
-  }catch(e){this.error.set(orderFriendlyError(e))}
-  finally{this.busy.set(false)}
+   const o=await firstValueFrom(this.api.detail(id));
+   if(generation!==this.loadGeneration)return;
+   this.order.set(o);this.observations.set(o.observaciones??'');
+   try{
+    const menu=await firstValueFrom(this.catalog.branchMenu(o.sucursalId));
+    if(generation===this.loadGeneration)this.menu.set(menu);
+   }catch{if(generation===this.loadGeneration)this.menu.set(null)}
+  }catch(e){if(generation===this.loadGeneration)this.error.set(orderFriendlyError(e))}
+  finally{if(generation===this.loadGeneration)this.busy.set(false)}
  }
  private async perform(action:()=>Promise<OrderDetail>){
   if(this.actionBusy())return;
@@ -288,6 +341,7 @@ export class GcOrdersDetailPage implements OnInit {
   await this.perform(()=>firstValueFrom(this.api.edit(o.id,{
    version:o.version,observaciones:this.observations().trim()
   })));
+  if(!this.error())this.showNotes.set(false);
  }
  protected hasExtra(group:string,id:string){return (this.extras()[group]??[]).includes(id)}
  protected selectExtra(group:CatalogProjectedGroup,id:string,checked:boolean){
@@ -335,8 +389,12 @@ export class GcOrdersDetailPage implements OnInit {
  protected setClassification(value:string){
   this.classification.set(CANCELLATION_CLASSES.find(x=>x.id===value)?.id??'');
  }
- protected beginCancel(){this.cancelTarget.set('order');this.reason.set('');this.classification.set('')}
- protected beginCancelLine(line:OrderLine){this.cancelTarget.set(line.id);this.reason.set('')}
+ protected beginCancel(){
+  this.editItem.set(null);this.cancelTarget.set('order');this.reason.set('');this.classification.set('');
+ }
+ protected beginCancelLine(line:OrderLine){
+  this.editItem.set(null);this.cancelTarget.set(line.id);this.reason.set('');
+ }
  protected async confirmCancel(){
   const o=this.order(),target=this.cancelTarget();if(!o||!target||this.reason().trim().length<5)return;
   if(!await this.dialog.confirm({title:'Confirmar cancelación',
