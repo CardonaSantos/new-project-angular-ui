@@ -247,6 +247,10 @@ import {parseApiDecimal} from '../../../shared/formatting';
     }
     <div class="pay-total-row"><span>Total</span><strong>{{money(o.total)}}</strong></div>
     <a [routerLink]="['/orders/list',o.id]">Volver al pedido</a>
+    @if(access.canSalesRead()&&detail()?.venta;as sale){
+     <a class="ord-primary" [routerLink]="['/payments/sales',sale.id,'receipt']">
+      Imprimir comprobante de venta</a>
+    }
     @if(access.canSplit()&&accounts().length===1&&allUnpaid()&&o.estado==='ABIERTA'){
      <details class="pay-details">
       <summary>Dividir la cuenta</summary>
