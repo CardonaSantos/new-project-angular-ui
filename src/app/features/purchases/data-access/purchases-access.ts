@@ -18,6 +18,9 @@ export class PurchasesAccess {
  canLotManage(){return this.can('inventory.adjust')}
  canSupplyRead(){return this.can('supply.read')}
  canSupplyRequest(){return this.can('supply.request')}
+ canSupplySend(){return this.can('supply.send')}
+ canSupplyReceive(){return this.can('supply.receive')}
+ canSupplyCancel(){return this.can('supply.cancel')}
  canEnter(){return this.canRead()||this.canQuickEntry()||this.canReceiptsCreate()||
   this.canSupplyRead()||this.canSupplyRequest()}
 }
