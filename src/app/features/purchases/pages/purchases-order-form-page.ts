@@ -1,5 +1,5 @@
 import {Component,computed,effect,inject,signal,untracked} from '@angular/core';
-import {Router,RouterLink} from '@angular/router';
+import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -33,6 +33,7 @@ const newLine=():OrderEditorLine=>({
   @if(!access.canOrdersCreate()){
    <p class="pur-alert" role="alert">No tienes permiso para crear órdenes de compra.</p>
   }@else{
+   @if(requisitionId){<p class="pur-note">Compra vinculada a la requisición {{requisitionNumber()}}. Solo se podrán adquirir los artículos pendientes.</p>}
    <section class="pur-card">
     <h2>1. Proveedor y sucursal</h2>
     <div class="pur-grid">
@@ -51,16 +52,23 @@ const newLine=():OrderEditorLine=>({
    </section>
    <section class="pur-card">
     <div class="pur-heading"><h2>2. Artículos solicitados</h2>
-     <button type="button" (click)="addLine()">Agregar artículo</button></div>
+     @if(!requisitionId){<button type="button" (click)="addLine()">Agregar artículo</button>}
+    </div>
     <div class="pur-lines">
      @for(l of lines();track l.key;let i=$index){
       <fieldset class="pur-line pur-simple-fieldset">
        <div class="pur-line-header"><strong>Artículo {{i+1}}</strong>
-        @if(lines().length>1){<button type="button" (click)="removeLine(l.key)">Quitar</button>}
+        @if(lines().length>1&&!requisitionId){
+         <button type="button" (click)="removeLine(l.key)">Quitar</button>
+        }
        </div>
-       <gc-inventory-picker [id]="'pur-order-art-'+l.key" label="Artículo"
-        kind="article" [value]="l.articuloId"
-        (valueChange)="chooseArticle(l.key,$event)"/>
+       @if(requisitionId){
+        <strong>{{requisitionLabel(l.articuloId)}}</strong>
+       }@else{
+        <gc-inventory-picker [id]="'pur-order-art-'+l.key" label="Artículo"
+         kind="article" [value]="l.articuloId"
+         (valueChange)="chooseArticle(l.key,$event)"/>
+       }
        @if(supplierId()){
         <gc-search-select [id]="'pur-order-pres-'+l.key" label="Presentación de compra"
          [items]="presentationsFor(l.articuloId)" [value]="l.presentacionId"
@@ -124,6 +132,10 @@ export class GcPurchasesOrderFormPage {
  protected readonly access=inject(PurchasesAccess);
  private readonly api=inject(PurchasesApi);
  private readonly router=inject(Router);
+ private readonly route=inject(ActivatedRoute);
+ protected readonly requisitionId=this.route.snapshot.queryParamMap.get('requisitionId')??'';
+ protected readonly requisitionNumber=signal('');
+ private readonly requisitionLabels=signal<Record<string,string>>({});
  private readonly notices=inject(GcNotificationService);
  private readonly dialogs=inject(ConfirmDialogService);
  protected readonly supplierId=signal('');
@@ -150,9 +162,23 @@ export class GcPurchasesOrderFormPage {
    this.context.branchId();untracked(()=>{
     this.lines.set([newLine()]);this.supplierId.set('');this.dirty=false;
     void this.loadSuppliers('');
+    if(this.requisitionId&&this.context.branchId())void this.loadRequisition();
    });
   });
  }
+ private async loadRequisition(){
+  try{
+   const r=await firstValueFrom(this.api.requisition(this.requisitionId));
+   if(r.estado!=='ABIERTA')throw Error('La requisición ya no está abierta.');
+   this.requisitionNumber.set(r.numero);
+   this.requisitionLabels.set(Object.fromEntries(r.lineas.map(l=>[l.articuloId,l.articulo.nombre])));
+   const pending=r.lineas.filter(l=>Number(l.pendiente)>0);
+   if(!pending.length)throw Error('La requisición no tiene insumos pendientes.');
+   this.lines.set(pending.map(l=>({...newLine(),articuloId:l.articuloId,
+    cantidadCompra:l.pendiente})));
+  }catch(e){this.error.set(gcErrorMessage(e))}
+ }
+ protected requisitionLabel(id:string){return this.requisitionLabels()[id]??id}
  protected markDirty(){this.key=newKey();this.dirty=true}
  private async loadSuppliers(search:string){
   const gen=++this.generation;this.supplierBusy.set(true);
@@ -204,6 +230,7 @@ export class GcPurchasesOrderFormPage {
  }
  protected async submit(confirmOrder:boolean){
   if(this.busy()||!this.valid()||!this.access.canOrdersCreate()||
+   (this.requisitionId&&!this.access.canSupplyRequest())||
    (confirmOrder&&!this.access.canOrdersApprove()))return;
   if(confirmOrder&&!await this.dialogs.confirm({title:'Crear y confirmar orden',
    message:'Se registrará la orden y quedará lista para recibir mercancía. Esto no aumenta todavía el stock.',
@@ -212,6 +239,7 @@ export class GcPurchasesOrderFormPage {
    sucursalId:this.context.branchId()!,proveedorId:this.supplierId(),
    precioIncluyeImpuesto:this.taxIncluded(),observaciones:this.observations().trim(),
    claveOperacion:this.key,
+   ...(this.requisitionId?{requisicionId:this.requisitionId}:{}),
    lineas:this.lines().map(l=>({
     articuloId:l.articuloId,...(l.presentacionId?{presentacionId:l.presentacionId}:{}),
     cantidadCompra:decimal(l.cantidadCompra)!,factorAUnidadBase:decimal(l.factorAUnidadBase)!,
@@ -221,7 +249,9 @@ export class GcPurchasesOrderFormPage {
   };
   this.busy.set(true);this.error.set('');
   try{
-   const o=await firstValueFrom(this.api.createOrder(body));this.dirty=false;
+   const o=await firstValueFrom(this.requisitionId
+    ?this.api.purchaseFromRequisition(this.requisitionId,{claveOperacion:this.key,orden:body})
+    :this.api.createOrder(body));this.dirty=false;
    if(confirmOrder){
     try{
      await firstValueFrom(this.api.confirmOrder(o.id,newKey()));
