@@ -3,6 +3,7 @@ import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
+import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcOrdersNav} from '../orders-nav';
@@ -49,9 +50,19 @@ import {money} from '../data-access/orders.helpers';
        {{!table.activa?'Inactiva':table.ocupacion?'Ocupada':'Disponible'}}</span></div>
      <small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
      @if(table.ocupacion){
-      @for(o of table.ocupacion.ordenesComoOcupacionMesa??[];track o.id){
-       @if(o.estado==='ABIERTA'){
-        <div class="ord-actions"><a [routerLink]="['/orders/list',o.id]">{{o.numero}} · {{money(o.total)}}</a></div>
+      @for(o of openOrders(table);track o.id){
+       <div class="ord-actions">
+        <a [routerLink]="['/orders/list',o.id]">{{o.numero}} · {{money(o.total)}}</a>
+       </div>
+      }
+      @if(openOrders(table).length){
+       <p class="ord-note ord-table-blocked">
+        Esta mesa tiene {{openOrders(table).length===1?'un pedido abierto':'pedidos abiertos'}}.
+        Debes finalizar su preparación y cerrar {{openOrders(table).length===1?'el pedido':'los pedidos'}}
+        antes de liberarla.
+       </p>
+       @if(access.canKitchenRead()){
+        <a routerLink="/orders/kitchen" class="ord-table-kitchen-link">Ver comandas de cocina</a>
        }
       }
      }
@@ -59,7 +70,11 @@ import {money} from '../data-access/orders.helpers';
       @if(!table.ocupacion&&table.activa&&access.canCreate()){
        <button type="button" class="ord-primary" (click)="openTable(table)">Tomar pedido</button>}
       @if(table.ocupacion&&access.canTablesManage()){
-       <button type="button" (click)="release(table)" [disabled]="actionBusy()">Liberar mesa</button>}
+       <button type="button" (click)="release(table)"
+        [disabled]="actionBusy()||openOrders(table).length>0"
+        [attr.title]="openOrders(table).length?'Cierra primero los pedidos abiertos de esta mesa':null">
+        Liberar mesa
+       </button>}
       @if(access.canTablesManage()){
        <a routerLink="/orders/tables/manage">Configurar</a>}
      </div>
@@ -150,6 +165,7 @@ export class GcOrdersTablesPage{
  private readonly route=inject(ActivatedRoute);
  protected readonly managing=Boolean(this.route.snapshot.data['manage']);
  private readonly confirm=inject(ConfirmDialogService);
+ private readonly notices=inject(GcNotificationService);
  protected readonly branch=inject(GcBranchContext);protected readonly access=inject(OrdersAccess);
  protected readonly money=money;
  protected readonly rooms=signal<Room[]>([]);protected readonly tables=signal<TableRecord[]>([]);
@@ -183,12 +199,21 @@ export class GcOrdersTablesPage{
  protected openTable(table:TableRecord){
   void this.router.navigate(['/orders/pos'],{queryParams:{mesaId:table.id}});
  }
+ protected openOrders(table:TableRecord){
+  return (table.ocupacion?.ordenesComoOcupacionMesa??[]).filter(order=>order.estado==='ABIERTA');
+ }
  protected async release(table:TableRecord){
-  const id=table.ocupacion?.id;if(!id)return;
-  if(!await this.confirm.confirm({title:'Liberar mesa',
-   message:'Solo puede liberarse cuando no tenga órdenes abiertas.',
-   confirmText:'Liberar'}))return;
-  await this.mutate(async()=>{await firstValueFrom(this.api.closeOccupancy(id))});
+  const id=table.ocupacion?.id;if(!id||this.actionBusy())return;
+  // Guard in the action as well as the template; NestJS remains the authority.
+  const open=this.openOrders(table);
+  if(open.length){
+   this.notices.show('La mesa '+table.numero+' tiene pedidos abiertos. Finaliza la preparación y cierra el pedido antes de liberarla.', 'warning', 6500);
+   return;
+  }
+  if(!await this.confirm.confirm({title:'Liberar mesa '+table.numero,
+   message:'No hay pedidos abiertos en esta mesa. ¿Cerrar su ocupación?',
+   confirmText:'Liberar mesa'}))return;
+  await this.mutate(async()=>{await firstValueFrom(this.api.closeOccupancy(id))},'Mesa '+table.numero+' liberada.');
  }
  protected editRoom(room:Room){
   this.manageTab.set('rooms');this.roomId.set(room.id);this.roomName.set(room.nombre);
@@ -225,9 +250,12 @@ export class GcOrdersTablesPage{
   if(table.activa&&!await this.confirm.confirm({title:'Desactivar mesa',message:'No podrá desactivarse una mesa ocupada.',confirmText:'Desactivar',danger:true}))return;
   await this.mutate(async()=>{await firstValueFrom(this.api.updateTable(table.id,{activa:!table.activa}))});
  }
- private async mutate(fn:()=>Promise<void>){
+ private async mutate(fn:()=>Promise<void>,successMessage?:string){
   if(this.actionBusy())return;this.actionBusy.set(true);this.error.set(null);
-  try{await fn();await this.load()}catch(e){this.error.set(gcErrorMessage(e))}
+  try{
+   await fn();await this.load();
+   if(successMessage)this.notices.show(successMessage,'success');
+  }catch(e){this.error.set(gcErrorMessage(e))}
   finally{this.actionBusy.set(false)}
  }
 }
