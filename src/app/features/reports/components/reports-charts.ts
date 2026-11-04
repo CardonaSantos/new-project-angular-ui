@@ -1,4 +1,4 @@
-import {Component,computed,input} from '@angular/core';
+import {Component,computed,input,inject} from '@angular/core';
 import {NgxEchartsDirective,provideEchartsCore} from 'ngx-echarts';
 import * as echarts from 'echarts/core';
 import {LineChart,BarChart} from 'echarts/charts';
@@ -6,10 +6,11 @@ import {GridComponent,TooltipComponent,LegendComponent,AriaComponent} from 'echa
 import {CanvasRenderer} from 'echarts/renderers';
 import type {EChartsCoreOption} from 'echarts/core';
 import {formatCalendarDate} from '../../../shared/formatting';
+import {ThemeManagerService} from '../../../design-system/themes/theme-manager.service';
 import {chartAmount,reportMoney} from '../data-access/reports.helpers';
 import type {ReportsOverview,PaymentMethodReport,ExpenseCategoryReport} from '../data-access/reports.models';
 echarts.use([LineChart,BarChart,GridComponent,TooltipComponent,LegendComponent,AriaComponent,CanvasRenderer]);
-const text='#bcaea6',grid='#62564b',main='#d6a47e',second='#8ac2b6',third='#aa8acc';
+
 @Component({
  selector:'gc-reports-daily-chart',
  imports:[NgxEchartsDirective],
@@ -38,6 +39,7 @@ const text='#bcaea6',grid='#62564b',main='#d6a47e',second='#8ac2b6',third='#aa8a
  `
 })
 export class GcReportsDailyChart{
+ private readonly theme=inject(ThemeManagerService);
  readonly report=input.required<ReportsOverview>();
  protected readonly money=reportMoney;
  protected readonly dateLabel=formatCalendarDate;
@@ -47,6 +49,9 @@ export class GcReportsDailyChart{
  protected readonly options=computed<EChartsCoreOption>(()=>{
   const data=this.report().serieDiaria,axis=data.map(x=>formatCalendarDate(x.fechaOperativa,'DD/MM'));
   const currency=this.report().currency;
+  const palette=this.theme.colors();
+  const text=palette.onSurfaceVariant,grid=palette.outlineVariant;
+  const main=palette.primary,second=palette.success,third=palette.warning;
   const lines=[
    {name:'Ventas',field:'ventasNetas' as const,color:main},
    {name:'Cobros netos',field:'cobrosNetos' as const,color:second},
@@ -82,11 +87,14 @@ export class GcReportsDailyChart{
  `
 })
 export class GcReportsBreakdownChart{
+ private readonly theme=inject(ThemeManagerService);
  readonly title=input.required<string>();
  readonly currency=input('GTQ');
  readonly rows=input.required<readonly {label:string;amount:string}[]>();
  protected readonly options=computed<EChartsCoreOption>(()=>{
   const data=this.rows().slice(0,10),cur=this.currency();
+  const colors=this.theme.colors();
+  const text=colors.onSurfaceVariant,grid=colors.outlineVariant,main=colors.primary;
   return {animationDuration:250,color:[main],
    aria:{enabled:true,description:this.title()},
    textStyle:{color:text,fontFamily:'inherit'},
