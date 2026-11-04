@@ -1,0 +1,32 @@
+import type {Routes} from '@angular/router';
+import {gcUnsavedChangesGuard} from '../../core/ux/gc-unsaved-changes.guard';
+export const PURCHASES_ROUTES:Routes=[
+ {path:'',pathMatch:'full',redirectTo:'quick'},
+ {path:'quick',title:'Entrada rápida — Gastro Core',data:{breadcrumb:'Entrada rápida'},
+  canDeactivate:[gcUnsavedChangesGuard],
+  loadComponent:()=>import('./pages/purchases-quick-page').then(m=>m.GcPurchasesQuickPage)},
+ {path:'receipts',title:'Recepciones — Gastro Core',data:{breadcrumb:'Recepciones'},
+  loadComponent:()=>import('./pages/purchases-receipts-page').then(m=>m.GcPurchasesReceiptsPage)},
+ {path:'receipts/new',title:'Recibir mercancía — Gastro Core',data:{breadcrumb:'Nueva recepción'},
+  canDeactivate:[gcUnsavedChangesGuard],
+  loadComponent:()=>import('./pages/purchases-receipt-form-page').then(m=>m.GcPurchasesReceiptFormPage)},
+ {path:'receipts/:id/edit',title:'Editar recepción — Gastro Core',data:{breadcrumb:'Editar recepción'},
+  canDeactivate:[gcUnsavedChangesGuard],
+  loadComponent:()=>import('./pages/purchases-receipt-form-page').then(m=>m.GcPurchasesReceiptFormPage)},
+ {path:'receipts/:id',title:'Detalle de recepción — Gastro Core',data:{breadcrumb:'Detalle de recepción'},
+  loadComponent:()=>import('./pages/purchases-receipt-detail-page').then(m=>m.GcPurchasesReceiptDetailPage)},
+ {path:'suppliers',title:'Proveedores — Gastro Core',data:{breadcrumb:'Proveedores'},
+  loadComponent:()=>import('./pages/purchases-suppliers-page').then(m=>m.GcPurchasesSuppliersPage)},
+ {path:'orders',title:'Órdenes de compra — Gastro Core',data:{breadcrumb:'Órdenes de compra'},
+  loadComponent:()=>import('./pages/purchases-orders-page').then(m=>m.GcPurchasesOrdersPage)},
+ {path:'orders/new',title:'Nueva orden de compra — Gastro Core',data:{breadcrumb:'Nueva orden de compra'},
+  canDeactivate:[gcUnsavedChangesGuard],
+  loadComponent:()=>import('./pages/purchases-order-form-page').then(m=>m.GcPurchasesOrderFormPage)},
+ {path:'orders/:id',title:'Detalle de compra — Gastro Core',data:{breadcrumb:'Detalle de compra'},
+  loadComponent:()=>import('./pages/purchases-order-detail-page').then(m=>m.GcPurchasesOrderDetailPage)},
+ {path:'presentations',title:'Presentaciones de compra — Gastro Core',
+  data:{breadcrumb:'Presentaciones de compra'},
+  loadComponent:()=>import('./pages/purchases-presentations-page').then(m=>m.GcPurchasesPresentationsPage)},
+ {path:'requisitions',title:'Requisiciones — Gastro Core',data:{breadcrumb:'Requisiciones'},
+  loadComponent:()=>import('./pages/purchases-requisitions-page').then(m=>m.GcPurchasesRequisitionsPage)}
+];
