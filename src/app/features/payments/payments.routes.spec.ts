@@ -14,6 +14,7 @@ describe('Caja — navegación por responsabilidades',()=>{
  });
  it('mantiene la venta y resumen financiero en sus páginas propias',()=>{
   expect(paths).toContain('sales');
+  expect(paths).toContain('sales/:id/receipt');
   expect(paths).toContain('reports');
  });
 });
