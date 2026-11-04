@@ -71,6 +71,7 @@ export const API_ENDPOINTS = {
     lots:'/api/inventory/lots',lotBlock:(id:string)=>'/api/inventory/lots/'+segment(id)+'/block',
     movements:'/api/inventory/movements',movement:(id:string)=>'/api/inventory/movements/'+segment(id),
     manual:(kind:'opening'|'inbound'|'outbound'|'waste')=>'/api/inventory/operations/'+kind,
+    inboundBatch:'/api/inventory/operations/inbound/batch',
     internalConsumption:'/api/inventory/internal-consumption',
     counts:'/api/inventory/counts',count:(id:string)=>'/api/inventory/counts/'+segment(id),
     countAction:(id:string,action:'confirm'|'cancel')=>'/api/inventory/counts/'+segment(id)+'/'+action,
