@@ -222,20 +222,21 @@ export class GcPurchasesRequisitionDetailPage implements OnInit {
    const result=a.lineas.find(l=>l.articuloId===s.articuloId);
    return !result||parseApiDecimal(decimal(s.cantidad)!).gt(parseApiDecimal(result.sugeridoEnviar));
   })){this.error.set('La cantidad excede lo sugerido por disponibilidad.');return}
-  if(!await this.dialogs.confirm({title: this.immediate()?'Trasladar y recibir':'Enviar mercancía',
-   message:this.immediate()?'Se descontará del origen y se sumará al destino en una operación.':
+  const postImmediate=this.immediate()&&this.access.canSupplyReceive();
+  if(!await this.dialogs.confirm({title: postImmediate?'Trasladar y recibir':'Enviar mercancía',
+   message:postImmediate?'Se descontará del origen y se sumará al destino en una operación.':
     'Se descontará del origen y quedará en tránsito hasta confirmar recepción.',
-   confirmText:this.immediate()?'Trasladar y recibir':'Enviar'}))return;
+   confirmText:postImmediate?'Trasladar y recibir':'Enviar'}))return;
   this.actionBusy.set(true);this.error.set('');
   try{
    const response=await firstValueFrom(this.api.sendRequisition(r.id,{
-    almacenOrigenId:this.originId(),inmediato:this.immediate()&&this.access.canSupplyReceive(),
+    almacenOrigenId:this.originId(),inmediato:postImmediate,
     claveOperacion:this.shipKey,
     lineas:chosen.map(s=>({articuloId:s.articuloId,ubicacionOrigenId:s.ubicacionOrigenId,
      ubicacionDestinoId:s.ubicacionDestinoId,...(s.loteId?{loteId:s.loteId}:{}),
      cantidad:decimal(s.cantidad)!}))
    }));
-   this.notice.show(this.immediate()?'Insumos transferidos y recibidos.':'Traslado enviado. Pendiente de recepción.','success');
+   this.notice.show(postImmediate?'Insumos transferidos y recibidos.':'Traslado enviado. Pendiente de recepción.','success');
    this.shipKey=newKey();this.availability.set(null);this.shipping.set([]);
    await this.load();
    if(response.estado==='EN_TRANSITO')this.notice.show('Puedes recibir el traslado en la sección Traslados.','info');
