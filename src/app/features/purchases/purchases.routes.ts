@@ -27,6 +27,12 @@ export const PURCHASES_ROUTES:Routes=[
  {path:'presentations',title:'Presentaciones de compra — Gastro Core',
   data:{breadcrumb:'Presentaciones de compra'},
   loadComponent:()=>import('./pages/purchases-presentations-page').then(m=>m.GcPurchasesPresentationsPage)},
+ {path:'requisitions/:id',title:'Detalle de requisición — Gastro Core',
+  data:{breadcrumb:'Detalle de requisición'},
+  loadComponent:()=>import('./pages/purchases-requisition-detail-page').then(m=>m.GcPurchasesRequisitionDetailPage)},
+ {path:'transfers/:id',title:'Recepción de traslado — Gastro Core',
+  data:{breadcrumb:'Recibir traslado'},
+  loadComponent:()=>import('./pages/purchases-transfer-detail-page').then(m=>m.GcPurchasesTransferDetailPage)},
  {path:'requisitions',title:'Requisiciones — Gastro Core',data:{breadcrumb:'Requisiciones'},
   loadComponent:()=>import('./pages/purchases-requisitions-page').then(m=>m.GcPurchasesRequisitionsPage)}
 ];
