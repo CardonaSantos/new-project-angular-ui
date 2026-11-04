@@ -88,6 +88,10 @@ export class InventoryApi {
  movement(id:string){return this.http.get<InventoryMovement>(this.e.movement(id))}
  manual(kind:'opening'|'inbound'|'outbound'|'waste',dto:ManualPosting){
   return this.http.post<InventoryMovement>(this.e.manual(kind),dto,silent)}
+ /** Posts all lines atomically; leave 4xx errors visible in the global notification center. */
+ inboundBatch(dto:BatchInboundInput){
+  return this.http.post<BatchInboundResult>(this.e.inboundBatch,dto);
+ }
  internalConsumption(dto:{articuloId:string;ubicacionId:string;loteId?:string;cantidad:string;
  claveOperacion:string;destinoUso:string;motivo:string}){
   return this.http.post<InventoryMovement>(this.e.internalConsumption,dto,silent)}
