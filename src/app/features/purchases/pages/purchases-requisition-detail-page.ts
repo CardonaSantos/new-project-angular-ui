@@ -12,6 +12,7 @@ import {PurchasesApi} from '../data-access/purchases.api';
 import {PurchasesAccess} from '../data-access/purchases-access';
 import type {SupplyRequisition,SupplyAvailability} from '../data-access/purchases.models';
 import {decimal,newKey} from '../data-access/purchases.helpers';
+import {parseApiDecimal} from '../../../shared/formatting';
 import {GcPurchasesNav} from '../purchases-nav';
 interface ShippingLine {
  articuloId:string;article:Article|null;cantidad:string;
@@ -219,7 +220,7 @@ export class GcPurchasesRequisitionDetailPage implements OnInit {
   const chosen=this.shipping().filter(s=>decimal(s.cantidad));
   if(chosen.some(s=>{
    const result=a.lineas.find(l=>l.articuloId===s.articuloId);
-   return !result||Number(s.cantidad)>Number(result.sugeridoEnviar);
+   return !result||parseApiDecimal(decimal(s.cantidad)!).gt(parseApiDecimal(result.sugeridoEnviar));
   })){this.error.set('La cantidad excede lo sugerido por disponibilidad.');return}
   if(!await this.dialogs.confirm({title: this.immediate()?'Trasladar y recibir':'Enviar mercancía',
    message:this.immediate()?'Se descontará del origen y se sumará al destino en una operación.':
