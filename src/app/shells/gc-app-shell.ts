@@ -19,6 +19,7 @@ import { CatalogAccess } from '../features/catalog/data-access/catalog-access';
 import { RecipesAccess } from '../features/recipes/data-access/recipes-access';
 import { OrdersAccess } from '../features/orders/data-access/orders-access';
 import { PaymentsAccess } from '../features/payments/data-access/payments-access';
+import { PurchasesAccess } from '../features/purchases/data-access/purchases-access';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
@@ -42,6 +43,7 @@ export class GcAppShell {
   protected readonly recipesAccess = inject(RecipesAccess);
   protected readonly ordersAccess = inject(OrdersAccess);
   protected readonly paymentsAccess = inject(PaymentsAccess);
+  protected readonly purchasesAccess = inject(PurchasesAccess);
   private readonly avatar=inject(GcCurrentAvatarStore);
   private readonly usersApi=inject(UsersApi);
   private readonly realtime = inject(GcRealtimeService);
@@ -58,6 +60,8 @@ export class GcAppShell {
           ? [{label:'Órdenes',path:'/orders',initials:'OR',exact:false}]:[]),
         ...(this.paymentsAccess.canEnter()
           ? [{label:'Cobros',path:'/payments',initials:'CO',exact:false}]:[]),
+        ...(this.purchasesAccess.canEnter()
+          ? [{label:'Compras',path:'/purchases',initials:'CP',exact:false}]:[]),
         ...((this.orgAccess.canGlobal('inventory.read')||this.context.has('inventory.read'))
          ? [{label:'Inventario',path:'/inventory',initials:'IV',exact:false}]:[]),
         ...((this.usersAccess.canRead()||this.usersAccess.canGlobal('roles.read')||
