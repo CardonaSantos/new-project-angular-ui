@@ -35,3 +35,12 @@ export function cashMovementName(move:CashMovement){
  if(reason.includes('cobro de cuenta'))return 'Cobro en efectivo';
  return move.tipo==='INGRESO'?'Entrada de efectivo':'Salida de efectivo';
 }
+
+/** Audits a close that uses expected cash in place of a declared physical count. */
+export function cashClosingNote(notes:string,physicallyCounted:boolean):string{
+ const trimmed=notes.trim();
+ if(physicallyCounted)return trimmed;
+ const disclosure='Sin conteo físico declarado; se registró el efectivo esperado automáticamente.';
+ return [trimmed.slice(0,Math.max(0,500-disclosure.length-3)),disclosure]
+  .filter(Boolean).join(' · ');
+}

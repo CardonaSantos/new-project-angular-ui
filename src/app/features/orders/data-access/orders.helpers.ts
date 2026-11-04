@@ -37,6 +37,10 @@ export const kitchenStage=(ticket:KitchenTicket):{label:string;kind:'pending'|'w
   ?{label:'En preparación',kind:'working'}:{label:'Pendiente',kind:'pending'};
 };
 
+/** Ready kitchen lines that still need a delivery record. Safe to retry. */
+export const pendingDeliveryLines=(ticket:KitchenTicket)=>
+ ticket.comandaLineasComoComanda.filter(line=>!line.canceladaEn&&!!line.listaEn&&!line.entregadaEn);
+
 export const orderFriendlyError=(error:unknown):string=>{
  const message=gcErrorMessage(error);
  if(/Variante preparada sin receta publicada/i.test(message))

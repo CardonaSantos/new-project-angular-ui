@@ -4,13 +4,14 @@ import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {parseApiDecimal} from '../../../shared/formatting';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
 import type {CatalogBranchMenu,CatalogProjectedGroup,CatalogProjectedItem} from '../../catalog/data-access/catalog.models';
 import {GcOrdersNav} from '../orders-nav';
-import {GcOrderStatus} from '../components/orders-ui';
+import {GcOrderStatus,GcKitchenModifiers} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import {PaymentsAccess} from '../../payments/data-access/payments-access';
@@ -19,7 +20,7 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
 
 @Component({
  selector:'gc-orders-detail-page',
- imports:[RouterLink,DatePipe,CdkTrapFocus,GcOrdersNav,GcOrderStatus,GcSearchSelect],
+ imports:[RouterLink,DatePipe,CdkTrapFocus,GcOrdersNav,GcOrderStatus,GcSearchSelect,GcKitchenModifiers],
  template:`
  <main class="ord-page ord-detail-page"><gc-orders-nav/>
   <div class="ord-heading"><div><a routerLink="/orders/list">← Órdenes</a>
@@ -79,13 +80,16 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
     </div>
     <div class="ord-order-lines">
      @for(line of o.ordenLineasComoOrden;track line.id){
-      <article class="ord-order-line" [class.ord-faded]="line.canceladaEn">
+      <article class="ord-order-line ord-detail-order-item" [class.ord-faded]="line.canceladaEn">
+       <div class="ord-detail-line-photo">
+        @if(imageForVariant(line.varianteId);as photo){
+         <img [src]="photo" [alt]="'Imagen de '+line.nombreSnapshot" loading="lazy"/>
+        }@else{<span aria-hidden="true">Sin imagen</span>}
+       </div>
        <div class="ord-line-title"><strong>{{line.nombreSnapshot}}</strong>
         <strong>{{money(line.subtotal)}}</strong></div>
        <small>{{qtyText(line.cantidad)}} unidades · {{money(line.precioUnitario)}} c/u</small>
-       @if(line.ordenLineaModificadoresComoOrdenLinea?.length){
-        <small>{{extraNames(line)}}</small>
-       }
+       <gc-kitchen-modifiers [modifiers]="line.ordenLineaModificadoresComoOrdenLinea"/>
        @if(line.notasCocina){<small>Para cocina: {{line.notasCocina}}</small>}
        @if(line.canceladaEn){<span>Cancelada</span>}
        @else if(o.estado==='ABIERTA'&&access.canManage()){
@@ -113,14 +117,25 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
    </section>
    @if(o.estado==='ABIERTA'&&access.canManage()){
     @if(showAdd()){
-    <section class="ord-card ord-detail-secondary" id="order-add-products">
-     <div class="ord-heading"><h2>Agregar productos</h2>
+     <button type="button" class="ord-overlay" [disabled]="actionBusy()"
+      aria-label="Cerrar selector de productos" (click)="showAdd.set(false)"></button>
+    <section class="ord-customizer ord-detail-dialog ord-detail-add-dialog"
+     role="dialog" aria-modal="true" cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+     aria-labelledby="order-add-title" id="order-add-products">
+     <div class="ord-heading"><h2 id="order-add-title">Agregar productos</h2>
       <button type="button" (click)="showAdd.set(false)" [disabled]="actionBusy()">Cerrar</button></div>
      <p class="ord-muted">Solo se enviarán a cocina los productos nuevos que no se hayan enviado antes.</p>
      <gc-search-select id="detail-menu-variant" label="Producto y presentación"
       [items]="variantChoices()" [value]="variantId()" placeholder="Buscar producto"
       (valueChange)="pickVariant($event)"/>
      @if(selectedItem();as item){
+      <div class="ord-detail-add-preview">
+       @if(item.variante.imagenPrincipalUrl;as preview){
+        <img [src]="preview" [alt]="'Imagen de '+(item.variante.producto?.nombre??item.variante.nombre)" loading="lazy"/>
+       }
+       <div><strong>{{item.variante.producto?.nombre??item.variante.nombre}}</strong>
+        <small>{{item.variante.nombre}} · {{money(item.precio,item.moneda)}}</small></div>
+      </div>
       <div class="ord-form-grid">
        <label>Cantidad <input [value]="addQty()" inputmode="decimal"
         (input)="addQty.set($any($event.target).value)"/></label>
@@ -220,6 +235,7 @@ export class GcOrdersDetailPage implements OnInit {
  private readonly api=inject(OrdersApi);
  private readonly catalog=inject(CatalogApi);
  private readonly dialog=inject(ConfirmDialogService);
+ private readonly notices=inject(GcNotificationService);
  protected readonly branch=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
  protected readonly paymentsAccess=inject(PaymentsAccess);
@@ -278,12 +294,17 @@ export class GcOrdersDetailPage implements OnInit {
   id:x.variante.id,label:(x.variante.producto?.nombre??x.variante.nombre)+' · '+x.variante.nombre
  })));
  protected readonly selectedItem=computed(()=>this.options().find(x=>x.variante.id===this.variantId())??null);
+ protected readonly imageMap=computed(()=>new Map(this.options().map(item=>[
+  item.variante.id,item.variante.imagenPrincipalUrl??null
+ ])));
+ protected imageForVariant(id:string){return this.imageMap().get(id)??null;}
  ngOnInit(){void this.load()}
  @HostListener('document:keydown.escape')
  protected dismissDialog(){
   if(this.actionBusy())return;
   if(this.cancelTarget())this.closeCancel();
   else if(this.editItem())this.closeEdit();
+  else if(this.showAdd())this.showAdd.set(false);
  }
  protected closeEdit(){if(!this.actionBusy())this.editItem.set(null)}
  protected closeCancel(){if(!this.actionBusy())this.cancelTarget.set('')}
@@ -293,9 +314,7 @@ export class GcOrdersDetailPage implements OnInit {
   this.editItem.set(line);this.editQty.set(line.cantidad);
   this.editNotes.set(line.notasCocina??'');this.editDiscount.set(line.descuento);
  }
- protected extraNames(line:OrderLine){
-  return (line.ordenLineaModificadoresComoOrdenLinea??[]).map(x=>x.nombreSnapshot).join(', ');
- }
+
  protected sent(line:OrderLine){return Number(line.cantidadEnviada)>0}
  protected async load(){
   const id=this.route.snapshot.paramMap.get('id');if(!id)return;
@@ -373,7 +392,11 @@ export class GcOrdersDetailPage implements OnInit {
   };
   const key=this.keyFor('line-add',{id:o.id,...payload});
   await this.perform(()=>firstValueFrom(this.api.addLines(o.id,{...payload,claveOperacion:key})));
-  if(!this.error()){this.variantId.set('');this.extras.set({});this.addQty.set('1');this.addNotes.set('')}
+  if(!this.error()){
+   this.variantId.set('');this.extras.set({});this.addQty.set('1');
+   this.addNotes.set('');this.addDiscount.set('0');
+   this.notices.show('Producto agregado al pedido. Puedes agregar otro.','success',5500);
+  }
  }
  protected async saveLine(){
   const o=this.order(),line=this.editItem();if(!o||!line)return;

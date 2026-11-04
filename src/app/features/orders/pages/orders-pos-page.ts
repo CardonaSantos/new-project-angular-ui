@@ -3,6 +3,7 @@ import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
@@ -37,13 +38,20 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
  </div>
  @if(error()){<div role="alert" class="ord-alert">{{error()}}
    <button type="button" (click)="reload()">Reintentar</button></div>}
- @if(success()){<div role="status" class="ord-success">
-  {{success()}}
-  <a [routerLink]="['/orders/list',createdId()]">Abrir pedido</a>
-  @if(paymentsAccess.canRead()&&paymentsAccess.canCollect()){
-   <a [routerLink]="['/payments/order',createdId()]">Cobrar ahora</a>
-  }
- </div>}
+ @if(success()){
+  <section class="ord-pos-confirmed" role="status" aria-live="polite">
+   <div class="ord-pos-confirmed-content">
+    <strong>Pedido registrado correctamente</strong>
+    <span>{{success()}}</span>
+   </div>
+   <div class="ord-actions ord-pos-confirmed-actions">
+    <a class="ord-primary" [routerLink]="['/orders/list',createdId()]">Ver pedido</a>
+    @if(paymentsAccess.canRead()&&paymentsAccess.canCollect()){
+     <a [routerLink]="['/payments/order',createdId()]">Cobrar ahora</a>
+    }
+   </div>
+  </section>
+ }
  @if(prefs.view()==='tables'&&showTablePicker()){
   <section class="ord-card ord-pos-tables">
    <div class="ord-heading"><h2>Elegir mesa</h2>
@@ -211,6 +219,7 @@ export class GcOrdersPosPage{
  private readonly catalog=inject(CatalogApi);
  private readonly branchesApi=inject(BranchesApi);
  private readonly confirm=inject(ConfirmDialogService);
+ private readonly notices=inject(GcNotificationService);
  private readonly router=inject(Router);
  private readonly activatedRoute=inject(ActivatedRoute);
  protected readonly context=inject(GcBranchContext);
@@ -436,7 +445,13 @@ export class GcOrdersPosPage{
   this.submitting.set(true);this.submitError.set('');
   try{
    const data=await firstValueFrom(this.api.create(dto));
-   this.createdId.set(data.id);this.success.set('Orden '+data.numero+' creada.');
+   this.createdId.set(data.id);
+   const kitchenCreated=(data.comandasComoOrden??[]).length>0;
+   const kitchenMessage=kitchenCreated?' · Enviada a Cocina':
+    this.sendKitchen()?' · Pendiente de envío a Cocina según condiciones del negocio':' · No enviada a Cocina';
+   const message='Orden '+data.numero+' creada'+kitchenMessage+'.';
+   this.success.set(message);
+   this.notices.show(message,'success',7000);
    this.cart.set([]);this.observations.set('');this.selectedTable.set(null);
    this.mode.set('MOSTRADOR');this.operationId='';this.cartOpen.set(false);
    this.showTablePicker.set(this.prefs.view()==='tables');

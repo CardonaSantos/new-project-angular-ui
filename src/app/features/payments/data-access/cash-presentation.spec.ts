@@ -1,4 +1,4 @@
-import {cashBreakdown,cashFromServer,cashMovementName,oldShiftWarning} from './cash-presentation';
+import {cashBreakdown,cashFromServer,cashMovementName,oldShiftWarning,cashClosingNote} from './cash-presentation';
 import type {CashMovement,CashShift} from './payments.models';
 const entry=(tipo:'INGRESO'|'EGRESO',monto:string,motivo:string):CashMovement=>({
  id:motivo,turnoId:'s1',tipo,monto,motivo,creadoEn:'2026-11-03T12:00:00Z'});
@@ -9,6 +9,12 @@ describe('Caja — resumen verificable',()=>{
    entry('INGRESO','22.00','Efectivo entregado por repartidor')];
   expect(cashBreakdown(list)).toEqual({
    income:'122.00',outflow:'10.00',entries:2,exits:1});
+ });
+ it('documenta los cierres sin conteo físico, sin modificar el esperado',()=>{
+  expect(cashClosingNote('',false)).toContain('Sin conteo físico');
+  expect(cashClosingNote('Se revisó caja',false)).toContain('Se revisó caja');
+  expect(cashClosingNote('Conté el dinero',true)).toBe('Conté el dinero');
+  expect(cashClosingNote('X'.repeat(500),false).length).toBeLessThanOrEqual(500);
  });
  it('usa el saldo del backend, sin recalcularlo para cobrar o cerrar',()=>{
   const s={fondoInicial:'0.00',efectivoCalculado:'90.00'} as CashShift;

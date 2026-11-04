@@ -1155,3 +1155,43 @@ gc-kitchen-ticket{display:block;min-width:0}
 .ord-kitchen-modifiers ul{margin:.06rem 0 0;padding:0 0 0 1.15rem;display:grid;gap:.14rem}
 .ord-kitchen-modifiers li{font-size:.87rem;line-height:1.45;overflow-wrap:anywhere}
 .ord-kitchen-line .ord-kitchen-modifiers li{font-size:.8rem}
+
+/* ORD UX: five-up visual POS (where space permits), prominent confirmations and photos. */
+.ord-pos .ord-pos-confirmed{display:flex;align-items:center;justify-content:space-between;
+ gap:.85rem;flex-wrap:wrap;border:1px solid var(--gc-primary);
+ background:var(--gc-surface-container);border-radius:.75rem;padding:.85rem 1rem}
+.ord-pos-confirmed-content{display:grid;gap:.28rem;min-width:0;flex:1}
+.ord-pos-confirmed-content strong{font-size:1.05rem}
+.ord-pos-confirmed-content span{font-size:.9rem;overflow-wrap:anywhere}
+.ord-pos-confirmed-actions{margin-left:auto}
+.ord-pos-confirmed-actions a{min-height:42px;display:inline-flex;align-items:center;
+ justify-content:center;padding:.5rem .75rem;border:1px solid var(--gc-outline);
+ border-radius:.55rem;text-decoration:none;font-weight:650}
+.ord-pos .ord-products:not(.ord-products--compact){
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,7.35rem),1fr));gap:.5rem}
+.ord-pos .ord-product:not(.ord-product--compact){padding:.48rem;min-height:7.3rem;gap:.25rem}
+.ord-pos .ord-product img{max-height:76px;aspect-ratio:16/9}
+.ord-pos .ord-photo-empty{height:76px;font-size:1.5rem}
+.ord-pos .ord-product-name{font-size:.88rem;line-height:1.24}
+.ord-detail-order-item{position:relative;padding-left:5.55rem;min-height:5.8rem}
+.ord-detail-line-photo{position:absolute;top:.75rem;left:.75rem;width:66px;height:66px;
+ border:1px solid var(--gc-outline-variant);border-radius:.55rem;overflow:hidden;
+ display:grid;place-items:center;background:var(--gc-surface-container)}
+.ord-detail-line-photo img{width:100%;height:100%;object-fit:cover}
+.ord-detail-line-photo span{font-size:.64rem;text-align:center;color:var(--gc-on-surface-variant)}
+.ord-detail-order-item gc-kitchen-modifiers{display:block}
+.ord-detail-add-dialog{width:min(44rem,calc(100vw - 1.2rem));max-height:90dvh}
+.ord-detail-add-preview{display:flex;align-items:center;gap:.75rem;padding:.55rem;
+ border-radius:.55rem;background:var(--gc-surface-container)}
+.ord-detail-add-preview img{width:60px;height:60px;object-fit:cover;border-radius:.4rem}
+.ord-detail-add-preview div{display:grid;gap:.2rem;min-width:0}
+.ord-detail-add-preview strong{overflow-wrap:anywhere}
+.ord-detail-add-preview small{color:var(--gc-on-surface-variant)}
+@media(max-width:600px){
+ .ord-pos-confirmed-actions{width:100%;margin-left:0}
+ .ord-pos-confirmed-actions a{flex:1}
+ .ord-pos .ord-products:not(.ord-products--compact){
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,7rem),1fr))}
+ .ord-detail-order-item{padding-left:4.9rem;min-height:5rem}
+ .ord-detail-line-photo{width:56px;height:56px}
+}

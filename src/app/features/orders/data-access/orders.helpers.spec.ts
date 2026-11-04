@@ -1,6 +1,6 @@
 import {GcApiError} from '../../../core/http/api-error';
 import type {KitchenTicket,TableRecord} from './orders.models';
-import {kitchenStage,orderFriendlyError,sortKitchenQueue,kitchenReadyAt,openTableOrders} from './orders.helpers';
+import {kitchenStage,orderFriendlyError,sortKitchenQueue,kitchenReadyAt,openTableOrders,pendingDeliveryLines} from './orders.helpers';
 
 describe('Comandas — estado operativo y mensajes',()=>{
  const ticket=(estado:'PENDIENTE'|'PREPARANDO'|'LISTA'|'CANCELADA',
@@ -10,6 +10,11 @@ describe('Comandas — estado operativo y mensajes',()=>{
    ...l}))} as KitchenTicket);
  const ready={canceladaEn:null,listaEn:'2026-11-03T12:00:00',entregadaEn:null};
  const delivered={...ready,entregadaEn:'2026-11-03T12:05:00'};
+ it('solo entrega líneas listas que no se entregaron ni cancelaron',()=>{
+  const one=ticket('LISTA',[ready,delivered,{...ready,canceladaEn:'2026-11-03'}]);
+  expect(pendingDeliveryLines(one).map(line=>line.id)).toEqual(['0']);
+  expect(pendingDeliveryLines(ticket('LISTA',[delivered]))).toEqual([]);
+ });
  it('no confunde lista con entregada',()=>{
   expect(kitchenStage(ticket('LISTA',[ready])).label).toBe('Lista para entregar');
   expect(kitchenStage(ticket('LISTA',[delivered])).label).toBe('Entregada');

@@ -4,6 +4,7 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {firstValueFrom,interval} from 'rxjs';
 import {parseApiDecimal} from '../../../shared/formatting';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcOrdersNav} from '../orders-nav';
@@ -11,7 +12,7 @@ import {GcKitchenTicket,GcKitchenModifiers} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import type {KitchenTicket,Station} from '../data-access/orders.models';
-import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitchenQueue} from '../data-access/orders.helpers';
+import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitchenQueue,pendingDeliveryLines} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-kitchen-page',imports:[GcOrdersNav,GcSearchSelect,GcKitchenTicket,GcKitchenModifiers,CdkTrapFocus],
  template:`
@@ -70,7 +71,7 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
        <button type="button" [disabled]="actionBusy()" (click)="start(ticket)">Comenzar preparación</button>
       }
       @if(ticket.estado==='PENDIENTE'||ticket.estado==='PREPARANDO'){
-       <button type="button" class="ord-primary" [disabled]="actionBusy()" (click)="ready(ticket)">Marcar lista</button>
+       <button type="button" class="ord-primary" [disabled]="actionBusy()" (click)="ready(ticket)">Lista y entregada</button>
       }
       @if(ticket.estado==='LISTA'&&stage(ticket).kind!=='delivered'){
        <button type="button" class="ord-primary" (click)="inspect(ticket)">Ver y entregar</button>
@@ -138,7 +139,7 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
          <button type="button" [disabled]="actionBusy()"
           (click)="startLine(line.id,line.cantidad,line.cantidadPreparada)">Preparar cantidad</button>
          <button type="button" class="ord-primary" [disabled]="actionBusy()"
-          (click)="markReady(line.id)">Marcar lista</button>
+          (click)="markReady(line.id)">Lista y entregada</button>
         } @else if(!line.entregadaEn){
          <button type="button" class="ord-primary" [disabled]="actionBusy()"
           (click)="deliver(line.id)">Confirmar entrega</button>
@@ -156,6 +157,7 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
 export class GcOrdersKitchenPage{
  private readonly api=inject(OrdersApi);
  private readonly confirm=inject(ConfirmDialogService);
+ private readonly notices=inject(GcNotificationService);
  private readonly branch=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
  protected readonly branches=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
@@ -279,12 +281,44 @@ export class GcOrdersKitchenPage{
    confirmText:'Iniciar'}))return;
   await this.mutate(()=>firstValueFrom(this.api.startTicket(t.id)));
  }
- protected async ready(t:KitchenTicket){
-  if(!await this.confirm.confirm({title:'Confirmar comanda lista',
-   message:'Se marcará como preparada, NO entregada. Si quedan ingredientes por consumir, esta acción puede descontarlos del inventario.',
-   confirmText:'Sí, está lista'}))return;
-  await this.mutate(()=>firstValueFrom(this.api.readyTicket(t.id)));
+ private async readyAndDeliver(ticketId:string,lineId?:string){
+  if(this.actionBusy())return;
+  if(!await this.confirm.confirm({
+   title:'Marcar lista y entregada',
+   message:'Se preparará el producto (puede descontar ingredientes) y se registrará como entregado. Confirma solo si realmente se entrega.',
+   confirmText:'Lista y entregada'
+  }))return;
+  this.actionBusy.set(true);this.error.set(null);
+  let prepared=false;
+  let failure:string|null=null;
+  let delivered=0;
+  try{
+   let ticket=lineId
+    ?await firstValueFrom(this.api.readyLine(lineId))
+    :await firstValueFrom(this.api.readyTicket(ticketId));
+   prepared=true;
+   const targets=pendingDeliveryLines(ticket).filter(line=>!lineId||line.id===lineId);
+   for(const line of targets){
+    ticket=await firstValueFrom(this.api.deliverLine(line.id));
+    delivered++;
+   }
+   if(this.selected()?.id===ticket.id)this.selected.set(ticket);
+   this.notices.show(delivered
+    ?(delivered===1?'Producto listo y entregado.':delivered+' productos listos y entregados.')
+    :'Comanda ya lista y entregada.','success',6500);
+  }catch(e){
+   failure=(prepared?'La preparación se guardó, pero falta registrar una o más entregas. ':'')
+    +orderFriendlyError(e);
+  }finally{
+   await this.reload();
+   if(failure){
+    this.error.set(failure);
+    this.notices.show(failure,'error',0);
+   }
+   this.actionBusy.set(false);
+  }
  }
+ protected async ready(t:KitchenTicket){await this.readyAndDeliver(t.id)}
  protected remaining(total:string,done:string){
   try{return parseApiDecimal(total).minus(parseApiDecimal(done)).toFixed(3).replace(/\.?0+$/,'')}
   catch{return total}
@@ -308,10 +342,8 @@ export class GcOrdersKitchenPage{
   if(!this.error()){this.startKeys.delete(id);this.partial.update(x=>({...x,[id]:''}))}
  }
  protected async markReady(id:string){
-  if(!await this.confirm.confirm({title:'Confirmar producto listo',
-   message:'Se marcará como preparado, NO entregado. Si quedan ingredientes pendientes, esta acción puede descontarlos.',
-   confirmText:'Sí, está listo'}))return;
-  await this.mutate(()=>firstValueFrom(this.api.readyLine(id)));
+  const selected=this.selected();
+  if(selected)await this.readyAndDeliver(selected.id,id);
  }
  protected async deliver(id:string){
   if(!await this.confirm.confirm({title:'Confirmar entrega',
