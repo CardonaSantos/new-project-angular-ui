@@ -30,7 +30,7 @@ interface ReceiptInput {key:string;cantidad:string}
      @for(l of t.lineas;track l.id){
       <div class="pur-line">
        <div class="pur-heading">
-        <strong>Artículo {{l.articuloId}}</strong>
+        <strong>{{articleNames()[l.articuloId]??'Artículo del traslado'}}</strong>
         <span class="pur-muted">Enviado: {{l.enviada}} · Recibido: {{l.recibida}} · Pendiente: {{l.pendiente}}</span>
        </div>
        @if(t.estado==='EN_TRANSITO'&&access.canSupplyReceive()&&positive(l.pendiente)){
@@ -65,6 +65,7 @@ export class GcPurchasesTransferDetailPage implements OnInit {
  private readonly confirm=inject(ConfirmDialogService);
  private readonly notice=inject(GcNotificationService);
  protected readonly transfer=signal<SupplyTransfer|null>(null);
+ protected readonly articleNames=signal<Record<string,string>>({});
  protected readonly quantities=signal<ReceiptInput[]>([]);
  protected readonly observations=signal('');
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
@@ -91,6 +92,10 @@ export class GcPurchasesTransferDetailPage implements OnInit {
   try{
    const t=await firstValueFrom(this.api.transfer(id));this.transfer.set(t);
    this.quantities.set(t.lineas.map(l=>({key:l.id,cantidad:l.pendiente})));
+   try{
+    const r=await firstValueFrom(this.api.requisition(t.requisicionId));
+    this.articleNames.set(Object.fromEntries(r.lineas.map(x=>[x.articuloId,x.articulo.nombre])));
+   }catch{this.articleNames.set({})}
   }catch(e){this.error.set(gcErrorMessage(e))}
   finally{this.busy.set(false)}
  }
