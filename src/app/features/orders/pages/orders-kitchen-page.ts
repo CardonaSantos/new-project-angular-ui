@@ -1,4 +1,5 @@
 import {Component,computed,effect,HostListener,inject,signal,untracked} from '@angular/core';
+import {RouterLink} from '@angular/router';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {firstValueFrom,interval} from 'rxjs';
@@ -14,7 +15,7 @@ import {OrdersAccess} from '../data-access/orders-access';
 import type {KitchenTicket,Station} from '../data-access/orders.models';
 import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitchenQueue,pendingDeliveryLines} from '../data-access/orders.helpers';
 @Component({
- selector:'gc-orders-kitchen-page',imports:[GcOrdersNav,GcSearchSelect,GcKitchenTicket,GcKitchenModifiers,CdkTrapFocus],
+ selector:'gc-orders-kitchen-page',imports:[RouterLink,GcOrdersNav,GcSearchSelect,GcKitchenTicket,GcKitchenModifiers,CdkTrapFocus],
  template:`
  <main class="ord-page ord-kitchen"><gc-orders-nav/>
  <div class="ord-heading ord-kitchen-heading">
@@ -105,7 +106,10 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
      <span class="ord-ticket-badge" [class.ord-ticket-badge--ready]="stage(ticket).kind==='ready'"
       [class.ord-ticket-badge--delivered]="stage(ticket).kind==='delivered'">{{stage(ticket).label}}</span>
     </div>
-    <button type="button" (click)="closeDetails()" [disabled]="actionBusy()">Cerrar</button>
+    <div class="ord-actions">
+     <a [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']">Imprimir comanda</a>
+     <button type="button" (click)="closeDetails()" [disabled]="actionBusy()">Cerrar</button>
+    </div>
    </div>
    <div class="ord-ticket-detail-meta">
     <span><strong>Pedido:</strong> {{ticket.orden?.numero}}</span>
