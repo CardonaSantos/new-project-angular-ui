@@ -24,6 +24,8 @@ export const PAYMENTS_ROUTES:Routes=[
   loadComponent:()=>import('./pages/payments-cash-register-form-page').then(m=>m.GcPaymentsCashRegisterFormPage)},
  {path:'cash/registers/:id',title:'Configurar caja — Gastro Core',data:{breadcrumb:'Configurar caja'},
   loadComponent:()=>import('./pages/payments-cash-register-form-page').then(m=>m.GcPaymentsCashRegisterFormPage)},
+ {path:'sales/:id/receipt',title:'Comprobante de venta — Gastro Core',data:{breadcrumb:'Comprobante de venta'},
+  loadComponent:()=>import('./pages/payments-sale-receipt-page').then(m=>m.GcPaymentsSaleReceiptPage)},
  {path:'sales',title:'Ventas — Gastro Core',data:{breadcrumb:'Ventas'},
   loadComponent:()=>import('./pages/payments-sales-page').then(m=>m.GcPaymentsSalesPage)},
  {path:'reports',title:'Resumen de cobros — Gastro Core',data:{breadcrumb:'Resumen'},
