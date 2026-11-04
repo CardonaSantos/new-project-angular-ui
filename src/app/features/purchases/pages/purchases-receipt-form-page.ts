@@ -16,6 +16,8 @@ import {PurchasesAccess} from '../data-access/purchases-access';
 import {decimal,newKey} from '../data-access/purchases.helpers';
 import type {PurchaseReceiptInput,ReceiptLineInput,PurchaseSupplier,PurchasePresentation,PurchaseOrder} from '../data-access/purchases.models';
 import {GcPurchasesNav} from '../purchases-nav';
+import {GcPurchasesCreateArticle} from '../components/purchases-create-article';
+import {GcPurchasesCreateSupplier} from '../components/purchases-create-supplier';
 
 interface ReceiptEditorLine {
  key:string;articuloId:string;article:Article|null;ubicacionId:string;loteId:string;
@@ -33,7 +35,7 @@ const blank=():ReceiptEditorLine=>({
 });
 @Component({
  selector:'gc-purchases-receipt-form-page',
- imports:[RouterLink,GcPurchasesNav,GcInventoryPicker,GcSearchSelect],
+ imports:[RouterLink,GcPurchasesNav,GcInventoryPicker,GcSearchSelect,GcPurchasesCreateArticle,GcPurchasesCreateSupplier],
  template:`<main class="pur-page"><gc-purchases-nav/>
   <header class="pur-heading"><div>
    <a class="pur-link" routerLink="/purchases/receipts">← Recepciones</a>
@@ -46,6 +48,15 @@ const blank=():ReceiptEditorLine=>({
    <section class="pur-card">
     <h2>1. Proveedor y destino</h2>
     @if(orderId()){<p class="pur-note">Recepción de la orden de compra {{orderNumber()}}. La mercancía debe vincularse a sus líneas.</p>}
+    @if(access.canSupplierManage()&&!orderId()){
+     <button type="button" (click)="showSupplierCreation.update(v=>!v)">
+      {{showSupplierCreation()?'Volver a la recepción':'Crear proveedor'}}
+     </button>
+    }
+    @if(showSupplierCreation()){
+     <gc-purchases-create-supplier (created)="supplierCreated($event)"
+      (cancel)="showSupplierCreation.set(false)"/>
+    }
     <div class="pur-grid">
      <gc-search-select id="pur-form-supplier" label="Proveedor"
       [items]="supplierChoices()" [remote]="true" [loading]="supplierBusy()"
@@ -91,6 +102,13 @@ const blank=():ReceiptEditorLine=>({
         <gc-inventory-picker [id]="'pur-receipt-art-'+line.key" kind="article" label="Artículo"
          [value]="line.articuloId"
          (valueChange)="chooseArticle(line.key,$event)"/>
+        @if(access.canArticleManage()){
+         <button type="button" (click)="articleCreationKey.set(line.key)">Crear artículo nuevo</button>
+        }
+       }
+       @if(articleCreationKey()===line.key){
+        <gc-purchases-create-article (created)="createdArticle(line.key,$event)"
+         (cancel)="articleCreationKey.set('')"/>
        }
        <div class="pur-grid">
         <gc-inventory-picker [id]="'pur-receipt-loc-'+line.key" kind="location"
@@ -211,6 +229,8 @@ export class GcPurchasesReceiptFormPage implements OnInit {
  protected readonly orderId=signal('');
  protected readonly orderNumber=signal('');
  protected readonly lines=signal<ReceiptEditorLine[]>([blank()]);
+ protected readonly showSupplierCreation=signal(false);
+ protected readonly articleCreationKey=signal('');
  protected readonly suppliers=signal<PurchaseSupplier[]>([]);
  protected readonly supplierBusy=signal(false);
  protected readonly supplierChoices=computed(()=>this.suppliers().map(s=>({id:s.id,label:s.nombre})));
@@ -267,6 +287,16 @@ export class GcPurchasesReceiptFormPage implements OnInit {
    }
   }catch(e){if(generation===this.supplierGeneration)this.error.set(gcErrorMessage(e))}
   finally{if(generation===this.supplierGeneration)this.supplierBusy.set(false)}
+ }
+ protected supplierCreated(s:PurchaseSupplier){
+  this.suppliers.update(rows=>rows.some(x=>x.id===s.id)?rows:[s,...rows]);
+  this.showSupplierCreation.set(false);this.setSupplier(s.id);
+ }
+ protected createdArticle(key:string,article:Article){
+  this.lines.update(lines=>lines.map(l=>l.key===key?{
+   ...l,articuloId:article.id,article,loteId:'',presentacionId:'',factorAUnidadBase:'1'
+  }:l));
+  this.articleCreationKey.set('');this.markDirty();
  }
  protected setSupplier(id:string){
   if(this.orderId())return;
@@ -346,6 +376,8 @@ export class GcPurchasesReceiptFormPage implements OnInit {
    this.warehouseId.set(data.almacenId);
    this.reference.set(data.referenciaProveedor??'');this.observations.set(data.observaciones??'');
    this.orderId.set(data.ordenCompraId??'');
+   const rowsForTax=data.recepcionCompraLineasComoRecepcion??[];
+   this.taxIncluded.set(Boolean(rowsForTax[0]?.precioIncluyeImpuesto));
    this.suppliers.update(s=>s.some(x=>x.id===data.proveedor.id)?s:[data.proveedor,...s]);
    const rows=data.recepcionCompraLineasComoRecepcion??[];
    const source=rows.map(l=>({...blank(),articuloId:l.articuloId,
