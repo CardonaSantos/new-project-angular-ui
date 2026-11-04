@@ -996,3 +996,10 @@ gc-kitchen-ticket{display:block;min-width:0}
  .ord-kitchen-summary small{width:100%}
  .ord-kitchen-settings .ord-setting-row{align-items:start;flex-wrap:wrap}
 }
+
+/* Order/KDS dialog backdrops are buttons for keyboard accessibility; override regular button chrome. */
+.ord-page button.ord-overlay,.ord-page button.ord-overlay:hover:not(:disabled){
+ position:fixed;inset:0;width:100%;height:100%;max-width:none;min-height:0;
+ margin:0;padding:0;border:0;border-radius:0;z-index:110;cursor:pointer;
+ background:rgb(0 0 0 / .55);color:transparent
+}
