@@ -58,7 +58,7 @@ export class GcReportsDailyChart{
    {name:'Gastos registrados',field:'gastosRegistrados' as const,color:third}
   ];
   return {animationDuration:250,
-   color:lines.map(x=>x.color),textStyle:{color,fontFamily:'inherit'},
+   color:lines.map(x=>x.color),textStyle:{color:text,fontFamily:'inherit'},
    aria:{enabled:true,description:this.description()},
    tooltip:{trigger:'axis',valueFormatter:(value:unknown)=>reportMoney(String(value??'0'),currency)},
    legend:{top:0,textStyle:{color:text},icon:'roundRect'},
@@ -71,7 +71,7 @@ export class GcReportsDailyChart{
     type:'line',name:item.name,smooth:true,showSymbol:data.length<=14,symbolSize:7,
     lineStyle:{width:3},areaStyle:{opacity:.06},
     data:data.map(x=>chartAmount(x[item.field]))
-   }))}
+   }))
   } as EChartsCoreOption;
  });
 }
