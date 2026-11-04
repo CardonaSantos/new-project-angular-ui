@@ -1,4 +1,4 @@
-import {Component,computed,effect,HostListener,inject,signal} from '@angular/core';
+import {Component,computed,effect,HostListener,inject,signal,untracked} from '@angular/core';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {firstValueFrom,interval} from 'rxjs';
@@ -181,10 +181,12 @@ export class GcOrdersKitchenPage{
  constructor(){
   effect(()=>{
    const b=this.branch.branchId();
-   if(b&&b!==this.branchId()){
-    this.branchId.set(b);this.cursor='';this.stationId.set('');this.page.set(1);
-    this.tickets.set([]);this.selected.set(null);this.inspectGeneration++;void this.reload();
-   }
+   untracked(()=>{
+    if(b&&b!==this.branchId()){
+     this.branchId.set(b);this.cursor='';this.stationId.set('');this.page.set(1);
+     this.tickets.set([]);this.selected.set(null);this.inspectGeneration++;void this.reload();
+    }
+   });
   });
   interval(7000).pipe(takeUntilDestroyed()).subscribe(()=>{
    if(this.autoRefresh()&&typeof document!=='undefined'&&!document.hidden&&
