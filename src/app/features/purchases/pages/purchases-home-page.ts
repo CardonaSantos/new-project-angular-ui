@@ -20,6 +20,12 @@ import {GcPurchasesNav} from '../purchases-nav';
      <strong>Consultar recepciones</strong>
      <span>Borradores, entradas confirmadas y movimientos.</span>
     </a>}
+    @if(access.canOrdersCreate()){<a routerLink="/purchases/orders/new">
+     <strong>Crear orden de compra</strong><span>Solicitar mercancía a un proveedor.</span>
+    </a>}
+    @if(access.canRead()||access.canSupplierManage()){<a routerLink="/purchases/suppliers">
+     <strong>Proveedores</strong><span>Buscar o registrar proveedores.</span>
+    </a>}
     @if(access.canSupplyRequest()){<a routerLink="/purchases/requisitions">
      <strong>Solicitar insumos</strong><span>Requisición a otro almacén.</span>
     </a>}
