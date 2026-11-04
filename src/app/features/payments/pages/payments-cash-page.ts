@@ -8,7 +8,7 @@ import {GcPaymentsCashNav} from '../payments-cash-nav';
 import {CashContext} from '../data-access/cash-context';
 import {PaymentsApi} from '../data-access/payments.api';
 import {PaymentsAccess} from '../data-access/payments-access';
-import {cashBreakdown,cashMovementName,oldShiftWarning} from '../data-access/cash-presentation';
+import {cashBreakdown,oldShiftWarning} from '../data-access/cash-presentation';
 import {money,paymentError} from '../data-access/payments.helpers';
 import type {CashShift} from '../data-access/payments.models';
 
