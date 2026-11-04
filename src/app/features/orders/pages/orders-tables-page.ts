@@ -1,5 +1,5 @@
 import {Component,computed,effect,inject,signal} from '@angular/core';
-import {Router,RouterLink} from '@angular/router';
+import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
@@ -13,13 +13,25 @@ import {money} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-tables-page',imports:[RouterLink,GcOrdersNav,GcSearchSelect],
  template:`
- <main class="ord-page"><gc-orders-nav/>
+ <main class="ord-page ord-tables-page"><gc-orders-nav/>
  <div class="ord-heading">
-  <h1>Mesas y salas</h1>
-  <button type="button" (click)="load()" [disabled]="busy()">Actualizar</button>
+  <div><h1>{{managing?'Administrar mesas y salas':'Mesas y salas'}}</h1>
+   <p class="ord-note">{{managing?'Configura la distribución del local.':'Consulta la ocupación y toma pedidos desde el tablero.'}}</p></div>
+  <div class="ord-actions">
+   @if(managing){<a routerLink="/orders/tables">Volver al tablero</a>}
+   @else if(access.canTablesManage()){<a routerLink="/orders/tables/manage">Administrar mesas</a>}
+   <button type="button" (click)="load()" [disabled]="busy()">Actualizar</button>
+  </div>
  </div>
  @if(error()){<p class="ord-alert" role="alert">{{error()}}</p>}
+ @if(!managing){
  <section class="ord-card">
+  <div class="ord-stat-grid ord-table-stats">
+   <div><small>Mesas</small><strong>{{tables().length}}</strong></div>
+   <div><small>Disponibles</small><strong>{{availableCount()}}</strong></div>
+   <div><small>Ocupadas</small><strong>{{occupiedCount()}}</strong></div>
+   <div><small>Inactivas</small><strong>{{inactiveCount()}}</strong></div>
+  </div>
   <div class="ord-category-list" role="group" aria-label="Seleccionar sala">
    <button type="button" [class.active]="selectedRoom()===''" (click)="selectedRoom.set('')">Todas las salas</button>
    @for(room of rooms();track room.id){
@@ -49,16 +61,26 @@ import {money} from '../data-access/orders.helpers';
       @if(table.ocupacion&&access.canTablesManage()){
        <button type="button" (click)="release(table)" [disabled]="actionBusy()">Liberar mesa</button>}
       @if(access.canTablesManage()){
-       <button type="button" (click)="editTable(table)">Editar</button>}
+       <a routerLink="/orders/tables/manage">Configurar</a>}
      </div>
     </article>
    } @empty {<p class="ord-empty">No hay mesas para mostrar.</p>}
   </div>
  </section>
- @if(access.canTablesManage()){
- <details class="ord-card ord-management" [open]="managementOpen()">
-  <summary>Administrar salas y mesas</summary>
-  <h2>Salas</h2>
+ }
+ @if(managing&&access.canTablesManage()){
+ <section class="ord-card ord-management ord-tables-admin">
+  <div class="ord-heading">
+   <h2>Configuración del local</h2>
+   <div class="ord-view-switch" role="group" aria-label="Configuración de mesas">
+    <button type="button" [class.active]="manageTab()==='rooms'"
+     [attr.aria-pressed]="manageTab()==='rooms'" (click)="manageTab.set('rooms')">Salas</button>
+    <button type="button" [class.active]="manageTab()==='tables'"
+     [attr.aria-pressed]="manageTab()==='tables'" (click)="manageTab.set('tables')">Mesas</button>
+   </div>
+  </div>
+  @if(manageTab()==='rooms'){
+  <h3>Salas</h3>
   <div class="ord-small-list">
    @for(room of rooms();track room.id){
     <div class="ord-setting-row">
@@ -81,6 +103,18 @@ import {money} from '../data-access/orders.helpers';
     @if(roomId()){<button type="button" (click)="roomId.set('');roomName.set('')">Cancelar</button>}
    </div>
   </fieldset>
+  }
+  @if(manageTab()==='tables'){
+  <div class="ord-small-list">
+   @for(t of tables();track t.id){
+    <div class="ord-setting-row">
+     <div><strong>Mesa {{t.numero}}</strong>
+      <small>{{t.sala.nombre}} · {{t.capacidad}} personas · {{t.activa?'Activa':'Inactiva'}}</small>
+     </div>
+     <button type="button" (click)="editTable(t)" [disabled]="actionBusy()">Editar</button>
+    </div>
+   } @empty {<p>No hay mesas configuradas.</p>}
+  </div>
   <fieldset class="ord-section"><legend>{{tableId()?'Editar mesa':'Nueva mesa'}}</legend>
    <div class="ord-form-grid">
     <gc-search-select id="room-for-table" label="Sala" [items]="roomOptions()"
@@ -103,27 +137,39 @@ import {money} from '../data-access/orders.helpers';
      <button type="button" (click)="toggleTable()" [disabled]="actionBusy()"> {{editingTable()?.activa?'Desactivar':'Activar'}} mesa </button>}
    </div>
   </fieldset>
- </details>
+  }
+ </section>
+ }
+ @if(managing&&!access.canTablesManage()){
+  <p role="alert" class="ord-alert">No tienes permisos para administrar salas o mesas.</p>
  }
  </main>`
 })
 export class GcOrdersTablesPage{
  private readonly api=inject(OrdersApi);private readonly router=inject(Router);
+ private readonly route=inject(ActivatedRoute);
+ protected readonly managing=Boolean(this.route.snapshot.data['manage']);
  private readonly confirm=inject(ConfirmDialogService);
  protected readonly branch=inject(GcBranchContext);protected readonly access=inject(OrdersAccess);
  protected readonly money=money;
  protected readonly rooms=signal<Room[]>([]);protected readonly tables=signal<TableRecord[]>([]);
  protected readonly selectedRoom=signal('');protected readonly busy=signal(false);
- protected readonly managementOpen=signal(false);
+ protected readonly manageTab=signal<'rooms'|'tables'>('rooms');
  protected readonly actionBusy=signal(false);protected readonly error=signal<string|null>(null);
  protected readonly roomId=signal('');protected readonly roomName=signal('');
  protected readonly tableId=signal('');protected readonly tableRoom=signal('');
  protected readonly tableNumber=signal('');protected readonly capacity=signal(2);
  protected readonly visibleTables=computed(()=>this.tables().filter(x=>!this.selectedRoom()||x.sala.id===this.selectedRoom()));
+ protected readonly availableCount=computed(()=>this.tables().filter(t=>t.activa&&!t.ocupacion).length);
+ protected readonly occupiedCount=computed(()=>this.tables().filter(t=>t.activa&&t.ocupacion).length);
+ protected readonly inactiveCount=computed(()=>this.tables().filter(t=>!t.activa).length);
  protected readonly roomOptions=computed(()=>this.rooms().filter(x=>x.activa).map(x=>({id:x.id,label:x.nombre})));
  protected readonly editingTable=computed(()=>this.tables().find(x=>x.id===this.tableId()));
  private generation=0;
- constructor(){effect(()=>{if(this.branch.branchId())void this.load()})}
+ constructor(){effect(()=>{
+  const id=this.branch.branchId();
+  if(id){this.selectedRoom.set('');void this.load()}
+ })}
  protected async load(){
   const id=this.branch.branchId();if(!id||!this.access.canTablesRead())return;
   const gen=++this.generation;this.busy.set(true);this.error.set(null);
@@ -144,8 +190,9 @@ export class GcOrdersTablesPage{
    confirmText:'Liberar'}))return;
   await this.mutate(async()=>{await firstValueFrom(this.api.closeOccupancy(id))});
  }
- protected editRoom(room:Room){this.managementOpen.set(true);
-  this.roomId.set(room.id);this.roomName.set(room.nombre)}
+ protected editRoom(room:Room){
+  this.manageTab.set('rooms');this.roomId.set(room.id);this.roomName.set(room.nombre);
+ }
  protected async toggleRoom(room:Room){
   if(room.activa&&!await this.confirm.confirm({title:'Desactivar sala',message:'No podrá desactivarse una sala con mesas ocupadas.',danger:true,confirmText:'Desactivar'}))return;
   await this.mutate(async()=>{await firstValueFrom(this.api.updateRoom(room.id,{activa:!room.activa}))});
@@ -159,8 +206,7 @@ export class GcOrdersTablesPage{
   });
  }
  protected editTable(table:TableRecord){
-  this.managementOpen.set(true);
-  this.tableId.set(table.id);this.tableRoom.set(table.sala.id);
+  this.manageTab.set('tables');this.tableId.set(table.id);this.tableRoom.set(table.sala.id);
   this.tableNumber.set(table.numero);this.capacity.set(table.capacidad);
  }
  protected resetTableForm(){this.tableId.set('');this.tableRoom.set('');this.tableNumber.set('');this.capacity.set(2)}
