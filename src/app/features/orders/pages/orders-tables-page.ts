@@ -10,7 +10,7 @@ import {GcOrdersNav} from '../orders-nav';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import type {Room,TableRecord} from '../data-access/orders.models';
-import {money} from '../data-access/orders.helpers';
+import {money,openTableOrders} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-tables-page',imports:[RouterLink,GcOrdersNav,GcSearchSelect],
  template:`
@@ -167,7 +167,7 @@ export class GcOrdersTablesPage{
  private readonly confirm=inject(ConfirmDialogService);
  private readonly notices=inject(GcNotificationService);
  protected readonly branch=inject(GcBranchContext);protected readonly access=inject(OrdersAccess);
- protected readonly money=money;
+ protected readonly money=money;protected readonly openOrders=openTableOrders;
  protected readonly rooms=signal<Room[]>([]);protected readonly tables=signal<TableRecord[]>([]);
  protected readonly selectedRoom=signal('');protected readonly busy=signal(false);
  protected readonly manageTab=signal<'rooms'|'tables'>('rooms');
@@ -198,9 +198,6 @@ export class GcOrdersTablesPage{
  }
  protected openTable(table:TableRecord){
   void this.router.navigate(['/orders/pos'],{queryParams:{mesaId:table.id}});
- }
- protected openOrders(table:TableRecord){
-  return (table.ocupacion?.ordenesComoOcupacionMesa??[]).filter(order=>order.estado==='ABIERTA');
  }
  protected async release(table:TableRecord){
   const id=table.ocupacion?.id;if(!id||this.actionBusy())return;
