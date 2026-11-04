@@ -708,3 +708,76 @@ gc-kitchen-ticket{display:block;min-width:0}
  .pay-page .ord-actions>button{min-height:44px}
 }
 @media(pointer:coarse){.pay-page button{min-height:44px}}
+
+/* CASH R2 — separate task pages and single-purpose cashier dashboard. */
+.pay-cash-page{min-width:0}
+.pay-cash-nav{display:flex;align-items:center;gap:.55rem;overflow-x:auto;scrollbar-width:thin;
+ border-bottom:1px solid var(--gc-outline-variant);padding:0 0 .5rem}
+.pay-cash-nav a{white-space:nowrap;display:inline-flex;align-items:center;min-height:38px;
+ text-decoration:none;color:var(--gc-on-surface);font-size:.85rem;
+ border-radius:.55rem;padding:.45rem .7rem;border:1px solid transparent}
+.pay-cash-nav a.active{border-color:var(--gc-outline);font-weight:700;
+ background:var(--gc-surface-container)}
+.pay-cash-hero{display:grid;gap:1rem}
+.pay-cash-hero>.ord-heading{align-items:flex-start}
+.pay-cash-balance{display:flex;flex-direction:column;gap:.25rem;
+ min-width:0;padding:1rem 1.2rem;border-radius:.75rem;
+ background:var(--gc-surface-container);border:1px solid var(--gc-outline-variant)}
+.pay-cash-balance small,.pay-cash-balance span{color:var(--gc-on-surface-variant)}
+.pay-cash-balance strong{font-size:clamp(1.75rem,3.2vw,2.55rem);
+ line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pay-cash-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:.65rem}
+.pay-cash-totals>div,.pay-cash-reconciliation>div{
+ display:flex;align-items:flex-start;justify-content:space-between;gap:.55rem;
+ border:1px solid var(--gc-outline-variant);border-radius:.55rem;padding:.8rem;
+ flex-wrap:wrap;min-width:0}
+.pay-cash-totals span,.pay-cash-reconciliation span{font-size:.82rem;
+ color:var(--gc-on-surface-variant)}
+.pay-cash-totals strong,.pay-cash-reconciliation strong{font-size:1rem;
+ font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pay-cash-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.65rem;min-width:0}
+.pay-cash-actions a{display:flex;align-items:center;justify-content:center;text-align:center;
+ min-height:46px;padding:.55rem .8rem;border:1px solid var(--gc-outline);
+ border-radius:.55rem;color:var(--gc-on-surface);text-decoration:none;
+ font-weight:650;font-size:.87rem}
+.pay-cash-actions a.ord-primary{color:var(--gc-on-primary);border-color:var(--gc-primary)}
+.pay-cash-task{max-width:830px;min-width:0}
+.pay-cash-task-card{display:grid;gap:.95rem;min-width:0}
+.pay-cash-task-card .ord-section{display:grid;gap:.75rem;margin:0}
+.pay-cash-task-card .ord-section label{font-size:.87rem;font-weight:600}
+.pay-cash-task-card .ord-actions{gap:.75rem;align-items:center}
+.pay-cash-task-card .ord-actions>a:not(.ord-primary){padding:.5rem}
+.pay-cash-difference{padding:.7rem;border:1px solid var(--gc-outline-variant);
+ border-radius:.55rem;font-weight:650;margin:0}
+.pay-cash-reconciliation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.pay-cash-history,.pay-cash-ledger{display:grid;min-width:0}
+.pay-cash-ledger-row{display:flex;align-items:center;justify-content:space-between;
+ gap:.7rem;min-width:0;padding:.85rem .2rem;
+ border-bottom:1px solid var(--gc-outline-variant)}
+.pay-cash-ledger-row>div{display:grid;gap:.17rem;min-width:0}
+.pay-cash-ledger-row strong{overflow-wrap:anywhere}
+.pay-cash-ledger-row small{color:var(--gc-on-surface-variant);font-size:.78rem}
+.pay-cash-ledger-row>a{flex-shrink:0;text-align:right}
+.pay-cash-out{color:var(--gc-on-surface-variant)}
+.pay-cash-empty{display:grid;gap:.65rem}
+.pay-cash-empty>.ord-primary{justify-self:start}
+.pay-cash-register-state{display:grid;gap:.65rem;padding-top:1rem;
+ border-top:1px solid var(--gc-outline-variant)}
+.pay-cash-register-state button{justify-self:start}
+@media(max-width:720px){
+ .pay-cash-totals{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .pay-cash-actions{grid-template-columns:minmax(0,1fr)}
+ .pay-cash-reconciliation{grid-template-columns:minmax(0,1fr)}
+ .pay-cash-ledger-row{align-items:flex-start}
+ .pay-cash-ledger-row>a{min-height:44px;display:flex;align-items:center}
+}
+@media(max-width:440px){
+ .pay-cash-totals{grid-template-columns:minmax(0,1fr)}
+ .pay-cash-hero .ord-heading{flex-wrap:wrap}
+}
+@media(pointer:coarse){
+ .pay-cash-nav a{min-height:44px}
+ .pay-cash-actions a{min-height:48px}
+}
