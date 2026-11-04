@@ -87,3 +87,12 @@
  .pur-pagination{align-items:stretch}
  .pur-pagination .pur-actions{width:100%}
 }
+
+.pur-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}
+.pur-choice-grid a{display:grid;gap:.35rem;text-decoration:none;color:var(--gc-on-surface);
+ border:1px solid var(--gc-outline-variant);border-radius:.7rem;padding:1rem;
+ min-height:104px;background:var(--gc-surface);align-content:center}
+.pur-choice-grid a:hover{border-color:var(--gc-primary)}
+.pur-choice-grid a span{color:var(--gc-on-surface-variant);font-size:.84rem}
+.pur-choice-grid a:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+@media(max-width:650px){.pur-choice-grid{grid-template-columns:minmax(0,1fr)}}
