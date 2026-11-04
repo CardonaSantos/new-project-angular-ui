@@ -743,7 +743,11 @@ gc-kitchen-ticket{display:block;min-width:0}
  border-radius:.55rem;color:var(--gc-on-surface);text-decoration:none;
  font-weight:650;font-size:.87rem}
 .pay-cash-actions a.ord-primary{color:var(--gc-on-primary);border-color:var(--gc-primary)}
-.pay-cash-task{max-width:830px;min-width:0}
+/* Keep the module tabs full-width; center only the cash task and its back link. */
+.pay-cash-task{max-width:none;min-width:0}
+.pay-cash-task > :is(a,.pay-cash-task-card){
+ width:100%;max-width:830px;justify-self:center
+}
 .pay-cash-task-card{display:grid;gap:.95rem;min-width:0}
 .pay-cash-task-card .ord-section{display:grid;gap:.75rem;margin:0}
 .pay-cash-task-card .ord-section label{font-size:.87rem;font-weight:600}
