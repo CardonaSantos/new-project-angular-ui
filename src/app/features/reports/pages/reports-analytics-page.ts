@@ -399,11 +399,11 @@ export class GcReportsAnalyticsPage{
    const blob=response.body;
    if(!blob||blob.size===0)throw new Error('El servidor devolvió un archivo vacío.');
    const url=URL.createObjectURL(blob);
-   try{
-    const link=document.createElement('a');
-    link.href=url;link.download='Gastro_Core_'+this.source()+'_'+this.period()+'.'+format.toLowerCase();
-    link.style.display='none';document.body.appendChild(link);link.click();link.remove();
-   }finally{URL.revokeObjectURL(url)}
+   const link=document.createElement('a');
+   link.href=url;link.download='Gastro_Core_'+this.source()+'_'+this.period()+'.'+format.toLowerCase();
+   link.style.display='none';document.body.appendChild(link);link.click();link.remove();
+   // Firefox may still be starting the file transfer after click() returns.
+   setTimeout(()=>URL.revokeObjectURL(url),5000)
    this.notice.show('Reporte generado: '+format+'.','success');
   }catch(e){this.exportError.set(gcErrorMessage(e));this.notice.show(gcErrorMessage(e),'error',0)}
   finally{this.exporting.set(false)}
