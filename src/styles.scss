@@ -1199,3 +1199,119 @@ gc-kitchen-ticket{display:block;min-width:0}
  .ord-detail-order-item{padding-left:4.9rem;min-height:5rem}
  .ord-detail-line-photo{width:56px;height:56px}
 }
+
+/* Gastro Core reports: Cappuccino-compatible, accessible and compact. */
+.rep-page{width:100%;max-width:1450px;margin:0 auto;display:grid;align-content:start;gap:1rem;min-width:0;
+ color:var(--gc-on-surface)}
+.rep-page :is(h1,h2,h3,p){margin:0}
+.rep-page h1{font-size:clamp(1.3rem,1.8vw,1.8rem);font-weight:700}
+.rep-page h2{font-size:1.03rem;font-weight:690}
+.rep-page h3{font-size:.97rem;font-weight:670}
+.rep-kicker{font-size:.76rem;font-weight:750;letter-spacing:.035em;text-transform:uppercase;
+ color:var(--gc-primary)}
+.rep-muted{font-size:.84rem;color:var(--gc-on-surface-variant);line-height:1.5}
+.rep-footnote{font-size:.75rem;color:var(--gc-on-surface-variant);line-height:1.5}
+.rep-heading{display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap}
+.rep-heading>div:first-child{display:grid;gap:.3rem}
+.rep-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem}
+.rep-page :is(button,.rep-button){border:1px solid var(--gc-outline);border-radius:.5rem;
+ padding:.52rem .75rem;background:transparent;color:var(--gc-on-surface);font:inherit;font-size:.84rem;
+ font-weight:620;min-height:36px;cursor:pointer;text-decoration:none;display:inline-flex;justify-content:center;align-items:center}
+.rep-page :is(button,.rep-button):hover:not(:disabled){border-color:var(--gc-primary);background:var(--gc-surface-container)}
+.rep-page :is(button,.rep-button):disabled{opacity:.55;cursor:not-allowed}
+.rep-page :is(button,.rep-button,a,select,input,summary):focus-visible{
+ outline:2px solid var(--gc-primary);outline-offset:3px}
+.rep-page .rep-primary{background:var(--gc-primary);border-color:var(--gc-primary);
+ color:var(--gc-on-primary)}
+.rep-page .rep-primary:hover:not(:disabled){background:var(--gc-primary-container);color:var(--gc-on-primary-container)}
+.rep-page .rep-text-link{color:var(--gc-primary);text-decoration:none;font-weight:650;font-size:.84rem}
+.rep-page .rep-text-link:hover{text-decoration:underline}
+.rep-card{background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);
+ border-radius:.8rem;padding:clamp(.7rem,1.5vw,1rem);display:grid;gap:1rem;min-width:0}
+.rep-card-header,.rep-section-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.rep-section-header>div{display:grid;gap:.2rem}
+.rep-section{display:grid;gap:.8rem}
+.rep-metrics{display:grid;gap:.7rem;grid-template-columns:repeat(4,minmax(0,1fr))}
+.rep-metric{border:1px solid var(--gc-outline-variant);border-radius:.68rem;
+ padding:.83rem;background:var(--gc-surface-container-low);display:grid;gap:.26rem;
+ align-content:start;min-width:0}
+.rep-metric>span{font-size:.8rem;color:var(--gc-on-surface-variant);font-weight:600}
+.rep-metric>strong{font-size:clamp(1.2rem,1.8vw,1.65rem);font-weight:750;
+ line-height:1.15;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.rep-metric>small{color:var(--gc-on-surface-variant);font-size:.73rem;line-height:1.5}
+.rep-metric-link{color:inherit;text-decoration:none;transition:border-color .15s ease,transform .15s ease}
+.rep-metric-link:hover{border-color:var(--gc-primary);transform:translateY(-2px)}
+.rep-tag{white-space:nowrap;border:1px solid var(--gc-outline-variant);padding:.32rem .5rem;
+ border-radius:99px;font-size:.72rem;color:var(--gc-on-surface-variant)}
+.rep-shortcuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:.7rem}
+.rep-shortcut{position:relative;display:grid;gap:.36rem;align-content:center;min-height:92px;
+ padding:.9rem 2rem .9rem .85rem;border:1px solid var(--gc-outline-variant);
+ border-radius:.7rem;background:var(--gc-surface-container-low);color:inherit;text-decoration:none}
+.rep-shortcut:hover{border-color:var(--gc-primary);background:var(--gc-surface-container)}
+.rep-shortcut-title{font-weight:680;font-size:.93rem}
+.rep-shortcut-arrow{position:absolute;right:.7rem;top:50%;transform:translateY(-50%);
+ color:var(--gc-primary);font-size:1.1rem}
+.rep-operational-secondary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ border:1px solid var(--gc-outline-variant);border-radius:.7rem;overflow:hidden}
+.rep-operational-secondary>div{display:grid;gap:.12rem;padding:.65rem .8rem;border-right:1px solid var(--gc-outline-variant)}
+.rep-operational-secondary>div:last-child{border-right:0}
+.rep-operational-secondary strong{font-size:1.25rem;font-variant-numeric:tabular-nums}
+.rep-operational-secondary span{font-size:.76rem;color:var(--gc-on-surface-variant)}
+.rep-analytics-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+.rep-insight{border-left:3px solid var(--gc-primary);padding:.75rem .85rem;display:grid;gap:.3rem;
+ background:var(--gc-surface-container-low);border-radius:0 .5rem .5rem 0}
+.rep-insight>strong{font-size:.86rem}
+.rep-insight p,.rep-insight span{font-size:.83rem;line-height:1.5}
+.rep-nav,.rep-tabs{display:flex;gap:.25rem;overflow-x:auto;border-bottom:1px solid var(--gc-outline-variant);
+ min-width:0;scrollbar-width:thin}
+.rep-page .rep-nav a,.rep-page .rep-tabs button{display:inline-flex;align-items:center;
+ flex:none;padding:.65rem .65rem;text-decoration:none;color:var(--gc-on-surface-variant);font-size:.86rem;
+ font-weight:630;border:0;background:transparent;border-radius:0;border-bottom:2px solid transparent}
+.rep-page .rep-nav a:hover,.rep-page .rep-tabs button:hover{color:var(--gc-on-surface)}
+.rep-page .rep-nav .rep-nav-active,.rep-page .rep-tabs .rep-tab-active{
+ color:var(--gc-on-surface);border-bottom-color:var(--gc-primary)}
+.rep-filters{gap:.7rem}
+.rep-filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:.75rem;
+ align-items:end}
+.rep-field{display:grid;gap:.3rem;min-width:0}
+.rep-field label{font-size:.78rem;font-weight:680}
+.rep-field :is(input,select){background:var(--gc-surface);color:var(--gc-on-surface);
+ border:1px solid var(--gc-outline);border-radius:.5rem;min-height:38px;padding:.45rem .55rem;
+ font:inherit;font-size:.88rem;min-width:0;width:100%}
+.rep-filter-submit{display:flex;align-items:end}
+.rep-filter-submit button{width:100%}
+.rep-chart{width:100%;height:310px;min-width:0}
+.rep-chart-small{height:260px}
+.rep-chart-data summary{cursor:pointer;font-size:.8rem;color:var(--gc-on-surface-variant);
+ padding:.4rem 0}
+.rep-table-wrap{overflow-x:auto;min-width:0;max-width:100%;scrollbar-width:thin}
+.rep-table{width:100%;border-collapse:collapse;font-size:.83rem;white-space:nowrap}
+.rep-table th{text-align:left;font-size:.76rem;letter-spacing:.015em;
+ color:var(--gc-on-surface-variant);font-weight:680;background:var(--gc-surface-container)}
+.rep-table :is(td,th){padding:.65rem .65rem;border-bottom:1px solid var(--gc-outline-variant)}
+.rep-table td{font-variant-numeric:tabular-nums}
+.rep-table td small{display:block;color:var(--gc-on-surface-variant)}
+.rep-table tbody tr:hover{background:var(--gc-surface-container)}
+.rep-pagination{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;
+ color:var(--gc-on-surface-variant);font-size:.8rem}
+.rep-report-toolbar{display:flex;justify-content:space-between;align-items:end;gap:.8rem;flex-wrap:wrap}
+.rep-report-toolbar>.rep-field{flex:1;min-width:min(100%,250px)}
+.rep-page .rep-alert{border:1px solid var(--gc-error);border-radius:.65rem;
+ padding:.65rem .85rem;color:var(--gc-error);font-size:.86rem;overflow-wrap:anywhere}
+.rep-alert button{margin-left:.5rem}
+@media(max-width:1040px){.rep-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rep-analytics-columns{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:580px){
+ .rep-page{gap:.85rem}
+ .rep-heading{align-items:stretch}
+ .rep-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rep-shortcut{padding:.7rem 1.5rem .7rem .65rem;min-height:86px}
+ .rep-metric{padding:.65rem}
+ .rep-metric>strong{font-size:1.2rem}
+ .rep-operational-secondary{grid-template-columns:minmax(0,1fr)}
+ .rep-operational-secondary>div{border-right:0;border-bottom:1px solid var(--gc-outline-variant)}
+ .rep-operational-secondary>div:last-child{border-bottom:0}
+ .rep-chart{height:270px}
+ .rep-chart-small{height:220px}
+}
+@media(prefers-reduced-motion:reduce){.rep-metric-link{transition:none}.rep-metric-link:hover{transform:none}}
