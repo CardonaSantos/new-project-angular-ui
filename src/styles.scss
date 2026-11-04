@@ -1003,3 +1003,12 @@ gc-kitchen-ticket{display:block;min-width:0}
  margin:0;padding:0;border:0;border-radius:0;z-index:110;cursor:pointer;
  background:rgb(0 0 0 / .55);color:transparent
 }
+
+/* Table occupancy safeguards: keep the disabled action's reason visible and actionable. */
+.ord-table-card .ord-table-blocked{
+ font-size:.81rem;line-height:1.5;color:var(--gc-on-surface-variant);
+ border-left:2px solid var(--gc-outline);padding-left:.65rem;margin:.15rem 0;
+ overflow-wrap:anywhere
+}
+.ord-table-card .ord-table-kitchen-link{font-size:.82rem;justify-self:start}
+.ord-table-card .ord-actions button:disabled{opacity:.6}
