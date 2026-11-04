@@ -1148,3 +1148,10 @@ gc-kitchen-ticket{display:block;min-width:0}
 }
 
 .pur-static-label{font-size:.86rem;font-weight:600;display:block;margin-bottom:.2rem}
+
+/* Kitchen must display stored modifiers independently from optional chef notes. */
+.ord-kitchen-modifiers{display:grid;gap:.16rem;min-width:0}
+.ord-kitchen-modifiers-title{font-size:.77rem;font-weight:700;color:var(--gc-on-surface-variant)}
+.ord-kitchen-modifiers ul{margin:.06rem 0 0;padding:0 0 0 1.15rem;display:grid;gap:.14rem}
+.ord-kitchen-modifiers li{font-size:.87rem;line-height:1.45;overflow-wrap:anywhere}
+.ord-kitchen-line .ord-kitchen-modifiers li{font-size:.8rem}
