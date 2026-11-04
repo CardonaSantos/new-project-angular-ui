@@ -42,6 +42,8 @@ import type {SaleRecord} from '../data-access/payments.models';
    <div class="pay-total-row"><span>Total</span><strong>{{money(data.total)}}</strong></div>
   </mat-dialog-content>
   <mat-dialog-actions align="end">
+   <a [routerLink]="['/payments/sales',data.id,'receipt']" mat-dialog-close>
+    Imprimir comprobante</a>
    @if(data.cuenta?.orden?.id){
     <a [routerLink]="['/orders/list',data.cuenta?.orden?.id]"
       mat-dialog-close>Ver pedido</a>
