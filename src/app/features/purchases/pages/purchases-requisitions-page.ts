@@ -47,7 +47,7 @@ const empty=():RequestLine=>({key:newKey(),articuloId:'',cantidad:''});
       </div>
      }
     </div>
-    <div class="pur-actions"><button type="button" (click)="formLines.update(ls=>[...ls,empty()])">Agregar insumo</button></div>
+    <div class="pur-actions"><button type="button" (click)="addLine()">Agregar insumo</button></div>
     <div class="pur-field"><label for="pur-req-note">Nota (opcional)</label>
      <textarea id="pur-req-note" [value]="note()" rows="2" maxlength="500"
       (input)="note.set($any($event.target).value)"></textarea>
@@ -115,6 +115,7 @@ export class GcPurchasesRequisitionsPage {
   this.formLines.update(ls=>ls.map(l=>l.key===key?{...l,[field]:value}:l));
   this.key=newKey();
  }
+ protected addLine(){this.formLines.update(ls=>[...ls,empty()]);this.key=newKey()}
  protected removeLine(key:string){this.formLines.update(ls=>ls.filter(l=>l.key!==key));this.key=newKey()}
  protected change(d:number){const n=this.page()+d;if(n<1||n>this.pages()||this.busy())return;this.page.set(n);void this.load()}
  protected async load(){
