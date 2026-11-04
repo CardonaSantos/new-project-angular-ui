@@ -8,6 +8,7 @@ import {PurchasesApi} from '../data-access/purchases.api';
 import {PurchasesAccess} from '../data-access/purchases-access';
 import type {SupplyTransfer} from '../data-access/purchases.models';
 import {decimal,newKey} from '../data-access/purchases.helpers';
+import {parseApiDecimal} from '../../../shared/formatting';
 import {GcPurchasesNav} from '../purchases-nav';
 interface ReceiptInput {key:string;cantidad:string}
 @Component({
@@ -32,7 +33,7 @@ interface ReceiptInput {key:string;cantidad:string}
         <strong>Artículo {{l.articuloId}}</strong>
         <span class="pur-muted">Enviado: {{l.enviada}} · Recibido: {{l.recibida}} · Pendiente: {{l.pendiente}}</span>
        </div>
-       @if(t.estado==='EN_TRANSITO'&&access.canSupplyReceive()&&asNumber(l.pendiente)>0){
+       @if(t.estado==='EN_TRANSITO'&&access.canSupplyReceive()&&positive(l.pendiente)){
         <div class="pur-field"><label [for]="'pur-trans-qty-'+l.id">Cantidad a recibir</label>
          <input [id]="'pur-trans-qty-'+l.id" inputmode="decimal"
           [value]="getQuantity(l.id)" (input)="setQuantity(l.id,$any($event.target).value)"/>
@@ -69,13 +70,13 @@ export class GcPurchasesTransferDetailPage implements OnInit {
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
  protected readonly error=signal('');
  private key=newKey();
- protected readonly asNumber=(value:string)=>Number(value);
+ protected readonly positive=(value:string)=>decimal(value)!==null;
  protected readonly ready=()=>{
   const t=this.transfer();if(!t||t.estado!=='EN_TRANSITO')return false;
   const selected=this.quantities().filter(l=>decimal(l.cantidad));
   return selected.length>0&&selected.every(l=>{
    const original=t.lineas.find(x=>x.id===l.key);
-   return Boolean(original&&Number(l.cantidad)<=Number(original.pendiente));
+   return Boolean(original&&parseApiDecimal(decimal(l.cantidad)!).lte(parseApiDecimal(original.pendiente)));
   });
  };
  ngOnInit(){void this.load()}
