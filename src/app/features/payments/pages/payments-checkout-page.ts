@@ -7,6 +7,8 @@ import {OrdersApi} from '../../orders/data-access/orders.api';
 import type {OrderDetail} from '../../orders/data-access/orders.models';
 import {GcPaymentsNav} from '../payments-nav';
 import {CashContext} from '../data-access/cash-context';
+import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {oldShiftWarning} from '../data-access/cash-presentation';
 import {PaymentsAccess} from '../data-access/payments-access';
 import {PaymentsApi} from '../data-access/payments.api';
 import {checkParts,amount,money,operationKey,paymentError,positive,remainder,pendingTotal} from '../data-access/payments.helpers';
@@ -71,7 +73,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
        }
       </details>
      }
-     @if(o.estado==='ABIERTA'&&account.estado==='ABIERTA'&&access.canCollect()&&parsePositive(available())&&cash.ownShift();as shift){
+     @if(o.estado==='ABIERTA'&&account.estado==='ABIERTA'&&access.canCollect()&&parsePositive(available())&&!outdatedShift()&&cash.ownShift();as shift){
       <fieldset class="ord-section pay-payment-form">
        <legend>1. Registrar cobro</legend>
        @for(part of parts();track $index;let i=$index){
@@ -136,6 +138,12 @@ import {parseApiDecimal} from '../../../shared/formatting';
        <button class="ord-primary pay-submit" type="button" (click)="collect()"
         [disabled]="working()||!!paymentIssue()">Confirmar cobro</button>
       </fieldset>
+     } @else if(o.estado==='ABIERTA'&&access.canCollect()&&parsePositive(available())&&outdatedShift()){
+      <div class="pay-empty-shift">
+       <h3>Tu turno necesita revisión</h3>
+       <p>Esta caja lleva abierta varios días. Cierra el turno anterior y abre uno nuevo para cobrar con normalidad.</p>
+       <a class="ord-primary" routerLink="/payments/cash">Revisar mi caja</a>
+      </div>
      } @else if(o.estado==='ABIERTA'&&access.canCollect()&&parsePositive(available())){
       <div class="pay-empty-shift">
        <h3>Necesitas un turno de caja</h3>
@@ -280,6 +288,9 @@ export class GcPaymentsCheckoutPage implements OnInit{
  private readonly confirm=inject(ConfirmDialogService);
  protected readonly access=inject(PaymentsAccess);
  protected readonly cash=inject(CashContext);
+ private readonly branch=inject(GcBranchContext);
+ protected readonly outdatedShift=computed(()=>oldShiftWarning(
+  this.cash.ownShift(),this.branch.active()?.zonaHoraria??'America/Guatemala'));
  protected readonly money=money;protected readonly methodLabel=methodLabel;
  protected readonly methods=METHODS;
  protected readonly order=signal<OrderDetail|null>(null);
@@ -400,7 +411,7 @@ export class GcPaymentsCheckoutPage implements OnInit{
  protected async collect(){
   const account=this.detail(),shift=this.cash.ownShift();
   if(!account||account.id!==this.selectedId()||account.estado!=='ABIERTA'||
-    !shift||this.paymentIssue()||this.working())return;
+    !shift||this.outdatedShift()||this.paymentIssue()||this.working())return;
   const payments=this.parts().map(p=>({
    metodo:p.metodo,monto:positive(p.monto)!,
    ...(p.metodo==='EFECTIVO'?{efectivoRecibido:amount(p.efectivoRecibido??p.monto)!}:{}),
