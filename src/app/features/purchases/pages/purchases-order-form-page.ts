@@ -13,6 +13,8 @@ import {PurchasesAccess} from '../data-access/purchases-access';
 import {decimal,newKey} from '../data-access/purchases.helpers';
 import type {PurchasePresentation,PurchaseSupplier,PurchaseOrderInput} from '../data-access/purchases.models';
 import {GcPurchasesNav} from '../purchases-nav';
+import {GcPurchasesCreateArticle} from '../components/purchases-create-article';
+import {GcPurchasesCreateSupplier} from '../components/purchases-create-supplier';
 interface OrderEditorLine{
  key:string;articuloId:string;presentacionId:string;cantidadCompra:string;
  factorAUnidadBase:string;precioUnitarioCompra:string;tasaImpuesto:string;
@@ -24,7 +26,7 @@ const newLine=():OrderEditorLine=>({
 });
 @Component({
  selector:'gc-purchases-order-form-page',
- imports:[RouterLink,GcPurchasesNav,GcInventoryPicker,GcSearchSelect],
+ imports:[RouterLink,GcPurchasesNav,GcInventoryPicker,GcSearchSelect,GcPurchasesCreateArticle,GcPurchasesCreateSupplier],
  template:`<main class="pur-page"><gc-purchases-nav/>
   <header class="pur-heading"><div>
    <a routerLink="/purchases/orders" class="pur-link">← Órdenes de compra</a>
@@ -36,6 +38,13 @@ const newLine=():OrderEditorLine=>({
    @if(requisitionId){<p class="pur-note">Compra vinculada a la requisición {{requisitionNumber()}}. Solo se podrán adquirir los artículos pendientes.</p>}
    <section class="pur-card">
     <h2>1. Proveedor y sucursal</h2>
+    @if(access.canSupplierManage()){
+     <button type="button" (click)="showSupplierCreation.update(v=>!v)">Crear proveedor</button>
+    }
+    @if(showSupplierCreation()){
+     <gc-purchases-create-supplier (created)="supplierCreated($event)"
+      (cancel)="showSupplierCreation.set(false)"/>
+    }
     <div class="pur-grid">
      <gc-search-select id="pur-order-supplier" label="Proveedor" [items]="supplierChoices()"
       [value]="supplierId()" [remote]="true" [loading]="supplierBusy()"
@@ -68,6 +77,13 @@ const newLine=():OrderEditorLine=>({
         <gc-inventory-picker [id]="'pur-order-art-'+l.key" label="Artículo"
          kind="article" [value]="l.articuloId"
          (valueChange)="chooseArticle(l.key,$event)"/>
+        @if(access.canArticleManage()){
+         <button type="button" (click)="articleCreationKey.set(l.key)">Crear artículo nuevo</button>
+        }
+       }
+       @if(articleCreationKey()===l.key){
+        <gc-purchases-create-article (created)="createdArticle(l.key,$event)"
+         (cancel)="articleCreationKey.set('')"/>
        }
        @if(supplierId()){
         <gc-search-select [id]="'pur-order-pres-'+l.key" label="Presentación de compra"
@@ -142,6 +158,8 @@ export class GcPurchasesOrderFormPage {
  protected readonly suppliers=signal<PurchaseSupplier[]>([]);
  protected readonly supplierChoices=computed(()=>this.suppliers().map(s=>({id:s.id,label:s.nombre})));
  protected readonly supplierBusy=signal(false);
+ protected readonly showSupplierCreation=signal(false);
+ protected readonly articleCreationKey=signal('');
  protected readonly supplierSearch=new Subject<string>();
  protected readonly presentations=signal<PurchasePresentation[]>([]);
  protected readonly lines=signal<OrderEditorLine[]>([newLine()]);
@@ -191,6 +209,13 @@ export class GcPurchasesOrderFormPage {
    this.suppliers.set(selected&&!active.some(s=>s.id===selected.id)?[selected,...active]:active);
   }catch(e){if(gen===this.generation)this.error.set(gcErrorMessage(e))}
   finally{if(gen===this.generation)this.supplierBusy.set(false)}
+ }
+ protected supplierCreated(s:PurchaseSupplier){
+  this.suppliers.update(rows=>rows.some(x=>x.id===s.id)?rows:[s,...rows]);
+  this.showSupplierCreation.set(false);this.chooseSupplier(s.id);
+ }
+ protected createdArticle(key:string,article:{id:string}){
+  this.chooseArticle(key,article.id);this.articleCreationKey.set('');
  }
  protected chooseSupplier(id:string){
   this.supplierId.set(id);this.presentations.set([]);
