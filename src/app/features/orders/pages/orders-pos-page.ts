@@ -246,7 +246,7 @@ export class GcOrdersPosPage{
  protected readonly configError=signal('');
  private readonly selectedExtras=signal<Record<string,string[]>>({});
  private operationId='';
- private loadingGeneration=0;
+ private loadingGeneration=0;private tableGeneration=0;
  private pendingTableFromUrl=this.activatedRoute.snapshot.queryParamMap.get('mesaId')??'';
  protected readonly money=money;
  protected readonly categories=computed(()=>{
@@ -324,11 +324,12 @@ export class GcOrdersPosPage{
  }
  protected async loadTables(){
   const branch=this.context.branchId();
-  if(!branch||!this.access.canTablesRead()||this.tableBusy())return;
+  if(!branch||!this.access.canTablesRead())return;
+  const generation=++this.tableGeneration;
   this.tableBusy.set(true);
   try{
    const tables=await firstValueFrom(this.api.tables(branch));
-   if(branch!==this.context.branchId())return;
+   if(generation!==this.tableGeneration||branch!==this.context.branchId())return;
    this.tables.set(tables);
    if(this.pendingTableFromUrl){
     const selected=tables.find(x=>x.id===this.pendingTableFromUrl&&x.activa);
@@ -336,8 +337,10 @@ export class GcOrdersPosPage{
     if(selected)this.chooseTable(selected);
     else this.error.set('La mesa seleccionada no está disponible.');
    }
-  }catch(e){if(branch===this.context.branchId())this.error.set(orderFriendlyError(e))}
-  finally{this.tableBusy.set(false)}
+  }catch(e){
+   if(generation===this.tableGeneration&&branch===this.context.branchId())
+    this.error.set(orderFriendlyError(e));
+  }finally{if(generation===this.tableGeneration)this.tableBusy.set(false)}
  }
  protected chooseTable(t:TableRecord){
   if(this.submitting())return;
