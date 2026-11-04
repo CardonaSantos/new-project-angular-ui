@@ -1315,3 +1315,63 @@ gc-kitchen-ticket{display:block;min-width:0}
  .rep-chart-small{height:220px}
 }
 @media(prefers-reduced-motion:reduce){.rep-metric-link{transition:none}.rep-metric-link:hover{transform:none}}
+
+/* 80 mm thermal paper: visual-only, records come from authorized server endpoints. */
+.gc-thermal-page{max-width:620px;min-width:0;margin:.5rem auto 2rem;display:grid;gap:1.1rem}
+.gc-thermal-controls{display:flex;justify-content:space-between;align-items:center;gap:.8rem;
+ flex-wrap:wrap}
+.gc-thermal-controls a{color:var(--gc-primary);font-size:.91rem}
+.gc-thermal-toolbar{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.gc-thermal-toolbar span{color:var(--gc-on-surface-variant);font-size:.82rem}
+.gc-thermal-toolbar button{border:1px solid var(--gc-outline);border-radius:.6rem;
+ background:var(--gc-primary);color:var(--gc-on-primary);padding:.65rem .9rem;
+ cursor:pointer;font:inherit;font-weight:650}
+.gc-thermal-toolbar button:disabled{opacity:.55;cursor:not-allowed}
+.gc-thermal-controls :is(button,a):focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+.gc-thermal-error{border:1px solid var(--gc-error);color:var(--gc-error);border-radius:.5rem;
+ padding:.8rem;overflow-wrap:anywhere}
+.gc-thermal-paper{width:min(100%,80mm);max-width:80mm;box-sizing:border-box;margin:0 auto;
+ padding:4mm 3mm;border:1px solid #d8d8d8;border-radius:0;
+ background:#fff;color:#111;font:12px/1.3 'Courier New',monospace;
+ overflow-wrap:anywhere;box-shadow:0 5px 18px rgb(0 0 0 / 12%)}
+.gc-thermal-paper :is(h1,h2,h3,p){margin:0}
+.gc-thermal-head{display:grid;gap:.18rem;justify-items:center;text-align:center}
+.gc-thermal-brand{font-size:18px;line-height:1.2}
+.gc-thermal-number{font-size:13px;letter-spacing:.02em}
+.gc-thermal-muted{color:#444;font-size:10px}
+.gc-thermal-divider{border-top:1px dashed #555;margin-top:10px;padding-top:9px;display:grid;gap:5px}
+.gc-thermal-divider>div{display:flex;justify-content:space-between;gap:10px}
+.gc-thermal-divider>div>span:last-child,.gc-thermal-divider>div>strong:last-child{text-align:right}
+.gc-thermal-lines{display:grid;gap:7px;padding:8px 0}
+.gc-thermal-line{display:grid;gap:3px;border-bottom:1px dashed #bbb;padding:4px 0 7px}
+.gc-thermal-line>strong{font-size:12px}
+.gc-thermal-line>div{display:flex;justify-content:space-between;gap:.4rem}
+.gc-thermal-line small{font-size:10px}
+.gc-thermal-line-note{font-weight:700}
+.gc-thermal-mod{padding-left:6px;font-size:11px}
+.gc-thermal-note{margin-top:8px;border:1px dashed #222;padding:5px}
+.gc-thermal-note p{margin-top:4px}
+.gc-thermal-total .gc-thermal-big{font-size:15px;padding-top:4px}
+.gc-thermal-foot{text-align:center;border-top:1px dashed #555;padding-top:12px;
+ margin-top:10px;display:grid;gap:5px;font-size:10px}
+.gc-thermal-notice{border:1px solid #333;padding:4px;font-size:10px}
+@media (max-width:550px){
+ .gc-thermal-paper{box-shadow:none}
+ .gc-thermal-controls{justify-content:center}
+}
+@media print{
+ @page{size:auto;margin:0}
+ body:has(.gc-thermal-page){margin:0!important;padding:0!important;background:#fff!important;color:#000!important}
+ body:has(.gc-thermal-page) .gc-shell{display:block!important;min-height:0!important}
+ body:has(.gc-thermal-page) .gc-navigation,
+ body:has(.gc-thermal-page) gc-topbar,
+ body:has(.gc-thermal-page) .gc-backdrop,
+ body:has(.gc-thermal-page) .gc-thermal-controls{display:none!important}
+ body:has(.gc-thermal-page) .gc-content{margin:0!important;padding:0!important;max-width:none!important}
+ body:has(.gc-thermal-page) .gc-workspace{margin:0!important;padding:0!important}
+ .gc-thermal-page{display:block!important;width:80mm;max-width:80mm;margin:0!important;padding:0!important}
+ .gc-thermal-paper{width:76mm!important;max-width:76mm!important;padding:2mm!important;
+  margin:0!important;border:0!important;box-shadow:none!important;background:#fff!important;
+  color:#000!important;break-inside:avoid-page}
+ .gc-thermal-line{break-inside:avoid}
+}
