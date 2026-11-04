@@ -141,7 +141,7 @@ export class GcPaymentsCashClosePage{
   try{
    await firstValueFrom(this.api.closeShift(s.id,{...body,claveOperacion:this.key}));
    this.signature='';this.key='';
-   await this.router.navigate(['/payments/cash/shift',s.id]);
+   await this.router.navigate(['/payments/cash/shift',s.id,'receipt']);
   }catch(e){this.error.set(paymentError(e))}
   finally{this.working.set(false)}
  }

@@ -41,6 +41,11 @@ import type {CashShift} from '../data-access/payments.models';
      <div><span>Salidas</span><strong>{{money(breakdown().outflow)}}</strong></div>
     </div>
     @if(shift.cerradaEn){
+     <div class="ord-actions">
+      <a class="ord-primary" [routerLink]="['/payments/cash/shift',shift.id,'receipt']">
+       Ver comprobante de cierre
+      </a>
+     </div>
      <div class="pay-cash-reconciliation">
       <div><span>Contado al cierre</span><strong>{{money(shift.efectivoContado??'0')}}</strong></div>
       <div><span>Diferencia</span><strong>{{money(shift.diferencia??'0')}}</strong></div>

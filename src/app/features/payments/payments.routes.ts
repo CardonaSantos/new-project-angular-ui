@@ -14,6 +14,8 @@ export const PAYMENTS_ROUTES:Routes=[
   loadComponent:()=>import('./pages/payments-cash-close-page').then(m=>m.GcPaymentsCashClosePage)},
  {path:'cash/history',title:'Historial de turnos — Gastro Core',data:{breadcrumb:'Historial'},
   loadComponent:()=>import('./pages/payments-cash-history-page').then(m=>m.GcPaymentsCashHistoryPage)},
+ {path:'cash/shift/:id/receipt',title:'Comprobante de cierre — Gastro Core',data:{breadcrumb:'Comprobante'},
+  loadComponent:()=>import('./pages/payments-cash-receipt-page').then(m=>m.GcPaymentsCashReceiptPage)},
  {path:'cash/shift/:id',title:'Movimientos del turno — Gastro Core',data:{breadcrumb:'Movimientos'},
   loadComponent:()=>import('./pages/payments-cash-shift-page').then(m=>m.GcPaymentsCashShiftPage)},
  {path:'cash/registers',title:'Administrar cajas — Gastro Core',data:{breadcrumb:'Administrar cajas'},
