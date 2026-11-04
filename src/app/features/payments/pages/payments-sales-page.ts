@@ -75,12 +75,12 @@ import {parseApiDecimal} from '../../../shared/formatting';
       <thead><tr><th>Fecha</th><th>Venta</th><th>Pedido</th><th>Total</th><th>Acción</th></tr></thead>
       <tbody>
        @for(s of sales();track s.id){
-        <tr>
-         <td>{{s.cerradaEn|date:'dd/MM/yyyy HH:mm'}}</td>
-         <td><strong class="pay-sales-number" [title]="s.numero">{{s.numero}}</strong></td>
-         <td><span [title]="s.cuenta?.orden?.numero??''">{{s.cuenta?.orden?.numero??'—'}}</span></td>
-         <td class="pay-sales-money">{{money(s.total)}}</td>
-         <td><button type="button" (click)="inspect(s.id)"
+        <tr class="pay-sales-data-row">
+         <td data-label="Fecha">{{s.cerradaEn|date:'dd/MM/yyyy HH:mm'}}</td>
+         <td data-label="Venta"><strong class="pay-sales-number" [title]="s.numero">{{s.numero}}</strong></td>
+         <td data-label="Pedido"><span [title]="s.cuenta?.orden?.numero??''">{{s.cuenta?.orden?.numero??'—'}}</span></td>
+         <td data-label="Total" class="pay-sales-money">{{money(s.total)}}</td>
+         <td data-label="Detalle"><button type="button" (click)="inspect(s.id)"
            [disabled]="busy()||detailBusy()"
            [attr.aria-label]="'Ver detalle de venta '+s.numero">Ver detalle</button></td>
         </tr>

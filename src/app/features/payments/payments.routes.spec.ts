@@ -8,7 +8,8 @@ describe('Caja — navegación por responsabilidades',()=>{
  it('separa la apertura del cierre, el historial, los movimientos y la administración',()=>{
   expect(paths).toEqual(expect.arrayContaining([
    'cash/open','cash/movement','cash/close','cash/shift/:id',
-   'cash/history','cash/registers','cash/registers/new','cash/registers/:id'
+   'cash/history','cash/registers','cash/registers/new','cash/registers/:id',
+   'cash/shift/:id/receipt'
   ]));
  });
  it('mantiene la venta y resumen financiero en sus páginas propias',()=>{
