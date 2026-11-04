@@ -2,10 +2,16 @@ import { Component, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { GcNavigationItem } from './navigation.model';
 import { GcBrandLogo } from '../branding/gc-brand-logo';
+import {
+ LucideHouse,LucideShoppingBag,LucideBookOpen,LucideClipboardList,LucideWallet,
+ LucideShoppingCart,LucidePackage,LucideChartColumn,LucideUsers,LucideSettings
+} from '@lucide/angular';
 
 @Component({
   selector: 'gc-sidebar',
-  imports: [RouterLink, RouterLinkActive, GcBrandLogo],
+  imports: [RouterLink, RouterLinkActive, GcBrandLogo,
+   LucideHouse,LucideShoppingBag,LucideBookOpen,LucideClipboardList,LucideWallet,
+   LucideShoppingCart,LucidePackage,LucideChartColumn,LucideUsers,LucideSettings],
   template: `
     <aside class="gc-sidebar" aria-label="Navegación principal">
       <gc-brand-logo [name]="brandName()" [logoUrl]="logoUrl()"
@@ -17,7 +23,21 @@ import { GcBrandLogo } from '../branding/gc-brand-logo';
             (click)="navigate.emit()"
             [attr.aria-label]="item.label"
             [title]="collapsed() && !mobileOpen() ? item.label : ''">
-            <span class="gc-initials" aria-hidden="true">{{ item.initials }}</span>
+            <span class="gc-initials" aria-hidden="true">
+              @switch(item.icon){
+               @case('home'){<svg lucideHouse class="gc-nav-icon"></svg>}
+               @case('catalog'){<svg lucideShoppingBag class="gc-nav-icon"></svg>}
+               @case('recipes'){<svg lucideBookOpen class="gc-nav-icon"></svg>}
+               @case('orders'){<svg lucideClipboardList class="gc-nav-icon"></svg>}
+               @case('payments'){<svg lucideWallet class="gc-nav-icon"></svg>}
+               @case('purchases'){<svg lucideShoppingCart class="gc-nav-icon"></svg>}
+               @case('inventory'){<svg lucidePackage class="gc-nav-icon"></svg>}
+               @case('reports'){<svg lucideChartColumn class="gc-nav-icon"></svg>}
+               @case('users'){<svg lucideUsers class="gc-nav-icon"></svg>}
+               @case('settings'){<svg lucideSettings class="gc-nav-icon"></svg>}
+               @default {<span>{{ item.initials }}</span>}
+              }
+            </span>
             @if (!collapsed() || mobileOpen()) {
               <span class="gc-nav-label">{{ item.label }}</span>
             }
