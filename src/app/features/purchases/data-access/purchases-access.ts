@@ -15,7 +15,7 @@ export class PurchasesAccess {
  canReceiptsConfirm(){return this.can('purchases.receipts.confirm')}
  canQuickEntry(){return this.can('inventory.adjust')&&this.can('inventory.costs.manage')}
  canArticleManage(){return this.global.canGlobal('inventory.articles.manage')}
- canLotManage(){return this.can('inventory.adjust')}
+ canLotManage(){return this.global.canGlobal('inventory.articles.manage')}
  canSupplyRead(){return this.can('supply.read')}
  canSupplyRequest(){return this.can('supply.request')}
  canSupplySend(){return this.can('supply.send')}
