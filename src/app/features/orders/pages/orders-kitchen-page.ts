@@ -17,9 +17,15 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
  template:`
  <main class="ord-page ord-kitchen"><gc-orders-nav/>
  <div class="ord-heading ord-kitchen-heading">
-  <h1>Comandas de cocina</h1>
-  <div class="ord-actions"><span class="ord-note">Actualización automática</span>
-   <button type="button" (click)="reload()" [disabled]="busy()">Actualizar</button></div>
+  <div><h1>Comandas de cocina</h1>
+   <p class="ord-note">Preparar, dejar listo y registrar la entrega son pasos diferentes.</p></div>
+  <div class="ord-actions">
+   <button type="button" [class.active]="autoRefresh()"
+    [attr.aria-pressed]="autoRefresh()" (click)="autoRefresh.update(v=>!v)">
+    {{autoRefresh()?'Automático: activo':'Automático: pausado'}}
+   </button>
+   <button type="button" (click)="reload()" [disabled]="busy()">Actualizar</button>
+  </div>
  </div>
  <section class="ord-card ord-kitchen-workspace">
   <div class="ord-kitchen-filters">
@@ -28,12 +34,15 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
    <gc-search-select id="kitchen-station" label="Estación" [items]="stationOptions()"
     [value]="stationId()" placeholder="Todas las estaciones"
     (valueChange)="stationId.set($event);page.set(1);reload()"/>
+   <gc-search-select id="kitchen-limit" label="Comandas por estado y página"
+    [items]="pageSizes" [value]="limitText()" [searchable]="false" [clearable]="false"
+    (valueChange)="changeLimit($event)"/>
   </div>
   <div class="ord-kitchen-tabs" role="group" aria-label="Mostrar comandas">
    <button type="button" [class.active]="view()==='active'"
     [attr.aria-pressed]="view()==='active'" (click)="setView('active')">Por preparar</button>
    <button type="button" [class.active]="view()==='ready'"
-    [attr.aria-pressed]="view()==='ready'" (click)="setView('ready')">Para entregar e historial</button>
+    [attr.aria-pressed]="view()==='ready'" (click)="setView('ready')">Listas y entregadas</button>
    <button type="button" [class.active]="view()==='cancelled'"
     [attr.aria-pressed]="view()==='cancelled'" (click)="setView('cancelled')">Canceladas</button>
    <button type="button" [class.active]="view()==='all'"
@@ -41,8 +50,20 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
   </div>
   @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
   @if(busy()){<p role="status" class="ord-muted">Consultando cocina…</p>}
+  @if(!busy()&&!error()&&tickets().length){
+   <div class="ord-kitchen-summary">
+    <span><strong>{{pendingCount()}}</strong> pendientes</span>
+    <span><strong>{{workingCount()}}</strong> preparando</span>
+    <span><strong>{{readyCount()}}</strong> para entregar</span>
+    <span><strong>{{deliveredCount()}}</strong> entregadas</span>
+    <small>Conteos de comandas cargadas en esta página.</small>
+   </div>
+  }
   <div class="ord-kitchen-board" aria-label="Comandas">
-   @for(ticket of tickets();track ticket.id){
+   @for(ticket of tickets();track ticket.id;let i=$index){
+    @if(view()==='ready'&&(i===0||stage(tickets()[i-1]).kind!==stage(ticket).kind)){
+     <h2 class="ord-kitchen-group-heading">{{stage(ticket).kind==='delivered'?'Ya entregadas':'Pendientes de entrega'}}</h2>
+    }
     <gc-kitchen-ticket [ticket]="ticket" (open)="inspect(ticket)">
      @if(access.canKitchenManage()&&ticket.estado!=='CANCELADA'){
       @if(ticket.estado==='PENDIENTE'){
@@ -63,7 +84,9 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
   </div>
   @if(total()>0){
    <div class="ord-pagination">
-    <span>{{total()}} comandas · Página {{page()}} de {{pages()||1}}</span>
+    <span>{{total()}} comandas · Página {{page()}} de {{pages()||1}}
+     @if(view()==='active'){ · Se consultan pendientes y preparando por separado.}
+    </span>
     <div class="ord-actions">
      <button type="button" [disabled]="page()<=1||busy()" (click)="changePage(-1)">Anterior</button>
      <button type="button" [disabled]="page()>=pages()||busy()" (click)="changePage(1)">Siguiente</button>
@@ -143,34 +166,59 @@ export class GcOrdersKitchenPage{
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly page=signal(1);protected readonly total=signal(0);protected readonly pages=signal(0);
+ protected readonly limit=signal(30);protected readonly limitText=computed(()=>String(this.limit()));
+ protected readonly pageSizes=[{id:'15',label:'15'},{id:'30',label:'30'},{id:'50',label:'50'}];
+ protected readonly autoRefresh=signal(true);
+ protected readonly pendingCount=computed(()=>this.tickets().filter(t=>kitchenStage(t).kind==='pending').length);
+ protected readonly workingCount=computed(()=>this.tickets().filter(t=>kitchenStage(t).kind==='working').length);
+ protected readonly readyCount=computed(()=>this.tickets().filter(t=>kitchenStage(t).kind==='ready').length);
+ protected readonly deliveredCount=computed(()=>this.tickets().filter(t=>kitchenStage(t).kind==='delivered').length);
  protected readonly partial=signal<Record<string,string>>({});
  protected readonly qtyText=qtyText;
  protected readonly modeText=modeText;
  protected readonly stage=kitchenStage;
- private cursor='';private querying=false;private generation=0;private startKeys=new Map<string,{quantity:string;key:string}>();
+ private cursor='';private querying=false;private generation=0;private inspectGeneration=0;private startKeys=new Map<string,{quantity:string;key:string}>();
  constructor(){
   effect(()=>{
    const b=this.branch.branchId();
-   if(b&&b!==this.branchId()){this.branchId.set(b);this.cursor='';this.stationId.set('');this.page.set(1);void this.reload()}
+   if(b&&b!==this.branchId()){
+    this.branchId.set(b);this.cursor='';this.stationId.set('');this.page.set(1);
+    this.tickets.set([]);this.selected.set(null);this.inspectGeneration++;void this.reload();
+   }
   });
   interval(7000).pipe(takeUntilDestroyed()).subscribe(()=>{
-   if(typeof document!=='undefined'&&!document.hidden&&this.branchId()&&!this.busy())void this.poll();
+   if(this.autoRefresh()&&typeof document!=='undefined'&&!document.hidden&&
+    this.branchId()&&!this.busy())void this.poll();
   });
  }
  protected setView(v:'active'|'ready'|'cancelled'|'all'){
+  if(v===this.view())return;
   this.view.set(v);this.page.set(1);void this.reload();
  }
- protected closeDetails(){if(!this.actionBusy())this.selected.set(null)}
+ protected changeLimit(v:string){
+  const n=Number(v);if(![15,30,50].includes(n)||n===this.limit())return;
+  this.limit.set(n);this.page.set(1);void this.reload();
+ }
+ protected closeDetails(){
+  if(!this.actionBusy()){this.inspectGeneration++;this.selected.set(null)}
+ }
  @HostListener('document:keydown.escape')
  protected dismissByEscape(){this.closeDetails()}
- protected selectBranch(id:string){this.branchId.set(id);this.cursor='';this.stationId.set('');void this.reload()}
- protected changePage(d:number){this.page.update(x=>x+d);void this.reload()}
+ protected selectBranch(id:string){
+  if(!id||id===this.branchId())return;
+  this.branchId.set(id);this.cursor='';this.stationId.set('');this.page.set(1);
+  this.tickets.set([]);this.selected.set(null);this.inspectGeneration++;void this.reload();
+ }
+ protected changePage(d:number){
+  const next=this.page()+d;if(next<1||next>this.pages()||this.busy())return;
+  this.page.set(next);void this.reload();
+ }
  protected async reload(){
   const branch=this.branchId();if(!branch||!this.access.canKitchenRead())return;
   const gen=++this.generation;this.busy.set(true);this.error.set(null);
   try{
    const base={sucursalId:branch,estacionId:this.stationId()||undefined,
-    page:this.page(),limit:30};
+    page:this.page(),limit:this.limit()};
    const requested=this.view();
    const queries=requested==='active'
     ?[this.api.tickets({...base,estado:'PENDIENTE'}),this.api.tickets({...base,estado:'PREPARANDO'})]
@@ -180,7 +228,7 @@ export class GcOrdersKitchenPage{
     firstValueFrom(this.api.stations(branch)),
     Promise.all(queries.map(q=>firstValueFrom(q)))
    ]);
-   if(gen!==this.generation)return;
+   if(gen!==this.generation||branch!==this.branchId())return;
    const combined=sortKitchenQueue(results.flatMap(r=>r.data),requested);
    this.stations.set(stations);this.tickets.set(combined);
    this.total.set(results.reduce((sum,r)=>sum+r.meta.total,0));
@@ -213,10 +261,14 @@ export class GcOrdersKitchenPage{
   finally{this.actionBusy.set(false)}
  }
  protected async inspect(t:KitchenTicket){
-  this.error.set(null);
-  this.selected.set(t);
-  try{this.selected.set(await firstValueFrom(this.api.ticket(t.id)))}
-  catch(e){this.error.set(orderFriendlyError(e))}
+  const generation=++this.inspectGeneration,branch=this.branchId();
+  this.error.set(null);this.selected.set(t);
+  try{
+   const ticket=await firstValueFrom(this.api.ticket(t.id));
+   if(generation===this.inspectGeneration&&branch===this.branchId())this.selected.set(ticket);
+  }catch(e){
+   if(generation===this.inspectGeneration)this.error.set(orderFriendlyError(e));
+  }
  }
  protected async start(t:KitchenTicket){
   if(!await this.confirm.confirm({title:'Iniciar preparación',
