@@ -4,6 +4,7 @@ import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
+import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
 import type {CatalogBranchMenu,CatalogProjectedGroup,CatalogProjectedItem} from '../../catalog/data-access/catalog.models';
 import {BranchesApi} from '../../organization/data-access/organization-api';
@@ -25,7 +26,8 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
  template:`
  <main class="ord-page ord-pos"><gc-orders-nav/>
  <div class="ord-heading">
-  <h1>Punto de venta</h1>
+  <div><h1>Punto de venta</h1>
+   <p class="ord-note">{{prefs.view()==='tables'?'Atención en mesas':'Venta en mostrador o para llevar'}} · {{cart().length}} líneas en el pedido</p></div>
   <div class="ord-view-switch" role="group" aria-label="Modo de atención">
    <button type="button" [class.active]="prefs.view()==='counter'"
     [attr.aria-pressed]="prefs.view()==='counter'" (click)="setView('counter')">Mostrador</button>
@@ -43,18 +45,26 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
   }
  </div>}
  @if(prefs.view()==='tables'&&showTablePicker()){
-  <section class="ord-card">
-   <div class="ord-heading"><h2>Mesas de la sucursal</h2>
-    <button type="button" (click)="loadTables()">Actualizar mesas</button></div>
+  <section class="ord-card ord-pos-tables">
+   <div class="ord-heading"><h2>Elegir mesa</h2>
+    <button type="button" (click)="loadTables()" [disabled]="tableBusy()">Actualizar mesas</button></div>
    @if(!access.canTablesRead()){<p>No tienes acceso al listado de mesas.</p>}
    @else{
+    <div class="ord-pos-table-toolbar">
+     <label for="pos-table-search">Buscar mesa o sala
+      <input id="pos-table-search" type="search" [value]="tableSearch()"
+       (input)="tableSearch.set($any($event.target).value)" placeholder="Número o nombre de sala"/>
+     </label>
+     <span class="ord-note">{{availableTableCount()}} disponibles · {{occupiedTableCount()}} ocupadas</span>
+    </div>
+    @if(tableBusy()){<p role="status" class="ord-note">Actualizando mesas…</p>}
     <div class="ord-table-grid">
-     @for(table of tables();track table.id){
+     @for(table of filteredTables();track table.id){
       <button class="ord-table-tile" type="button" [disabled]="!table.activa" (click)="chooseTable(table)">
        <strong>Mesa {{table.numero}}</strong><small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
-       <span [class.ord-occupied]="!!table.ocupacion">{{table.ocupacion?'Ocupada':'Disponible'}}</span>
+       <span [class.ord-occupied]="!!table.ocupacion">{{!table.activa?'Inactiva':table.ocupacion?'Ocupada · abrir pedido':'Disponible'}}</span>
       </button>
-     } @empty {<p>No hay mesas registradas. Puedes configurarlas en la sección Mesas.</p>}
+     } @empty {<p class="ord-empty">No se encontraron mesas con esta búsqueda.</p>}
     </div>
    }
    <div class="ord-actions"><a routerLink="/orders/tables">Ver todas las mesas</a>
@@ -85,6 +95,9 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <button type="button" (click)="reload()" [disabled]="busy()">Actualizar</button>
     </div>
    </div>
+   <div class="ord-pos-catalog-meta"><span class="ord-note">{{filtered().length}} presentaciones disponibles</span>
+    @if(query()||category()){<button type="button" (click)="query.set('');category.set('')">Limpiar búsqueda</button>}
+   </div>
    <div class="ord-category-list" role="group" aria-label="Categorías">
     <button type="button" [class.active]="category()===''" (click)="category.set('')">Todos</button>
     @for(c of categories();track c){<button type="button" [class.active]="category()===c"
@@ -102,11 +115,15 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
    </div>
   </section>
   <aside class="ord-checkout" [class.ord-checkout--open]="cartOpen()" aria-label="Resumen del pedido">
-   <div class="ord-cart-close"><button type="button" (click)="cartOpen.set(false)">Cerrar pedido</button></div>
+   <div class="ord-cart-close"><button type="button" (click)="cartOpen.set(false)">Cerrar resumen</button></div>
    <gc-pos-cart [items]="cart()" [total]="total()" [currency]="currency()"
     [disabled]="submitting()"
     (quantity)="changeQty($event)" (remove)="remove($event)"/>
    <div class="ord-checkout-options">
+    @if(cart().length){<div class="ord-actions ord-pos-cart-tools">
+     <span class="ord-note">El importe definitivo lo calcula el servidor.</span>
+     <button type="button" class="ord-danger" [disabled]="submitting()" (click)="clearCart()">Vaciar carrito</button>
+    </div>}
     <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes()"
      [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()"
      (valueChange)="chooseMode($event)"/>
@@ -140,7 +157,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
     }
     <button class="ord-primary ord-confirm" type="button"
      [disabled]="submitting()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&!selectedTable())"
-     (click)="submit()">{{submitting()?'Confirmando…':'Confirmar pedido'}}</button>
+     (click)="submit()">{{submitting()?'Confirmando…':'Confirmar pedido · '+money(total(),currency())}}</button>
    </div>
   </aside>
  </div>
@@ -193,6 +210,7 @@ export class GcOrdersPosPage{
  private readonly api=inject(OrdersApi);
  private readonly catalog=inject(CatalogApi);
  private readonly branchesApi=inject(BranchesApi);
+ private readonly confirm=inject(ConfirmDialogService);
  private readonly router=inject(Router);
  private readonly activatedRoute=inject(ActivatedRoute);
  protected readonly context=inject(GcBranchContext);
@@ -204,6 +222,7 @@ export class GcOrdersPosPage{
   ORDER_MODES.filter(m=>m.id!=='MESA'||this.access.canTablesRead()));
  protected readonly menu=signal<CatalogBranchMenu|null>(null);
  protected readonly tables=signal<TableRecord[]>([]);
+ protected readonly tableSearch=signal('');protected readonly tableBusy=signal(false);
  protected readonly config=signal<BranchConfig|null>(null);
  protected readonly query=signal('');
  protected readonly category=signal('');
@@ -248,6 +267,12 @@ export class GcOrdersPosPage{
    }
   }
   return list;
+ });
+ protected readonly availableTableCount=computed(()=>this.tables().filter(t=>t.activa&&!t.ocupacion).length);
+ protected readonly occupiedTableCount=computed(()=>this.tables().filter(t=>t.activa&&t.ocupacion).length);
+ protected readonly filteredTables=computed(()=>{
+  const term=this.tableSearch().trim().toLocaleLowerCase('es');
+  return this.tables().filter(t=>!term||(t.numero+' '+t.sala.nombre).toLocaleLowerCase('es').includes(term));
  });
  protected readonly tableChoices=computed(()=>this.tables().filter(x=>x.activa).map(t=>({
   id:t.id,label:t.sala.nombre+' · Mesa '+t.numero+(t.ocupacion?' (ocupada)':'')
@@ -299,7 +324,8 @@ export class GcOrdersPosPage{
  }
  protected async loadTables(){
   const branch=this.context.branchId();
-  if(!branch||!this.access.canTablesRead())return;
+  if(!branch||!this.access.canTablesRead()||this.tableBusy())return;
+  this.tableBusy.set(true);
   try{
    const tables=await firstValueFrom(this.api.tables(branch));
    if(branch!==this.context.branchId())return;
@@ -310,7 +336,8 @@ export class GcOrdersPosPage{
     if(selected)this.chooseTable(selected);
     else this.error.set('La mesa seleccionada no está disponible.');
    }
-  }catch(e){this.error.set(orderFriendlyError(e))}
+  }catch(e){if(branch===this.context.branchId())this.error.set(orderFriendlyError(e))}
+  finally{this.tableBusy.set(false)}
  }
  protected chooseTable(t:TableRecord){
   if(this.submitting())return;
@@ -327,6 +354,7 @@ export class GcOrdersPosPage{
  }
  protected pick(item:CatalogProjectedItem){
   if(this.submitting())return;
+  this.success.set('');this.createdId.set('');
   this.configError.set('');
   if(item.gruposModificadores.length){
    this.configuring.set(item);this.selectedExtras.set({});this.customQty.set(1);
@@ -385,6 +413,13 @@ export class GcOrdersPosPage{
  }
  protected remove(id:string){if(this.submitting())return;this.cart.update(lines=>lines.filter(x=>x.key!==id));this.invalidateKey()}
  protected invalidateKey(){if(!this.submitting())this.operationId=''}
+ protected async clearCart(){
+  if(this.submitting()||!this.cart().length)return;
+  if(!await this.confirm.confirm({title:'Vaciar pedido actual',
+   message:'Se quitarán todos los productos sin crear ni cancelar ninguna orden en el servidor.',
+   confirmText:'Vaciar carrito',danger:true}))return;
+  this.cart.set([]);this.submitError.set('');this.invalidateKey();this.cartOpen.set(false);
+ }
  protected async submit(){
   const branch=this.context.branchId();if(!branch||this.submitting()||!this.cart().length)return;
   if(this.mode()==='MESA'&&!this.selectedTable()){this.submitError.set('Selecciona una mesa.');return}
