@@ -1693,3 +1693,55 @@ gc-kitchen-ticket{display:block;min-width:0}
  .pay-checkout-compact .pay-methods button{min-height:44px}
  .pay-checkout-compact .pay-payment-form>.ord-actions button{min-height:44px}
 }
+
+
+/* POS R4 — tighter catalog controls and clear table action buttons. */
+.ord-pos .ord-pos-table-context{gap:.5rem;padding:.52rem .65rem}
+.ord-pos .ord-pos-table-context>div:first-child{gap:.1rem;flex:1 1 16rem}
+.ord-pos .ord-pos-table-context>div:first-child strong{font-size:.87rem}
+.ord-pos .ord-pos-table-context>div:first-child span{font-size:.74rem}
+.ord-pos .ord-pos-table-context>.ord-actions{gap:.32rem;margin-left:auto}
+.ord-pos .ord-pos-table-context .ord-actions a.ord-pos-context-button{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:34px;padding:.28rem .52rem;border-radius:.42rem;
+ border:1px solid var(--gc-outline);background:var(--gc-surface-container-low);
+ color:var(--gc-on-surface);font-size:.77rem;font-weight:650;line-height:1.2;
+ text-decoration:none;white-space:nowrap
+}
+.ord-pos .ord-pos-table-context .ord-actions a.ord-pos-context-button--pay{
+ border-color:var(--gc-primary);color:var(--gc-on-primary);
+ background:var(--gc-primary);font-weight:700
+}
+.ord-pos .ord-pos-table-context .ord-actions a.ord-pos-print-link{
+ min-height:34px;padding:.28rem .52rem;font-size:.77rem
+}
+.ord-pos .ord-pos-table-context .ord-actions button{min-height:34px;padding:.28rem .52rem;font-size:.77rem}
+.ord-pos .ord-toolbar{gap:.4rem;align-items:center}
+.ord-pos .ord-toolbar .ord-pos-search-label{font-size:.8rem}
+.ord-pos .ord-toolbar .ord-pos-search-label input{
+ min-height:36px;height:36px;padding:.35rem .6rem;font-size:.81rem
+}
+.ord-pos .ord-toolbar .ord-pos-view-controls{gap:.28rem;flex-wrap:nowrap}
+.ord-pos .ord-toolbar .ord-pos-view-controls button{
+ min-height:34px;padding:.3rem .52rem;border-radius:.43rem;font-size:.78rem;
+ min-width:0;white-space:nowrap
+}
+.ord-pos .ord-pos-catalog-meta{min-height:1.1rem;gap:.3rem}
+.ord-pos .ord-pos-catalog-meta .ord-note{font-size:.73rem;margin:0}
+.ord-pos .ord-category-list{gap:.28rem;padding:.02rem 0 .18rem}
+.ord-pos .ord-category-list button{
+ min-height:32px;padding:.29rem .56rem;border-radius:.43rem;
+ font-size:.76rem;line-height:1.2
+}
+.ord-pos .ord-catalog{gap:.46rem}
+.ord-pos .ord-pos-layout{gap:.7rem}
+.gc-thermal-screen-note{font-size:.76rem;line-height:1.4;
+ color:var(--gc-on-surface-variant);margin:0 auto;max-width:520px;text-align:center}
+@media(max-width:760px){
+ .ord-pos .ord-toolbar{grid-template-columns:minmax(0,1fr)}
+ .ord-pos .ord-toolbar .ord-pos-view-controls{justify-content:flex-start}
+ .ord-pos .ord-pos-table-context>.ord-actions{margin-left:0}
+}
+@media print{
+ .gc-thermal-screen-note{display:none!important}
+}

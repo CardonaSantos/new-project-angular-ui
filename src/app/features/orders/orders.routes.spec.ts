@@ -4,7 +4,7 @@ describe('ORD-UI — navegación por responsabilidades',()=>{
  const paths=ORDERS_ROUTES.map(x=>x.path);
  it('mantiene todas las rutas operativas y de cobros existentes',()=>{
   expect(paths).toEqual(expect.arrayContaining([
-   '', 'pos','list','list/:id','tables','kitchen','kitchen/tickets/:id/print','settings'
+   '', 'pos','list','list/:id','print/:id','tables','kitchen','kitchen/tickets/:id/print','settings'
   ]));
  });
  it('separa el tablero de mesas de su administración sin duplicar API',()=>{

@@ -47,6 +47,9 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
    </div>
    <div class="ord-actions ord-pos-confirmed-actions">
     <a class="ord-primary" [routerLink]="['/orders/list',createdId()]">Ver pedido</a>
+    @if(access.canViewDetail()){
+     <a [routerLink]="['/orders/print',createdId()]">Imprimir pedido completo</a>
+    }
     @if(expressSale();as sale){
      <a [routerLink]="['/payments/sales',sale.ventaId,'receipt']">Imprimir comprobante 80 mm</a>
      <button type="button" (click)="newSale()">Nueva venta</button>
@@ -105,9 +108,12 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
    <div><strong>Ampliando {{current.numero}}</strong>
     <span>Pedido abierto · Total anterior {{money(current.total,currency())}}</span></div>
    <div class="ord-actions">
-    <a [routerLink]="['/orders/list',current.id]">Ver pedido</a>
+    <a class="ord-pos-context-button" [routerLink]="['/orders/list',current.id]">Ver detalles</a>
     @if(paymentsAccess.canRead()){
-     <a [routerLink]="['/payments/order',current.id]">Cobrar</a>
+     <a class="ord-pos-context-button ord-pos-context-button--pay" [routerLink]="['/payments/order',current.id]">Cobrar</a>
+    }
+    @if(access.canViewDetail()){
+     <a class="ord-pos-context-button" [routerLink]="['/orders/print',current.id]">Pedido completo</a>
     }
     @if(access.canKitchenRead()){
      @if(recentComanda();as ticket){
@@ -128,9 +134,12 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
    </div>
    <div class="ord-actions">
     @if(existingOrder();as current){
-     <a [routerLink]="['/orders/list',current.id]">Ver detalles</a>
+     <a class="ord-pos-context-button" [routerLink]="['/orders/list',current.id]">Ver detalles</a>
      @if(paymentsAccess.canRead()){
-      <a [routerLink]="['/payments/order',current.id]">Cobrar mesa</a>
+      <a class="ord-pos-context-button ord-pos-context-button--pay" [routerLink]="['/payments/order',current.id]">Cobrar mesa</a>
+     }
+     @if(access.canViewDetail()){
+      <a class="ord-pos-context-button" [routerLink]="['/orders/print',current.id]">Pedido completo</a>
      }
      @if(access.canKitchenRead()){
       @if(recentComanda();as ticket){
@@ -147,11 +156,11 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
  <div class="ord-pos-layout">
   <section class="ord-catalog" aria-label="Catálogo de productos">
    <div class="ord-toolbar">
-    <label>Buscar producto
-     <input #productSearch type="search" [value]="query()" (input)="query.set($any($event.target).value)"
+    <label class="ord-pos-search-label"><span class="ord-pos-sr-only">Buscar producto</span>
+     <input #productSearch type="search" aria-label="Buscar producto" [value]="query()" (input)="query.set($any($event.target).value)"
       placeholder="Nombre o presentación" autocomplete="off"/>
     </label>
-    <div class="ord-actions">
+    <div class="ord-actions ord-pos-view-controls" role="group" aria-label="Visualización del catálogo">
      <button type="button" [class.active]="prefs.productLayout()==='visual'"
       [attr.aria-pressed]="prefs.productLayout()==='visual'"
       (click)="prefs.setLayout('visual')">Tarjetas</button>

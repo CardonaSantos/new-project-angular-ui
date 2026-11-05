@@ -26,7 +26,12 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
   <div class="ord-heading"><div><a routerLink="/orders/list">← Órdenes</a>
    <h1>Pedido {{order()?.numero??''}}</h1></div>
    <div class="ord-actions">
-    @if(order();as o){<gc-order-status [state]="o.estado"/>}
+    @if(order();as o){
+     <gc-order-status [state]="o.estado"/>
+     @if(access.canViewDetail()){
+      <a class="ord-detail-print" [routerLink]="['/orders/print',o.id]">Imprimir pedido completo</a>
+     }
+    }
     @if(access.canKitchenRead()){
      @if(primaryComanda();as ticket){
       <a class="ord-primary ord-detail-print" [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']">

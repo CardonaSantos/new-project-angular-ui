@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
-import {thermalAmount,saleForBranch,printableKitchenLines,kitchenModifierNames} from './thermal-print.helpers';
-import type {KitchenTicket} from '../data-access/orders.models';
+import {thermalAmount,saleForBranch,printableKitchenLines,kitchenModifierNames,printableOrderLines} from './thermal-print.helpers';
+import type {KitchenTicket,OrderDetail} from '../data-access/orders.models';
 import type {SaleRecord} from '../../payments/data-access/payments.models';
 
 describe('80 mm thermal print safeguards',()=>{
@@ -15,6 +15,18 @@ describe('80 mm thermal print safeguards',()=>{
   expect(saleForBranch(sale,'s1')).toBe(true);
   expect(saleForBranch(sale,'s2')).toBe(false);
   expect(saleForBranch(sale,null)).toBe(false);
+ });
+ it('includes direct bottled water and prepared cappuccino in full order print only',()=>{
+  const order={ordenLineasComoOrden:[
+   {id:'water',nombreSnapshot:'Agua en botella',cantidad:'2',canceladaEn:null},
+   {id:'cappuccino',nombreSnapshot:'Capuchino',cantidad:'1',canceladaEn:null},
+   {id:'cancelled',nombreSnapshot:'Refresco',cantidad:'1',canceladaEn:'2026-11-05T11:00:00Z'}
+  ]} as OrderDetail;
+  expect(printableOrderLines(order).map(x=>x.id)).toEqual(['water','cappuccino']);
+  const kitchen={comandaLineasComoComanda:[
+   {id:'prepared',ordenLineaId:'cappuccino',canceladaEn:null}
+  ]} as KitchenTicket;
+  expect(printableKitchenLines(kitchen).map(x=>x.ordenLineaId)).toEqual(['cappuccino']);
  });
  it('filters cancelled ticket lines without losing modifier snapshots',()=>{
   const ticket={
