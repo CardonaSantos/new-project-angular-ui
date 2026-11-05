@@ -1375,3 +1375,97 @@ gc-kitchen-ticket{display:block;min-width:0}
   color:#000!important;break-inside:avoid-page}
  .gc-thermal-line{break-inside:avoid}
 }
+
+/* UX-R: fast, accessible POS, contextual occupied tables, and touch-safe kitchen. */
+.ord-pos .ord-pos-layout{gap:.85rem;align-items:start}
+.ord-pos .ord-products{grid-template-columns:repeat(5,minmax(0,1fr));gap:.5rem}
+.ord-pos .ord-products--compact{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ord-pos .ord-product{padding:.48rem;gap:.25rem;min-height:7.4rem}
+.ord-pos .ord-product img{max-height:94px}
+.ord-pos .ord-checkout{position:sticky;top:1rem;align-self:start;max-height:calc(100dvh - 2rem);
+ overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.ord-pos .ord-checkout .ord-confirm{width:100%;min-height:46px;font-size:1rem;font-weight:740}
+.ord-pos .ord-checkout .ord-secondary-action{width:100%;min-height:42px}
+.ord-pos-table-context{display:flex;align-items:center;justify-content:space-between;
+ gap:.65rem;flex-wrap:wrap;padding:.75rem .9rem;border:1px solid var(--gc-outline-variant);
+ border-radius:.7rem;background:var(--gc-surface-container-low)}
+.ord-pos-table-context>div:first-child{display:grid;gap:.2rem}
+.ord-pos-table-context span{font-size:.82rem;color:var(--gc-on-surface-variant)}
+.ord-worklist-switch{width:max-content;max-width:100%}
+.ord-worklist-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.65rem}
+.ord-worklist-tile{display:grid;gap:.65rem;align-content:start;min-width:0;padding:.8rem;
+ background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:.7rem}
+.ord-worklist-tile>.ord-heading{gap:.4rem}
+.ord-worklist-tile>.ord-heading strong{font-size:.84rem;overflow-wrap:anywhere}
+.ord-worklist-tile .ord-actions{margin-top:auto;gap:.3rem}
+.ord-worklist-tile .ord-actions a{display:inline-flex;align-items:center;text-decoration:none;
+ font-size:.76rem;min-height:35px;padding:.3rem .5rem;border:1px solid var(--gc-outline-variant);
+ border-radius:.45rem}
+.ord-worklist-tile .ord-actions .ord-primary{background:var(--gc-primary);color:var(--gc-on-primary)}
+.ord-worklist-money{display:grid;gap:.35rem}
+.ord-worklist-money>div{display:flex;align-items:center;justify-content:space-between;gap:.35rem;
+ font-size:.77rem;font-variant-numeric:tabular-nums}
+.ord-worklist-money>div span{color:var(--gc-on-surface-variant)}
+.ord-kitchen .ord-kitchen-board{grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr));gap:.65rem}
+.ord-kitchen .ord-ticket{gap:.5rem;padding:.7rem}
+.ord-kitchen .ord-ticket-actions{display:flex;gap:.4rem;flex-wrap:wrap}
+.ord-kitchen .ord-ticket-actions button{flex:1;min-width:max-content;min-height:42px}
+.pos-express-dialog{width:min(94vw,520px);max-height:min(88dvh,790px);overflow-y:auto;
+ scrollbar-width:thin;display:grid;align-content:start;gap:.85rem}
+.pos-express-dialog .ord-heading{align-items:start}
+.pos-express-total{display:grid;gap:.2rem;padding:.9rem;border-radius:.7rem;
+ background:var(--gc-surface-container);border:1px solid var(--gc-outline-variant)}
+.pos-express-total>span,.pos-express-total>small{color:var(--gc-on-surface-variant);font-size:.78rem}
+.pos-express-total strong{font-size:clamp(1.55rem,3vw,2.2rem);font-weight:780;
+ font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pos-express-items{display:grid;gap:.2rem;max-height:170px;overflow-y:auto}
+.pos-express-item{display:flex;align-items:start;justify-content:space-between;gap:.65rem;
+ padding:.45rem 0;border-bottom:1px solid var(--gc-outline-variant);font-size:.83rem}
+.pos-express-item span{min-width:0}
+.pos-express-item small{display:block;color:var(--gc-on-surface-variant);margin-top:.15rem}
+.pos-express-item strong{white-space:nowrap;font-variant-numeric:tabular-nums}
+.pos-express-methods{min-width:0;display:grid;gap:.65rem;border:1px solid var(--gc-outline-variant);
+ border-radius:.65rem;padding:.75rem}
+.pos-express-methods legend{font-size:.86rem;font-weight:700;padding:0 .3rem}
+.pos-express-method-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem}
+.pos-express-method-row button{min-width:0;min-height:44px}
+.pos-express-method-row button.active{background:var(--gc-primary);
+ color:var(--gc-on-primary);border-color:var(--gc-primary)}
+.pos-express-methods label{display:grid;gap:.32rem;font-size:.84rem;font-weight:650;min-width:0}
+.pos-express-methods input{min-height:42px;min-width:0;width:100%;font:inherit;
+ color:var(--gc-on-surface);background:var(--gc-surface);border:1px solid var(--gc-outline);
+ border-radius:.5rem;padding:.5rem}
+.pos-express-change{display:flex;align-items:center;justify-content:space-between;gap:.4rem;
+ font-variant-numeric:tabular-nums;border-top:1px solid var(--gc-outline-variant);padding-top:.6rem}
+.pos-express-change strong{font-size:1.18rem}
+.pos-express-actions{display:flex;gap:.5rem;align-items:center;justify-content:space-between}
+.pos-express-actions .ord-primary{min-height:46px;flex:1;font-weight:720}
+.pos-express-dialog :is(input,button,a):focus-visible,.ord-worklist-tile a:focus-visible{
+ outline:2px solid var(--gc-primary);outline-offset:3px}
+@media(max-width:1500px){
+ .ord-worklist-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .ord-pos .ord-products{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:1250px){
+ .ord-worklist-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .ord-pos .ord-products{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .ord-pos .ord-checkout{position:static;max-height:none;overflow:visible}
+}
+@media(max-width:820px){
+ .ord-worklist-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ord-pos .ord-products{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .pos-express-dialog{width:min(96vw,520px)}
+}
+@media(max-width:560px){
+ .ord-worklist-grid{grid-template-columns:minmax(0,1fr)}
+ .ord-pos .ord-products{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ord-pos .ord-products--compact{grid-template-columns:minmax(0,1fr)}
+ .ord-pos-table-context{align-items:stretch}
+ .pos-express-actions{flex-direction:column-reverse;align-items:stretch}
+ .pos-express-actions button{width:100%}
+ .pos-express-dialog{max-height:94dvh}
+}
+@media(pointer:coarse){
+ .ord-worklist-tile .ord-actions a,.pos-express-dialog button,
+ .ord-kitchen .ord-ticket-actions button{min-height:44px}
+}
