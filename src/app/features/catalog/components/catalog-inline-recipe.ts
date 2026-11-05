@@ -9,13 +9,12 @@ import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {gcErrorMessage} from '../../../core/http/api-error';
+import {recipeDraftIssues} from '../data-access/catalog-r3-validation';
 
 interface Ingredient {
  key:number;articuloId:string;articuloNombre:string;unidadId:string;unidadNombre:string;
  cantidad:string;mermaPorcentaje:string;
 }
-const quantity=/^(?!0(?:\.0{1,6})?$)(?:0|[1-9]\d{0,13})(?:\.\d{1,6})?$/;
-const percent=/^(?:0|[1-9]\d{0,2})(?:\.\d{1,4})?$/;
 /** Receta VENTA por presentación; NEVER calls stock posting or updates published versions in-place. */
 @Component({
  selector:'gc-catalog-inline-recipe',
@@ -247,23 +246,8 @@ export class GcCatalogInlineRecipe {
   this.parts.update(a=>a.map(x=>x.key===key?{...x,...patch}:x));
  }
  protected removePart(key:number){if(this.parts().length>1)this.parts.update(a=>a.filter(x=>x.key!==key))}
- private errors(){
-  const problems:string[]=[];
-  if(!this.yieldUnit())problems.push('Selecciona la unidad de rendimiento.');
-  if(!quantity.test(this.yieldAmount()))problems.push('El rendimiento necesita un número positivo (máximo seis decimales).');
-  const used=new Set<string>();
-  for(const [i,row] of this.parts().entries()){
-   if(!row.articuloId||!row.unidadId)
-    problems.push('Ingrediente '+(i+1)+': selecciona artículo y unidad.');
-   if(!quantity.test(row.cantidad))problems.push('Ingrediente '+(i+1)+': cantidad positiva requerida.');
-   if(!percent.test(row.mermaPorcentaje||'0')||Number(row.mermaPorcentaje)>100)
-    problems.push('Ingrediente '+(i+1)+': la merma debe estar entre 0 y 100 %.');
-   if(row.articuloId&&used.has(row.articuloId))
-    problems.push('El mismo artículo aparece más de una vez. Agrupa su consumo en una sola línea.');
-   used.add(row.articuloId);
-  }
-  return problems;
- }
+ private errors(){return recipeDraftIssues(this.dto());}
+
  private dto():RecipeVersionInput{
   return {rendimiento:this.yieldAmount().trim(),unidadRendimientoId:this.yieldUnit(),
    componentes:this.parts().map(p=>({
