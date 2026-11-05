@@ -311,7 +311,7 @@ export class GcOrdersKitchenPage{
    await this.reload();
   }catch(e){
    const msg=orderFriendlyError(e);
-   await this.reload();this.error.set(msg);this.notices.show(msg,'error',0);
+   await this.reload();this.error.set(msg);
   }finally{this.actionBusy.set(false)}
  }
  protected remaining(total:string,done:string){
