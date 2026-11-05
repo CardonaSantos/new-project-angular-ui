@@ -17,14 +17,14 @@ import type {CatalogMenu,CatalogPage} from '../data-access/catalog.models';
  selector:'gc-catalog-menus-page',
  imports:[RouterLink,GcCatalogNav,GcErrorState,GcSearchSelect],
  template:`
- <main class="cat-page">
+ <main class="cat-page cat-menu-editor">
   <gc-catalog-nav/>
   <section class="cat-card">
    <div class="cat-row">
-    <h2>Menús comerciales</h2>
-    @if(access.canMenus()){<a class="cat-primary" routerLink="/catalog/menus/new">Nuevo menú</a>}
+    <h2>Cartas comerciales</h2>
+    @if(access.canMenus()){<a class="cat-primary" routerLink="/catalog/menus/new">+ Crear carta</a>}
    </div>
-   <p class="cat-muted">Organiza las cartas de tus sucursales, con sus productos, secciones y horarios.</p>
+   <p class="cat-muted">Crea cartas por secciones, añade productos y comprueba su publicación por sucursal.</p>
    <div class="cat-toolbar gc-filter-grid">
     <label class="cat-field">Buscar menú
      <input [value]="search()" maxlength="120" placeholder="Nombre o código"
@@ -41,18 +41,24 @@ import type {CatalogMenu,CatalogPage} from '../data-access/catalog.models';
    @if(page.busy()){<p role="status" class="cat-muted">Consultando menús…</p>}
    @if(page.status()==='error'){<gc-error-state [message]="error()" (retry)="reload()"/>}
    @if(page.data();as result){
-    <div class="cat-table-wrap"><table class="cat-table">
-     <thead><tr><th>Menú</th><th>Sucursales</th><th>Secciones</th><th>Estado</th><th>Acción</th></tr></thead>
-     <tbody>
-      @for(menu of result.data;track menu.id){
-       <tr><td><strong>{{menu.nombre}}</strong><div class="cat-muted">{{menu.codigo}}</div></td>
-        <td>{{menu.sucursales.length}}</td><td>{{menu.secciones.length}}</td>
-        <td>{{status(menu)}}</td>
-        <td><a [routerLink]="['/catalog/menus',menu.id]">Configurar</a></td>
-       </tr>
-      } @empty {<tr><td colspan="5">No hay menús con los filtros seleccionados.</td></tr>}
-     </tbody>
-    </table></div>
+    <div class="cat-menu-list" aria-label="Cartas comerciales">
+     @for(menu of result.data;track menu.id){
+      <article class="cat-menu-list-card">
+       <div><strong>{{menu.nombre}}</strong>
+        <span>{{menu.secciones.length}} secciones · {{menu.sucursales.length}} sucursales</span>
+        <span>{{status(menu)}}</span>
+       </div>
+       <div class="cat-menu-list-actions">
+        <a class="cat-menu-action cat-menu-action--primary"
+         [routerLink]="['/catalog/menus',menu.id]">Editar carta</a>
+        @if(menu.publicadoEn){
+         <a class="cat-menu-action" routerLink="/catalog/preview"
+          [queryParams]="{menuId:menu.id}">Ver carta publicada</a>
+        }
+       </div>
+      </article>
+     }@empty{<p class="cat-menu-empty">No hay cartas con esos filtros.</p>}
+    </div>
     <div class="cat-row cat-muted">
      <span>{{result.meta.total}} menús · Página {{result.meta.page}} de {{result.meta.totalPages||1}}</span>
      <div class="cat-actions">

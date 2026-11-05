@@ -1,3 +1,5 @@
+@use './app/features/catalog/pages/catalog-menu-editor-r3';
+@use './app/features/catalog/pages/catalog-menu-preview-r3';
 @use './app/features/catalog/pages/catalog-product-guide';
 @use '@angular/material' as mat;
 @import '@ng-select/ng-select/themes/default.theme.css';
