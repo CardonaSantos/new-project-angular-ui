@@ -9,11 +9,12 @@ import {GcCatalogNav} from '../catalog-nav';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {RecipesAccess} from '../../recipes/data-access/recipes-access';
+import {OrganizationAccess} from '../../organization/data-access/organization-access';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {PRODUCT_KINDS,type CatalogKind,type CatalogProduct,type CatalogCategoryOption,
  type CatalogProductReadiness} from '../data-access/catalog.models';
-import {guidedProductDto,suggestedProductCode,validateGuidedProduct,validPrice,
+import {guidedSetupDto,suggestedArticleCode,suggestedProductCode,validateGuidedProduct,validPrice,
  type GuidedVariant} from '../data-access/catalog-product-guide';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 
@@ -33,7 +34,10 @@ interface PriceResult {state:'saved'|'review';amount:string}
   @if(created();as product){
    <section class="cat-card cat-guide-created" role="status">
     <h2>{{product.nombre}}</h2>
-    <p class="cat-muted">{{product.varianteProductosComoProducto?.length??0}} presentaciones guardadas</p>
+    <p class="cat-muted">{{product.varianteProductosComoProducto?.length===1?'Producto único':(product.varianteProductosComoProducto?.length??0)+' presentaciones'}} · Guardado en una operación</p>
+    @if(product.tipo==='INVENTARIABLE'){
+     <p class="cat-guide-stock-note">Artículo de Inventario vinculado · <strong>stock inicial: 0</strong>. Registra una entrada cuando recibas mercancía.</p>
+    }
     <div class="cat-guide-prices">
      @for(variant of product.varianteProductosComoProducto??[];track variant.id){
       <div><strong>{{variant.nombre}}</strong>
@@ -135,11 +139,18 @@ interface PriceResult {state:'saved'|'review';amount:string}
     </section>
 
     <section class="cat-card">
-     <div class="cat-guide-title"><span>2</span><h2>Presentaciones y precios</h2></div>
-     <div class="cat-actions cat-guide-presets">
-      <button type="button" [disabled]="saving()||variants().length>=50" (click)="addVariant()">+ Presentación</button>
-      <button type="button" [disabled]="saving()||variants().length>47" (click)="addSizes()">Pequeño, Mediano y Grande</button>
-     </div>
+     <div class="cat-guide-title"><span>2</span><h2>{{multiSize()?'Tamaños y precios':'Precio y existencias'}}</h2></div>
+     @if(!multiSize()){
+      <div class="cat-guide-single-head">
+       <span>Se vende por unidad. La presentación «Única» se gestiona automáticamente.</span>
+       <button type="button" [disabled]="saving()" (click)="addVariant()">+ Agregar tamaños</button>
+      </div>
+     }@else{
+      <div class="cat-actions cat-guide-presets">
+       <button type="button" [disabled]="saving()||variants().length>=50" (click)="addVariant()">+ Presentación</button>
+       <button type="button" [disabled]="saving()||variants().length>47" (click)="addSizes()">Pequeño, Mediano y Grande</button>
+      </div>
+     }
      @if(branch.branchId()&&access.canPrices()){
       <p class="cat-muted">Precios en <strong>{{branch.active()?.nombre}}</strong> · GTQ. Déjalo vacío para agregarlo después.</p>
      }@else{
@@ -148,13 +159,15 @@ interface PriceResult {state:'saved'|'review';amount:string}
      <div class="cat-guide-variants">
       @for(variant of variants();track variant.key;let i=$index){
        <fieldset class="cat-guide-variant">
-        <legend>Presentación {{i+1}}</legend>
-        <div class="cat-guide-variant-row">
-         <label class="cat-guide-field">Nombre
-          <input maxlength="120" required [value]="variant.nombre" [disabled]="saving()"
-           [attr.aria-invalid]="submitted()&&!variant.nombre.trim()"
-           (input)="editVariant(variant.key,{nombre:$any($event.target).value})"
-           placeholder="Única, Mediano, Grande…"/></label>
+        <legend>{{multiSize()?'Presentación '+(i+1):'Producto único'}}</legend>
+        <div class="cat-guide-variant-row" [class.cat-guide-variant-row--single]="!multiSize()">
+         @if(multiSize()){
+          <label class="cat-guide-field">Nombre del tamaño
+           <input maxlength="120" required [value]="variant.nombre" [disabled]="saving()"
+            [attr.aria-invalid]="submitted()&&!variant.nombre.trim()"
+            (input)="editVariant(variant.key,{nombre:$any($event.target).value})"
+            placeholder="Mediano, Grande…"/></label>
+         }
          @if(branch.branchId()&&access.canPrices()){
           <label class="cat-guide-field">Precio (Q)
            <input inputmode="decimal" maxlength="19" [value]="variant.precio" [disabled]="saving()"
@@ -163,21 +176,55 @@ interface PriceResult {state:'saved'|'review';amount:string}
             placeholder="24.00"/></label>
          }
          @if(kind()==='INVENTARIABLE'){
-          <gc-inventory-picker [id]="'guide-article-'+variant.key" label="Artículo físico"
-           kind="article" articleKind="PRODUCTO_TERMINADO"
-           [value]="variant.articuloInventarioId" [disabled]="saving()"
-           (valueChange)="editVariant(variant.key,{articuloInventarioId:$event})"/>
+          <div class="cat-guide-article-inline">
+           @if(canCreateArticle()){
+            <fieldset class="cat-guide-article-choice">
+             <legend>Inventario</legend>
+             <label><input type="radio" [name]="'article-'+variant.key" value="nuevo"
+              [disabled]="saving()" [checked]="variant.articuloModo==='nuevo'"
+              (change)="editVariant(variant.key,{articuloModo:'nuevo',articuloInventarioId:''})"/>
+              Crear artículo ahora</label>
+             <label><input type="radio" [name]="'article-'+variant.key" value="existente"
+              [disabled]="saving()" [checked]="variant.articuloModo!=='nuevo'"
+              (change)="editVariant(variant.key,{articuloModo:'existente'})"/>
+              Usar uno existente</label>
+            </fieldset>
+           }
+           @if(variant.articuloModo==='nuevo'&&canCreateArticle()){
+            <p class="cat-muted">El artículo terminado se crea y vincula automáticamente con <strong>0 existencias</strong>.</p>
+            <details class="cat-guide-article-advanced">
+             <summary>Opciones del artículo (código y vencimientos)</summary>
+             <label class="cat-guide-field">Código de inventario
+              <input maxlength="50" [disabled]="saving()" [value]="variant.articuloCodigo||articleCode(i)"
+               (input)="editVariant(variant.key,{articuloCodigo:$any($event.target).value})"/></label>
+             <label><input type="checkbox" [checked]="!!variant.controlarLote" [disabled]="saving()"
+               (change)="editVariant(variant.key,{controlarLote:$any($event.target).checked,
+                 controlarVencimiento:$any($event.target).checked?variant.controlarVencimiento:false})"/>
+               Controlar por lotes</label>
+             <label><input type="checkbox" [checked]="!!variant.controlarVencimiento"
+               [disabled]="saving()||!variant.controlarLote"
+               (change)="editVariant(variant.key,{controlarVencimiento:$any($event.target).checked})"/>
+               Controlar vencimientos</label>
+            </details>
+           }@else{
+            <gc-inventory-picker [id]="'guide-article-'+variant.key" label="Artículo físico existente"
+             kind="article" articleKind="PRODUCTO_TERMINADO"
+             [value]="variant.articuloInventarioId" [disabled]="saving()"
+             (valueChange)="editVariant(variant.key,{articuloInventarioId:$event})"/>
+           }
+          </div>
          }
-         <button type="button" [disabled]="saving()||variants().length===1"
-          [attr.aria-label]="'Quitar presentación '+(i+1)"
-          (click)="removeVariant(variant.key)">Quitar</button>
+         @if(multiSize()){
+          <button type="button" [disabled]="saving()||variants().length===1"
+           [attr.aria-label]="'Quitar presentación '+(i+1)"
+           (click)="removeVariant(variant.key)">Quitar</button>
+         }
         </div>
        </fieldset>
       }
      </div>
-     @if(kind()==='INVENTARIABLE'){
-      <p class="cat-muted">Vincula un artículo terminado por presentación.
-       <a routerLink="/inventory/articles/new">Crear artículo en Inventario</a></p>
+     @if(kind()==='INVENTARIABLE'&&!canCreateArticle()){
+      <p class="cat-muted">Tu rol permite usar artículos existentes. Solicita el permiso de Inventario para crear uno nuevo sin salir de esta pantalla.</p>
      }
     </section>
 
@@ -192,9 +239,9 @@ interface PriceResult {state:'saved'|'review';amount:string}
      @if(error()){<p class="cat-alert" role="alert">{{error()}}
       <span> Si la respuesta se perdió, comprueba la lista antes de repetir el alta.</span></p>}
      <div class="cat-guide-actions">
-      <span class="cat-muted">{{variants().length}} presentaciones · {{branch.active()?.nombre??'Sin sucursal'}}</span>
+      <span class="cat-muted">{{multiSize()?variants().length+' tamaños':'Producto único'}} · {{branch.active()?.nombre??'Sin sucursal'}}</span>
       <button type="submit" class="cat-primary" [disabled]="saving()||!access.canManage()">
-       {{saving()?'Guardando…':'Crear producto y presentaciones'}}</button>
+       {{saving()?'Guardando…':'Crear producto'}}</button>
      </div>
     </section>
    </form>
@@ -206,6 +253,9 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  protected readonly access=inject(CatalogAccess);
  protected readonly branch=inject(GcBranchContext);
  protected readonly recipesAccess=inject(RecipesAccess);
+ private readonly org=inject(OrganizationAccess);
+ protected readonly canCreateArticle=computed(()=>this.org.canGlobal('inventory.articles.manage'));
+ protected readonly articleCode=(index:number)=>suggestedArticleCode(this.code(),index);
  private readonly api=inject(CatalogApi);
  private readonly notify=inject(GcNotificationService);
  protected readonly types=PRODUCT_KINDS;
@@ -215,6 +265,7 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  protected readonly categoryId=signal('');
  protected readonly customCode=signal('');
  protected readonly editedCode=signal(false);
+ protected readonly multiSize=signal(false);
  protected readonly variants=signal<GuidedVariant[]>([
   {key:1,nombre:'Única',precio:'',articuloInventarioId:''}
  ]);
@@ -262,24 +313,33 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  protected setCode(value:string){this.editedCode.set(true);this.customCode.set(value.toUpperCase())}
  protected selectKind(value:CatalogKind){
   this.kind.set(value);this.submitted.set(false);
-  if(value!=='INVENTARIABLE')
-   this.variants.update(list=>list.map(x=>({...x,articuloInventarioId:''})));
+  this.variants.update(list=>list.map(x=>({...x,articuloInventarioId:'',
+   articuloModo:value==='INVENTARIABLE'?
+    (this.canCreateArticle()?'nuevo':'existente'):undefined})));
  }
  protected addVariant(){
   if(this.variants().length>=50)return;
-  this.variants.update(list=>[...list,{key:this.nextKey++,nombre:'',precio:'',articuloInventarioId:''}]);
+  this.multiSize.set(true);
+  this.variants.update(list=>[...list,{key:this.nextKey++,nombre:'',precio:'',articuloInventarioId:'',
+   articuloModo:this.kind()==='INVENTARIABLE'?
+    (this.canCreateArticle()?'nuevo':'existente'):undefined}]);
  }
  protected addSizes(){
+  this.multiSize.set(true);
   const current=this.variants();
   if(current.length===1&&current[0].nombre==='Única'&&!current[0].precio&&!current[0].articuloInventarioId){
    this.variants.set(['Pequeño','Mediano','Grande'].map(nombre=>({
-    key:this.nextKey++,nombre,precio:'',articuloInventarioId:''
+    key:this.nextKey++,nombre,precio:'',articuloInventarioId:'',
+    articuloModo:this.kind()==='INVENTARIABLE'?
+     (this.canCreateArticle()?'nuevo':'existente'):undefined
    })));return;
   }
   for(const nombre of ['Pequeño','Mediano','Grande']){
    if(this.variants().length>=50)break;
    if(!this.variants().some(x=>x.nombre.trim().toLowerCase()===nombre.toLowerCase())){
-    this.variants.update(list=>[...list,{key:this.nextKey++,nombre,precio:'',articuloInventarioId:''}]);
+    this.variants.update(list=>[...list,{key:this.nextKey++,nombre,precio:'',articuloInventarioId:'',
+     articuloModo:this.kind()==='INVENTARIABLE'?
+      (this.canCreateArticle()?'nuevo':'existente'):undefined}]);
    }
   }
  }
@@ -316,37 +376,17 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
   if(!this.access.canManage()||this.saving()||this.created()||this.issues().length)return;
   const branchId=this.branch.branchId();
   const canPrice=!!branchId&&this.access.canPrices();
-  const items=this.variants().map(x=>({...x}));
   this.saving.set(true);this.error.set('');
   try{
-   const product=await firstValueFrom(this.api.createProduct(guidedProductDto(this.draft())));
-   // The persisted ID is committed before prices. Do not create the product twice if a price fails.
+   const product=await firstValueFrom(this.api.setupProduct(guidedSetupDto(
+    this.draft(),canPrice?branchId:undefined)));
    this.created.set(product);
-   this.notify.show('Producto y presentaciones creados.','success');
-   if(branchId&&canPrice)await this.savePrices(product,items,branchId);
+   this.prices.set(Object.fromEntries(product.preciosConfigurados.map(x=>[
+    x.varianteId,{state:'saved' as const,amount:x.importe}])));
+   this.notify.show('Producto y precios guardados en una operación.','success');
    try{if(branchId)this.readiness.set(await firstValueFrom(this.api.productReadiness(product.id,branchId)))}
-   catch{/* Readiness is optional for the completed creation. */}
+   catch{/* Creation transaction is already completed; readiness is advisory. */}
   }catch(e){this.error.set(gcErrorMessage(e))}
   finally{this.saving.set(false)}
- }
- private async savePrices(product:CatalogProduct,items:GuidedVariant[],branchId:string){
-  const variants=product.varianteProductosComoProducto??[];
-  const since=new Date().toISOString();
-  let failed=false;
-  for(const item of items.filter(x=>x.precio.trim())){
-   const v=variants.find(x=>x.nombre.trim().toLowerCase()===item.nombre.trim().toLowerCase());
-   if(!v){failed=true;continue}
-   try{
-    await firstValueFrom(this.api.createVariantPrice({
-     entityId:v.id,sucursalId:branchId,importe:item.precio.trim(),vigenteDesde:since
-    }));
-    this.prices.update(old=>({...old,[v.id]:{state:'saved',amount:item.precio.trim()}}));
-   }catch{
-    // No automatic retry: a timeout may still have committed this tariff.
-    this.prices.update(old=>({...old,[v.id]:{state:'review',amount:item.precio.trim()}}));
-    failed=true;
-   }
-  }
-  if(failed)this.priceError.set('Algunos precios necesitan revisión. El producto ya se creó; revisa los precios vigentes antes de registrar otro.');
  }
 }
