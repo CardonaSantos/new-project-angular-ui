@@ -60,6 +60,43 @@ export interface KitchenTicket{
 }
 export interface OrderListQuery{sucursalId:string;estado?:OrderState;modalidad?:OrderMode;search?:string;page?:number;limit?:number}
 export interface TicketListQuery{sucursalId:string;estacionId?:string;estado?:TicketState;page?:number;limit?:number}
+export interface OrderQuoteLine{
+ varianteId:string;nombre:string;cantidad:string;precioUnitario:string;subtotal:string;
+ descuento:string;total:string;modificadores:{id:string;nombre:string;recargo:string}[];
+}
+export interface OrderQuote{
+ sucursalId:string;moneda:string;subtotal:string;descuentoTotal:string;total:string;
+ lineas:OrderQuoteLine[];advertencia:string;
+}
+export interface PosPaymentPart{
+ metodo:'EFECTIVO'|'TARJETA'|'TRANSFERENCIA'|'OTRO';monto:string;
+ efectivoRecibido?:string;codigoAutorizacion?:string;referencia?:string;terminalReferencia?:string;
+}
+export interface QuickCheckoutInput extends CreateOrderInput{
+ turnoId:string;pagos:PosPaymentPart[];
+}
+export interface QuickCheckoutResult{
+ ordenId:string;numero:string;ventaId:string;estado:'CERRADA';total:string;pagoIds:string[];
+}
+export interface PayAndSendInput{
+ turnoId:string;pagos:PosPaymentPart[];claveOperacion:string;
+}
+export interface PayAndSendResult{
+ ordenId:string;estado:OrderState;pagoIds:string[];comandasPendientes:number;
+}
+export interface WorkOrder{
+ id:string;numero:string;modalidad:OrderMode;estado:OrderState;version:number;abiertaEn:string;
+ ocupacionMesaId:string|null;mesa:{id:string;numero:string;sala:{nombre:string}}|null;
+ total:string;pagado:string;saldo:string;needsProcessing:boolean;
+ kitchen:{pending:number;preparing:number;toDeliver:number};
+}
+export type KitchenQueueView='ACTIVAS'|'PARA_ENTREGAR'|'ENTREGADAS'|'TODAS';
+export interface KitchenQueueQuery{
+ sucursalId:string;estacionId?:string;vista:KitchenQueueView;page?:number;limit?:number;
+}
+export interface KitchenQueueResponse extends Page<KitchenTicket>{
+ totals:{pending:number;preparing:number;readyToDeliver:number;delivered:number};
+}
 export const ORDER_MODES:{id:OrderMode;label:string}[]=[
  {id:'MOSTRADOR',label:'En mostrador'},{id:'MESA',label:'Para una mesa'},
  {id:'PARA_LLEVAR',label:'Para llevar'},{id:'DELIVERY',label:'A domicilio'}];
