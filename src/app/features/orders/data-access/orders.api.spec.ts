@@ -109,4 +109,54 @@ describe('ORD-A UI — all 32 backend endpoints',()=>{
   expect(safeQuantity('-1')).toBeNull();
   expect(operationKey('pos').startsWith('pos:')).toBe(true);
  });
+ it('uses authoritative quote and a single idempotent express checkout request',()=>{
+  const item={varianteId:'water',cantidad:'1'};
+  const order={sucursalId:'b1',modalidad:'MOSTRADOR' as const,
+   origen:'CAJA' as const,lineas:[item],enviarCocina:true,claveOperacion:'POS:QUICK:001'};
+  request('POST',orderPaths.quote,()=>api.quote({sucursalId:'b1',lineas:[item]}),
+   {sucursalId:'b1',lineas:[item]});
+  const checkout={...order,turnoId:'shift-a',
+   pagos:[{metodo:'EFECTIVO' as const,monto:'7.00',efectivoRecibido:'10.00'}]};
+  request('POST',orderPaths.quickCheckout,()=>api.quickCheckout(checkout),checkout);
+ });
+ it('routes prepared-order pay-and-send without creating a new order',()=>{
+  const payload={turnoId:'shift-a',
+   pagos:[{metodo:'EFECTIVO' as const,monto:'25.00',efectivoRecibido:'30.00'}],
+   claveOperacion:'PAY:SEND:001'};
+  request('POST',orderPaths.order('order-1')+'/pay-and-send',
+   ()=>api.payAndSend('order-1',payload),payload);
+ });
+ it('asks server for globally sorted kitchen queue with page, station and view',()=>{
+  api.queue({sucursalId:'branch-a',estacionId:'station-a',
+   vista:'PARA_ENTREGAR',page:2,limit:15}).subscribe();
+  const req=http.expectOne(r=>r.url===orderPaths.queue);
+  expect(req.request.method).toBe('GET');
+  expect(req.request.params.get('sucursalId')).toBe('branch-a');
+  expect(req.request.params.get('estacionId')).toBe('station-a');
+  expect(req.request.params.get('vista')).toBe('PARA_ENTREGAR');
+  expect(req.request.params.get('page')).toBe('2');
+  expect(req.request.params.get('limit')).toBe('15');
+  req.flush({data:[],meta:{page:2,limit:15,total:35,totalPages:3},
+   totals:{pending:17,preparing:9,readyToDeliver:6,delivered:3}});
+ });
+ it('keeps kitchen handoff atomic and idempotent at both ticket and line scopes',()=>{
+  request('POST',orderPaths.ticket('ticket/1')+'/ready-deliver',
+   ()=>api.readyDeliverTicket('ticket/1','KDS:TICKET:001'),
+   {claveOperacion:'KDS:TICKET:001'});
+  request('POST',orderPaths.lineKitchen('line/1')+'/ready-deliver',
+   ()=>api.readyDeliverLine('line/1','KDS:LINE:001'),
+   {claveOperacion:'KDS:LINE:001'});
+ });
+ it('retrieves worklist balances from NestJS instead of per-card requests',()=>{
+  api.worklist({sucursalId:'b1',estado:'ABIERTA',
+   modalidad:'MESA',page:3,limit:20}).subscribe();
+  const req=http.expectOne(r=>r.url===orderPaths.worklist);
+  expect(req.request.method).toBe('GET');
+  expect(req.request.params.get('sucursalId')).toBe('b1');
+  expect(req.request.params.get('estado')).toBe('ABIERTA');
+  expect(req.request.params.get('modalidad')).toBe('MESA');
+  expect(req.request.params.get('page')).toBe('3');
+  req.flush({data:[],meta:{page:3,limit:20,total:44,totalPages:3}});
+ });
+
 });
