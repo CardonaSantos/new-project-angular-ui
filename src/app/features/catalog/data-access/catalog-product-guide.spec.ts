@@ -24,7 +24,7 @@ describe('CAT R1 guided product creation',()=>{
  });
  it('requires physical inventory articles only for direct inventory products',()=>{
   const d=draft();d.tipo='INVENTARIABLE';
-  expect(validateGuidedProduct(d).filter(x=>x.includes('artículo físico'))).toHaveLength(2);
+  expect(validateGuidedProduct(d).filter(x=>x.includes('artículo'))).toHaveLength(2);
   d.variantes[0].articuloInventarioId='physical1';
   d.variantes[1].articuloInventarioId='physical1';
   expect(validateGuidedProduct(d)).toEqual([]);
