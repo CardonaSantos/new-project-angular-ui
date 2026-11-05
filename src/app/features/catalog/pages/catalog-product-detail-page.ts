@@ -342,7 +342,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   this.visible.set(d.visibleEnMenu);this.editVariant.set(null);
   await this.fetchReadiness();
  }
- private async fetchReadiness(){
+ protected async fetchReadiness(){
   const id=this.branch.branchId();if(!id||this.isNew)return;
   try{this.readiness.set(await firstValueFrom(this.api.productReadiness(this.id,id)))}
   catch{this.readiness.set(null)}
