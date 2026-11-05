@@ -139,6 +139,20 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
     <section class="ord-express-context" role="status">
      <strong>Pedido {{o.numero}} · Mesa {{selectedTable()?.numero}}</strong>
      <span>Total actual {{money(o.total,currency())}} · Añade solo productos nuevos</span>
+     <details class="ord-express-existing">
+      <summary>Ver productos actuales ({{o.ordenLineasComoOrden.length}})</summary>
+      @for(line of o.ordenLineasComoOrden;track line.id){
+       @if(!line.canceladaEn){
+        <div class="ord-express-existing-line">
+         <strong>{{line.cantidad}} × {{line.nombreSnapshot}}</strong>
+         <span>{{money(line.subtotal,currency())}}</span>
+         @if(line.ordenLineaModificadoresComoOrdenLinea?.length){
+          <small>{{modifiersLabel(line.ordenLineaModificadoresComoOrdenLinea??[])}}</small>
+         }
+        </div>
+       }
+      }
+     </details>
      <div class="ord-actions">
       <a [routerLink]="['/payments/order',o.id]">Cobrar cuenta</a>
       <button type="button" [disabled]="cart().length>0" (click)="leaveActiveOrder()">Salir</button>
@@ -521,6 +535,9 @@ export class GcOrdersPosPage{
   this.operationId='';this.cartOpen.set(false);
  }
  protected newSale(){this.success.set('');this.createdId.set('');this.createdSaleId.set('')}
+ protected modifiersLabel(list:{nombreSnapshot:string;cantidad:number}[]){
+  return list.map(m=>(m.cantidad>1?m.cantidad+' × ':'')+m.nombreSnapshot).join(', ');
+ }
  protected leaveActiveOrder(){
   if(this.submitting()||this.cart().length)return;
   this.activeOrder.set(null);this.selectedTable.set(null);this.mode.set('MOSTRADOR');
