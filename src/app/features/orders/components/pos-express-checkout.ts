@@ -15,13 +15,13 @@ import {parseApiDecimal} from '../../../shared/formatting';
  imports:[RouterLink,CdkTrapFocus],
  template:`
  <button type="button" class="ord-overlay" aria-label="Cerrar cobro" [disabled]="working()"
-  (click)="cancel.emit()"></button>
+  (click)="dismissed.emit()"></button>
  <section class="ord-customizer pos-express-dialog" role="dialog" aria-modal="true"
   aria-labelledby="pos-express-heading" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
   <div class="ord-heading">
    <div><h2 id="pos-express-heading">Cobro rápido</h2>
     <p class="ord-note">Venta directa, sin comanda de Cocina.</p></div>
-   <button type="button" (click)="cancel.emit()" [disabled]="working()" aria-label="Cerrar cobro">×</button>
+   <button type="button" (click)="dismissed.emit()" [disabled]="working()" aria-label="Cerrar cobro">×</button>
   </div>
   @if(loading()){<p role="status" class="ord-note">Verificando precios y turno de caja…</p>}
   @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
@@ -45,7 +45,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
    @if(!ownShift()){
     <div role="alert" class="ord-alert">
      No tienes un turno de caja abierto. Debes abrir uno para registrar el cobro.
-     <a routerLink="/payments/cash/open" (click)="cancel.emit()">Abrir mi caja</a>
+     <a routerLink="/payments/cash/open" (click)="dismissed.emit()">Abrir mi caja</a>
      <button type="button" (click)="refreshCash()" [disabled]="loading()">Actualizar turno</button>
     </div>
    }@else{
@@ -87,7 +87,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
    </fieldset>
    <p class="ord-note">Los productos y los precios se validan otra vez al confirmar. Si falla, no se registra una venta parcial.</p>
    <div class="ord-actions pos-express-actions">
-    <button type="button" [disabled]="working()" (click)="cancel.emit()">Volver al carrito</button>
+    <button type="button" [disabled]="working()" (click)="dismissed.emit()">Volver al carrito</button>
     <button type="button" class="ord-primary"
      [disabled]="!canPay()" (click)="pay()">
      {{working()?'Registrando…':'Confirmar y cobrar · '+money(q.total,q.moneda)}}
