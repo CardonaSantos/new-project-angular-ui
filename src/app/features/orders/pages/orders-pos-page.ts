@@ -154,17 +154,19 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <button type="button" class="ord-danger" [disabled]="submitting()" (click)="clearCart()">Vaciar carrito</button>
     </div>}
     <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes()"
-     [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()"
+     [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()||!!activeOrder()"
      (valueChange)="chooseMode($event)"/>
     @if(mode()==='MESA'){
      <gc-search-select id="pos-table" label="Mesa" [items]="tableChoices()"
-      [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()"
+      [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()||!!activeOrder()"
       placeholder="Seleccionar mesa" (valueChange)="selectTableId($event)"/>
     }
-    <label>Observaciones del pedido
-     <textarea rows="2" maxlength="500" [value]="observations()" [disabled]="submitting()"
-      placeholder="Opcional" (input)="observations.set($any($event.target).value);invalidateKey()"></textarea>
-    </label>
+    @if(!activeOrder()){
+     <label>Observaciones del pedido
+      <textarea rows="2" maxlength="500" [value]="observations()" [disabled]="submitting()"
+       placeholder="Opcional" (input)="observations.set($any($event.target).value);invalidateKey()"></textarea>
+     </label>
+    }
     @if(directOnly()){
      <p class="ord-note" role="status">
       Venta sin preparación: estos productos no generan comandas.
@@ -368,9 +370,16 @@ export class GcOrdersPosPage{
  }
  protected setView(mode:'counter'|'tables'){
   if(this.submitting())return;
+  if(mode!==this.prefs.view()&&this.cart().length&&this.selectedTable()){
+   this.submitError.set('Guarda o vacía los productos de esta mesa antes de cambiar de atención.');
+   return;
+  }
   this.prefs.setView(mode);
   this.showTablePicker.set(mode==='tables');
   if(mode==='tables')void this.loadTables();
+  else if(!this.cart().length){
+   this.activeOrder.set(null);this.selectedTable.set(null);this.mode.set('MOSTRADOR');
+  }
  }
  protected chooseMode(value:string){
   if(this.submitting())return;
@@ -413,8 +422,8 @@ export class GcOrdersPosPage{
  }
  protected async chooseTable(t:TableRecord){
   if(this.submitting())return;
-  if(this.cart().length){
-   this.submitError.set('Guarda o vacía el carrito antes de cambiar de mesa.');return;
+  if(this.cart().length&&this.selectedTable()&&this.selectedTable()!.id!==t.id){
+   this.submitError.set('Guarda o vacía el carrito antes de cambiar a otra mesa.');return;
   }
   const existing=t.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA');
   this.selectedTable.set(t);this.mode.set('MESA');this.activeOrder.set(null);
