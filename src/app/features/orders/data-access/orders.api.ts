@@ -4,7 +4,7 @@ import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
  AddLinesInput,CancellationClass,ChangeFeed,CreateOrderInput,EditLineInput,KitchenRoute,
  KitchenTicket,OrderDetail,OrderListQuery,OrderSummary,Page,Room,Station,TableRecord,
- TicketListQuery
+ TicketListQuery,PosQuote,PosQuickCheckout,PosQuickResult,OrderWorkItem,KitchenQueue,KitchenQueueView
 } from './orders.models';
 
 /** All 32 authenticated ORD-A endpoints from backend main, 2026-11-03.
