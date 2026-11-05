@@ -368,6 +368,8 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
    PRODUCTO_O_VARIANTE_INACTIVA:'Activa el producto y su presentación.',
    OCULTA_EN_MENU:'Habilita la visibilidad del producto.',
    ARTICULO_FISICO_INVALIDO:'Revisa el artículo de inventario asociado.',
+   EXTRA_SIN_COMPOSICION_FISICA:'Un extra necesita configurar sus ingredientes físicos.',
+   EXTRA_FISICO_REQUIERE_PREPARADO:'Esta presentación tiene extras físicos incompatibles con venta directa.',
    SUCURSAL_INACTIVA:'La sucursal no está activa.',
   };
   return labels[code]??'Revisa la configuración de esta presentación antes de publicarla.';
