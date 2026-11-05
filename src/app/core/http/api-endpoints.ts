@@ -101,6 +101,7 @@ export const API_ENDPOINTS = {
     variantMedia:(id:string)=>'/api/catalog/variants/'+segment(id)+'/media',
     variantGroups:(id:string)=>'/api/catalog/variants/'+segment(id)+'/modifier-groups',
     modifierGroups:'/api/catalog/modifier-groups',
+    modifierGroupsSetup:'/api/catalog/modifier-groups/setup',
     modifierGroupOptions:'/api/catalog/modifier-groups/options',
     modifierGroup:(id:string)=>'/api/catalog/modifier-groups/'+segment(id),
     modifiers:'/api/catalog/modifiers',

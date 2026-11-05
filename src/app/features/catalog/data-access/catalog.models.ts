@@ -92,6 +92,16 @@ export interface CatalogModifier {
  id:string;grupoId:string;nombre:string;incrementoPrecio:string;requiereComposicion:boolean;
  activo:boolean;grupo?:CatalogGroup;
 }
+export interface CatalogQuickGroupSetup {
+ nombre:string;minimo:number;maximo:number|null;varianteId?:string;
+ opciones:{nombre:string;incrementoPrecio:string;
+  ingredientes:{articuloId:string;unidadId:string;cantidad:string;efecto:'SUMAR'}[]}[];
+}
+export interface CatalogQuickGroupResult {
+ id:string;nombre:string;minimo:number;maximo:number|null;activo:boolean;
+ opciones:{id:string;nombre:string;incrementoPrecio:string;requiereComposicion:boolean}[];
+ asignadoAVarianteId:string|null;
+}
 export interface CatalogModifierCreate {
  grupoId:string;nombre:string;incrementoPrecio:string;requiereComposicion?:boolean;
 }

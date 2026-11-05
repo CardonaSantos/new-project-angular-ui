@@ -8,7 +8,7 @@ import type {
  CatalogProductCreate,CatalogProductSetup,CatalogProductSetupResult,CatalogBatchPriceResult,
  CatalogProductPatch,CatalogVariant,CatalogVariantInput,
  CatalogVariantPatch,CatalogVariantBranchPatch,CatalogGroup,CatalogGroupCreate,
- CatalogGroupPatch,CatalogModifier,CatalogModifierCreate,CatalogModifierPatch,
+ CatalogGroupPatch,CatalogQuickGroupSetup,CatalogQuickGroupResult,CatalogModifier,CatalogModifierCreate,CatalogModifierPatch,
  CatalogGroupAttachment,CatalogPriceCreate,CatalogPrice,CatalogResolvedPrice,
  CatalogQuoteInput,CatalogQuote,CatalogProductReadiness,CatalogPage,CatalogOptions,
  CatalogPageQuery,CatalogOptionsQuery,CatalogKind,CatalogMenu,CatalogMenuCreate,
@@ -117,6 +117,10 @@ export class CatalogApi {
  }
  createModifierGroup(dto:CatalogGroupCreate){
   return this.http.post<CatalogGroup>(this.e.modifierGroups,dto,silent);
+ }
+ /** R3-A: atomic group + choices + validated physical consumption + optional variant link. */
+ setupModifierGroup(dto:CatalogQuickGroupSetup){
+  return this.http.post<CatalogQuickGroupResult>(this.e.modifierGroupsSetup,dto,silent);
  }
  updateModifierGroup(id:string,dto:CatalogGroupPatch){
   return this.http.patch<CatalogGroup>(this.e.modifierGroup(id),dto,silent);
