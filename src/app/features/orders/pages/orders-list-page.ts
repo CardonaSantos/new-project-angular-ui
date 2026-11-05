@@ -82,10 +82,9 @@ import {money,modeText} from '../data-access/orders.helpers';
         </p>
        }
        <div class="ord-actions">
-        @if(item.mesa){
-         <a class="ord-primary" [routerLink]="['/orders/pos']"
-          [queryParams]="{mesaId:item.mesa.id}">Agregar productos</a>
-        }
+        <a class="ord-primary" [routerLink]="['/orders/pos']"
+         [queryParams]="item.mesa?{mesaId:item.mesa.id}:{ordenId:item.id}">
+         Agregar productos</a>
         <a [routerLink]="['/orders/list',item.id]">Ver pedido</a>
         @if(paymentsAccess.canRead()&&paymentsAccess.canCollect()){
          <a [routerLink]="['/payments/order',item.id]">Cobrar</a>
