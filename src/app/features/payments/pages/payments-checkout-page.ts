@@ -136,7 +136,13 @@ import {parseApiDecimal} from '../../../shared/formatting';
         <p class="pay-warn">Al cobrar por completo, este pedido puede finalizarse y liberar automáticamente la mesa.</p>
        }
        <button class="ord-primary pay-submit" type="button" (click)="collect()"
-        [disabled]="working()||!!paymentIssue()">Confirmar cobro</button>
+        [disabled]="working()||!!paymentIssue()">
+        {{canPayAndSend()?'Cobrar y enviar a Cocina':'Confirmar cobro'}}
+       </button>
+       @if(needsProcessing()&&!canPayAndSend()){
+        <p class="ord-note">Hay productos por procesar. Los pagos parciales o pendientes
+         se registran sin enviarlos automáticamente a Cocina.</p>
+       }
       </fieldset>
      } @else if(o.estado==='ABIERTA'&&access.canCollect()&&parsePositive(available())&&outdatedShift()){
       <div class="pay-empty-shift">
@@ -324,6 +330,12 @@ export class GcPaymentsCheckoutPage implements OnInit{
   &&!(this.detail()?.intentos.length));
  protected readonly allSettled=computed(()=>this.accounts().length>0&&this.accounts().every(a=>
   parseApiDecimal(a.pagado).eq(parseApiDecimal(a.total))));
+ protected readonly needsProcessing=computed(()=>this.order()?.ordenLineasComoOrden.some(
+  l=>!l.canceladaEn&&parseApiDecimal(l.cantidadEnviada).lt(parseApiDecimal(l.cantidad)))??false);
+ protected readonly canPayAndSend=computed(()=>this.needsProcessing()&&
+  this.accounts().length===1&&!this.hasPendingAttempt()&&
+  !this.parts().some(p=>p.metodo==='TRANSFERENCIA')&&
+  parseApiDecimal(this.partsTotal()).eq(parseApiDecimal(this.available())));
  protected readonly personOptions=computed(()=>Array.from({length:Math.max(2,Math.min(20,this.people()))},
   (_,i)=>({id:String(i+1),label:'Persona '+(i+1)})));
  ngOnInit(){void this.load()}
@@ -424,16 +436,21 @@ export class GcPaymentsCheckoutPage implements OnInit{
    ...(p.terminalReferencia?.trim()?{terminalReferencia:p.terminalReferencia.trim()}:{}),
   }));
   const pending=payments.some(x=>x.metodo==='TRANSFERENCIA');
+  const express=this.canPayAndSend()&&!pending;
   const message=pending
    ?'Las transferencias quedarán pendientes hasta comprobarse. ¿Registrar los pagos?'
+   :express?'Se registrará el pago confirmado y se enviarán los productos pendientes a Cocina. La orden seguirá abierta mientras falte preparación. ¿Continuar?'
    :this.order()?.modalidad==='MESA'&&this.orderReady()
     ?'Al completar el cobro, el pedido puede finalizarse y la mesa quedar disponible. ¿Continuar?'
     :'¿Registrar el cobro de '+money(this.partsTotal())+'?';
   if(!await this.confirm.confirm({title:pending?'Registrar pago pendiente':'Confirmar cobro',
    message,confirmText:pending?'Registrar':'Cobrar'}))return;
   const payload={turnoId:shift.id,pagos:payments};
-  const key=this.idem('collect',{accountId:account.id,...payload});
-  await this.operate(()=>firstValueFrom(this.api.collect(account.id,{...payload,claveOperacion:key})),
+  const key=this.idem(express?'pay-and-send':'collect',{accountId:account.id,orderId:this.id,...payload});
+  await this.operate(()=>firstValueFrom(express
+   ?this.ordersApi.payAndSend(this.id,{...payload,claveOperacion:key})
+   :this.api.collect(account.id,{...payload,claveOperacion:key})),
+   express?'Cobro confirmado y productos enviados a Cocina.':
    pending?'Pago registrado; verifica las transferencias antes de darlo por pagado.':'Cobro registrado correctamente.');
  }
  protected orderReady(){
