@@ -1,4 +1,4 @@
-import {Component,computed,inject,input,output,signal} from '@angular/core';
+import {Component,computed,effect,inject,input,output,signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
@@ -115,6 +115,7 @@ export class GcCatalogQuickExtraEditor {
  readonly variantId=input('');
  readonly kind=input<CatalogKind>('PREPARADO');
  readonly saved=output<string>();
+ readonly pendingChange=output<boolean>();
  protected readonly access=inject(CatalogAccess);
  protected readonly recipeAccess=inject(RecipesAccess);
  private readonly api=inject(CatalogApi);
@@ -131,6 +132,15 @@ export class GcCatalogQuickExtraEditor {
  protected readonly Number=Number;
  private nextChoice=2;
  private nextIngredient=1;
+ private readonly original=JSON.stringify({name:'',mode:'optional',max:2,
+  choices:[{key:1,nombre:'',precio:'0.00',consumo:false,ingredientes:[]}]});
+ constructor(){
+  effect(()=>{
+   const value=JSON.stringify({name:this.groupName(),mode:this.selectionMode(),
+    max:this.maxChoices(),choices:this.choices()});
+   this.pendingChange.emit(value!==this.original);
+  });
+ }
  protected addChoice(){if(this.choices().length<30)this.choices.update(a=>[...a,{
   key:this.nextChoice++,nombre:'',precio:'0.00',consumo:false,ingredientes:[]
  }])}

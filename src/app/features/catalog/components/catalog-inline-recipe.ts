@@ -1,4 +1,4 @@
-import {Component,effect,inject,input,output,signal,untracked} from '@angular/core';
+import {Component,computed,effect,inject,input,output,signal,untracked} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {RecipesApi} from '../../recipes/data-access/recipes.api';
 import {RecipesAccess} from '../../recipes/data-access/recipes-access';
@@ -156,6 +156,7 @@ export class GcCatalogInlineRecipe {
  readonly productName=input('');
  readonly variantName=input('');
  readonly updated=output<void>();
+ readonly pendingChange=output<boolean>();
  protected readonly access=inject(RecipesAccess);
  protected readonly branch=inject(GcBranchContext);
  private readonly api=inject(RecipesApi);
@@ -173,6 +174,11 @@ export class GcCatalogInlineRecipe {
   {key:1,articuloId:'',articuloNombre:'',unidadId:'',unidadNombre:'',cantidad:'',mermaPorcentaje:'0'}
  ]);
  protected readonly publishNow=signal(false);
+ protected readonly signature=computed(()=>JSON.stringify({
+  amount:this.yieldAmount(),unit:this.yieldUnit(),parts:this.parts(),
+  publish:this.publishNow()
+ }));
+ private readonly baseline=signal('');
  protected readonly problem=signal('');
  protected readonly saving=signal(false);
  protected readonly checking=signal(false);
@@ -182,6 +188,10 @@ export class GcCatalogInlineRecipe {
  private generation=0;
  constructor(){
   effect(()=>{const id=this.variantId();untracked(()=>void this.load(id))});
+  effect(()=>{
+   this.pendingChange.emit(!this.loading()&&this.editing()&&
+    this.signature()!==this.baseline());
+  });
  }
  private async load(id:string){
   const gen=++this.generation;
@@ -206,7 +216,9 @@ export class GcCatalogInlineRecipe {
    const base=units.data.find(x=>x.esBase)??units.data[0];
    this.yieldUnit.set(base?.id??'');
   }catch(e){if(gen===this.generation)this.loadError.set(gcErrorMessage(e))}
-  finally{if(gen===this.generation)this.loading.set(false)}
+  finally{if(gen===this.generation){
+   this.baseline.set(this.signature());this.loading.set(false);
+  }}
  }
  private fillVersion(version:RecipeVersion|null){
   this.yieldAmount.set(version?.rendimiento??'1');
@@ -223,7 +235,8 @@ export class GcCatalogInlineRecipe {
  }
  protected startEditing(){
   this.fillVersion(this.currentPublished());
-  this.publishNow.set(false);this.problem.set('');this.editing.set(true);
+  this.publishNow.set(false);this.problem.set('');
+  this.baseline.set(this.signature());this.editing.set(true);
  }
  protected cancelEditing(){this.editing.set(false);this.problem.set('')}
  protected addIngredient(){if(this.parts().length<100)this.parts.update(a=>[...a,{
