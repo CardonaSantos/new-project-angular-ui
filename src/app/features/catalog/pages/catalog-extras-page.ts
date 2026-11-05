@@ -6,6 +6,7 @@ import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcCatalogQuickExtraEditor} from '../components/catalog-quick-extra-editor';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
@@ -14,7 +15,7 @@ import {toApiDecimal,formatCurrency} from '../../../shared/formatting';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 
 @Component({
- selector:'gc-catalog-extras-page',imports:[GcCatalogNav,GcErrorState,GcSearchSelect],
+ selector:'gc-catalog-extras-page',imports:[GcCatalogNav,GcErrorState,GcSearchSelect,GcCatalogQuickExtraEditor],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
@@ -44,7 +45,13 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
    @if(groupError()){<p role="alert" class="cat-alert">{{groupError()}}</p>}
    @if(groupBusy()){<p role="status" class="cat-muted">Consultando grupos…</p>}
   </section>
-  @if((selectedGroup()||newGroupMode())&&access.canManage()){
+  @if(newGroupMode()&&access.canManage()){
+   <section class="cat-card">
+    <gc-catalog-quick-extra-editor (saved)="quickGroupSaved()"/>
+    <button type="button" (click)="closeGroup()">Cancelar</button>
+   </section>
+  }
+  @if(selectedGroup()&&access.canManage()){
    <section class="cat-card">
     <h2>{{newGroupMode()?'Nuevo grupo':'Configurar grupo'}}</h2>
     <form class="cat-form" (submit)="saveGroup($event)">
@@ -123,8 +130,8 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <input [value]="modifierPrice()" inputmode="decimal" (input)="modifierPrice.set($any($event.target).value)"
        placeholder="0.00" required/>
      </label>
-     <label class="cat-check"><input type="checkbox" [checked]="requiresRecipe()"
-      (change)="requiresRecipe.set($any($event.target).checked)"/> Requiere preparación especial</label>
+     <p class="cat-muted">Consumo físico: {{requiresRecipe()?'Tiene composición: revisa ingredientes en Recetas → Extras':'Sin composición de ingredientes'}}.
+      Para evitar descuentos incorrectos, esta marca no se cambia desde el formulario comercial.</p>
      @if(selectedModifier()){
       <label class="cat-check"><input type="checkbox" [checked]="modifierActive()"
        (change)="modifierActive.set($any($event.target).checked)"/> Opción activa</label>
@@ -216,6 +223,10 @@ export class GcCatalogExtrasPage implements GcDirtyAware{
  protected newGroup(){this.selectedGroup.set(null);this.newGroupMode.set(true);
   this.groupName.set('');this.minimum.set(0);this.maximum.set('');this.groupActive.set(true)}
  protected closeGroup(){this.selectedGroup.set(null);this.newGroupMode.set(false)}
+ protected async quickGroupSaved(){
+  this.closeGroup();
+  await Promise.all([this.loadGroups(),this.loadModifiers()]);
+ }
  protected async saveGroup(event:Event){
   event.preventDefault();if(!this.access.canManage()||!this.validGroup()||this.busy())return;
   const original=this.selectedGroup(),dto={nombre:this.groupName().trim(),minimo:this.minimum(),

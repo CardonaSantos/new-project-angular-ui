@@ -10,6 +10,8 @@ import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {GcCatalogGallery} from '../components/catalog-gallery';
+import {GcCatalogQuickExtraEditor} from '../components/catalog-quick-extra-editor';
+import {GcCatalogInlineRecipe} from '../components/catalog-inline-recipe';
 import {GcCatalogNav} from '../catalog-nav';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../data-access/catalog.api';
@@ -22,7 +24,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 
 @Component({
  selector:'gc-catalog-product-detail-page',
- imports:[RouterLink,GcCatalogNav,GcErrorState,GcInventoryPicker,GcCatalogGallery,GcSearchSelect],
+ imports:[RouterLink,GcCatalogNav,GcErrorState,GcInventoryPicker,GcCatalogGallery,GcSearchSelect,GcCatalogQuickExtraEditor,GcCatalogInlineRecipe],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
@@ -146,6 +148,29 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
           Guardar extras</button>
         </div>
        </div>
+       @if(access.canManage()){
+        <section class="cat-subsection">
+         <div class="cat-row"><h3>Crear extras sin salir de esta ficha</h3>
+          <button type="button" (click)="quickExtras.set(!quickExtras())">
+           {{quickExtras()?'Cerrar':'Crear y asignar grupo'}}</button></div>
+         @if(quickExtras()){
+          <gc-catalog-quick-extra-editor [variantId]="v.id" [kind]="product.tipo"
+           (saved)="quickGroupSaved(v.id)"/>
+         }
+        </section>
+       }
+       @if(product.tipo==='PREPARADO'){
+        <section class="cat-subsection">
+         <div class="cat-row"><h3>Preparación y consumo</h3>
+          <button type="button" (click)="inlineRecipe.set(!inlineRecipe())">
+           {{inlineRecipe()?'Cerrar receta':'Configurar receta aquí'}}</button></div>
+         @if(inlineRecipe()){
+          <gc-catalog-inline-recipe [variantId]="v.id"
+           [productName]="product.nombre" [variantName]="v.nombre"
+           (updated)="fetchReadiness()"/>
+         }
+        </section>
+       }
        <gc-catalog-gallery [entityId]="v.id" kind="variant" [photos]="v.imagenes??[]"
         [editable]="access.canManage()" (updated)="refreshVariant(v.id)"/>
        @if(branch.branchId()){
@@ -245,6 +270,8 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected readonly saving=signal(false);
  protected readonly saveError=signal<string|null>(null);
  protected readonly editVariant=signal<CatalogVariant|null>(null);
+ protected readonly quickExtras=signal(false);
+ protected readonly inlineRecipe=signal(false);
  protected readonly creatingVariant=signal(false);
  protected readonly variantName=signal('');
  protected readonly variantSku=signal('');
@@ -364,6 +391,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  }
  protected async chooseVariant(v:CatalogVariant){
   this.creatingVariant.set(false);this.editVariant.set(v);
+  this.quickExtras.set(false);this.inlineRecipe.set(false);
   this.variantName.set(v.nombre);this.variantSku.set(v.sku??'');this.variantOrder.set(v.orden);
   this.variantActive.set(v.activo);this.articleId.set(v.articuloInventarioId??v.articuloInventario?.id??'');
   const attached=v.varianteGrupoModificadoresComoVariante??[];
@@ -414,6 +442,12 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   try{await firstValueFrom(this.api.attachVariantGroups(v.id,this.links()));
    await this.refreshVariant(v.id);this.notice.show('Extras asociados.','success');
   }catch(e){this.variantError.set(gcErrorMessage(e))}finally{this.saving.set(false)}
+ }
+ protected async quickGroupSaved(variantId:string){
+  this.quickExtras.set(false);
+  await this.searchGroups();
+  await this.refreshVariant(variantId);
+  this.notice.show('Grupo creado y asignado a la presentación.','success');
  }
  protected async refreshVariant(id:string){
   await this.reload();const v=this.variants().find(x=>x.id===id);

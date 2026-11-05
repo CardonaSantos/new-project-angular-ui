@@ -10,6 +10,7 @@ import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {RecipesAccess} from '../../recipes/data-access/recipes-access';
 import {OrganizationAccess} from '../../organization/data-access/organization-access';
+import {GcCatalogInlineRecipe} from '../components/catalog-inline-recipe';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {PRODUCT_KINDS,type CatalogKind,type CatalogProduct,type CatalogCategoryOption,
@@ -23,7 +24,7 @@ interface PriceResult {state:'saved'|'review';amount:string}
 /** A task-oriented entry point; advanced product editing remains at /catalog/products/:id. */
 @Component({
  selector:'gc-catalog-product-guide-page',
- imports:[RouterLink,GcCatalogNav,GcSearchSelect,GcInventoryPicker],
+ imports:[RouterLink,GcCatalogNav,GcSearchSelect,GcInventoryPicker,GcCatalogInlineRecipe],
  template:`
  <main class="cat-page cat-guide">
   <gc-catalog-nav/>
@@ -68,11 +69,14 @@ interface PriceResult {state:'saved'|'review';amount:string}
      <a [routerLink]="['/catalog/products',product.id]"><strong>Fotografía y extras</strong><small>Configurar detalles y disponibilidad</small></a>
      @if(product.tipo==='PREPARADO'){
       @for(variant of product.varianteProductosComoProducto??[];track variant.id){
-       @if(recipesAccess.canManage()){
-        <a routerLink="/recipes/list/new" [queryParams]="{varianteId:variant.id}">
-         <strong>Receta · {{variant.nombre}}</strong><small>Ingredientes y cantidades</small></a>
+       @if(recipesAccess.canRead()){
+        <button type="button" class="cat-guide-recipe-trigger"
+         (click)="recipeVariant.set(recipeVariant()===variant.id?'':variant.id)">
+         <strong>Receta · {{variant.nombre}}</strong>
+         <small>Configurar ingredientes y consumo sin salir</small></button>
        }@else{
-        <span class="cat-guide-next-disabled"><strong>Receta · {{variant.nombre}}</strong><small>Solicita acceso a gestión de recetas</small></span>
+        <span class="cat-guide-next-disabled"><strong>Receta · {{variant.nombre}}</strong>
+         <small>Consulta de recetas no autorizada</small></span>
        }
       }
      }
@@ -83,6 +87,14 @@ interface PriceResult {state:'saved'|'review';amount:string}
       <a routerLink="/catalog/menus"><strong>Agregar a carta</strong><small>Seleccionar menú y sección</small></a>
      }
     </div>
+    @if(product.tipo==='PREPARADO'&&recipeVariant()){
+     @for(variant of product.varianteProductosComoProducto??[];track variant.id){
+      @if(recipeVariant()===variant.id){
+       <gc-catalog-inline-recipe [variantId]="variant.id" [productName]="product.nombre"
+        [variantName]="variant.nombre" (updated)="refreshReadiness(product.id)"/>
+      }
+     }
+    }
     <p class="cat-muted">Crear el producto no lo publica automáticamente en el POS.</p>
     <div class="cat-actions"><a class="cat-primary" routerLink="/catalog/products/new">Crear otro producto</a>
      <a routerLink="/catalog/products">Volver al catálogo</a></div>
@@ -288,6 +300,7 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  protected readonly submitted=signal(false);
  protected readonly error=signal('');
  protected readonly created=signal<CatalogProduct|null>(null);
+ protected readonly recipeVariant=signal('');
  protected readonly createdNewArticle=signal(false);
  protected readonly prices=signal<Record<string,PriceResult>>({});
  protected readonly priceError=signal('');
@@ -398,6 +411,12 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
    this.notify.show('Categoría creada y seleccionada.','success');
   }catch(e){this.categoryError.set(gcErrorMessage(e))}
   finally{this.categorySaving.set(false)}
+ }
+ protected async refreshReadiness(productId:string){
+  const branchId=this.branch.branchId();
+  if(!branchId)return;
+  try{this.readiness.set(await firstValueFrom(this.api.productReadiness(productId,branchId)))}
+  catch{ /* Product is saved even when readiness cannot be refreshed. */ }
  }
  protected async create(event:Event){
   event.preventDefault();this.submitted.set(true);

@@ -66,15 +66,19 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
    <section class="cat-card">
     <h2>{{creating()?'Nueva categoría':'Editar categoría'}}</h2>
     <form class="cat-form" (submit)="save($event)">
-     <div class="cat-form-section"><h3>1. Identificación y jerarquía</h3>
-     <label>Nombre
-      <input [value]="name()" maxlength="130" required (input)="name.set($any($event.target).value)"/>
-     </label>
-     <gc-search-select id="cat-category-parent" label="Categoría superior" [items]="parentChoices()"
-      [value]="parent()" placeholder="Sin categoría superior" (valueChange)="parent.set($event)"/>
-     <label>Orden de presentación
-      <input type="number" min="0" step="1" [value]="order()" (input)="order.set(+$any($event.target).value)"/>
-     </label>
+     <div class="cat-form-section"><h3>Nombre de la categoría</h3>
+      <label>Nombre comercial
+       <input [value]="name()" maxlength="130" required (input)="name.set($any($event.target).value)"
+        placeholder="Ej. Postres"/></label>
+      <details class="cat-guide-options">
+       <summary>Organización avanzada (opcional)</summary>
+       <p class="cat-muted">Usa una categoría superior solo cuando necesites agrupar productos.</p>
+       <gc-search-select id="cat-category-parent" label="Categoría superior" [items]="parentChoices()"
+        [value]="parent()" placeholder="Sin categoría superior" (valueChange)="parent.set($event)"/>
+       <label>Orden de presentación
+        <input type="number" min="0" step="1" [value]="order()"
+         (input)="order.set(+$any($event.target).value)"/></label>
+      </details>
      </div>
      @if(saveError()){<p role="alert" class="cat-alert">{{saveError()}}</p>}
      <div class="cat-actions">
