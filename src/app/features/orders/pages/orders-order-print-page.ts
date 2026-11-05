@@ -1,4 +1,4 @@
-import {Component,effect,inject,signal,untracked} from '@angular/core';
+import {Component,computed,effect,inject,signal,untracked} from '@angular/core';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBrandingService} from '../../../core/branding/gc-branding.service';
@@ -18,9 +18,19 @@ import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-prin
  <main class="gc-thermal-page">
   <header class="gc-thermal-controls">
    <a [routerLink]="['/orders/list',order()?.id??'']">← Detalle del pedido</a>
-   <div class="gc-thermal-toolbar">
-    <span>Pedido completo · 80 mm</span>
-    <button type="button" [disabled]="busy()||!order()" (click)="print()">Imprimir pedido</button>
+   <div class="gc-thermal-toolbar gc-print-toolbar">
+    <nav class="gc-print-modes" aria-label="Tipo de comanda">
+     @if(access.canKitchenRead()&&primaryTicket();as ticket){
+      <a class="gc-print-mode" [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']"
+       title="Solo productos que requieren preparación">Comanda de preparación</a>
+     }@else{
+      <span class="gc-print-mode gc-print-mode--disabled" aria-disabled="true"
+       title="No hay comanda de preparación disponible">Comanda de preparación</span>
+     }
+     <span class="gc-print-mode gc-print-mode--active" aria-current="page"
+      title="Todos los productos, incluidos los de venta directa">Comanda completa</span>
+    </nav>
+    <button type="button" [disabled]="busy()||!order()" (click)="print()">Imprimir completa</button>
    </div>
   </header>
   @if(busy()){<p role="status">Cargando pedido completo…</p>}
@@ -29,7 +39,7 @@ import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-prin
    <article class="gc-thermal-paper" aria-label="Pedido completo con todos los productos">
     <header class="gc-thermal-head">
      <strong class="gc-thermal-brand">{{branding.name()}}</strong>
-     <strong>PEDIDO COMPLETO</strong>
+     <strong>COMANDA COMPLETA</strong>
      <strong class="gc-thermal-number">{{data.numero}}</strong>
     </header>
     <section class="gc-thermal-divider">
@@ -59,8 +69,7 @@ import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-prin
      }@empty{<p>No hay productos activos en esta orden.</p>}
     </section>
     <footer class="gc-thermal-foot">
-     <p>Resumen interno completo del pedido, incluidos los productos sin preparación.</p>
-     <p>No es factura ni comprobante de pago.</p>
+     <p>Preparación y venta directa. Documento interno, no fiscal.</p>
     </footer>
    </article>
   }
@@ -73,6 +82,10 @@ export class GcOrdersOrderPrintPage{
  protected readonly access=inject(OrdersAccess);
  protected readonly branding=inject(GcBrandingService);
  protected readonly order=signal<OrderDetail|null>(null);
+ protected readonly primaryTicket=computed(()=>
+  (this.order()?.comandasComoOrden??[])
+   .filter(ticket=>ticket.estado!=='CANCELADA')
+   .sort((a,b)=>b.enviadaEn.localeCompare(a.enviadaEn))[0]??null);
  protected readonly busy=signal(false);
  protected readonly error=signal('');
  protected readonly printable=printableOrderLines;

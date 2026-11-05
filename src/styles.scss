@@ -1745,3 +1745,120 @@ gc-kitchen-ticket{display:block;min-width:0}
 @media print{
  .gc-thermal-screen-note{display:none!important}
 }
+
+
+/* UX R5 — POS express: viewport-contained dialog with always-visible checkout button. */
+.pos-express-dialog{
+ width:min(94vw,520px);max-height:min(92dvh,760px);
+ display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:0;
+ padding:0;overflow:hidden;align-content:stretch
+}
+.pos-express-dialog .pos-express-header{
+ gap:.5rem;min-height:0;padding:.65rem .8rem .4rem;
+ border-bottom:1px solid var(--gc-outline-variant);
+ align-items:center
+}
+.pos-express-header h2{font-size:1.07rem;margin:0}
+.pos-express-header .ord-note{font-size:.76rem;margin:.13rem 0 0}
+.pos-express-header>button{min-width:34px;min-height:34px;padding:.2rem .45rem}
+.pos-express-dialog .pos-express-scroll{
+ overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;min-height:0;
+ display:grid;gap:.5rem;align-content:start;padding:.48rem .8rem .6rem
+}
+.pos-express-dialog .pos-express-total{
+ display:flex;align-items:center;justify-content:space-between;gap:.65rem;
+ padding:.57rem .68rem;border-radius:.48rem
+}
+.pos-express-total>div{display:grid;gap:.14rem;min-width:0}
+.pos-express-dialog .pos-express-total>div span{font-size:.73rem;color:var(--gc-on-surface-variant)}
+.pos-express-dialog .pos-express-total>div small{font-size:.7rem}
+.pos-express-dialog .pos-express-total strong{
+ font-size:1.6rem;line-height:1.1;white-space:nowrap
+}
+.pos-express-dialog .pos-express-items{max-height:108px;gap:0}
+.pos-express-dialog .pos-express-item{padding:.34rem 0;font-size:.78rem;gap:.4rem}
+.pos-express-dialog .pos-express-item small{font-size:.7rem}
+.pos-express-dialog .pos-express-cash{font-size:.76rem;margin:0}
+.pos-express-dialog .pos-express-methods{gap:.44rem;padding:.5rem .6rem}
+.pos-express-dialog .pos-express-methods legend{font-size:.78rem}
+.pos-express-dialog .pos-express-method-row{gap:.3rem}
+.pos-express-dialog .pos-express-method-row button{min-height:38px;font-size:.8rem;padding:.35rem .4rem}
+.pos-express-dialog .pos-express-methods label{font-size:.76rem;gap:.2rem}
+.pos-express-dialog .pos-express-methods input{min-height:38px;padding:.38rem .5rem;font-size:.83rem}
+.pos-express-dialog .pos-express-change{padding-top:.38rem;font-size:.8rem}
+.pos-express-dialog .pos-express-change strong{font-size:.95rem}
+.pos-express-dialog .pos-express-methods .ord-note{font-size:.73rem}
+.pos-express-dialog .pos-express-footer{
+ flex-shrink:0;border-top:1px solid var(--gc-outline);
+ background:var(--gc-surface-container-low);
+ box-shadow:0 -.3rem 1rem rgb(0 0 0 / .12);
+ padding:.55rem .8rem max(.55rem,env(safe-area-inset-bottom,0px))
+}
+.pos-express-dialog .pos-express-actions{
+ display:grid;grid-template-columns:auto minmax(0,1fr);gap:.45rem;align-items:stretch
+}
+.pos-express-dialog .pos-express-actions button{
+ min-height:44px;width:auto;max-width:none;padding:.42rem .56rem;font-size:.82rem
+}
+.pos-express-dialog .pos-express-actions .ord-primary{min-width:0;line-height:1.25}
+@media(max-width:560px){
+ .pos-express-dialog{max-height:94dvh}
+ .pos-express-dialog .pos-express-actions{grid-template-columns:4.6rem minmax(0,1fr)}
+ .pos-express-dialog .pos-express-total strong{font-size:1.35rem}
+ .pos-express-dialog .pos-express-scroll{padding:.4rem .65rem .55rem}
+ .pos-express-dialog .pos-express-header{padding:.45rem .65rem}
+ .pos-express-dialog .pos-express-footer{padding:.4rem .65rem max(.4rem,env(safe-area-inset-bottom,0px))}
+}
+@media(pointer:coarse){
+ .pos-express-dialog .pos-express-method-row button{min-height:44px}
+}
+
+/* Dual print variants: semantic, compact, and hidden during physical printing. */
+.gc-print-toolbar{gap:.5rem;justify-content:flex-end}
+.gc-print-modes{
+ display:flex;align-items:center;gap:.32rem;flex-wrap:wrap;
+ min-width:0
+}
+.gc-thermal-page .gc-print-modes .gc-print-mode{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:38px;padding:.38rem .6rem;line-height:1.2;
+ border:1px solid var(--gc-outline);border-radius:.45rem;
+ background:var(--gc-surface-container-low);color:var(--gc-on-surface);
+ font-size:.8rem;font-weight:650;text-decoration:none
+}
+.gc-thermal-page .gc-print-modes .gc-print-mode--active{
+ background:var(--gc-primary);color:var(--gc-on-primary);
+ border-color:var(--gc-primary)
+}
+.gc-thermal-page .gc-print-modes .gc-print-mode--disabled{opacity:.5}
+.gc-thermal-page .gc-print-toolbar>button{
+ min-height:38px;padding:.4rem .65rem;font-size:.82rem
+}
+.gc-thermal-page .gc-print-modes a:focus-visible{
+ outline:2px solid var(--gc-primary);outline-offset:2px
+}
+@media(max-width:620px){
+ .gc-print-toolbar{justify-content:flex-start}
+ .gc-thermal-controls{align-items:flex-start}
+ .gc-print-modes{width:100%}
+}
+@media print{
+ .gc-print-modes{display:none!important}
+}
+
+/* Compact the top navigation and mode selector, without shrinking touch targets excessively. */
+.ord-pos{gap:.5rem}
+.ord-pos>.ord-heading.ord-pos-heading{gap:.4rem;align-items:center}
+.ord-pos-heading-copy{display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap}
+.ord-pos .ord-pos-heading h1{font-size:1.08rem;line-height:1.25;margin:0}
+.ord-pos-heading-copy .ord-note{font-size:.74rem;line-height:1.2;margin:0}
+.ord-pos .ord-nav{gap:.1rem}
+.ord-pos .ord-nav a{min-height:36px;padding:.4rem .56rem;font-size:.81rem}
+.ord-pos .ord-pos-heading .ord-view-switch{padding:.12rem;gap:.1rem}
+.ord-pos .ord-pos-heading .ord-view-switch button{
+ min-height:36px;padding:.36rem .65rem;font-size:.81rem
+}
+@media(max-width:560px){
+ .ord-pos .ord-nav a{min-height:40px;padding:.42rem .48rem}
+ .ord-pos .ord-pos-heading .ord-view-switch button{min-height:40px}
+}

@@ -18,18 +18,19 @@ import {parseApiDecimal} from '../../../shared/formatting';
   (click)="dismissed.emit()"></button>
  <section class="ord-customizer pos-express-dialog" role="dialog" aria-modal="true"
   aria-labelledby="pos-express-heading" cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
-  <div class="ord-heading">
+  <div class="ord-heading pos-express-header">
    <div><h2 id="pos-express-heading">Cobro rápido</h2>
-    <p class="ord-note">Venta directa, sin comanda de Cocina.</p></div>
+    <p class="ord-note">Venta directa · sin preparación</p></div>
    <button type="button" (click)="dismissed.emit()" [disabled]="working()" aria-label="Cerrar cobro">×</button>
   </div>
+  <div class="pos-express-scroll">
   @if(loading()){<p role="status" class="ord-note">Verificando precios y turno de caja…</p>}
   @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
   @if(quote();as q){
    <div class="pos-express-total" aria-live="polite">
-    <span>Total confirmado por el servidor</span>
+    <div><span>Total del cobro · validado</span>
+     <small>{{q.lineas.length}} líneas · {{q.moneda}}</small></div>
     <strong>{{money(q.total,q.moneda)}}</strong>
-    <small>{{q.lineas.length}} líneas · {{q.moneda}}</small>
    </div>
    <div class="pos-express-items">
     @for(line of q.lineas;track $index){
@@ -49,7 +50,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
      <button type="button" (click)="refreshCash()" [disabled]="loading()">Actualizar turno</button>
     </div>
    }@else{
-    <p class="ord-note">Caja: {{ownShift()?.caja?.nombre??'Mi turno abierto'}}</p>
+    <p class="ord-note pos-express-cash">Caja: {{ownShift()?.caja?.nombre??'Mi turno abierto'}}</p>
    }
    <fieldset class="pos-express-methods" [disabled]="working()">
     <legend>Forma de pago</legend>
@@ -85,16 +86,19 @@ import {parseApiDecimal} from '../../../shared/formatting';
      </label>
     }
    </fieldset>
-   <p class="ord-note">Los productos y los precios se validan otra vez al confirmar. Si falla, no se registra una venta parcial.</p>
-   <div class="ord-actions pos-express-actions">
-    <button type="button" [disabled]="working()" (click)="dismissed.emit()">Volver al carrito</button>
-    <button type="button" class="ord-primary"
-     [disabled]="!canPay()" (click)="pay()">
-     {{working()?'Registrando…':'Confirmar y cobrar · '+money(q.total,q.moneda)}}
-    </button>
-   </div>
   }@else if(!loading()){
    <button type="button" (click)="load()" [disabled]="working()">Volver a consultar precios</button>
+  }
+  </div>
+  @if(quote();as q){
+   <div class="pos-express-footer">
+    <div class="ord-actions pos-express-actions">
+     <button type="button" [disabled]="working()" (click)="dismissed.emit()">Volver</button>
+     <button type="button" class="ord-primary" [disabled]="!canPay()" (click)="pay()">
+      {{working()?'Registrando…':'Confirmar y cobrar · '+money(q.total,q.moneda)}}
+     </button>
+    </div>
+   </div>
   }
  </section>`
 })

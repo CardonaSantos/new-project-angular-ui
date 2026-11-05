@@ -27,9 +27,9 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
  imports:[RouterLink,CdkTrapFocus,GcOrdersNav,GcSearchSelect,GcPosProduct,GcPosCart,GcPosExpressCheckout],
  template:`
  <main class="ord-page ord-pos"><gc-orders-nav/>
- <div class="ord-heading">
-  <div><h1>Punto de venta</h1>
-   <p class="ord-note">{{prefs.view()==='tables'?'Atención en mesas':'Venta en mostrador o para llevar'}} · {{cart().length}} líneas en el pedido</p></div>
+ <div class="ord-heading ord-pos-heading">
+  <div class="ord-pos-heading-copy"><h1>Punto de venta</h1>
+   <span class="ord-note">{{prefs.view()==='tables'?'Mesas':'Mostrador'}} · {{cart().length}} líneas</span></div>
   <div class="ord-view-switch" role="group" aria-label="Modo de atención">
    <button type="button" [class.active]="prefs.view()==='counter'"
     [attr.aria-pressed]="prefs.view()==='counter'" (click)="setView('counter')">Mostrador</button>

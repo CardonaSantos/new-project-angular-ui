@@ -16,20 +16,22 @@ import {printableKitchenLines,kitchenModifierNames} from '../printing/thermal-pr
  <main class="gc-thermal-page">
   <header class="gc-thermal-controls">
    <a routerLink="/orders/kitchen">← Cocina</a>
-   <div class="gc-thermal-toolbar">
-    <span>Comanda de Cocina · 80 mm</span>
-    @if(access.canViewDetail()){
-     @if(ticket()?.orden?.id;as orderId){
-      <a [routerLink]="['/orders/print',orderId]">Pedido completo (incluye botellas)</a>
+   <div class="gc-thermal-toolbar gc-print-toolbar">
+    <nav class="gc-print-modes" aria-label="Tipo de comanda">
+     <span class="gc-print-mode gc-print-mode--active" aria-current="page"
+      title="Solo productos que requieren preparación">Comanda de preparación</span>
+     @if(access.canViewDetail()){
+      @if(ticket()?.orden?.id;as orderId){
+       <a class="gc-print-mode" [routerLink]="['/orders/print',orderId]"
+        title="Todos los productos, incluidos los de venta directa">Comanda completa</a>
+      }
      }
-    }
-    <button type="button" [disabled]="busy()||!ticket()" (click)="print()">Imprimir comanda</button>
+    </nav>
+    <button type="button" [disabled]="busy()||!ticket()" (click)="print()">Imprimir preparación</button>
    </div>
   </header>
   @if(busy()){<p role="status">Cargando comanda…</p>}
   @if(error()){<p role="alert" class="gc-thermal-error">{{error()}}</p>}
-  <p class="gc-thermal-screen-note">La comanda contiene solo productos que requieren preparación.
-   Para incluir agua embotellada y otros artículos directos, usa «Pedido completo».</p>
   @if(ticket();as data){
    <article class="gc-thermal-paper" aria-label="Comanda interna para preparar">
     <header class="gc-thermal-head">
