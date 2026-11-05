@@ -235,7 +235,8 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <p class="ord-note">La preparación seguirá las reglas vigentes de la sucursal.</p>
     }
     </div>
-    <div class="ord-checkout-actions">
+   </div>
+   <div class="ord-checkout-actions">
      <div class="ord-checkout-total">
       <span>{{existingOrder()?'Por agregar (estimado)':'Importe estimado'}}</span>
       <strong>{{money(total(),currency())}}</strong>
@@ -261,7 +262,6 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
       [disabled]="submitting()||tableBusy()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&(!selectedTable()||!tableOrderReady()))"
       (click)="submit()">{{submitting()?'Guardando…':existingOrder()?'Agregar productos al pedido':'Confirmar pedido · '+money(total(),currency())}}</button>
     }
-    </div>
    </div>
   </aside>
  </div>
