@@ -200,7 +200,7 @@ interface PriceResult {state:'saved'|'review';amount:string}
    </form>
   }
  </main>`,
- styleUrl:'../catalog.scss'
+ styleUrls:['../catalog.scss','./catalog-product-guide.scss']
 })
 export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  protected readonly access=inject(CatalogAccess);
