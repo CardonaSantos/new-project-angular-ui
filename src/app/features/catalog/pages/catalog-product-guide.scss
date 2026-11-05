@@ -1,0 +1,76 @@
+/* CAT-A R1: guided product creation uses one contextual form, compact labels and responsive controls. */
+.cat-guide{max-width:1140px;margin:0 auto}
+.cat-guide-top{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap}
+.cat-guide-top h1{font-size:1.25rem;margin:.24rem 0 0}
+.cat-guide-top a{font-size:.85rem}
+.cat-guide-form{display:grid;gap:.75rem}
+.cat-guide-title{display:flex;align-items:center;gap:.55rem}
+.cat-guide-title span{display:grid;place-items:center;width:28px;height:28px;flex:0 0 28px;
+ border-radius:50%;background:var(--gc-primary);color:var(--gc-on-primary);font-size:.85rem;font-weight:700}
+.cat-guide-title h2{font-size:1.04rem}
+.cat-guide-field{display:grid;gap:.26rem;font-size:.84rem;font-weight:600;min-width:0}
+.cat-guide-field input,.cat-guide-field textarea{
+ width:100%;min-height:40px;border:1px solid var(--gc-outline);border-radius:.48rem;
+ padding:.42rem .55rem;background:var(--gc-surface);color:var(--gc-on-surface);font:inherit;font-size:.87rem}
+.cat-guide-field input[aria-invalid=true]{border-color:var(--gc-error);outline:1px solid var(--gc-error)}
+.cat-guide-field small{font-weight:400;font-size:.72rem;color:var(--gc-on-surface-variant)}
+.cat-guide-types{border:0;padding:0;margin:0;min-width:0}
+.cat-guide-types legend{font-size:.84rem;font-weight:650;margin-bottom:.36rem}
+.cat-guide-type-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}
+.cat-guide-type-grid label{display:grid;grid-template-columns:auto minmax(0,1fr);
+ gap:.1rem .45rem;align-items:center;min-width:0;cursor:pointer;
+ border:1px solid var(--gc-outline);padding:.55rem .62rem;border-radius:.55rem}
+.cat-guide-type-grid label.active{border-color:var(--gc-primary);background:var(--gc-surface-container)}
+.cat-guide-type-grid input{grid-row:1/3;accent-color:var(--gc-primary)}
+.cat-guide-type-grid strong{font-size:.84rem}
+.cat-guide-type-grid small{font-size:.73rem;color:var(--gc-on-surface-variant)}
+.cat-guide-type-grid label:focus-within{outline:2px solid var(--gc-primary);outline-offset:2px}
+.cat-guide-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;align-items:end}
+.cat-guide-category-action{display:grid;gap:.35rem;justify-items:start}
+.cat-guide-category-action .cat-guide-field{width:100%}
+.cat-guide-options{border:1px solid var(--gc-outline-variant);padding:.48rem .65rem;border-radius:.5rem}
+.cat-guide-options>summary{cursor:pointer;font-weight:650;font-size:.83rem}
+.cat-guide-options .cat-guide-two{margin-top:.6rem}
+.cat-guide-presets button{font-size:.78rem}
+.cat-guide-variants{display:grid;gap:.45rem}
+.cat-guide-variant{min-width:0;border:1px solid var(--gc-outline-variant);
+ border-radius:.58rem;padding:.48rem .6rem}
+.cat-guide-variant legend{font-size:.8rem;font-weight:650;padding:0 .3rem}
+.cat-guide-variant-row{display:flex;gap:.55rem;align-items:end;min-width:0}
+.cat-guide-variant-row>.cat-guide-field{flex:1 1 12rem}
+.cat-guide-variant-row>.cat-guide-field:has(input[inputmode=decimal]){flex:0 1 140px}
+.cat-guide-variant-row>gc-inventory-picker{min-width:180px;flex:1 1 16rem}
+.cat-guide-variant-row>button{min-height:40px;flex:0 0 auto}
+.cat-guide-actions{display:flex;justify-content:space-between;align-items:center;
+ gap:.75rem;flex-wrap:wrap;border-top:1px solid var(--gc-outline-variant);padding-top:.65rem}
+.cat-guide-actions button{min-height:44px;padding:.5rem .9rem}
+.cat-guide-prices{display:grid;gap:.4rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.cat-guide-prices>div{display:flex;justify-content:space-between;gap:.4rem;flex-wrap:wrap;
+ border:1px solid var(--gc-outline-variant);border-radius:.5rem;padding:.45rem .6rem;font-size:.81rem}
+.cat-guide-price-error{color:var(--gc-error);font-weight:650}
+.cat-guide-created>p{margin:0}
+.cat-guide-next{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:.48rem}
+.cat-guide-next>a,.cat-guide-next-disabled{
+ display:grid;gap:.18rem;min-height:69px;padding:.65rem;border-radius:.55rem;
+ border:1px solid var(--gc-outline-variant);text-decoration:none;color:var(--gc-on-surface)}
+.cat-guide-next a:hover{border-color:var(--gc-primary)}
+.cat-guide-next strong{font-size:.85rem}
+.cat-guide-next small{color:var(--gc-on-surface-variant);font-size:.73rem}
+.cat-guide-next-disabled{opacity:.68}
+.cat-guide :is(button,a,input,textarea,summary):focus-visible{outline:2px solid var(--gc-primary);outline-offset:2px}
+.cat-guide .cat-alert ul{padding-left:1.2rem;margin:.25rem 0 0}
+@media(max-width:790px){
+ .cat-guide-variant-row{flex-wrap:wrap}
+ .cat-guide-variant-row>gc-inventory-picker{flex:1 1 100%}
+ .cat-guide-type-grid{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+ .cat-guide .cat-card{padding:.7rem}
+ .cat-guide-two{grid-template-columns:1fr}
+ .cat-guide-variant-row{display:grid;grid-template-columns:1fr}
+ .cat-guide-variant-row>.cat-guide-field:has(input[inputmode=decimal]){flex:auto}
+ .cat-guide-variant-row>gc-inventory-picker{min-width:0}
+ .cat-guide-variant-row>button{justify-self:start}
+ .cat-guide-actions button{width:100%}
+ .cat-guide :is(button,.cat-primary){min-height:44px}
+}
