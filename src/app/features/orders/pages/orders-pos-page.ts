@@ -1,5 +1,5 @@
 import {Component,computed,effect,ElementRef,HostListener,inject,signal,viewChild} from '@angular/core';
-import {ActivatedRoute,Router,RouterLink} from '@angular/router';
+import {ActivatedRoute,RouterLink} from '@angular/router';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -42,12 +42,16 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
  @if(success()){
   <section class="ord-pos-confirmed" role="status" aria-live="polite">
    <div class="ord-pos-confirmed-content">
-    <strong>Pedido registrado correctamente</strong>
+    <strong>{{createdSaleId()?'Venta completada':'Pedido registrado correctamente'}}</strong>
     <span>{{success()}}</span>
    </div>
    <div class="ord-actions ord-pos-confirmed-actions">
     <a class="ord-primary" [routerLink]="['/orders/list',createdId()]">Ver pedido</a>
-    @if(paymentsAccess.canRead()&&paymentsAccess.canCollect()){
+    @if(createdSaleId()&&paymentsAccess.canSalesRead()){
+     <a [routerLink]="['/payments/sales',createdSaleId(),'receipt']">Imprimir ticket</a>
+    }
+    <button type="button" (click)="newSale()">Nueva venta</button>
+    @if(!createdSaleId()&&paymentsAccess.canRead()&&paymentsAccess.canCollect()){
      <a [routerLink]="['/payments/order',createdId()]">Cobrar ahora</a>
     }
     @if(access.canKitchenRead()){
@@ -131,6 +135,16 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
   </section>
   <aside class="ord-checkout" [class.ord-checkout--open]="cartOpen()" aria-label="Resumen del pedido">
    <div class="ord-cart-close"><button type="button" (click)="cartOpen.set(false)">Cerrar resumen</button></div>
+   @if(activeOrder();as o){
+    <section class="ord-express-context" role="status">
+     <strong>Pedido {{o.numero}} · Mesa {{selectedTable()?.numero}}</strong>
+     <span>Total actual {{money(o.total,currency())}} · Añade solo productos nuevos</span>
+     <div class="ord-actions">
+      <a [routerLink]="['/payments/order',o.id]">Cobrar cuenta</a>
+      <button type="button" [disabled]="cart().length>0" (click)="leaveActiveOrder()">Salir</button>
+     </div>
+    </section>
+   }
    <gc-pos-cart [items]="cart()" [total]="total()" [currency]="currency()"
     [disabled]="submitting()"
     (quantity)="changeQty($event)" (remove)="remove($event)"/>
@@ -182,15 +196,28 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
       <a routerLink="/orders/settings">Configurar cocina</a>
      }
     }
-    <button class="ord-primary ord-confirm" type="button"
-     [disabled]="submitting()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&!selectedTable())"
-     (click)="submit()">{{submitting()?'Confirmando…':'Confirmar pedido · '+money(total(),currency())}}</button>
+    <div class="ord-express-actions">
+     @if(quickEligible()){
+      <button class="ord-primary ord-confirm" type="button"
+       [disabled]="submitting()||!cart().length" (click)="openQuickCheckout()">
+       Cobrar · {{money(total(),currency())}}
+      </button>
+     }
+     <button type="button" [class.ord-primary]="!quickEligible()"
+      [disabled]="submitting()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&!selectedTable())"
+      (click)="submit()">
+      {{submitting()?'Guardando…':activeOrder()?'Añadir productos':
+       quickEligible()?'Guardar sin cobrar':'Confirmar pedido · '+money(total(),currency())}}
+     </button>
+    </div>
    </div>
   </aside>
  </div>
  @if(cart().length){<button class="ord-mobile-cart" type="button" (click)="cartOpen.set(true)">
   Ver pedido · {{cart().length}} productos · {{money(total(),currency())}}
  </button>}
+ <gc-pos-express-checkout [items]="cart()" [modality]="mode()"
+  (completed)="onQuickCompleted($event)"/>
  @if(configuring();as item){
   <div class="ord-overlay" role="presentation" (click)="configureClose()"></div>
   <section class="ord-customizer" role="dialog" aria-modal="true"
@@ -239,7 +266,6 @@ export class GcOrdersPosPage{
  private readonly branchesApi=inject(BranchesApi);
  private readonly confirm=inject(ConfirmDialogService);
  private readonly notices=inject(GcNotificationService);
- private readonly router=inject(Router);
  private readonly activatedRoute=inject(ActivatedRoute);
  protected readonly context=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
