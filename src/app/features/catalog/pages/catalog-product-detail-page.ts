@@ -151,8 +151,11 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        @if(access.canManage()){
         <section class="cat-subsection">
          <div class="cat-row"><h3>Crear extras sin salir de esta ficha</h3>
-          <button type="button" (click)="toggleQuickExtras()">
+          <button type="button" (click)="toggleQuickExtras()" [disabled]="linksDirty()">
            {{quickExtras()?'Cerrar':'Crear y asignar grupo'}}</button></div>
+         @if(linksDirty()){
+          <p class="cat-muted">Guarda primero los cambios pendientes de extras antes de crear un grupo nuevo.</p>
+         }
          @if(quickExtras()){
           <gc-catalog-quick-extra-editor [variantId]="v.id" [kind]="product.tipo"
            (saved)="quickGroupSaved(v.id)" (pendingChange)="quickPending.set($event)"/>
@@ -405,7 +408,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   this.articleId.set('');this.variantActive.set(true);this.links.set([]);
  }
  protected async chooseVariant(v:CatalogVariant){
-  if((this.quickPending()||this.recipePending())&&
+  if((this.quickPending()||this.recipePending()||this.linksDirty())&&
    !await this.confirm.confirm({title:'Descartar formulario sin guardar',
     message:'Hay extras o ingredientes escritos sin guardar. ¿Cambiar de presentación?',
     confirmText:'Descartar cambios',danger:true}))return;
@@ -464,7 +467,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   }catch(e){this.variantError.set(gcErrorMessage(e))}finally{this.saving.set(false)}
  }
  protected async toggleQuickExtras(){
-  if(this.quickExtras()&&this.quickPending()&&
+  if((this.quickExtras()&&this.quickPending()||this.linksDirty())&&
    !await this.confirm.confirm({title:'Descartar extras sin guardar',
     message:'La composición y los precios escritos aún no se guardaron.',
     confirmText:'Descartar',danger:true}))return;
