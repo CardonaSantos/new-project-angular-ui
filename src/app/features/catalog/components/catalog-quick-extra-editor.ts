@@ -19,8 +19,10 @@ interface ChoiceRow {
  imports:[GcInventoryPicker],
  template:`
  <section class="cat-quick-group" aria-label="Crear grupo completo de extras">
-  <div class="cat-row"><h3>Nuevo grupo de extras</h3>
-   <span class="cat-muted">Grupo, opciones y asociación en un solo guardado</span></div>
+  <div class="cat-quick-group-header">
+   <h3>Nuevo grupo de extras</h3>
+   <p class="cat-muted">Grupo, opciones y asociación en un solo guardado.</p>
+  </div>
   <form (submit)="save($event)" class="cat-form" novalidate>
    <div class="cat-inline-grid">
     <label>Nombre del grupo
@@ -38,9 +40,11 @@ interface ChoiceRow {
        (input)="maxChoices.set(Number($any($event.target).value))"/></label>
     }
    </div>
-   <div class="cat-row">
+   <div class="cat-quick-group-options-heading">
     <strong>Opciones que verá el cliente</strong>
-    <button type="button" [disabled]="busy()||choices().length>=30" (click)="addChoice()">+ Opción</button>
+    <span class="cat-quick-group-count" aria-live="polite">
+     {{choices().length}} {{choices().length===1?'opción':'opciones'}}
+    </span>
    </div>
    <div class="cat-quick-group-options">
     @for(choice of choices();track choice.key;let index=$index){
@@ -54,7 +58,7 @@ interface ChoiceRow {
        <label>Recargo (Q)
         <input inputmode="decimal" [value]="choice.precio" required [disabled]="busy()"
          (input)="changeChoice(choice.key,{precio:$any($event.target).value})" placeholder="0.00"/></label>
-       <button type="button" [disabled]="busy()||choices().length===1"
+       <button type="button" class="gc-button gc-button--outline" [disabled]="busy()||choices().length===1"
         [attr.aria-label]="'Quitar opción '+(index+1)" (click)="removeChoice(choice.key)">Quitar</button>
       </div>
       @if(prepared()&&recipeAccess.canManage()){
@@ -76,22 +80,33 @@ interface ChoiceRow {
             <input inputmode="decimal" [disabled]="busy()" [value]="part.cantidad"
              (input)="changeIngredient(choice.key,part.key,{cantidad:$any($event.target).value})"
              placeholder="Ej. 0.010"/></label>
-           <button type="button" [disabled]="busy()" (click)="removeIngredient(choice.key,part.key)"
+           <button type="button" class="gc-button gc-button--outline" [disabled]="busy()"
+            (click)="removeIngredient(choice.key,part.key)"
             aria-label="Quitar ingrediente adicional">Quitar</button>
           </div>
          }
         </div>
-        <button type="button" [disabled]="busy()||choice.ingredientes.length>=30"
-         (click)="addIngredient(choice.key)">+ Ingrediente adicional</button>
+        <div class="cat-quick-group-add-row">
+         <button type="button" class="gc-button gc-button--outline"
+          [disabled]="busy()||choice.ingredientes.length>=30"
+          (click)="addIngredient(choice.key)">+ Agregar ingrediente adicional</button>
+        </div>
        }
       }
      </fieldset>
     }
    </div>
+   <div class="cat-quick-group-add-row">
+    <button type="button" class="gc-button gc-button--outline cat-quick-group-add-option"
+     [disabled]="busy()||choices().length>=30" (click)="addChoice()">
+     + Agregar otra opción
+    </button>
+   </div>
    @if(problem()){<div class="cat-alert" role="alert">{{problem()}}</div>}
-   <div class="cat-actions">
-    <button class="cat-primary" type="submit" [disabled]="busy()||!access.canManage()">
-     {{busy()?'Guardando…':variantId()?'Guardar y asignar al producto':'Guardar grupo y opciones'}}</button>
+   <div class="cat-quick-group-actions">
+    <button class="gc-button cat-quick-group-submit" type="submit"
+     [disabled]="busy()||!access.canManage()">
+     {{busy()?'Guardando…':variantId()?'Guardar grupo y asignar al producto':'Guardar grupo y opciones'}}</button>
    </div>
   </form>
  </section>`,
@@ -105,6 +120,33 @@ interface ChoiceRow {
  .cat-quick-group-ingredients{display:grid;gap:.5rem}
  .cat-quick-group-ingredient{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 125px auto;align-items:end;gap:.4rem}
  .cat-quick-group-ingredient input{width:100%;min-width:0}
+ .cat-quick-group-header{display:grid;gap:.25rem}
+ .cat-quick-group-header h3{font-size:1rem;line-height:1.4;margin:0}
+ .cat-quick-group-header p{margin:0}
+ .cat-quick-group .cat-muted{color:var(--gc-on-surface-variant);font-size:.85rem;line-height:1.4}
+ .cat-quick-group .cat-form{display:grid;grid-template-columns:1fr;gap:1rem;min-width:0}
+ .cat-quick-group .cat-inline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
+ .cat-quick-group .cat-inline-grid>label{display:grid;gap:.3rem;font-size:.9rem;font-weight:600}
+ .cat-quick-group :is(input:not([type=checkbox]),select){min-height:44px;
+  padding:.5rem .65rem;border:1px solid var(--gc-outline);border-radius:.5rem;
+  background:var(--gc-surface);color:var(--gc-on-surface);font-size:.95rem;min-width:0;width:100%}
+ .cat-quick-group-options-heading{display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:.5rem;border-bottom:1px solid var(--gc-outline-variant);padding-bottom:.55rem}
+ .cat-quick-group-options-heading strong{font-size:.95rem}
+ .cat-quick-group-count{font-size:.85rem;color:var(--gc-on-surface-variant)}
+ .cat-quick-group-choice{display:grid;gap:.65rem;padding:.7rem}
+ .cat-quick-group-choice legend{font-size:.85rem}
+ .cat-quick-group .cat-check{display:flex;align-items:flex-start;gap:.6rem;font-size:.9rem;line-height:1.4}
+ .cat-quick-group .cat-check input{width:18px;height:18px;flex:none;accent-color:var(--gc-primary);margin-top:.14rem}
+ .cat-quick-group .gc-button{min-height:44px;font-size:.9rem;line-height:1.25}
+ .cat-quick-group-add-row{display:flex;justify-content:flex-start}
+ .cat-quick-group-add-option{border-style:dashed}
+ .cat-quick-group-actions{display:flex;gap:.65rem;align-items:center;flex-wrap:wrap;
+  border-top:1px solid var(--gc-outline-variant);padding-top:.8rem}
+ .cat-quick-group-submit{font-weight:700}
+ @media(max-width:560px){.cat-quick-group .cat-inline-grid{grid-template-columns:1fr}
+  .cat-quick-group-add-row>.gc-button,.cat-quick-group-actions>.gc-button{width:100%}}
+
  .cat-quick-group-choice :is(button,input,select):focus-visible{outline:2px solid var(--gc-primary);outline-offset:2px}
  @media(max-width:800px){.cat-quick-group-ingredient{grid-template-columns:repeat(2,minmax(0,1fr))}}
  @media(max-width:540px){.cat-quick-group-top,.cat-quick-group-ingredient{grid-template-columns:1fr}
