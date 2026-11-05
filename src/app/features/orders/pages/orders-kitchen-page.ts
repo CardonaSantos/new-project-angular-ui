@@ -54,7 +54,7 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../
   </div>
   @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
   @if(busy()){<p role="status" class="ord-muted">Consultando cocina…</p>}
-  @if(!busy()&&!error()&&tickets().length){
+  @if(!busy()&&!error()&&view()!=='cancelled'){
    <div class="ord-kitchen-summary">
     <span><strong>{{pendingCount()}}</strong> pendientes</span>
     <span><strong>{{workingCount()}}</strong> preparando</span>
@@ -289,7 +289,7 @@ export class GcOrdersKitchenPage{
   if(!await this.confirm.confirm({title:'Iniciar preparación',
    message:'Este paso puede descontar ingredientes del inventario.',
    confirmText:'Iniciar'}))return;
-  await this.mutate(()=>firstValueFrom(this.api.startTicket(t.id)));
+  await this.mutate(()=>firstValueFrom(this.api.startTicket(t.id)),'Preparación iniciada.');
  }
  private async readyAndDeliver(ticketId:string,lineId?:string){
   if(this.actionBusy())return;
@@ -339,7 +339,7 @@ export class GcOrdersKitchenPage{
   const existing=this.startKeys.get(id);
   const key=existing?.quantity===q?existing.key:operationKey('kitchen-line');
   this.startKeys.set(id,{quantity:q,key});
-  await this.mutate(()=>firstValueFrom(this.api.startLine(id,key,q)));
+  await this.mutate(()=>firstValueFrom(this.api.startLine(id,key,q)),'Cantidad enviada a preparación.');
   if(!this.error()){this.startKeys.delete(id);this.partial.update(x=>({...x,[id]:''}))}
  }
  protected async markReady(id:string){
