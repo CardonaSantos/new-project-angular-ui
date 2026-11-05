@@ -29,7 +29,7 @@ export const sameCartConfiguration=(a:PosCartEntry,b:PosCartEntry)=>
  a.notes.trim()===b.notes.trim()&&zeroDiscount(a.discount)&&zeroDiscount(b.discount)&&
  sortedEqual(a.modifierIds,b.modifierIds)&&sortedEqual(a.extras,b.extras);
 
-export type CartInsertResult={
+export interface CartInsertResult{
  entries:PosCartEntry[];
  status:'added'|'merged'|'too-many-lines'|'too-many-units';
 };
