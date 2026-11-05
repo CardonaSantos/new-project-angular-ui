@@ -64,7 +64,7 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../
   <div class="ord-kitchen-board" aria-label="Comandas">
    @for(ticket of tickets();track ticket.id){
     
-    <gc-kitchen-ticket [ticket]="ticket" (open)="inspect(ticket)">
+    <gc-kitchen-ticket [ticket]="ticket" [now]="clock()" (open)="inspect(ticket)">
      @if(access.canKitchenManage()&&ticket.estado!=='CANCELADA'){
       @if(ticket.estado==='PENDIENTE'){
        <button type="button" [disabled]="actionBusy()" (click)="start(ticket)">Comenzar preparación</button>
@@ -179,6 +179,7 @@ export class GcOrdersKitchenPage{
  protected readonly limit=signal(30);protected readonly limitText=computed(()=>String(this.limit()));
  protected readonly pageSizes=[{id:'15',label:'15'},{id:'30',label:'30'},{id:'50',label:'50'}];
  protected readonly autoRefresh=signal(true);
+ protected readonly clock=signal(Date.now());
  protected readonly pendingCount=computed(()=>this.globalCounts().pending);
  protected readonly workingCount=computed(()=>this.globalCounts().preparing);
  protected readonly readyCount=computed(()=>this.globalCounts().readyToDeliver);
@@ -201,6 +202,7 @@ export class GcOrdersKitchenPage{
    });
   });
   interval(7000).pipe(takeUntilDestroyed()).subscribe(()=>{
+   this.clock.set(Date.now());
    if(this.autoRefresh()&&typeof document!=='undefined'&&!document.hidden&&
     this.branchId()&&!this.busy())void this.poll();
   });
@@ -281,15 +283,10 @@ export class GcOrdersKitchenPage{
   }
  }
  protected async start(t:KitchenTicket){
-  if(!await this.confirm.confirm({title:'Iniciar preparación',
-   message:'Este paso puede descontar ingredientes del inventario.',
-   confirmText:'Iniciar'}))return;
   await this.mutate(()=>firstValueFrom(this.api.startTicket(t.id)));
+  if(!this.error())this.notices.show('Preparación iniciada.','success',4000);
  }
  protected async ready(t:KitchenTicket){
-  if(!await this.confirm.confirm({title:'Marcar comanda preparada',
-   message:'La comanda quedará LISTA para servir. No se registrará entrega.',
-   confirmText:'Marcar lista'}))return;
   await this.mutate(()=>firstValueFrom(this.api.readyTicket(t.id)));
   if(!this.error())this.notices.show('Comanda lista, pendiente de entrega.','success',5000);
  }
@@ -313,8 +310,8 @@ export class GcOrdersKitchenPage{
    this.notices.show('Preparación y entrega registradas correctamente.','success',6500);
    await this.reload();
   }catch(e){
-   const msg=orderFriendlyError(e);this.error.set(msg);this.notices.show(msg,'error',0);
-   await this.reload();
+   const msg=orderFriendlyError(e);
+   await this.reload();this.error.set(msg);this.notices.show(msg,'error',0);
   }finally{this.actionBusy.set(false)}
  }
  protected remaining(total:string,done:string){
