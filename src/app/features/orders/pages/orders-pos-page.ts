@@ -209,7 +209,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
       (click)="submit()">Guardar sin cobrar</button>
     }@else{
      <button class="ord-primary ord-confirm" type="button"
-      [disabled]="submitting()||tableBusy()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&!selectedTable())"
+      [disabled]="submitting()||tableBusy()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&(!selectedTable()||!tableOrderReady()))"
       (click)="submit()">{{submitting()?'Guardando…':existingOrder()?'Agregar productos al pedido':'Confirmar pedido · '+money(total(),currency())}}</button>
     }
    </div>
@@ -294,6 +294,12 @@ export class GcOrdersPosPage{
  protected readonly expressSale=signal<QuickCheckoutResult|null>(null);
  protected readonly quickDraft=signal<CreateOrderInput|null>(null);
  protected readonly existingOrder=signal<OrderDetail|null>(null);
+ protected readonly activeTableOrderId=computed(()=>
+  this.selectedTable()?.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA')?.id??'');
+ protected readonly tableOrderReady=computed(()=>
+  !this.tableBusy()&&(!this.activeTableOrderId()||
+   this.existingOrder()?.id===this.activeTableOrderId()));
+
  protected readonly observations=signal('');
  protected readonly mode=signal<OrderMode>('MOSTRADOR');
  protected readonly selectedTable=signal<TableRecord|null>(null);
@@ -508,7 +514,9 @@ export class GcOrdersPosPage{
  }
  protected async submit(){
   const branch=this.context.branchId();if(!branch||this.submitting()||!this.cart().length)return;
-  if(this.mode()==='MESA'&&!this.selectedTable()){this.submitError.set('Selecciona una mesa.');return}
+  if(this.mode()==='MESA'&&(!this.selectedTable()||!this.tableOrderReady())){
+   this.submitError.set('Espera a cargar el pedido de la mesa antes de agregar productos.');return;
+  }
   if(!this.operationId)this.operationId=operationKey('pos');
   // Direct products MUST be sent through the server processing step:
   // INVENTARIABLE -> inventory consumption, SERVICIO -> sent flag, neither creates KDS tickets.
