@@ -162,7 +162,7 @@ export class GcPosExpressCheckout{
    void this.cash.refresh(true);
   }catch(e){
    const message=orderFriendlyError(e);this.error.set(message);
-   this.notices.show(message,'error',0);
+
   }finally{this.busy.set(false)}
  }
 }
