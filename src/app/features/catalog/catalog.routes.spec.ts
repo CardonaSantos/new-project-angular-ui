@@ -14,6 +14,14 @@ describe('CAT-A navigation and menu editing',()=>{
   expect(children.find(child=>child.path==='new')?.canDeactivate).toHaveLength(1);
   expect(children.find(child=>child.path===':id')?.canDeactivate).toHaveLength(1);
  });
+ it('keeps guided new product separate from the advanced existing-product editor',()=>{
+  const products=CATALOG_ROUTES.find(route=>route.path==='products');
+  const children=products?.children??[];
+  expect(children.find(route=>route.path==='new')?.canDeactivate).toHaveLength(1);
+  expect(children.find(route=>route.path===':id')?.canDeactivate).toHaveLength(1);
+  expect(children.find(route=>route.path==='new')?.loadComponent).not.toBe(
+   children.find(route=>route.path===':id')?.loadComponent);
+ });
  it('keeps sensitive editor actions behind authenticated routes rather than public kiosk paths',()=>{
   const keys=CATALOG_ROUTES.map(route=>route.path);
   expect(keys).not.toContain('checkout');
