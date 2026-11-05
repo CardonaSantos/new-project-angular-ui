@@ -13,17 +13,18 @@ import type {BranchConfig} from '../../organization/data-access/organization.mod
 import {sumDecimals,parseApiDecimal} from '../../../shared/formatting';
 import {GcOrdersNav} from '../orders-nav';
 import {GcPosProduct,GcPosCart} from '../components/orders-ui';
+import {GcPosExpressCheckout} from '../components/gc-pos-express-checkout';
 import {asOrderLine,type PosCartEntry} from '../components/pos-cart.models';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import {PaymentsAccess} from '../../payments/data-access/payments-access';
 import {OrdersPreferences} from '../data-access/orders-preferences';
-import {ORDER_MODES,type OrderMode,type TableRecord} from '../data-access/orders.models';
+import {ORDER_MODES,type OrderMode,type TableRecord,type OrderDetail,type PosQuickResult} from '../data-access/orders.models';
 import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpers';
 
 @Component({
  selector:'gc-orders-pos-page',
- imports:[RouterLink,CdkTrapFocus,GcOrdersNav,GcSearchSelect,GcPosProduct,GcPosCart],
+ imports:[RouterLink,CdkTrapFocus,GcOrdersNav,GcSearchSelect,GcPosProduct,GcPosCart,GcPosExpressCheckout],
  template:`
  <main class="ord-page ord-pos"><gc-orders-nav/>
  <div class="ord-heading">
@@ -260,6 +261,11 @@ export class GcOrdersPosPage{
  protected readonly success=signal('');
  protected readonly createdId=signal('');
  protected readonly createdTickets=signal<{id:string;numero:string}[]>([]);
+ protected readonly createdSaleId=signal('');
+ protected readonly activeOrder=signal<OrderDetail|null>(null);
+ private readonly expressCheckout=viewChild(GcPosExpressCheckout);
+ protected readonly quickEligible=computed(()=>!this.activeOrder()&&this.directOnly()&&
+  (this.mode()==='MOSTRADOR'||this.mode()==='PARA_LLEVAR')&&this.paymentsAccess.canCollect());
  protected readonly observations=signal('');
  protected readonly mode=signal<OrderMode>('MOSTRADOR');
  protected readonly selectedTable=signal<TableRecord|null>(null);
@@ -322,7 +328,7 @@ export class GcOrdersPosPage{
  constructor(){effect(()=>{
   const branch=this.context.branchId();
   this.prefs.load();
-  if(branch){this.selectedTable.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);this.invalidateKey();void this.reload()}
+  if(branch){this.activeOrder.set(null);this.createdSaleId.set('');this.selectedTable.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);this.invalidateKey();void this.reload()}
  })}
  hasUnsavedChanges():boolean{return this.cart().length>0}
  @HostListener('document:keydown',['$event'])
@@ -379,12 +385,23 @@ export class GcOrdersPosPage{
     this.error.set(orderFriendlyError(e));
   }finally{if(generation===this.tableGeneration)this.tableBusy.set(false)}
  }
- protected chooseTable(t:TableRecord){
+ protected async chooseTable(t:TableRecord){
   if(this.submitting())return;
+  if(this.cart().length){
+   this.submitError.set('Guarda o vacía el carrito antes de cambiar de mesa.');return;
+  }
   const existing=t.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA');
-  if(existing){void this.router.navigate(['/orders/list',existing.id]);return}
-  this.selectedTable.set(t);this.mode.set('MESA');this.invalidateKey();
-  this.showTablePicker.set(false);
+  this.selectedTable.set(t);this.mode.set('MESA');this.activeOrder.set(null);
+  this.invalidateKey();this.showTablePicker.set(false);
+  if(existing){
+   const branch=this.context.branchId();
+   try{
+    const order=await firstValueFrom(this.api.detail(existing.id));
+    if(branch!==this.context.branchId()||this.selectedTable()?.id!==t.id)return;
+    this.activeOrder.set(order);
+    this.notices.show('Mesa '+t.numero+': añade productos sin salir del POS.','info',5000);
+   }catch(e){this.submitError.set(orderFriendlyError(e));this.showTablePicker.set(true)}
+  }
  }
  protected selectTableId(id:string){
   if(this.submitting())return;
@@ -460,6 +477,20 @@ export class GcOrdersPosPage{
    confirmText:'Vaciar carrito',danger:true}))return;
   this.cart.set([]);this.submitError.set('');this.invalidateKey();this.cartOpen.set(false);
  }
+ protected openQuickCheckout(){void this.expressCheckout()?.show()}
+ protected onQuickCompleted(result:PosQuickResult){
+  this.createdId.set(result.ordenId);this.createdSaleId.set(result.ventaId);
+  this.success.set('Venta '+result.numero+' cobrada y cerrada.');
+  this.createdTickets.set([]);this.cart.set([]);this.observations.set('');
+  this.selectedTable.set(null);this.activeOrder.set(null);this.mode.set('MOSTRADOR');
+  this.operationId='';this.cartOpen.set(false);
+ }
+ protected newSale(){this.success.set('');this.createdId.set('');this.createdSaleId.set('')}
+ protected leaveActiveOrder(){
+  if(this.submitting()||this.cart().length)return;
+  this.activeOrder.set(null);this.selectedTable.set(null);this.mode.set('MOSTRADOR');
+  this.showTablePicker.set(true);this.invalidateKey();
+ }
  protected async submit(){
   const branch=this.context.branchId();if(!branch||this.submitting()||!this.cart().length)return;
   if(this.mode()==='MESA'&&!this.selectedTable()){this.submitError.set('Selecciona una mesa.');return}
@@ -475,7 +506,10 @@ export class GcOrdersPosPage{
   };
   this.submitting.set(true);this.submitError.set('');
   try{
-   const data=await firstValueFrom(this.api.create(dto));
+   const data=this.activeOrder()
+    ?await firstValueFrom(this.api.addLines(this.activeOrder()!.id,{
+      lineas:dto.lineas,enviarCocina:shouldProcess,claveOperacion:dto.claveOperacion}))
+    :await firstValueFrom(this.api.create(dto));
    this.createdId.set(data.id);
    this.createdTickets.set((data.comandasComoOrden??[]).map(x=>({id:x.id,numero:x.numero})));
    const kitchenCreated=(data.comandasComoOrden??[]).length>0;
@@ -484,10 +518,13 @@ export class GcOrdersPosPage{
    const status=kitchenCreated?' · Enviada a Cocina':
     hasUnprocessed?' · Pendiente de procesar antes de cerrar':
     ' · Procesada sin comanda de Cocina';
-   const message='Orden '+data.numero+' creada'+status+'.';
+   const message=this.activeOrder()
+    ?'Productos añadidos a '+data.numero+' correctamente.'
+    :'Orden '+data.numero+' creada'+status+'.';
+   this.activeOrder.set(null);
    this.success.set(message);
    this.notices.show(message,'success',7000);
-   this.cart.set([]);this.observations.set('');this.selectedTable.set(null);
+   this.cart.set([]);this.observations.set('');this.selectedTable.set(null);this.createdSaleId.set('');
    this.mode.set('MOSTRADOR');this.operationId='';this.cartOpen.set(false);
    this.showTablePicker.set(this.prefs.view()==='tables');
    if(this.prefs.view()==='tables')void this.loadTables();
