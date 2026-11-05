@@ -72,10 +72,17 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
    </section>
    <section class="ord-card">
     <div class="ord-heading"><h2>Productos del pedido</h2>
-     @if(o.estado==='ABIERTA'&&access.canManage()){
-      <button type="button" class="ord-primary" (click)="showAdd.update(v=>!v)">
-       {{showAdd()?'Cerrar productos':'Agregar productos'}}
-      </button>
+     @if(o.estado==='ABIERTA'&&(access.canManage()||access.canCreate())){
+      <div class="ord-actions">
+       <a class="ord-primary" [routerLink]="['/orders/pos']"
+        [queryParams]="o.ocupacionMesa?.mesa?.id?{mesaId:o.ocupacionMesa?.mesa?.id}:{ordenId:o.id}">
+        Agregar desde POS</a>
+       @if(access.canManage()){
+        <button type="button" (click)="showAdd.update(v=>!v)">
+         {{showAdd()?'Cerrar editor':'Editar aquí'}}
+        </button>
+       }
+      </div>
      }
     </div>
     <div class="ord-order-lines">
