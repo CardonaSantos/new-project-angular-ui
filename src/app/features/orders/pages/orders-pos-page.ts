@@ -377,14 +377,21 @@ export class GcOrdersPosPage{
     event.preventDefault();this.searchInput()?.nativeElement.focus();
   }
   if(event.key==='Escape'&&this.configuring())this.configureClose();
-  if(event.key==='Escape'&&this.quickDraft())this.quickDraft.set(null);
+
   if(event.key==='F4'&&!this.configuring()&&!this.quickDraft()&&
    !['INPUT','TEXTAREA','SELECT'].includes(t?.tagName??'')){
    event.preventDefault();this.beginExpress();
   }
  }
- protected setView(mode:'counter'|'tables'){
-  if(this.submitting())return;
+ protected async setView(mode:'counter'|'tables'){
+  if(this.submitting()||this.prefs.view()===mode)return;
+  if(mode==='counter'&&this.selectedTable()&&this.cart().length){
+   const okay=await this.confirm.confirm({title:'Cambiar a mostrador',
+    message:'Hay productos sin guardar para la mesa seleccionada. ¿Descartarlos y cambiar de atención?',
+    confirmText:'Descartar y cambiar',danger:true});
+   if(!okay)return;
+   this.cart.set([]);this.invalidateKey();
+  }
   this.prefs.setView(mode);
   if(mode==='counter'){
    this.selectedTable.set(null);this.existingOrder.set(null);this.mode.set('MOSTRADOR');
@@ -431,8 +438,16 @@ export class GcOrdersPosPage{
     this.error.set(orderFriendlyError(e));
   }finally{if(generation===this.tableGeneration)this.tableBusy.set(false)}
  }
- protected chooseTable(t:TableRecord){
+ protected async chooseTable(t:TableRecord){
   if(this.submitting())return;
+  if(this.selectedTable()?.id===t.id){this.showTablePicker.set(false);return}
+  if(this.selectedTable()&&this.cart().length){
+   const okay=await this.confirm.confirm({title:'Cambiar de mesa',
+    message:'Los productos del carrito aún no están guardados. ¿Descartarlos para atender otra mesa?',
+    confirmText:'Descartar y cambiar',danger:true});
+   if(!okay)return;
+   this.cart.set([]);this.invalidateKey();
+  }
   const existing=t.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA');
   this.selectedTable.set(t);this.existingOrder.set(null);
   this.mode.set('MESA');this.invalidateKey();this.showTablePicker.set(false);
