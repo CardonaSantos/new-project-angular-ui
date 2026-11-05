@@ -11,7 +11,7 @@ export const CATALOG_ROUTES:Routes=[
    loadComponent:()=>import('./pages/catalog-products-page').then(m=>m.GcCatalogProductsPage)},
   {path:'new',title:'Nuevo producto — Gastro Core',data:{breadcrumb:'Nuevo producto'},
    canDeactivate:[gcUnsavedChangesGuard],
-   loadComponent:()=>import('./pages/catalog-product-detail-page').then(m=>m.GcCatalogProductDetailPage)},
+   loadComponent:()=>import('./pages/catalog-product-guide-page').then(m=>m.GcCatalogProductGuidePage)},
   {path:':id',title:'Detalle de producto — Gastro Core',data:{breadcrumb:'Detalle del producto'},
    canDeactivate:[gcUnsavedChangesGuard],
    loadComponent:()=>import('./pages/catalog-product-detail-page').then(m=>m.GcCatalogProductDetailPage)}
