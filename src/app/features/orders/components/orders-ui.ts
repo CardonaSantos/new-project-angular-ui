@@ -4,6 +4,7 @@ import type {CatalogProjectedItem} from '../../catalog/data-access/catalog.model
 import type {KitchenTicket,OrderLineModifier,OrderState,TicketState} from '../data-access/orders.models';
 import {kitchenReadyAt,kitchenStage,money,qtyText,statusText} from '../data-access/orders.helpers';
 import type {PosCartEntry} from './pos-cart.models';
+import {parseApiDecimal} from '../../../shared/formatting';
 
 /** Modifier snapshots are saved with each order line; render them without any catalog lookups. */
 @Component({
@@ -48,41 +49,41 @@ export class GcPosProduct {
 
 @Component({
  selector:'gc-pos-cart',template:`
- <section class="ord-cart" aria-label="Pedido actual">
-  <h2>Pedido actual <small>{{items().length}} productos</small></h2>
-  @for(item of items();track item.key){
-   <div class="ord-cart-item">
-    <div class="ord-cart-line">
-     <strong [title]="item.name">{{item.name}}</strong>
-     <span>{{money(item.price,item.currency)}}</span>
+ <section class="ord-cart" aria-label="Productos por agregar">
+  <h2>Pedido actual <small>{{units()}} unidades · {{items().length}} líneas</small></h2>
+  <div class="ord-cart-lines">
+   @for(item of items();track item.key){
+    <div class="ord-cart-item">
+     <div class="ord-cart-line">
+      <strong [title]="item.name">{{item.name}}</strong>
+      <span>{{lineTotal(item)}}</span>
+     </div>
+     <small>{{item.variant}}</small>
+     @if(item.extras.length){<small class="ord-cart-modifiers">{{item.extras.join(', ')}}</small>}
+     @if(item.notes){<small>Nota: {{item.notes}}</small>}
+     <div class="ord-cart-buttons">
+      <button type="button" [attr.aria-label]="'Quitar una unidad de '+item.name"
+       [disabled]="disabled()" (click)="quantity.emit({key:item.key,delta:-1})">−</button>
+      <span aria-live="polite">{{item.quantity}}</span>
+      <button type="button" [attr.aria-label]="'Agregar una unidad de '+item.name"
+       [disabled]="disabled()||item.quantity>=999" (click)="quantity.emit({key:item.key,delta:1})">+</button>
+      <button type="button" class="ord-link" [disabled]="disabled()"
+       [attr.aria-label]="'Quitar línea de '+item.name" (click)="remove.emit(item.key)">Quitar</button>
+     </div>
     </div>
-    <small>{{item.variant}}</small>
-    @if(item.extras.length){<small>{{item.extras.join(', ')}}</small>}
-    @if(item.notes){<small>Nota: {{item.notes}}</small>}
-    <div class="ord-cart-buttons">
-     <button type="button" [attr.aria-label]="'Quitar una unidad de '+item.name"
-      [disabled]="disabled()" (click)="quantity.emit({key:item.key,delta:-1})">−</button>
-     <span aria-live="polite">{{item.quantity}}</span>
-     <button type="button" [attr.aria-label]="'Agregar una unidad de '+item.name"
-      [disabled]="disabled()" (click)="quantity.emit({key:item.key,delta:1})">+</button>
-     <button type="button" class="ord-link" [disabled]="disabled()" (click)="remove.emit(item.key)">Quitar</button>
-    </div>
-   </div>
-  } @empty {<p class="ord-muted">Elige productos para empezar.</p>}
-  <div class="ord-cart-footer">
-   <div><span>Importe estimado</span><strong>{{money(total(),currency())}}</strong></div>
-
+   } @empty {<p class="ord-muted">Elige productos para empezar.</p>}
   </div>
  </section>`
 })
 export class GcPosCart{
  readonly items=input.required<PosCartEntry[]>();
- readonly total=input.required<string>();
- readonly currency=input('GTQ');
  readonly disabled=input(false);
  readonly quantity=output<{key:string;delta:number}>();
  readonly remove=output<string>();
- protected readonly money=money;
+ protected readonly units=computed(()=>this.items().reduce((sum,item)=>sum+item.quantity,0));
+ protected readonly lineTotal=(item:PosCartEntry)=>money(
+  parseApiDecimal(item.price).mul(item.quantity).minus(parseApiDecimal(item.discount||'0')).toFixed(2),
+  item.currency);
 }
 
 @Component({

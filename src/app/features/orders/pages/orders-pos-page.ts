@@ -14,7 +14,7 @@ import {sumDecimals,parseApiDecimal} from '../../../shared/formatting';
 import {GcOrdersNav} from '../orders-nav';
 import {GcPosProduct,GcPosCart} from '../components/orders-ui';
 import {GcPosExpressCheckout} from '../components/pos-express-checkout';
-import {asOrderLine,type PosCartEntry} from '../components/pos-cart.models';
+import {addOrMergeCartEntry,asOrderLine,type PosCartEntry} from '../components/pos-cart.models';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import {PaymentsAccess} from '../../payments/data-access/payments-access';
@@ -162,43 +162,57 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
   </section>
   <aside class="ord-checkout" [class.ord-checkout--open]="cartOpen()" aria-label="Resumen del pedido">
    <div class="ord-cart-close"><button type="button" (click)="cartOpen.set(false)">Cerrar resumen</button></div>
-   @if(existingOrder();as current){
-    <section class="ord-express-existing" aria-label="Productos ya registrados">
-     <strong>Pedido {{current.numero}} · productos existentes</strong>
-     <small>Total registrado {{money(current.total,currency())}}</small>
-     <details><summary>Ver líneas del pedido ({{current.ordenLineasComoOrden.length}})</summary>
-      @for(line of current.ordenLineasComoOrden;track line.id){
-       @if(!line.canceladaEn){
-        <div class="ord-express-existing-line">
-         <span>{{line.cantidad}} × {{line.nombreSnapshot}}</span>
-         <small>{{money(line.subtotal,currency())}}</small>
-        </div>
+   <div class="ord-checkout-scroll">
+    @if(existingOrder();as current){
+     <section class="ord-express-existing" aria-label="Productos ya registrados">
+      <div class="ord-express-existing-head">
+       <strong>Orden {{current.numero}}</strong>
+       <small>{{current.ordenLineasComoOrden.length}} líneas registradas · {{money(current.total,currency())}}</small>
+      </div>
+      <details><summary>Ver productos anteriores</summary>
+       @for(line of current.ordenLineasComoOrden;track line.id){
+        @if(!line.canceladaEn){
+         <div class="ord-express-existing-line">
+          <span>{{line.cantidad}} × {{line.nombreSnapshot}}</span>
+          <small>{{money(line.subtotal,currency())}}</small>
+         </div>
+        }
        }
-      }
-     </details>
-     <p class="ord-note">El carrito contiene solamente los productos nuevos que vas a añadir.</p>
-    </section>
-   }
-   <gc-pos-cart [items]="cart()" [total]="total()" [currency]="currency()"
-    [disabled]="submitting()"
-    (quantity)="changeQty($event)" (remove)="remove($event)"/>
-   <div class="ord-checkout-options">
+      </details>
+     </section>
+    }
+    <gc-pos-cart [items]="cart()" [disabled]="submitting()"
+     (quantity)="changeQty($event)" (remove)="remove($event)"/>
+    <div class="ord-checkout-options">
     @if(cart().length){<div class="ord-actions ord-pos-cart-tools">
      <span class="ord-note">El importe definitivo lo calcula el servidor.</span>
      <button type="button" class="ord-danger" [disabled]="submitting()" (click)="clearCart()">Vaciar carrito</button>
     </div>}
-    <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes()"
-     [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()||!!existingOrder()"
-     (valueChange)="chooseMode($event)"/>
-    @if(mode()==='MESA'){
-     <gc-search-select id="pos-table" label="Mesa" [items]="tableChoices()"
-      [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()||!!existingOrder()"
-      placeholder="Seleccionar mesa" (valueChange)="selectTableId($event)"/>
+    @if(selectedTable();as table){
+     <div class="ord-pos-selection-summary">
+      <strong>Mesa {{table.numero}}</strong><small>{{table.sala.nombre}} · {{existingOrder()?'Añadiendo a la orden':'Pedido nuevo'}}</small>
+     </div>
+    }@else if(existingOrder();as current){
+     <div class="ord-pos-selection-summary">
+      <strong>Ampliando {{current.numero}}</strong><small>Modalidad {{mode()}} · sin nueva orden</small>
+     </div>
+    }@else{
+     <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes()"
+      [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()"
+      (valueChange)="chooseMode($event)"/>
+     @if(mode()==='MESA'){
+      <gc-search-select id="pos-table" label="Mesa" [items]="tableChoices()"
+       [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()"
+       placeholder="Seleccionar mesa" (valueChange)="selectTableId($event)"/>
+     }
     }
-    <label>Observaciones del pedido
-     <textarea rows="2" maxlength="500" [value]="observations()" [disabled]="submitting()"
-      placeholder="Opcional" (input)="observations.set($any($event.target).value);invalidateKey()"></textarea>
-    </label>
+    <details class="ord-pos-more">
+     <summary>Observaciones {{observations().trim()?'(añadidas)':'(opcional)'}}</summary>
+     <label>Notas del pedido
+      <textarea rows="2" maxlength="500" [value]="observations()" [disabled]="submitting()"
+       placeholder="Instrucciones adicionales" (input)="observations.set($any($event.target).value);invalidateKey()"></textarea>
+     </label>
+    </details>
     @if(directOnly()){
      <p class="ord-note" role="status">
       Venta sin preparación: estos productos no generan comandas.
@@ -220,17 +234,23 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
     } @else if(!config()){
      <p class="ord-note">La preparación seguirá las reglas vigentes de la sucursal.</p>
     }
-    @if(submitError()){
-     <p role="alert" class="ord-alert">{{submitError()}}</p>
-     @if(submitError()?.includes('receta publicada')){
-      <a routerLink="/recipes/list">Revisar recetas publicadas</a>
-     } @else if(submitError()?.includes('precio vigente')){
-      <a routerLink="/catalog/prices">Revisar precios</a>
-     } @else if(submitError()?.includes('estación de cocina')){
-      <a routerLink="/orders/settings">Configurar cocina</a>
+    </div>
+    <div class="ord-checkout-actions">
+     <div class="ord-checkout-total">
+      <span>{{existingOrder()?'Por agregar (estimado)':'Importe estimado'}}</span>
+      <strong>{{money(total(),currency())}}</strong>
+     </div>
+     @if(submitError()){
+      <p role="alert" class="ord-alert">{{submitError()}}</p>
+      @if(submitError()?.includes('receta publicada')){
+       <a routerLink="/recipes/list">Revisar recetas publicadas</a>
+      } @else if(submitError()?.includes('precio vigente')){
+       <a routerLink="/catalog/prices">Revisar precios</a>
+      } @else if(submitError()?.includes('estación de cocina')){
+       <a routerLink="/orders/settings">Configurar cocina</a>
+      }
      }
-    }
-    @if(quickEligible()){
+     @if(quickEligible()){
      <button class="ord-primary ord-confirm" type="button"
       [disabled]="submitting()||!cart().length"
       (click)="beginExpress()">Cobrar ahora · {{money(total(),currency())}}</button>
@@ -241,6 +261,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
       [disabled]="submitting()||tableBusy()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&(!selectedTable()||!tableOrderReady()))"
       (click)="submit()">{{submitting()?'Guardando…':existingOrder()?'Agregar productos al pedido':'Confirmar pedido · '+money(total(),currency())}}</button>
     }
+    </div>
    </div>
   </aside>
  </div>
@@ -560,11 +581,18 @@ export class GcOrdersPosPage{
   this.configureClose();
  }
  private addLine(item:CatalogProjectedItem,qty:number,mods:string[],extras:string[],notes:string,discount:string,extraPrices:string[]=[]){
-  if(this.cart().length>=100){this.submitError.set('El pedido admite hasta 100 líneas.');return}
-  this.cart.update(list=>[...list,{key:operationKey('item'),variantId:item.variante.id,
+  const entry:PosCartEntry={key:operationKey('item'),variantId:item.variante.id,
    name:item.variante.producto?.nombre??item.variante.nombre,variant:item.variante.nombre,
    price:sumDecimals([item.precio,...extraPrices]),currency:item.moneda,quantity:qty,
-   modifierIds:mods,extras,notes:notes.trim().slice(0,300),discount}]);
+   modifierIds:mods,extras,notes:notes.trim().slice(0,300),discount};
+  const updated=addOrMergeCartEntry(this.cart(),entry);
+  if(updated.status==='too-many-lines'){
+   this.submitError.set('El pedido admite hasta 100 líneas diferentes.');return;
+  }
+  if(updated.status==='too-many-units'){
+   this.submitError.set('Una línea admite como máximo 999 unidades.');return;
+  }
+  this.cart.set(updated.entries);
   this.invalidateKey();this.submitError.set('');
  }
  protected changeQty(change:{key:string;delta:number}){

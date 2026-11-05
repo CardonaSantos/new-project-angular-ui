@@ -1475,3 +1475,86 @@ gc-kitchen-ticket{display:block;min-width:0}
  .ord-pos .ord-products{grid-template-columns:repeat(5,minmax(0,1fr))}
  .ord-pos .ord-products--compact{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* POS 2026-11-05: fixed checkout action footer; compact independently scrolling body. */
+@media (min-width:1181px){
+ .ord-pos .ord-checkout{
+  position:sticky;top:.75rem;max-height:calc(100dvh - 1.5rem);
+  overflow:hidden;display:flex;flex-direction:column
+ }
+}
+.ord-pos .ord-checkout-scroll{
+ flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin
+}
+.ord-pos .ord-checkout-actions{
+ flex:0 0 auto;padding:.65rem .75rem .75rem;display:grid;gap:.45rem;
+ max-height:46dvh;overflow-y:auto;position:relative;z-index:1;
+ background:var(--gc-surface-container-low);border-top:1px solid var(--gc-outline);
+ box-shadow:0 -.35rem 1rem rgb(0 0 0 / .09)
+}
+.ord-pos .ord-checkout-total{
+ display:flex;align-items:center;justify-content:space-between;gap:.65rem;
+ font-size:.84rem;font-variant-numeric:tabular-nums
+}
+.ord-pos .ord-checkout-total strong{font-size:1.05rem;white-space:nowrap}
+.ord-pos gc-pos-cart{display:block;min-width:0}
+.ord-pos .ord-cart{min-height:0;display:block;overflow:visible;padding:.6rem .75rem .25rem}
+.ord-pos .ord-cart h2{
+ margin:0 0 .35rem;font-size:.91rem;display:flex;align-items:center;
+ justify-content:space-between;gap:.4rem
+}
+.ord-pos .ord-cart h2 small{font-size:.73rem;white-space:nowrap}
+.ord-pos .ord-cart-lines{display:grid;gap:.3rem;min-width:0}
+.ord-pos .ord-cart-item{
+ padding:.34rem 0 .42rem;gap:.12rem;display:grid;border-bottom:1px solid var(--gc-outline-variant)
+}
+.ord-pos .ord-cart-line{gap:.45rem;font-size:.83rem;line-height:1.3}
+.ord-pos .ord-cart-item>small{color:var(--gc-on-surface-variant);font-size:.73rem;line-height:1.22}
+.ord-pos .ord-cart-modifiers{overflow-wrap:anywhere}
+.ord-pos .ord-cart-buttons{gap:.28rem;min-height:32px;margin-top:.18rem}
+.ord-pos .ord-cart-buttons button{min-width:35px;min-height:32px;padding:.22rem .4rem}
+.ord-pos .ord-cart-buttons .ord-link{font-size:.78rem;min-width:0}
+.ord-pos .ord-checkout-options{
+ overflow:visible;padding:.35rem .75rem .65rem;gap:.45rem;border:0
+}
+.ord-pos .ord-pos-cart-tools{margin:0;gap:.3rem;align-items:center}
+.ord-pos .ord-pos-cart-tools .ord-note{font-size:.72rem}
+.ord-pos .ord-pos-cart-tools .ord-danger{font-size:.74rem;min-height:32px}
+.ord-pos .ord-pos-selection-summary{
+ display:flex;align-items:center;justify-content:space-between;gap:.45rem;
+ padding:.4rem .55rem;border:1px solid var(--gc-outline-variant);border-radius:.45rem;
+ font-size:.77rem;flex-wrap:wrap
+}
+.ord-pos .ord-pos-selection-summary small{color:var(--gc-on-surface-variant)}
+.ord-pos .ord-pos-more{
+ border:1px solid var(--gc-outline-variant);border-radius:.45rem;padding:.35rem .55rem
+}
+.ord-pos .ord-pos-more summary,.ord-pos .ord-express-existing summary{
+ cursor:pointer;font-size:.78rem;font-weight:650
+}
+.ord-pos .ord-pos-more label{display:grid;gap:.25rem;margin-top:.45rem;font-size:.77rem}
+.ord-pos .ord-pos-more textarea{min-height:60px}
+.ord-pos .ord-express-existing{
+ display:grid;gap:.3rem;margin:.55rem .75rem 0;padding:.5rem .6rem;
+ border:1px solid var(--gc-outline-variant);border-radius:.5rem;
+ background:var(--gc-surface-container);min-width:0
+}
+.ord-pos .ord-express-existing-head{display:flex;justify-content:space-between;gap:.35rem;flex-wrap:wrap;font-size:.78rem}
+.ord-pos .ord-express-existing-head small{color:var(--gc-on-surface-variant)}
+.ord-pos .ord-express-existing details{min-width:0}
+.ord-pos .ord-express-existing-line{
+ display:flex;justify-content:space-between;gap:.4rem;padding:.3rem 0;
+ border-top:1px solid var(--gc-outline-variant);font-size:.76rem
+}
+.ord-pos .ord-express-existing-line span{min-width:0;overflow-wrap:anywhere}
+.ord-pos .ord-express-existing-line small{white-space:nowrap}
+@media(max-width:1180px){
+ .ord-pos .ord-checkout{
+  display:none;position:fixed;inset:auto 0 0 0;top:auto;
+  max-height:88dvh;overflow:hidden;flex-direction:column
+ }
+ .ord-pos .ord-checkout--open{display:flex}
+ .ord-pos .ord-checkout-actions{padding-bottom:max(.75rem,env(safe-area-inset-bottom,0px))}
+ .ord-pos .ord-cart-buttons button{min-height:40px;min-width:40px}
+}
