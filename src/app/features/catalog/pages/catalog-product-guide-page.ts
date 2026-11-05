@@ -40,7 +40,7 @@ interface PriceResult {state:'saved'|'review';amount:string}
     }
     <div class="cat-guide-prices">
      @for(variant of product.varianteProductosComoProducto??[];track variant.id){
-      <div><strong>{{variant.nombre}}</strong>
+      <div><strong>{{product.varianteProductosComoProducto?.length===1?'Producto único':variant.nombre}}</strong>
        @if(prices()[variant.id];as price){
         <span [class.cat-guide-price-error]="price.state==='review'">
          {{price.state==='saved'?'Q '+price.amount:'Precio por revisar'}}</span>
@@ -54,7 +54,12 @@ interface PriceResult {state:'saved'|'review';amount:string}
      </p>
     }
     @if(readiness();as result){
-     @if(!result.lista){<p class="cat-muted">Para venderlo todavía debes completar la fotografía, visibilidad y publicación en la carta.</p>}
+     @if(!result.lista){
+      <div class="cat-guide-diagnostics" role="status">
+       <strong>Qué falta para venderlo</strong>
+       <ul>@for(message of readinessMessages();track message){<li>{{message}}</li>}</ul>
+      </div>
+     }@else{<p class="cat-muted">Configuración válida. Comprueba la asignación del producto a la carta de la sucursal.</p>}
     }
    </section>
    <section class="cat-card">
@@ -286,6 +291,20 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  protected readonly prices=signal<Record<string,PriceResult>>({});
  protected readonly priceError=signal('');
  protected readonly readiness=signal<CatalogProductReadiness|null>(null);
+ protected readonly readinessMessages=computed(()=>{
+  const labels:Record<string,string>={
+   SIN_PRECIO:'Registrar precio de venta',SIN_RECETA_PUBLICADA:'Publicar la receta de preparación',
+   SIN_RUTA_O_UBICACION_COCINA:'Configurar la estación de Cocina y su ubicación de consumo',
+   SIN_FOTOGRAFIA_CONFIRMADA:'Agregar una fotografía',
+   OCULTA_EN_MENU:'Habilitar visibilidad en la carta',
+   ARTICULO_FISICO_INVALIDO:'Vincular un artículo físico activo',
+   ARTICULO_UNIDAD_INCOMPATIBLE:'El artículo debe medirse por unidades',
+   PRODUCTO_O_VARIANTE_INACTIVA:'Activar producto y presentación',
+   PAUSADA_EN_SUCURSAL:'Habilitar el producto en esta sucursal'
+  };
+  return [...new Set((this.readiness()?.variantes??[])
+   .flatMap(x=>x.advertencias).map(x=>labels[x]??x.replaceAll('_',' ').toLowerCase()))];
+ });
  protected readonly draft=computed(()=>({
   nombre:this.name(),codigo:this.code(),tipo:this.kind(),categoriaId:this.categoryId(),
   descripcion:this.description(),variantes:this.variants()
@@ -304,7 +323,9 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
    !!this.name().trim()||!!this.description().trim()||!!this.categoryId()||
    this.editedCode()||this.kind()!=='PREPARADO'||this.variants().length!==1||
    this.variants()[0].nombre!=='Única'||!!this.variants()[0].precio||
-   !!this.variants()[0].articuloInventarioId
+   !!this.variants()[0].articuloInventarioId||
+   this.variants().some(x=>!!x.articuloModo||!!x.articuloCodigo||
+    !!x.controlarLote||!!x.controlarVencimiento)
   );
  }
  protected kindHint(kind:CatalogKind){
