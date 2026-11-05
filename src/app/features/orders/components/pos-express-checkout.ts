@@ -100,7 +100,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
 })
 export class GcPosExpressCheckout{
  readonly order=input.required<CreateOrderInput>();
- readonly cancel=output<void>();
+ readonly dismissed=output<void>();
  readonly completed=output<QuickCheckoutResult>();
  protected readonly api=inject(OrdersApi);
  private readonly branch=inject(GcBranchContext);
