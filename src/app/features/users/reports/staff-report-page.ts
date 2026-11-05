@@ -13,24 +13,21 @@ import {formatDecimal} from '../../../shared/formatting';
 import {UsersApi} from '../data-access/users.api';
 import type {Page,StaffReportRow} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 @Component({
  selector:'gc-staff-report-page',
- imports:[GcUsersNav,GcPageHeader,GcButtonDirective,GcPagination,GcDataTable,GcErrorState],
+ imports:[GcUsersNav,GcPageHeader,GcButtonDirective,GcPagination,GcDataTable,GcErrorState,GcSearchSelect],
  template:`
  <div class="gc-u-page">
   <gc-page-header title="Resumen de personal"/><gc-users-nav/>
   <section class="gc-u-card gc-u-page">
-   <form class="gc-u-toolbar" (submit)="searchNow($event)">
+   <form class="gc-u-toolbar gc-filter-grid" (submit)="searchNow($event)">
     <div class="gc-u-field"><label for="report-from">Desde</label>
      <input id="report-from" type="date" [value]="from()" (change)="from.set($any($event.target).value)"/></div>
     <div class="gc-u-field"><label for="report-to">Hasta (sin incluir)</label>
      <input id="report-to" type="date" [value]="to()" (change)="to.set($any($event.target).value)"/></div>
-    <div class="gc-u-field"><label for="report-branch">Sucursal</label>
-     <select id="report-branch" [value]="branchId()" (change)="branchId.set($any($event.target).value)">
-      <option value="">Todas</option>
-      @for(b of branch.branches();track b.id){<option [value]="b.id">{{b.nombre}}</option>}
-     </select>
-    </div>
+    <gc-search-select id="report-branch" label="Sucursal" [items]="branchChoices()"
+     [value]="branchId()" placeholder="Todas" (valueChange)="branchId.set($event)"/>
     <button type="submit" gcButton variant="outline">Aplicar</button>
    </form>
    @if(page.status()==='error'){<gc-error-state [message]="readError()" (retry)="reload()"/>}
@@ -46,6 +43,7 @@ import {GcUsersNav} from '../users-nav';
 export class GcStaffReportPage implements OnInit {
  private readonly api=inject(UsersApi);
  protected readonly branch=inject(GcBranchContext);
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly page=new GcPageState<Page<StaffReportRow>>();
  protected readonly from=signal('');protected readonly to=signal('');
  protected readonly branchId=signal('');protected readonly index=signal(0);protected readonly size=signal(10);

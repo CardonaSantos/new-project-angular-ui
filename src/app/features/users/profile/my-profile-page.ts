@@ -32,6 +32,7 @@ import type {UserRecord} from '../data-access/users.models';
      <div><strong>{{user.profile.nombreCompleto}}</strong><p class="gc-u-muted">{{user.profile.email}}</p></div>
     </div>
     <form class="gc-u-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+     <fieldset class="gc-u-section"><legend>1. Preferencias y contacto</legend>
      <div class="gc-u-grid">
       <div class="gc-u-field"><label for="my-last">Apellidos</label>
        <input id="my-last" formControlName="apellidos" maxlength="100" placeholder="Ej. López García"/>
@@ -48,6 +49,7 @@ import type {UserRecord} from '../data-access/users.models';
          [attr.aria-invalid]="form.controls.zonaHoraria.touched&&form.controls.zonaHoraria.invalid"/>
       </div>
      </div>
+     </fieldset>
      @if(error()){<p role="alert" class="gc-u-alert">{{error()}}</p>}
      <div class="gc-u-actions"><button gcButton type="submit" [disabled]="!form.dirty||form.invalid||saving.busy()">
       {{saving.busy()?'Guardando…':'Guardar cambios'}}</button></div>

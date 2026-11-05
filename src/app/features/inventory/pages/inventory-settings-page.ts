@@ -15,6 +15,7 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcInventoryNav} from '../inventory-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcInventorySubnav,SETTINGS_LINKS} from '../components/inventory-subnav';
 import {GcInventoryPicker} from '../components/inventory-picker';
 import {InventoryUrlState} from '../data-access/inventory-url-state';
@@ -25,7 +26,7 @@ type Scope='warehouses'|'locations';
  selector:'gc-inventory-settings-page',
  providers:[InventoryUrlState],
  imports:[ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcDataTable,GcTableCellDirective,
-  GcPagination,GcErrorState,GcInventoryNav,GcInventorySubnav,GcInventoryPicker],
+  GcPagination,GcErrorState,GcInventoryNav,GcInventorySubnav,GcInventoryPicker,GcSearchSelect],
  template:`
  <div class="inv-page">
   <gc-page-header title="Almacenes y ubicaciones"/>
@@ -38,18 +39,10 @@ type Scope='warehouses'|'locations';
   </nav>
   <section class="inv-card">
    <div class="inv-toolbar">
-    <div class="inv-field"><label for="warehouse-branch">Sucursal</label>
-     <select id="warehouse-branch" [value]="url.filters().sucursalId"
-      (change)="changeBranch($any($event.target).value)">
-      @for(b of branch.branches();track b.id){<option [value]="b.id">{{b.nombre}}</option>}
-     </select>
-    </div>
-    <div class="inv-field"><label for="warehouse-status">Estado</label>
-     <select id="warehouse-status" [value]="url.filters().estado"
-      (change)="setFilter('estado',$any($event.target).value)">
-      <option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option>
-     </select>
-    </div>
+    <gc-search-select id="warehouse-branch" label="Sucursal" [items]="branchChoices()"
+     [value]="url.filters().sucursalId" [clearable]="false" (valueChange)="changeBranch($event)"/>
+    <gc-search-select id="warehouse-status" label="Estado" [items]="statusChoices"
+     [value]="url.filters().estado" placeholder="Todos" [searchable]="false" (valueChange)="setFilter('estado',$event)"/>
     <form class="inv-toolbar" (submit)="applySearch($event)">
      <div class="inv-field"><label for="warehouse-search">Buscar</label>
       <input id="warehouse-search" [value]="search()" (input)="search.set($any($event.target).value)"
@@ -74,6 +67,7 @@ type Scope='warehouses'|'locations';
     @if(selectedId()){<button gcButton variant="outline" type="button" (click)="clear()">Nuevo</button>}
    </div>
    <form class="inv-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <fieldset class="inv-section"><legend>1. Identificación</legend>
     <div class="inv-grid">
      @if(scope()==='locations'){
       <gc-inventory-picker id="location-warehouse" label="Almacén" kind="warehouse"
@@ -91,8 +85,11 @@ type Scope='warehouses'|'locations';
        [attr.aria-invalid]="form.controls.nombre.invalid&&form.controls.nombre.touched"/>
      </div>
     </div>
+    </fieldset>
     @if(scope()==='locations'){
-     <label><input type="checkbox" formControlName="esRecepcion"/> Ubicación de recepción</label>
+     <fieldset class="inv-section"><legend>2. Configuración de ubicación</legend>
+      <label><input type="checkbox" formControlName="esRecepcion"/> Ubicación de recepción</label>
+     </fieldset>
     }
     @if(saveError()){<p class="inv-alert" role="alert">{{saveError()}}</p>}
     <div class="inv-actions">
@@ -120,6 +117,8 @@ export class GcInventorySettingsPage {
  protected readonly links=SETTINGS_LINKS;
  protected readonly url=inject(InventoryUrlState);
  protected readonly branch=inject(GcBranchContext);
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
+ protected readonly statusChoices=[{id:'true',label:'Activos'},{id:'false',label:'Inactivos'}];
  private readonly api=inject(InventoryApi);
  private readonly dialog=inject(ConfirmDialogService);
  private readonly notices=inject(GcNotificationService);

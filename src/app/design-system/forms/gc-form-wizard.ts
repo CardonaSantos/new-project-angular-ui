@@ -78,8 +78,8 @@ export class GcFormWizard implements OnInit {
   private focusInvalidField(): void {
     setTimeout(() => {
       const host = this.host.nativeElement;
-      const invalid = host.querySelector<HTMLElement>('input.ng-invalid, select.ng-invalid, textarea.ng-invalid');
-      (invalid ?? host.querySelector<HTMLElement>('input, select, textarea'))?.focus();
+      const invalid = host.querySelector<HTMLElement>('gc-search-select.ng-invalid input, input.ng-invalid, select.ng-invalid, textarea.ng-invalid');
+      (invalid ?? host.querySelector<HTMLElement>('gc-search-select input, input, select, textarea'))?.focus();
     }, 0);
   }
 

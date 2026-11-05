@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { GcPageState } from '../../../core/ux/gc-page-state';
@@ -13,10 +13,11 @@ import { OrganizationAccess } from '../data-access/organization-access';
 import { CompanyApi } from '../data-access/organization-api';
 import type { Company, CompanyUpdate, ValuationMethod } from '../data-access/organization.models';
 import { GcOrganizationNav } from '../organization-nav';
+import { GcSearchSelect } from '../../../design-system/forms/gc-search-select';
 
 @Component({
   selector: 'gc-company-page',
-  imports: [ReactiveFormsModule, GcPageHeader, GcButtonDirective, GcErrorState, GcOrganizationNav],
+  imports: [ReactiveFormsModule, GcPageHeader, GcButtonDirective, GcErrorState, GcOrganizationNav, GcSearchSelect],
   template: `
     <div class="gc-org-page gc-org-page--form">
       <gc-page-header title="Empresa" />
@@ -28,6 +29,7 @@ import { GcOrganizationNav } from '../organization-nav';
       @if (page.data(); as company) {
         <section class="gc-org-card gc-org-narrow">
           <form class="gc-org-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+            <fieldset class="gc-org-section"><legend>1. Identificación fiscal</legend>
             <div class="gc-org-grid">
               <div class="gc-org-field">
                 <label for="co-name">Nombre comercial</label>
@@ -47,6 +49,9 @@ import { GcOrganizationNav } from '../organization-nav';
                 <input id="co-nit" formControlName="nit" maxlength="40"
                   placeholder="Ej. 1234567-8" />
               </div>
+            </div></fieldset>
+            <fieldset class="gc-org-section"><legend>2. Configuración operativa</legend>
+            <div class="gc-org-grid">
               <div class="gc-org-field">
                 <label for="co-currency">Moneda base</label>
                 <input id="co-currency" formControlName="moneda" maxlength="3"
@@ -63,15 +68,10 @@ import { GcOrganizationNav } from '../organization-nav';
                   [attr.aria-describedby]="invalid('zonaHoraria') ? 'co-zone-error' : null" />
                 @if (invalid('zonaHoraria')) { <small id="co-zone-error" class="gc-org-error">Introduce una zona horaria.</small> }
               </div>
-              <div class="gc-org-field">
-                <label for="co-valuation">Valoración de inventario</label>
-                <select id="co-valuation" formControlName="metodoValoracion">
-                  @for (method of methods(); track method) {
-                    <option [value]="method">{{ method === 'FIFO' ? 'Primeras entradas, primeras salidas' : 'Promedio ponderado' }}</option>
-                  }
-                </select>
-              </div>
-            </div>
+              <gc-search-select id="co-valuation" label="Valoración de inventario"
+                [items]="valuationChoices()" formControlName="metodoValoracion"
+                [searchable]="false" [clearable]="false"/>
+            </div></fieldset>
             @if (form.invalid && form.touched) {
               <p class="gc-org-alert" role="alert">Revisa los campos obligatorios y sus formatos.</p>
             }
@@ -101,6 +101,9 @@ export class GcCompanyPage implements OnInit {
   protected readonly action = new GcConfirmedAction();
   protected readonly error = signal<string | null>(null);
   protected readonly methods = signal<ValuationMethod[]>(['PROMEDIO_PONDERADO','FIFO']);
+  protected readonly valuationChoices = computed(() => this.methods().map(method => ({
+    id:method, label:method==='FIFO'?'Primeras entradas, primeras salidas':'Promedio ponderado',
+  })));
   protected readonly form = new FormGroup({
     nombreComercial: new FormControl('', { nonNullable:true, validators:[Validators.required, Validators.maxLength(150)] }),
     razonSocial: new FormControl(''),

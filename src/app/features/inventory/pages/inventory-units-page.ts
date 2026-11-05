@@ -15,6 +15,7 @@ import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {OrganizationAccess} from '../../organization/data-access/organization-access';
 import {GcInventoryNav} from '../inventory-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcInventorySubnav,SETTINGS_LINKS} from '../components/inventory-subnav';
 import {GcInventoryPicker} from '../components/inventory-picker';
 import {InventoryApi} from '../data-access/inventory.api';
@@ -25,7 +26,7 @@ import {toApiDecimal} from '../../../shared/formatting';
  selector:'gc-inventory-units-page',
  providers:[InventoryUrlState],
  imports:[ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcDataTable,GcTableCellDirective,
-  GcPagination,GcErrorState,GcInventoryNav,GcInventorySubnav,GcInventoryPicker],
+  GcPagination,GcErrorState,GcInventoryNav,GcInventorySubnav,GcInventoryPicker,GcSearchSelect],
  template:`
  <div class="inv-page">
   <gc-page-header title="Unidades y conversiones"/>
@@ -59,19 +60,16 @@ import {toApiDecimal} from '../../../shared/formatting';
    <section class="inv-card inv-narrow">
     <h2>{{editId()?'Renombrar unidad':'Crear unidad'}}</h2>
     <form class="inv-form" [formGroup]="unitForm" (ngSubmit)="saveUnit()" novalidate>
+     <fieldset class="inv-section"><legend>1. Identificación y dimensión</legend>
      <div class="inv-grid">
       <div class="inv-field"><label for="unit-code">Código</label>
        <input id="unit-code" formControlName="codigo" maxlength="50" placeholder="Ej. KG"/></div>
       <div class="inv-field"><label for="unit-name">Nombre</label>
        <input id="unit-name" formControlName="nombre" maxlength="120" placeholder="Ej. Kilogramo"/></div>
-      <div class="inv-field"><label for="unit-dimension">Dimensión</label>
-       <select id="unit-dimension" formControlName="dimension">
-        @for(d of dimensions;track d.value){<option [value]="d.value">{{d.label}}</option>}
-       </select>
-      </div>
+      <gc-search-select id="unit-dimension" label="Dimensión" formControlName="dimension"
+       [items]="dimensionChoices" [searchable]="false" [clearable]="false"/>
       <label><input type="checkbox" formControlName="esBase"/> Unidad base de la dimensión</label>
-     </div>
-     <p class="inv-muted">Las unidades existentes conservan sus códigos y dimensiones para proteger las conversiones históricas.</p>
+     </div></fieldset>
      @if(error()){<p class="inv-alert" role="alert">{{error()}}</p>}
      <div class="inv-actions">
       <button gcButton type="submit" [disabled]="unitForm.invalid||action.busy()||!canManage()||(!unitForm.dirty&&!!editId())">Guardar</button>
@@ -83,6 +81,7 @@ import {toApiDecimal} from '../../../shared/formatting';
    <section class="inv-card inv-narrow">
     <h2>Registrar conversión</h2>
     <form class="inv-form" [formGroup]="conversionForm" (ngSubmit)="saveConversion()" novalidate>
+     <fieldset class="inv-section"><legend>1. Unidades y factor de conversión</legend>
      <div class="inv-grid">
       <gc-inventory-picker id="conversion-from" kind="unit" label="Unidad de origen"
        [value]="origin()" (valueChange)="origin.set($event)"/>
@@ -93,6 +92,7 @@ import {toApiDecimal} from '../../../shared/formatting';
       <div class="inv-field"><label for="conversion-qty">Cantidad a comprobar</label>
        <input id="conversion-qty" formControlName="cantidad" inputmode="decimal" placeholder="Ej. 2.5"/></div>
      </div>
+     </fieldset>
      @if(previewData();as data){
       <div class="inv-card"><strong>Vista previa</strong>
        @for(item of previewEntries(data);track item.key){<p>{{item.key}}: {{item.value}}</p>}
@@ -126,6 +126,7 @@ export class GcInventoryUnitsPage {
  protected readonly error=signal<string|null>(null);
  protected readonly action=new GcConfirmedAction();
  protected readonly dimensions=DIMENSIONS;
+ protected readonly dimensionChoices=this.dimensions.map(d=>({id:d.value,label:d.label}));
  protected readonly origin=signal('');protected readonly destination=signal('');
  protected readonly previewData=signal<Record<string,unknown>|null>(null);
  protected readonly columns=computed<GcTableColumn[]>(()=>

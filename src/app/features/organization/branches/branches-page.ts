@@ -31,12 +31,14 @@ import { GcOrganizationNav } from '../organization-nav';
     </gc-page-header>
     <gc-organization-nav />
     <section class="gc-org-card gc-org-page">
-      <form class="gc-org-toolbar" (submit)="applySearch($event)">
-        <gc-table-toolbar searchLabel="Buscar sucursales" [query]="search()"
-          (queryChange)="search.set($event)"/>
+      <form class="gc-org-toolbar gc-org-filter-grid" (submit)="applySearch($event)">
+        <div class="gc-org-search-action">
+          <gc-table-toolbar searchLabel="Buscar sucursales" [query]="search()"
+            (queryChange)="search.set($event)"/>
+          <button gcButton variant="outline" type="submit">Buscar</button>
+        </div>
         <gc-filter-bar filterId="branch-active-filter" label="Estado" [value]="status()"
           [options]="statusOptions" (valueChange)="updateStatus($event)" />
-        <button gcButton variant="outline" type="submit">Buscar</button>
       </form>
       @if (page.status() === 'error') {
         <gc-error-state [message]="errorMessage()" (retry)="reload()"/>

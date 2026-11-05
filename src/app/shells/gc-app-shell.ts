@@ -16,6 +16,11 @@ import { GcBranchContext } from '../core/organization/gc-branch-context';
 import { OrganizationAccess } from '../features/organization/data-access/organization-access';
 import { UsersAccess } from '../features/users/data-access/users-access';
 import { CatalogAccess } from '../features/catalog/data-access/catalog-access';
+import { RecipesAccess } from '../features/recipes/data-access/recipes-access';
+import { OrdersAccess } from '../features/orders/data-access/orders-access';
+import { PaymentsAccess } from '../features/payments/data-access/payments-access';
+import { PurchasesAccess } from '../features/purchases/data-access/purchases-access';
+import { ReportsAccess } from '../features/reports/data-access/reports-access';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
@@ -36,6 +41,11 @@ export class GcAppShell {
   protected readonly orgAccess = inject(OrganizationAccess);
   protected readonly usersAccess = inject(UsersAccess);
   protected readonly catalogAccess = inject(CatalogAccess);
+  protected readonly recipesAccess = inject(RecipesAccess);
+  protected readonly ordersAccess = inject(OrdersAccess);
+  protected readonly paymentsAccess = inject(PaymentsAccess);
+  protected readonly purchasesAccess = inject(PurchasesAccess);
+  protected readonly reportsAccess = inject(ReportsAccess);
   private readonly avatar=inject(GcCurrentAvatarStore);
   private readonly usersApi=inject(UsersApi);
   private readonly realtime = inject(GcRealtimeService);
@@ -43,17 +53,27 @@ export class GcAppShell {
   protected readonly items = computed<readonly GcNavigationItem[]>(() =>
     this.session.authenticated()
       ? [
-        { label: 'Inicio', path: '/workspace', initials: 'IN', exact: true },
+        { label: 'Inicio', path: '/workspace', initials: 'IN', icon:'home', exact: true },
         ...(this.catalogAccess.canEnter()
-          ? [{label:'Catálogo',path:'/catalog',initials:'CA',exact:false}]:[]),
+          ? [{label:'Catálogo',path:'/catalog',initials:'CA',icon:'catalog',exact:false}]:[]),
+        ...(this.recipesAccess.canEnter()
+          ? [{label:'Recetas',path:'/recipes',initials:'RE',icon:'recipes',exact:false}]:[]),
+        ...(this.ordersAccess.canEnter()
+          ? [{label:'Órdenes',path:'/orders',initials:'OR',icon:'orders',exact:false}]:[]),
+        ...(this.paymentsAccess.canEnter()
+          ? [{label:'Cobros',path:'/payments',initials:'CO',icon:'payments',exact:false}]:[]),
+        ...(this.purchasesAccess.canEnter()
+          ? [{label:'Compras',path:'/purchases',initials:'CP',icon:'purchases',exact:false}]:[]),
+        ...(this.reportsAccess.canRead()
+          ? [{label:'Analítica',path:'/reports',initials:'AN',icon:'reports',exact:false}]:[]),
         ...((this.orgAccess.canGlobal('inventory.read')||this.context.has('inventory.read'))
-         ? [{label:'Inventario',path:'/inventory',initials:'IV',exact:false}]:[]),
+         ? [{label:'Inventario',path:'/inventory',initials:'IV',icon:'inventory',exact:false}]:[]),
         ...((this.usersAccess.canRead()||this.usersAccess.canGlobal('roles.read')||
           this.usersAccess.canGlobal('users.reports.read'))
-          ? [{label:'Usuarios',path:'/users',initials:'US',exact:false}]:[]),
+          ? [{label:'Usuarios',path:'/users',initials:'US',icon:'users',exact:false}]:[]),
         ...((this.orgAccess.canGlobal('organization.read') ||
           this.context.has('branches.read') || this.context.has('devices.read'))
-          ? [{ label: 'Configuración', path: '/organization', initials: 'CF', exact: false }] : []),
+          ? [{ label: 'Configuración', path: '/organization', initials: 'CF', icon:'settings', exact: false }] : []),
       ]
       : [
     { label: 'Design System', path: '/lab/design-system', initials: 'DS', exact: true },

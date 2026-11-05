@@ -1,36 +1,32 @@
 
-import {Component,computed,effect,inject,input,output,signal} from '@angular/core';
+import {Component,computed,effect,inject,input,output,signal,untracked} from '@angular/core';
+import {Subject,debounceTime,distinctUntilChanged} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {firstValueFrom} from 'rxjs';
 import {InventoryApi} from '../data-access/inventory.api';
+import type {InventoryKind,Dimension} from '../data-access/inventory.models';
 
 export type InventoryPickerKind='article'|'warehouse'|'location'|'lot'|'unit';
 interface Choice {id:string;label:string}
 @Component({
  selector:'gc-inventory-picker',
+ imports:[GcSearchSelect],
  template:`
- <div class="inv-field">
-  <label [for]="id()">{{label()}}</label>
-  <div class="inv-row">
-   <input [id]="id()+'-search'" [attr.aria-label]="'Buscar '+label()" [value]="search()"
-    (input)="search.set($any($event.target).value)" maxlength="100"
-    placeholder="Buscar por nombre o código" [disabled]="loading()"/>
-   <button type="button" (click)="reload()" [disabled]="loading()">Buscar</button>
-  </div>
-  <select [id]="id()" [value]="value()" (change)="select($any($event.target).value)"
-   [disabled]="loading()||disabled()">
-   <option value="" [selected]="!value()">{{loading()?'Consultando…':'Seleccionar'}}</option>
-   @for(item of visibleItems();track item.id){
-    <option [value]="item.id" [selected]="item.id===value()">{{item.label}}</option>
-   }
-  </select>
-  @if(error()){<small class="inv-error" role="alert">{{error()}}</small>}
-  @if(more()){<small>Refina la búsqueda para encontrar más resultados.</small>}
- </div>`,
+ <gc-search-select [id]="id()" [label]="label()" [items]="visibleItems()"
+  [value]="value()" [disabled]="pickerDisabled()" [loading]="loading()"
+  [remote]="kind()!=='lot'" [clearable]="true"
+  [placeholder]="prerequisite()||placeholder()||'Buscar por nombre o código…'"
+  [hint]="prerequisite()||(more()?'Refina la búsqueda para encontrar más resultados.':'')"
+  [error]="error()??''"
+  (valueChange)="select($event)" (searchChange)="onSearch($event)"/>
+ `,
  styleUrl:'../inventory.scss'
 })
 export class GcInventoryPicker {
  readonly id=input.required<string>();
  readonly label=input('Artículo');
+ readonly placeholder=input('');
  readonly kind=input.required<InventoryPickerKind>();
  readonly value=input('');
  /** Saved readable name when the current value is outside the options page. */
@@ -38,7 +34,19 @@ export class GcInventoryPicker {
  readonly branchId=input('');
  readonly warehouseId=input('');
  readonly articleId=input('');
+ /** Restrict article searches when a form requires a specific inventory category. */
+ readonly articleKind=input<InventoryKind|''>('');
+ /** Limits units to the dimension of the ingredient or commercial yield. */
+ readonly unitDimension=input<Dimension|''>('');
  readonly disabled=input(false);
+ /** Explain why a dependent field cannot yet be selected. */
+ protected readonly prerequisite=computed(()=>{
+  if(this.kind()==='warehouse'&&!this.branchId())return 'Selecciona primero una sucursal';
+  if(this.kind()==='location'&&!this.warehouseId())return 'Selecciona primero un almacén';
+  if(this.kind()==='lot'&&(!this.articleId()||!this.branchId()))return 'Selecciona primero un artículo y una sucursal';
+  return '';
+ });
+ protected readonly pickerDisabled=computed(()=>this.disabled()||!!this.prerequisite());
  readonly valueChange=output<string>();
  protected readonly search=signal('');
  protected readonly items=signal<Choice[]>([]);
@@ -54,11 +62,15 @@ export class GcInventoryPicker {
  protected readonly error=signal<string|null>(null);
  protected readonly more=signal(false);
  private readonly api=inject(InventoryApi);
+ private readonly searchQueries=new Subject<string>();
  private generation=0;
  constructor(){
+  this.searchQueries.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed()).subscribe(term=>{
+   this.search.set(term);void this.load();
+  });
   effect(()=>{
-   this.kind();this.branchId();this.warehouseId();this.articleId();
-   void this.load();
+   this.kind();this.branchId();this.warehouseId();this.articleId();this.articleKind();this.unitDimension();
+   untracked(()=>void this.load());
   });
   effect(()=>{
    const id=this.value(),kind=this.kind(),supplied=this.selectedLabel();
@@ -88,7 +100,9 @@ export class GcInventoryPicker {
   }
  }
  protected select(value:string){this.valueChange.emit(value)}
- protected reload(){void this.load()}
+ protected onSearch(value:string){
+  if(this.kind()!=='lot')this.searchQueries.next(value);
+ }
  private async load(){
   const current=++this.generation;
   this.loading.set(true);this.error.set(null);this.items.set([]);
@@ -96,7 +110,7 @@ export class GcInventoryPicker {
    const kind=this.kind(),search=this.search().trim();
    let items:Choice[]=[],more=false;
    if(kind==='article'){
-    const r=await firstValueFrom(this.api.articleOptions({search,limit:50}));
+    const r=await firstValueFrom(this.api.articleOptions({search,limit:50,tipo:this.articleKind()||undefined}));
     items=r.data.map(x=>({id:x.id,label:x.codigo+' · '+x.nombre}));more=r.meta.hasMore;
    }else if(kind==='warehouse'){
     if(!this.branchId())return;
@@ -109,7 +123,7 @@ export class GcInventoryPicker {
     }));
     items=r.data.map(x=>({id:x.id,label:x.label||x.nombre||x.codigo}));more=r.meta.hasMore;
    }else if(kind==='unit'){
-    const r=await firstValueFrom(this.api.unitOptions({search,limit:50}));
+    const r=await firstValueFrom(this.api.unitOptions({search,limit:50,dimension:this.unitDimension()||undefined}));
     items=r.data.map(x=>({id:x.id,label:x.nombre+' ('+x.codigo+')'}));more=r.meta.hasMore;
    }else{
     if(!this.articleId()||!this.branchId())return;

@@ -1,4 +1,4 @@
-import {Component,effect,inject} from '@angular/core';
+import {Component,computed,effect,inject} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
@@ -7,6 +7,7 @@ import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {CatalogApi} from '../data-access/catalog.api';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogAccess} from '../data-access/catalog-access';
 import {PRODUCT_KINDS,type CatalogSummary,type CatalogPriceCoverage} from '../data-access/catalog.models';
 
@@ -14,7 +15,7 @@ interface Overview{summary:CatalogSummary;coverage:CatalogPriceCoverage|null}
 
 @Component({
  selector:'gc-catalog-summary-page',
- imports:[GcPageHeader,GcErrorState,GcCatalogNav],
+ imports:[GcPageHeader,GcErrorState,GcCatalogNav,GcSearchSelect],
  template:`
   <main class="cat-page">
    <gc-page-header title="Catálogo comercial" description="Configuración comercial y cobertura por sucursal"/>
@@ -22,14 +23,9 @@ interface Overview{summary:CatalogSummary;coverage:CatalogPriceCoverage|null}
    <section class="cat-card">
     <div class="cat-row">
      <h2>Estado del catálogo</h2>
-     <div class="cat-field">
-      <label for="catalog-branch">Sucursal seleccionada</label>
-      <select id="catalog-branch" [value]="branch.branchId()??''" (change)="chooseBranch($any($event.target).value)">
-       @for(item of branch.branches();track item.id){
-        <option [value]="item.id" [selected]="item.id===branch.branchId()">{{item.nombre}}</option>
-       }
-      </select>
-     </div>
+     <gc-search-select id="catalog-branch" label="Sucursal seleccionada"
+      [items]="branchChoices()" [value]="branch.branchId()??''"
+      [clearable]="false" (valueChange)="chooseBranch($event)"/>
     </div>
     @if(!access.canReports()){
      <p class="cat-muted">No tienes permiso para consultar los reportes comerciales. La gestión de productos depende de tus permisos de catálogo.</p>
@@ -72,6 +68,7 @@ interface Overview{summary:CatalogSummary;coverage:CatalogPriceCoverage|null}
 export class GcCatalogSummaryPage {
  protected readonly access=inject(CatalogAccess);
  protected readonly branch=inject(GcBranchContext);
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  private readonly api=inject(CatalogApi);
  protected readonly page=new GcPageState<Overview>();
  private readonly types=PRODUCT_KINDS;

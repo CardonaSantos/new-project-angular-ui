@@ -3,5 +3,6 @@ export interface GcNavigationItem {
   label: string;
   path: string;
   initials: string;
+  icon?:string;
   exact?: boolean;
 }

@@ -1,6 +1,7 @@
 import {Component,computed,inject,signal,OnInit} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
-import {firstValueFrom} from 'rxjs';
+import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
@@ -10,6 +11,7 @@ import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {GcCatalogGallery} from '../components/catalog-gallery';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
 import type {CatalogProduct,CatalogCategory,CatalogVariant,CatalogGroup,CatalogGroupAttachment,CatalogProductReadiness} from '../data-access/catalog.models';
@@ -20,7 +22,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 
 @Component({
  selector:'gc-catalog-product-detail-page',
- imports:[RouterLink,GcCatalogNav,GcErrorState,GcInventoryPicker,GcCatalogGallery],
+ imports:[RouterLink,GcCatalogNav,GcErrorState,GcInventoryPicker,GcCatalogGallery,GcSearchSelect],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
@@ -31,6 +33,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
    <section class="cat-card">
     <h2>{{isNew?'Nuevo producto':'Datos comerciales'}}</h2>
     <form class="cat-form" (submit)="save($event)">
+     <div class="cat-form-section"><h3>1. Identificación comercial</h3>
      <label>Código
       <input [value]="code()" (input)="code.set($any($event.target).value)" [disabled]="!isNew||!access.canManage()"
        required pattern="[A-Za-z][A-Za-z0-9_-]*" maxlength="50" placeholder="CAFE-LATTE"/>
@@ -39,26 +42,15 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <input [value]="name()" (input)="name.set($any($event.target).value)" maxlength="160"
        [disabled]="!access.canManage()" required/>
      </label>
-     <label>Tipo de producto
-      <select [value]="kind()" (change)="kind.set($any($event.target).value)" [disabled]="!isNew||!access.canManage()">
-       @for(k of kinds;track k.value){<option [value]="k.value">{{k.label}}</option>}
-      </select>
-     </label>
-     <div class="cat-category-picker">
-      <label for="catalog-category">Categoría</label>
-      <div class="cat-search-inline">
-       <input id="catalog-category-search" aria-label="Buscar por nombre de categoría"
-        placeholder="Buscar categoría" [value]="categorySearch()" maxlength="120"
-        (input)="categorySearch.set($any($event.target).value)"
-        (keydown.enter)="$event.preventDefault();searchCategories()"/>
-       <button type="button" (click)="searchCategories()">Buscar</button>
-      </div>
-      <select id="catalog-category" [value]="category()" (change)="category.set($any($event.target).value)"
-       [disabled]="!access.canManage()" aria-label="Categoría asignada al producto">
-       <option value="" [selected]="!category()">Sin categoría</option>
-       @for(c of categories();track c.id){<option [value]="c.id" [selected]="c.id===category()">{{c.nombre}}{{c.activa?'':' (inactiva)'}}</option>}
-      </select>
+     <gc-search-select id="catalog-product-kind" label="Tipo de producto"
+      [items]="kindChoices" [value]="kind()" [searchable]="false" [clearable]="false"
+      [disabled]="!isNew||!access.canManage()" (valueChange)="kind.set($event)"/>
+     <gc-search-select id="catalog-category" label="Categoría" [items]="categoryChoices()"
+      [value]="category()" [remote]="true" [disabled]="!access.canManage()"
+      placeholder="Sin categoría" (searchChange)="queueCategorySearch($event)"
+      (valueChange)="category.set($event)"/>
      </div>
+     <div class="cat-form-section"><h3>2. Presentación en la carta</h3>
      <label class="cat-wide">Descripción para el menú
       <textarea [value]="description()" (input)="description.set($any($event.target).value)" rows="3"
        maxlength="1500" [disabled]="!access.canManage()"></textarea>
@@ -67,6 +59,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       <label class="cat-check"><input type="checkbox" [checked]="visible()" (change)="visible.set($any($event.target).checked)"
        [disabled]="!access.canManage()"/> Mostrar en menú comercial</label>
      }
+     </div>
      @if(saveError()){<p class="cat-alert" role="alert">{{saveError()}}</p>}
      <div class="cat-actions">
       @if(access.canManage()){<button class="cat-primary" type="submit"
@@ -81,7 +74,6 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     <section class="cat-card">
      <div class="cat-row"><h2>Presentaciones y tamaños</h2>
       <span class="cat-muted">{{variants().length}} presentaciones</span></div>
-     <p class="cat-muted">Agrega opciones como pequeño, mediano o grande. Cada una puede tener su propio precio y extras.</p>
      <div class="cat-table-wrap"><table class="cat-table"><thead><tr>
       <th>Presentación</th><th>Artículo de inventario</th><th>Estado</th><th>Acción</th>
      </tr></thead><tbody>
@@ -98,6 +90,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
      <section class="cat-card">
       <h2>{{creatingVariant()?'Nueva presentación':'Editar presentación'}}</h2>
       <form class="cat-form" (submit)="saveVariant($event)">
+       <div class="cat-form-section"><h3>1. Datos de la presentación</h3>
        <label>Nombre
         <input [value]="variantName()" (input)="variantName.set($any($event.target).value)"
          [disabled]="!access.canManage()" maxlength="120" required/>
@@ -110,17 +103,19 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
         <input type="number" min="0" step="1" [value]="variantOrder()" (input)="variantOrder.set(+$any($event.target).value)"
          [disabled]="!access.canManage()"/>
        </label>
-       @if(product.tipo==='INVENTARIABLE'){
-        @if(editVariant()?.articuloInventario?.nombre){<p class="cat-muted">Artículo asociado: {{editVariant()?.articuloInventario?.nombre}}</p>}
-        <gc-inventory-picker id="catalog-linked-article" label="Artículo físico de Inventario"
-         kind="article" [value]="articleId()"
-         [selectedLabel]="editVariant()?.articuloInventario?.nombre??''"
-         (valueChange)="articleId.set($event)"
-         [disabled]="!access.canManage()"/>
-       }
        @if(editVariant()){
         <label class="cat-check"><input type="checkbox" [checked]="variantActive()"
          (change)="variantActive.set($any($event.target).checked)" [disabled]="!access.canManage()"/> Presentación activa</label>
+       }
+       </div>
+       @if(product.tipo==='INVENTARIABLE'){
+        <div class="cat-form-section"><h3>2. Inventario asociado</h3>
+         <gc-inventory-picker id="catalog-linked-article" label="Artículo físico de Inventario"
+          kind="article" [value]="articleId()"
+          [selectedLabel]="editVariant()?.articuloInventario?.nombre??''"
+          (valueChange)="articleId.set($event)"
+          [disabled]="!access.canManage()"/>
+        </div>
        }
        @if(variantError()){<p role="alert" class="cat-alert">{{variantError()}}</p>}
        <div class="cat-actions">
@@ -132,31 +127,19 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       @if(editVariant();as v){
        <hr/>
        <h2>Extras disponibles para {{v.nombre}}</h2>
-       <div class="cat-toolbar">
-        <label class="cat-field">Buscar grupos de extras
-         <input [value]="groupSearch()" maxlength="120"
-          (input)="groupSearch.set($any($event.target).value)" (keyup.enter)="searchGroups()"/>
-        </label>
-        <button type="button" (click)="searchGroups()">Buscar grupos</button>
-       </div>
-       <p class="cat-muted">Elige qué opciones adicionales estarán disponibles para esta presentación.</p>
-       <div class="cat-form">
+       <div class="cat-extra-config">
         @for(link of links();track link.grupoId){
-         <div class="cat-row">
+         <div class="cat-extra-group-row">
           <strong>{{groupName(link.grupoId)}}</strong>
           <label class="cat-check"><input type="checkbox" [checked]="link.obligatorio"
            [disabled]="!access.canManage()" (change)="toggleRequired(link.grupoId,$any($event.target).checked)"/> Obligatorio</label>
           <button type="button" [disabled]="!access.canManage()" (click)="removeGroup(link.grupoId)">Quitar</button>
          </div>
         }
-        <label>Agregar grupo
-         <select [value]="groupId()" (change)="groupId.set($any($event.target).value)" [disabled]="!access.canManage()">
-          <option value="">Seleccionar grupo</option>
-          @for(group of groups();track group.id){
-           @if(group.activo&&!linked(group.id)){<option [value]="group.id" [selected]="group.id===groupId()">{{group.nombre}}</option>}
-          }
-         </select>
-        </label>
+        <gc-search-select id="catalog-add-modifier-group" label="Agregar grupo"
+         [items]="groupChoices()" [value]="groupId()" [remote]="true"
+         [disabled]="!access.canManage()" placeholder="Buscar grupo…"
+         (searchChange)="queueGroupSearch($event)" (valueChange)="groupId.set($event)"/>
         <div class="cat-actions">
          <button type="button" [disabled]="!access.canManage()||!groupId()" (click)="addGroup()">Agregar grupo</button>
          <button type="button" class="cat-primary" [disabled]="!access.canManage()||busy()" (click)="saveGroups()">
@@ -171,14 +154,16 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
          <label class="cat-check"><input type="checkbox" [checked]="branchEnabled()"
           (change)="branchEnabled.set($any($event.target).checked)" [disabled]="!access.canManageBranch()"/>
           Habilitada para vender en esta sucursal</label>
-         <label class="cat-field">Pausa hasta (opcional, hora de este equipo)
-          <input type="datetime-local" [value]="branchPause()" (input)="branchPause.set($any($event.target).value)"
-           [disabled]="!access.canManageBranch()"/>
-         </label>
-         <label class="cat-field">Motivo (opcional)
-          <input [value]="branchReason()" (input)="branchReason.set($any($event.target).value)" maxlength="500"
-           [disabled]="!access.canManageBranch()"/>
-         </label>
+         <div class="cat-inline-grid">
+          <label class="cat-field">Pausa hasta (opcional, hora local)
+           <input type="datetime-local" [value]="branchPause()" (input)="branchPause.set($any($event.target).value)"
+            [disabled]="!access.canManageBranch()"/>
+          </label>
+          <label class="cat-field">Motivo (opcional)
+           <input [value]="branchReason()" (input)="branchReason.set($any($event.target).value)" maxlength="500"
+            [disabled]="!access.canManageBranch()"/>
+          </label>
+         </div>
          <button type="button" [disabled]="!access.canManageBranch()||busy()" (click)="saveBranch()">
           Guardar disponibilidad</button>
         </section>
@@ -188,7 +173,6 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     }
     <section class="cat-card">
      <h2>Revisión del producto</h2>
-     <p class="cat-muted">Comprueba qué falta para mostrar este producto en la carta de la sucursal.</p>
      @if(readiness();as r){
       <strong>{{r.lista?'Listo para publicar':'Requiere atención'}}</strong>
       @for(v of r.variantes;track v.varianteId){
@@ -199,11 +183,13 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     <section class="cat-card">
      <h2>Estado del producto</h2>
      <strong>{{product.activo?'Activo':'Inactivo'}}</strong>
-     <label class="cat-field">Motivo del cambio
-      <input [value]="reason()" maxlength="500" (input)="reason.set($any($event.target).value)" [disabled]="!access.canManage()"/>
-     </label>
-     @if(access.canManage()){<button type="button" [disabled]="busy()||reason().trim().length<3" (click)="changeStatus()">
-      {{product.activo?'Desactivar':'Reactivar'}} producto</button>}
+     <div class="cat-inline-form">
+      <label class="cat-field">Motivo del cambio
+       <input [value]="reason()" maxlength="500" (input)="reason.set($any($event.target).value)" [disabled]="!access.canManage()"/>
+      </label>
+      @if(access.canManage()){<button type="button" [disabled]="busy()||reason().trim().length<3" (click)="changeStatus()">
+       {{product.activo?'Desactivar':'Reactivar'}} producto</button>}
+     </div>
     </section>
    }
   }
@@ -230,6 +216,25 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected readonly groups=signal<CatalogGroup[]>([]);
  protected readonly readiness=signal<CatalogProductReadiness|null>(null);
  protected readonly kinds=PRODUCT_KINDS;
+ protected readonly kindChoices=this.kinds.map(k=>({id:k.value,label:k.label}));
+ protected readonly categoryChoices=computed(()=>this.categories().map(c=>({
+  id:c.id,label:c.nombre+(c.activa?'':' (inactiva)')
+ })));
+ protected readonly groupChoices=computed(()=>this.groups()
+  .filter(g=>(g.activo&&!this.linked(g.id))||g.id===this.groupId())
+  .map(g=>({id:g.id,label:g.nombre})));
+ private readonly categoryTerms=new Subject<string>();
+ private readonly groupTerms=new Subject<string>();
+ private categoryGeneration=0;
+ private groupGeneration=0;
+ protected queueCategorySearch(term:string){this.categoryTerms.next(term)}
+ protected queueGroupSearch(term:string){this.groupTerms.next(term)}
+ constructor(){
+  this.categoryTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{this.categorySearch.set(term);void this.searchCategories()});
+  this.groupTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{this.groupSearch.set(term);void this.searchGroups()});
+ }
  protected readonly code=signal('');
  protected readonly name=signal('');
  protected readonly description=signal('');
@@ -266,8 +271,10 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   if(!this.isNew)await this.reload();
  }
  protected async searchCategories(){
+  const gen=++this.categoryGeneration;
   try{
    const result=await firstValueFrom(this.api.categoryOptions({search:this.categorySearch().trim(),limit:50}));
+   if(gen!==this.categoryGeneration)return;
    const options:CatalogCategory[]=result.data.map(x=>({
     id:x.id,nombre:x.label,parentId:x.parentId,orden:0,activa:true
    }));
@@ -276,11 +283,13 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
    const saved=readableCategory(this.page.data()?.categoria);
    const selected=existing??(saved?.id===currentId?saved:null);
    this.categories.set(keepSelected(options,selected));
-  }catch(e){this.saveError.set(gcErrorMessage(e))}
+  }catch(e){if(gen===this.categoryGeneration)this.saveError.set(gcErrorMessage(e))}
  }
  protected async searchGroups(){
+  const gen=++this.groupGeneration;
   try{
    const result=await firstValueFrom(this.api.modifierGroupOptions({search:this.groupSearch().trim(),limit:50}));
+   if(gen!==this.groupGeneration)return;
    const attached=this.editVariant()?.varianteGrupoModificadoresComoVariante??[];
    const prior=attached.flatMap(link=>link.grupo?[link.grupo]:[]);
    const selected=this.groups().find(x=>x.id===this.groupId());
@@ -289,7 +298,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
     if(!all.some(x=>x.id===item.id))all.unshift(item);
    }
    this.groups.set(all);
-  }catch(e){this.variantError.set(gcErrorMessage(e))}
+  }catch(e){if(gen===this.groupGeneration)this.variantError.set(gcErrorMessage(e))}
  }
  protected error(){return gcErrorMessage(this.page.error())}
  protected async reload(){

@@ -8,6 +8,7 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {GcInventoryNav} from '../inventory-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {InventoryApi} from '../data-access/inventory.api';
 import {InventoryUrlState} from '../data-access/inventory-url-state';
 import {parseApiDecimal,formatDecimal} from '../../../shared/formatting';
@@ -15,7 +16,7 @@ import type {StockSummary} from '../data-access/inventory.models';
 @Component({
  selector:'gc-inventory-summary-page',
  providers:[InventoryUrlState],
- imports:[RouterLink,GcPageHeader,GcInventoryNav,GcErrorState],
+ imports:[RouterLink,GcPageHeader,GcInventoryNav,GcErrorState,GcSearchSelect],
  template:`
  <div class="inv-page">
   <gc-page-header title="Resumen de inventario"
@@ -23,13 +24,8 @@ import type {StockSummary} from '../data-access/inventory.models';
   <gc-inventory-nav/>
   <section class="inv-card">
    <div class="inv-row">
-    <div class="inv-field">
-     <label for="overview-branch">Consultar sucursal</label>
-     <select id="overview-branch" [value]="url.filters().sucursalId"
-       (change)="selectBranch($any($event.target).value)">
-      @for(item of branch.branches();track item.id){<option [value]="item.id">{{item.nombre}}</option>}
-     </select>
-    </div>
+    <gc-search-select id="overview-branch" label="Consultar sucursal" [items]="branchChoices()"
+     [value]="url.filters().sucursalId" [clearable]="false" (valueChange)="selectBranch($event)"/>
    </div>
    @if(page.busy()&&!page.data()){<p role="status" class="inv-muted">Cargando existencias…</p>}
    @else if(page.busy()){<p role="status" class="inv-muted">Actualizando existencias…</p>}
@@ -78,6 +74,7 @@ import type {StockSummary} from '../data-access/inventory.models';
 })
 export class GcInventorySummaryPage{
  protected readonly branch=inject(GcBranchContext);
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly url=inject(InventoryUrlState);
  private readonly api=inject(InventoryApi);
  protected readonly page=new GcPageState<{data:StockSummary[];nota?:string}>();

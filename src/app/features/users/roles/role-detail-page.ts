@@ -15,9 +15,10 @@ import {RolesApi} from '../data-access/users.api';
 import {UsersAccess} from '../data-access/users-access';
 import type {Role,PermissionGroup,Scope} from '../data-access/users.models';
 import {GcUsersNav} from '../users-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 @Component({
  selector:'gc-role-detail-page',
- imports:[ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcErrorState,GcUsersNav],
+ imports:[ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcErrorState,GcUsersNav,GcSearchSelect],
  template:`
  <div class="gc-u-page gc-u-narrow">
   <gc-page-header [title]="isNew?'Nuevo rol':(role.data()?.nombre??'Rol')"/>
@@ -27,7 +28,7 @@ import {GcUsersNav} from '../users-nav';
   @if(isNew||role.data()){
    <section class="gc-u-card gc-u-page">
     <form class="gc-u-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-     <h2>Información</h2>
+     <fieldset class="gc-u-section"><legend>1. Identificación y alcance</legend>
      <div class="gc-u-grid">
       <div class="gc-u-field"><label for="role-code">Código</label>
        <input id="role-code" formControlName="codigo" maxlength="50" placeholder="Ej. CAJERO"
@@ -38,23 +39,21 @@ import {GcUsersNav} from '../users-nav';
        <input id="role-name" formControlName="nombre" maxlength="100" placeholder="Ej. Cajero"
         [attr.aria-invalid]="form.controls.nombre.touched&&form.controls.nombre.invalid"/>
       </div>
-      <div class="gc-u-field"><label for="role-scope">Alcance</label>
-       <select id="role-scope" formControlName="alcance">
-        <option value="SUCURSAL">Por sucursal</option><option value="GLOBAL">Global</option>
-       </select>
-      </div>
+      <gc-search-select id="role-scope" label="Alcance" [items]="scopeChoices"
+       formControlName="alcance" [searchable]="false" [clearable]="false"/>
       @if(!isNew){
-       <div class="gc-u-field"><label for="role-active">Estado</label>
-        <select id="role-active" formControlName="activo">
-         <option [ngValue]="true">Activo</option><option [ngValue]="false">Inactivo</option>
-        </select>
-       </div>
+       <gc-search-select id="role-active" label="Estado" [items]="activeChoices"
+       [value]="form.controls.activo.value?'true':'false'" [searchable]="false"
+       [clearable]="false" (valueChange)="setActive($event)"/>
       }
      </div>
+     </fieldset>
+     <fieldset class="gc-u-section"><legend>2. Descripción del rol</legend>
      <div class="gc-u-field"><label for="role-description">Descripción</label>
       <textarea id="role-description" formControlName="descripcion" rows="3" maxlength="500"
         placeholder="Ej. Personal de caja"></textarea>
      </div>
+     </fieldset>
      @if(error()){<p class="gc-u-alert" role="alert">{{error()}}</p>}
      <div class="gc-u-actions"><button gcButton type="submit"
        [disabled]="!access.canGlobal('roles.manage')||role.data()?.codigo==='SUPER_ADMIN'||form.invalid||(!isNew&&!form.dirty)||action.busy()">
@@ -64,8 +63,10 @@ import {GcUsersNav} from '../users-nav';
    @if(!isNew&&role.data()){
     <section class="gc-u-card gc-u-page">
      <div class="gc-u-row"><h2>Permisos</h2><span class="gc-u-muted">{{selected().length}} seleccionados</span></div>
+     <div class="gc-u-permission-grid">
      @for(group of groups();track group.module){
-      <section><h3>{{group.module}}</h3>
+      <section class="gc-u-permission-group" [attr.aria-label]="group.module">
+       <h3>{{group.module}}</h3>
        <div class="gc-u-check-list">
         @for(p of group.permissions;track p.codigo){
          <label class="gc-u-check">
@@ -77,6 +78,7 @@ import {GcUsersNav} from '../users-nav';
        </div>
       </section>
      }
+     </div>
      @if(permissionError()){<p role="alert" class="gc-u-alert">{{permissionError()}}</p>}
      <div class="gc-u-actions"><button gcButton type="button"
        [disabled]="!access.canGlobal('roles.manage')||role.data()?.codigo==='SUPER_ADMIN'||form.dirty||!permissionDirty()||permissionAction.busy()"
@@ -96,6 +98,12 @@ export class GcRoleDetailPage implements OnInit {
  private readonly notices=inject(GcNotificationService);
  protected readonly id=this.route.snapshot.paramMap.get('id')??this.route.snapshot.parent?.paramMap.get('id')??'new';
  protected readonly isNew=this.id==='new';
+ protected readonly scopeChoices=[{id:'SUCURSAL',label:'Por sucursal'},{id:'GLOBAL',label:'Global'}];
+ protected readonly activeChoices=[{id:'true',label:'Activo'},{id:'false',label:'Inactivo'}];
+ protected setActive(value:string){
+  const control=this.form.controls.activo;
+  control.setValue(value==='true');control.markAsDirty();control.markAsTouched();
+ }
  protected readonly role=new GcPageState<Role>();
  protected readonly groups=signal<PermissionGroup[]>([]);
  protected readonly selected=signal<string[]>([]);

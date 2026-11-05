@@ -36,8 +36,29 @@ export const routes: Routes = [
         loadChildren: () => import('./features/users/users.routes').then(m => m.USERS_ROUTES),
       },
       {
+        path: 'recipes', canActivate: [gcSessionGuard], data: { breadcrumb: 'Recetas' },
+        loadChildren: () => import('./features/recipes/recipes.routes').then(m => m.RECIPES_ROUTES),
+      },
+      {
         path: 'catalog', canActivate: [gcSessionGuard], data: { breadcrumb: 'Catálogo' },
         loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.CATALOG_ROUTES),
+      },
+      {
+        path: 'orders', canActivate: [gcSessionGuard], data: { breadcrumb: 'Órdenes' },
+        loadChildren: () => import('./features/orders/orders.routes').then(m => m.ORDERS_ROUTES),
+      },
+      {
+        path: 'payments', canActivate: [gcSessionGuard], data: { breadcrumb: 'Cobros' },
+        loadChildren: () => import('./features/payments/payments.routes').then(m => m.PAYMENTS_ROUTES),
+      },
+      {
+        path: 'purchases', canActivate: [gcSessionGuard],
+        data: {breadcrumb:'Compras y abastecimiento'},
+        loadChildren: () => import('./features/purchases/purchases.routes').then(m=>m.PURCHASES_ROUTES),
+      },
+      {
+        path: 'reports', canActivate: [gcSessionGuard], data: {breadcrumb:'Analítica'},
+        loadChildren: () => import('./features/reports/reports.routes').then(m=>m.REPORTS_ROUTES),
       },
       {
         path: 'inventory', canActivate: [gcSessionGuard], data: { breadcrumb: 'Inventario' },

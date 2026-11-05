@@ -1,4 +1,4 @@
-import {Component,inject,signal,OnInit} from '@angular/core';
+import {Component,computed,inject,signal,OnInit} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -6,13 +6,14 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {formatCurrency} from '../../../shared/formatting';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
 import type {CatalogBranchMenu} from '../data-access/catalog.models';
 
 @Component({
  selector:'gc-catalog-menu-preview-page',
- imports:[GcCatalogNav,GcErrorState,RouterLink],
+ imports:[GcCatalogNav,GcErrorState,RouterLink,GcSearchSelect],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
@@ -22,13 +23,8 @@ import type {CatalogBranchMenu} from '../data-access/catalog.models';
    </div>
    <p class="cat-muted">Consulta cómo se verá la carta de la sucursal en la fecha que elijas.</p>
    <div class="cat-toolbar">
-    <label class="cat-field">Sucursal
-     <select [value]="branchId()" (change)="branchId.set($any($event.target).value)">
-      @for(branch of branches.branches();track branch.id){
-       <option [value]="branch.id" [selected]="branch.id===branchId()">{{branch.nombre}}</option>
-      }
-     </select>
-    </label>
+    <gc-search-select id="cat-menu-preview-branch" label="Sucursal" [items]="branchChoices()"
+      [value]="branchId()" [clearable]="false" (valueChange)="branchId.set($event)"/>
     <label class="cat-field">Fecha y hora a consultar
      <input type="datetime-local" [value]="localDate()" (change)="localDate.set($any($event.target).value)"/>
     </label>
@@ -82,6 +78,7 @@ export class GcCatalogMenuPreviewPage implements OnInit {
  protected readonly branches=inject(GcBranchContext);
  private readonly api=inject(CatalogApi);
  protected readonly branchId=signal('');
+ protected readonly branchChoices=computed(()=>this.branches.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly localDate=signal('');
  protected readonly result=signal<CatalogBranchMenu|null>(null);
  protected readonly busy=signal(false);

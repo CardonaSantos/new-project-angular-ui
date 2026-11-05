@@ -15,6 +15,22 @@ describe('Shared inventory picker — saved relations',()=>{
    providers:[{provide:InventoryApi,useValue:api}]
   });
  });
+ it('renders one searchable combobox rather than three unrelated controls',async()=>{
+  const f=TestBed.createComponent(GcInventoryPicker);
+  f.componentRef.setInput('id','article-picker');
+  f.componentRef.setInput('kind','article');
+  f.detectChanges();await f.whenStable();f.detectChanges();
+  expect(f.nativeElement.querySelector('ng-select')).not.toBeNull();
+  expect(f.nativeElement.querySelector('select')).toBeNull();
+  expect(f.nativeElement.querySelector('button')).toBeNull();
+ });
+ it('explains the prerequisite for a location picker',async()=>{
+  const f=TestBed.createComponent(GcInventoryPicker);
+  f.componentRef.setInput('id','location-picker');
+  f.componentRef.setInput('kind','location');
+  f.detectChanges();await f.whenStable();f.detectChanges();
+  expect(f.nativeElement.textContent).toContain('Selecciona primero un almacén');
+ });
  it('shows and selects the current article even when omitted from the first 50 search results',async()=>{
   const f=TestBed.createComponent(GcInventoryPicker);
   f.componentRef.setInput('id','article-picker');
@@ -22,10 +38,8 @@ describe('Shared inventory picker — saved relations',()=>{
   f.componentRef.setInput('value','saved');
   f.componentRef.setInput('selectedLabel','Artículo guardado');
   f.detectChanges();await f.whenStable();f.detectChanges();
-  const select=f.nativeElement.querySelector('select') as HTMLSelectElement;
-  expect(select.value).toBe('saved');
-  expect(select.selectedOptions[0]?.textContent).toContain('Artículo guardado');
-  expect(select.options.length).toBe(3);
+  const selected=f.nativeElement.querySelector('.ng-value-label') as HTMLElement;
+  expect(selected?.textContent).toContain('Artículo guardado');
  });
  it('updates the selected label without requiring a new search or clearing the saved ID',async()=>{
   const f=TestBed.createComponent(GcInventoryPicker);
@@ -37,9 +51,10 @@ describe('Shared inventory picker — saved relations',()=>{
   f.componentRef.setInput('value','new-value');
   f.componentRef.setInput('selectedLabel','Artículo nuevo');
   f.detectChanges();
-  const select=f.nativeElement.querySelector('select') as HTMLSelectElement;
-  expect(select.value).toBe('new-value');
-  expect(select.selectedOptions[0]?.textContent).toContain('Artículo nuevo');
+  // NgModel propagates external writes in a scheduled microtask.
+  await f.whenStable();f.detectChanges();
+  const selected=f.nativeElement.querySelector('.ng-value-label') as HTMLElement;
+  expect(selected?.textContent).toContain('Artículo nuevo');
  });
  it('loads a readable label when the parent did not provide one',async()=>{
   const f=TestBed.createComponent(GcInventoryPicker);
@@ -47,8 +62,7 @@ describe('Shared inventory picker — saved relations',()=>{
   f.componentRef.setInput('kind','article');
   f.componentRef.setInput('value','saved');
   f.detectChanges();await f.whenStable();f.detectChanges();
-  const select=f.nativeElement.querySelector('select') as HTMLSelectElement;
-  expect(select.value).toBe('saved');
-  expect(select.selectedOptions[0]?.textContent).toContain('ART-1 · Artículo guardado');
+  const selected=f.nativeElement.querySelector('.ng-value-label') as HTMLElement;
+  expect(selected?.textContent).toContain('ART-1 · Artículo guardado');
  });
 });

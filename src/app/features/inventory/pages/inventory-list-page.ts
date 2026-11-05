@@ -17,6 +17,7 @@ import {GcTableCellDirective} from '../../../design-system/data/gc-table-cell.di
 import {GcPagination,type GcPageChange} from '../../../design-system/data/gc-pagination';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {GcInventoryNav} from '../inventory-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcInventorySubnav,STOCK_LINKS,OPERATION_LINKS} from '../components/inventory-subnav';
 import {InventoryApi} from '../data-access/inventory.api';
 import {InventoryUrlState,type InventoryFilters} from '../data-access/inventory-url-state';
@@ -53,7 +54,7 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
  selector:'gc-inventory-list-page',
  providers:[InventoryUrlState],
  imports:[RouterLink,GcPageHeader,GcButtonDirective,GcDataTable,GcTableCellDirective,
-  GcPagination,GcErrorState,GcInventoryNav,GcInventorySubnav,GcInventoryPicker],
+  GcPagination,GcErrorState,GcInventoryNav,GcInventorySubnav,GcInventoryPicker,GcSearchSelect],
  template:`
  <div class="inv-page">
   <gc-page-header [title]="config.title"/>
@@ -69,50 +70,33 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
      <a gcButton [routerLink]="config.create">{{view==='articles'?'Nuevo artículo':view==='movements'?'Registrar movimiento':view==='counts'?'Nuevo conteo':'Nueva transferencia'}}</a>
     </div>
    }
-   <form class="inv-toolbar" (submit)="apply($event)">
+   <form class="inv-toolbar gc-filter-grid" aria-label="Filtros de inventario" (submit)="apply($event)">
     @if(view==='articles'||view==='movements'){
      <div class="inv-field"><label for="inv-search">Buscar artículo</label>
       <input id="inv-search" [value]="search()" (input)="search.set($any($event.target).value)"
        maxlength="100" placeholder="Nombre o código"/></div>
     }
     @if(view!=='articles'){
-     <div class="inv-field"><label for="inv-branch">Sucursal</label>
-      <select id="inv-branch" [value]="url.filters().sucursalId" (change)="setFilter('sucursalId',$any($event.target).value)">
-       @for(b of branch.branches();track b.id){<option [value]="b.id">{{b.nombre}}</option>}
-      </select>
-     </div>
+     <gc-search-select id="inv-branch" label="Sucursal" [items]="branchChoices()"
+      [value]="url.filters().sucursalId" [clearable]="false" (valueChange)="setFilter('sucursalId',$event)"/>
     }
     @if(view==='articles'){
-     <div class="inv-field"><label for="inv-type">Tipo</label>
-      <select id="inv-type" [value]="url.filters().tipo" (change)="setFilter('tipo',$any($event.target).value)">
-       <option value="">Todos</option>
-       @for(kind of kinds;track kind.value){<option [value]="kind.value">{{kind.label}}</option>}
-      </select>
-     </div>
+     <gc-search-select id="inv-type" label="Tipo" [items]="kindChoices"
+      [value]="url.filters().tipo" placeholder="Todos" [searchable]="false" (valueChange)="setFilter('tipo',$event)"/>
     }
     @if(view==='articles'||view==='counts'||view==='transfers'){
-     <div class="inv-field"><label for="inv-status">Estado</label>
-      <select id="inv-status" [value]="url.filters().estado" (change)="setFilter('estado',$any($event.target).value)">
-       <option value="">Todos</option>
-       @for(option of states();track option.value){<option [value]="option.value">{{option.label}}</option>}
-      </select>
-     </div>
+     <gc-search-select id="inv-status" label="Estado" [items]="stateChoices()"
+      [value]="url.filters().estado" placeholder="Todos" [searchable]="false" (valueChange)="setFilter('estado',$event)"/>
     }
     @if(view==='stock'||view==='lots'||view==='movements'||view==='counts'){
-     <div class="inv-field"><label for="inv-warehouse">Almacén</label>
-      <select id="inv-warehouse" [value]="url.filters().almacenId" (change)="setFilter('almacenId',$any($event.target).value)">
-       <option value="">Todos</option>
-       @for(item of warehouses();track item.id){<option [value]="item.id">{{item.nombre}}</option>}
-      </select>
-     </div>
+     <gc-inventory-picker id="inv-warehouse" label="Almacén" kind="warehouse"
+      [branchId]="url.filters().sucursalId" [value]="url.filters().almacenId"
+      placeholder="Todos los almacenes" (valueChange)="setFilter('almacenId',$event)"/>
     }
     @if(view==='lots'||view==='stock'||view==='movements'){
-     <div class="inv-field"><label for="inv-article">Artículo</label>
-      <select id="inv-article" [value]="url.filters().articuloId" (change)="setFilter('articuloId',$any($event.target).value)">
-       <option value="">Todos</option>
-       @for(item of articles();track item.id){<option [value]="item.id">{{item.nombre}}</option>}
-      </select>
-     </div>
+     <gc-inventory-picker id="inv-article" label="Artículo" kind="article"
+      [value]="url.filters().articuloId" placeholder="Todos los artículos"
+      (valueChange)="setFilter('articuloId',$event)"/>
     }
     @if(view==='articles'||view==='movements'){<button gcButton type="submit" variant="outline">Buscar</button>}
    </form>
@@ -156,6 +140,7 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
   @if(view==='lots'&&access.canGlobal('inventory.articles.manage')){
    <section class="inv-card inv-narrow">
     <h2>Registrar lote</h2>
+    <fieldset class="inv-section"><legend>Datos del lote</legend>
     <div class="inv-grid">
      <gc-inventory-picker id="new-lot-article" kind="article" label="Artículo"
        [value]="newLotArticle()" (valueChange)="newLotArticle.set($event)"/>
@@ -172,12 +157,13 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
        (change)="newLotExpiry.set($any($event.target).value)"/>
      </div>
     </div>
+    </fieldset>
     @if(lotError()){<p role="alert" class="inv-alert">{{lotError()}}</p>}
     <div class="inv-actions">
      <button gcButton type="button" [disabled]="action.busy()||!newLotArticle()||!newLotCode().trim()"
       (click)="createLot()">Crear lote</button>
     </div>
-    <p class="inv-muted">Los lotes nuevos pueden aparecer sin existencias. Selecciona el artículo para consultarlos.</p>
+
    </section>
   }
  </div>`,
@@ -199,6 +185,9 @@ export class GcInventoryListPage {
   {value:'INGREDIENTE',label:'Ingrediente'},{value:'PREPARACION',label:'Preparación'},
   {value:'PRODUCTO_TERMINADO',label:'Producto terminado'},
   {value:'EMPAQUE',label:'Empaque'},{value:'SUMINISTRO',label:'Suministro'}];
+ protected readonly kindChoices=this.kinds.map(k=>({id:k.value,label:k.label}));
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
+ protected readonly stateChoices=computed(()=>this.states().map(v=>({id:v.value,label:v.label})));
  protected readonly search=signal('');
  protected readonly warehouses=signal<{id:string;nombre:string}[]>([]);
  protected readonly articles=signal<{id:string;nombre:string}[]>([]);

@@ -62,6 +62,15 @@ export interface TransferDetail extends RecordId {numero:string;estado:TransferS
  despachadaEn:string|null;recibidaEn:string|null;lineas:TransferLine[]}
 export interface ManualPosting {articuloId:string;ubicacionId:string;loteId?:string;cantidad:string;
  costoUnitario?:string;claveOperacion:string;motivo:string}
+export interface BatchInboundInput {
+ claveOperacion:string;motivo:string;
+ lineas:{articuloId:string;ubicacionId:string;loteId?:string;cantidad:string;costoUnitario:string}[];
+}
+export interface BatchInboundResult {
+ claveOperacion:string;sucursalId:string;numeroLineas:number;
+ movimientos:{movementId:string;articuloId:string;ubicacionId:string;loteId?:string|null;
+  cantidad:string;costoUnitario?:string;costoTotal?:string}[];
+}
 export interface CountCreate {almacenId:string;nota:string;lineas:{articuloId:string;ubicacionId:string;loteId?:string;
  cantidadContada:string;costoUnitarioEntrada?:string}[]}
 export interface TransferCreate {almacenOrigenId:string;almacenDestinoId:string;nota:string;

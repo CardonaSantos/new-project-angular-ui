@@ -1,5 +1,6 @@
 
-import {Component,inject,signal} from '@angular/core';
+import {Component,computed,inject,signal} from '@angular/core';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {Router,RouterLink} from '@angular/router';
 import {FormGroup,FormControl,ReactiveFormsModule,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
@@ -21,65 +22,67 @@ type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
  selector:'gc-inventory-operation-page',
  providers:[InventoryUrlState],
  imports:[RouterLink,ReactiveFormsModule,GcPageHeader,GcButtonDirective,
-  GcInventoryNav,GcInventorySubnav,GcInventoryPicker],
+  GcInventoryNav,GcInventorySubnav,GcInventoryPicker,GcSearchSelect],
  template:`
  <div class="inv-page inv-narrow">
   <gc-page-header title="Registrar movimiento"/>
   <gc-inventory-nav/><gc-inventory-subnav [links]="links" label="Operaciones"/>
   <section class="inv-card">
    <form class="inv-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-    <div class="inv-grid">
-     <div class="inv-field">
-      <label for="manual-type">Operación</label>
-      <select id="manual-type" [value]="kind()" (change)="kind.set($any($event.target).value);newRequestKey()">
-       <option value="opening">Saldo inicial</option>
-       <option value="inbound">Entrada manual</option>
-       <option value="outbound">Salida manual</option>
-       <option value="waste">Merma</option>
-       <option value="consume">Consumo interno</option>
-      </select>
+    <fieldset class="inv-section">
+     <legend>1. Contexto del movimiento</legend>
+     <div class="inv-grid">
+      <gc-search-select id="manual-type" label="Operación" [items]="operationChoices"
+       [value]="kind()" [searchable]="false" [clearable]="false"
+       (valueChange)="changeKind($event)"/>
+      <gc-search-select id="manual-branch" label="Sucursal" [items]="branchChoices()"
+       [value]="url.filters().sucursalId" [clearable]="false"
+       (valueChange)="branchChange($event)"/>
      </div>
-     <div class="inv-field"><label for="manual-branch">Sucursal</label>
-      <select id="manual-branch" [value]="url.filters().sucursalId"
-       (change)="branchChange($any($event.target).value)">
-       @for(b of branch.branches();track b.id){<option [value]="b.id">{{b.nombre}}</option>}
-      </select>
+    </fieldset>
+    <fieldset class="inv-section">
+     <legend>2. Artículo y ubicación</legend>
+     <div class="inv-grid">
+      <gc-inventory-picker id="manual-art" label="Artículo" kind="article" [value]="articleId()"
+       (valueChange)="articleId.set($event);lotId.set('');newRequestKey()"/>
+      <gc-inventory-picker id="manual-warehouse" label="Almacén" kind="warehouse"
+       [branchId]="url.filters().sucursalId" [value]="warehouseId()"
+       (valueChange)="warehouseId.set($event);locationId.set('');newRequestKey()"/>
+      <gc-inventory-picker id="manual-location" label="Ubicación" kind="location"
+       [branchId]="url.filters().sucursalId" [warehouseId]="warehouseId()" [value]="locationId()"
+       (valueChange)="locationId.set($event);newRequestKey()"/>
+      <gc-inventory-picker id="manual-lot" label="Lote (si aplica)" kind="lot"
+       [branchId]="url.filters().sucursalId" [articleId]="articleId()" [value]="lotId()"
+       (valueChange)="lotId.set($event);newRequestKey()"/>
      </div>
-     <gc-inventory-picker id="manual-art" label="Artículo" kind="article" [value]="articleId()"
-      (valueChange)="articleId.set($event);lotId.set('');newRequestKey()"/>
-     <gc-inventory-picker id="manual-warehouse" label="Almacén" kind="warehouse"
-      [branchId]="url.filters().sucursalId" [value]="warehouseId()"
-      (valueChange)="warehouseId.set($event);locationId.set('');newRequestKey()"/>
-     <gc-inventory-picker id="manual-location" label="Ubicación" kind="location"
-      [branchId]="url.filters().sucursalId" [warehouseId]="warehouseId()" [value]="locationId()"
-      (valueChange)="locationId.set($event);newRequestKey()"/>
-     <gc-inventory-picker id="manual-lot" label="Lote (si aplica)" kind="lot"
-      [branchId]="url.filters().sucursalId" [articleId]="articleId()" [value]="lotId()"
-      (valueChange)="lotId.set($event);newRequestKey()"/>
-     <div class="inv-field"><label for="manual-qty">Cantidad</label>
-      <input id="manual-qty" formControlName="cantidad" inputmode="decimal"
-       placeholder="Ej. 5.250000"
-       [attr.aria-invalid]="form.controls.cantidad.invalid&&form.controls.cantidad.touched"/>
-      @if(form.controls.cantidad.touched&&form.controls.cantidad.invalid){<small class="inv-error">Cantidad positiva con hasta seis decimales.</small>}
-     </div>
-     @if(kind()==='opening'||kind()==='inbound'){
-      <div class="inv-field"><label for="manual-cost">Costo unitario</label>
-       <input id="manual-cost" formControlName="costoUnitario" inputmode="decimal" placeholder="Ej. 1.250000"/>
-       <small>Obligatorio para ingresos. Solo cuentas autorizadas para costos.</small>
+    </fieldset>
+    <fieldset class="inv-section">
+     <legend>3. Cantidades y justificación</legend>
+     <div class="inv-grid">
+      <div class="inv-field"><label for="manual-qty">Cantidad</label>
+       <input id="manual-qty" formControlName="cantidad" inputmode="decimal"
+        placeholder="Ej. 5.250000"
+        [attr.aria-invalid]="form.controls.cantidad.invalid&&form.controls.cantidad.touched"/>
+       @if(form.controls.cantidad.touched&&form.controls.cantidad.invalid){<small class="inv-error">Cantidad positiva con hasta seis decimales.</small>}
       </div>
-     }
-     @if(kind()==='consume'){
-      <div class="inv-field"><label for="manual-purpose">Destino de uso</label>
-       <input id="manual-purpose" formControlName="destinoUso" maxlength="100" placeholder="Ej. Consumo del personal"/>
-      </div>
-     }
-    </div>
-    <div class="inv-field"><label for="manual-reason">Motivo</label>
-     <textarea id="manual-reason" formControlName="motivo" rows="3" maxlength="500"
-      placeholder="Describe el motivo del movimiento"></textarea>
-    </div>
-    <p class="inv-muted">Cada operación genera un registro inmutable de Kardex y una clave de idempotencia. No se modifican saldos manualmente en Angular.</p>
-    @if(error()){<p role="alert" class="inv-alert">{{error()}}</p>}
+      @if(kind()==='opening'||kind()==='inbound'){
+       <div class="inv-field"><label for="manual-cost">Costo unitario</label>
+        <input id="manual-cost" formControlName="costoUnitario" inputmode="decimal" placeholder="Ej. 1.250000"/>
+        <small>Obligatorio para ingresos. Solo cuentas autorizadas para costos.</small>
+       </div>
+      }
+      @if(kind()==='consume'){
+       <div class="inv-field"><label for="manual-purpose">Destino de uso</label>
+        <input id="manual-purpose" formControlName="destinoUso" maxlength="100" placeholder="Ej. Consumo del personal"/>
+       </div>
+      }
+     </div>
+     <div class="inv-field"><label for="manual-reason">Motivo</label>
+      <textarea id="manual-reason" formControlName="motivo" rows="3" maxlength="500"
+       placeholder="Describe el motivo del movimiento"></textarea>
+     </div>
+    </fieldset>
+        @if(error()){<p role="alert" class="inv-alert">{{error()}}</p>}
     <div class="inv-actions">
      <button type="submit" gcButton [disabled]="action.busy()||form.invalid||!articleId()||!locationId()||!canWrite()">
       {{action.busy()?'Registrando…':'Revisar y registrar'}}
@@ -101,6 +104,13 @@ export class GcInventoryOperationPage {
  protected readonly links=OPERATION_LINKS;
  protected readonly action=new GcConfirmedAction();
  protected readonly kind=signal<Operation>('inbound');
+ protected readonly operationChoices=[
+  {id:'opening',label:'Saldo inicial'},{id:'inbound',label:'Entrada manual'},
+  {id:'outbound',label:'Salida manual'},{id:'waste',label:'Merma'},
+  {id:'consume',label:'Consumo interno'}
+ ];
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
+ protected changeKind(value:string){this.kind.set(value as Operation);this.newRequestKey()}
  protected readonly articleId=signal('');protected readonly warehouseId=signal('');
  protected readonly locationId=signal('');protected readonly lotId=signal('');
  protected readonly error=signal<string|null>(null);

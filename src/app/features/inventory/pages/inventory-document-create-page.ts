@@ -1,5 +1,5 @@
 
-import {Component,inject,signal} from '@angular/core';
+import {Component,computed,inject,signal} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {FormControl,FormGroup,ReactiveFormsModule,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
@@ -12,6 +12,7 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcInventoryNav} from '../inventory-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcInventorySubnav,OPERATION_LINKS} from '../components/inventory-subnav';
 import {GcInventoryPicker} from '../components/inventory-picker';
 import {InventoryApi} from '../data-access/inventory.api';
@@ -31,7 +32,7 @@ function emptyLine():DocumentLine {
  selector:'gc-inventory-document-create-page',
  providers:[InventoryUrlState],
  imports:[ReactiveFormsModule,RouterLink,GcPageHeader,GcButtonDirective,GcInventoryNav,
-  GcInventorySubnav,GcInventoryPicker],
+  GcInventorySubnav,GcInventoryPicker,GcSearchSelect],
  template:`
  <div class="inv-page inv-narrow">
   <gc-page-header [title]="isCount?'Nuevo conteo físico':'Nueva transferencia'"/>
@@ -39,23 +40,15 @@ function emptyLine():DocumentLine {
   <form class="inv-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
    <section class="inv-card">
     <h2>1. Origen y destino</h2>
-    <div class="inv-grid">
-     <div class="inv-field"><label for="document-branch">Sucursal de origen</label>
-      <select id="document-branch" [value]="url.filters().sucursalId" (change)="selectBranch($any($event.target).value)">
-       @for(item of branch.branches();track item.id){<option [value]="item.id">{{item.nombre}}</option>}
-      </select>
-     </div>
+        <div class="inv-grid">
+     <gc-search-select id="document-branch" label="Sucursal de origen" [items]="branchChoices()"
+     [value]="url.filters().sucursalId" [clearable]="false" (valueChange)="selectBranch($event)"/>
      <gc-inventory-picker id="document-warehouse" label="Almacén de origen" kind="warehouse"
       [branchId]="url.filters().sucursalId" [value]="warehouseId()"
       (valueChange)="setWarehouse($event)"/>
      @if(!isCount){
-      <div class="inv-field"><label for="document-target-branch">Sucursal de destino</label>
-       <select id="document-target-branch" [value]="targetBranch()"
-        (change)="setTargetBranch($any($event.target).value)">
-        <option value="">Selecciona una sucursal</option>
-        @for(item of branch.branches();track item.id){<option [value]="item.id">{{item.nombre}}</option>}
-       </select>
-      </div>
+      <gc-search-select id="document-target-branch" label="Sucursal de destino" [items]="branchChoices()"
+     [value]="targetBranch()" placeholder="Selecciona una sucursal" (valueChange)="setTargetBranch($event)"/>
       <gc-inventory-picker id="document-target-warehouse" label="Almacén de destino" kind="warehouse"
        [branchId]="targetBranch()" [value]="targetWarehouse()"
        (valueChange)="targetWarehouse.set($event);resetLines()"/>
@@ -146,6 +139,7 @@ export class GcInventoryDocumentCreatePage {
  private readonly dialog=inject(ConfirmDialogService);
  private readonly notice=inject(GcNotificationService);
  protected readonly links=OPERATION_LINKS;
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly action=new GcConfirmedAction();
  protected readonly error=signal<string|null>(null);
  protected readonly warehouseId=signal('');

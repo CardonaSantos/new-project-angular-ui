@@ -8,12 +8,13 @@ import {GcPageState} from '../../../core/ux/gc-page-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogApi} from '../data-access/catalog.api';
 import {CatalogAccess} from '../data-access/catalog-access';
 import {PRODUCT_KINDS,type CatalogProduct,type CatalogCategory,type CatalogPage} from '../data-access/catalog.models';
 
 @Component({
- selector:'gc-catalog-products-page',imports:[RouterLink,GcCatalogNav,GcErrorState],
+ selector:'gc-catalog-products-page',imports:[RouterLink,GcCatalogNav,GcErrorState,GcSearchSelect],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
@@ -21,29 +22,20 @@ import {PRODUCT_KINDS,type CatalogProduct,type CatalogCategory,type CatalogPage}
    <div class="cat-row"><h2>Productos comerciales</h2>
     @if(access.canManage()){<a class="cat-primary" routerLink="/catalog/products/new">Nuevo producto</a>}
    </div>
-   <div class="cat-toolbar">
+   <div class="cat-toolbar gc-filter-grid">
     <label class="cat-field">Buscar producto
      <input [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="applySearch()"
       maxlength="120" placeholder="Nombre o código"/>
     </label>
     <button type="button" (click)="applySearch()">Buscar</button>
-    <label class="cat-field">Categoría
-     <select [value]="category()" (change)="patch({categoriaId:$any($event.target).value||null,page:null})">
-      <option value="" [selected]="!category()">Todas</option>
-      @for(item of categories();track item.id){<option [value]="item.id" [selected]="item.id===category()">{{item.nombre}}</option>}
-     </select>
-    </label>
-    <label class="cat-field">Tipo
-     <select [value]="kind()" (change)="patch({tipo:$any($event.target).value||null,page:null})">
-      <option value="">Todos</option>
-      @for(item of kinds;track item.value){<option [value]="item.value">{{item.label}}</option>}
-     </select>
-    </label>
-    <label class="cat-field">Estado
-     <select [value]="state()" (change)="patch({activo:$any($event.target).value||null,page:null})">
-      <option value="">Todos</option><option value="true">Activos</option><option value="false">Inactivos</option>
-     </select>
-    </label>
+    <gc-search-select id="cat-products-category" label="Categoría" [items]="categoryChoices()"
+     [value]="category()" placeholder="Todas" (valueChange)="patch({categoriaId:$event||null,page:null})"/>
+    <gc-search-select id="cat-products-kind" label="Tipo" [items]="kindChoices"
+     [value]="kind()" placeholder="Todos" [searchable]="false"
+     (valueChange)="patch({tipo:$event||null,page:null})"/>
+    <gc-search-select id="cat-products-state" label="Estado" [items]="stateChoices"
+     [value]="state()" placeholder="Todos" [searchable]="false"
+     (valueChange)="patch({activo:$event||null,page:null})"/>
    </div>
    @if(page.busy()){<p role="status" class="cat-muted">Consultando productos…</p>}
    @if(page.status()==='error'){<gc-error-state [message]="error()" (retry)="reload()"/>}
@@ -91,6 +83,9 @@ export class GcCatalogProductsPage {
  protected readonly search=signal('');
  protected readonly categories=signal<CatalogCategory[]>([]);
  protected readonly kinds=PRODUCT_KINDS;
+ protected readonly kindChoices=this.kinds.map(k=>({id:k.value,label:k.label}));
+ protected readonly categoryChoices=computed(()=>this.categories().map(c=>({id:c.id,label:c.nombre})));
+ protected readonly stateChoices=[{id:'true',label:'Activos'},{id:'false',label:'Inactivos'}];
  protected readonly currentPage=computed(()=>Math.max(1,Number(this.query().get('page')||1)||1));
  protected readonly kind=computed(()=>this.query().get('tipo')??'');
  protected readonly category=computed(()=>this.query().get('categoriaId')??'');

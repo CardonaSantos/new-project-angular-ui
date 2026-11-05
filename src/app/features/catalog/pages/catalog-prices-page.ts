@@ -1,7 +1,9 @@
 import {Component,computed,inject,signal,OnInit} from '@angular/core';
-import {firstValueFrom} from 'rxjs';
+import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcCatalogNav} from '../catalog-nav';
+import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {CatalogAccess} from '../data-access/catalog-access';
 import {CatalogApi} from '../data-access/catalog.api';
 import type {CatalogVariant,CatalogModifier,CatalogPrice,CatalogQuote,CatalogResolvedPrice} from '../data-access/catalog.models';
@@ -21,43 +23,24 @@ function positivePrice(raw:string):string{
  return value;
 }
 @Component({
- selector:'gc-catalog-prices-page',imports:[GcCatalogNav,GcErrorState],
+ selector:'gc-catalog-prices-page',imports:[GcCatalogNav,GcErrorState,GcSearchSelect],
  template:`
  <main class="cat-page">
   <gc-catalog-nav/>
   <section class="cat-card">
    <div class="cat-row"><h2>Precios comerciales</h2>
-    <label class="cat-field">Sucursal
-     <select [value]="branchId()" (change)="selectBranch($any($event.target).value)">
-      @for(b of branch.branches();track b.id){<option [value]="b.id" [selected]="b.id===branchId()">{{b.nombre}}</option>}
-     </select>
-    </label>
+    <gc-search-select id="price-branch" label="Sucursal" [items]="branchChoices()"
+     [value]="branchId()" [clearable]="false" (valueChange)="selectBranch($event)"/>
    </div>
-   <p class="cat-muted">Los precios son específicos de cada sucursal. Un precio nuevo conserva el historial anterior y no modifica las ventas ya registradas.</p>
-   <div class="cat-toolbar">
-    <label class="cat-field">Tipo de precio
-     <select [value]="mode()" (change)="setMode($any($event.target).value)">
-      <option value="variant">Presentaciones de productos</option><option value="modifier">Extras</option>
-     </select>
-    </label>
-    <label class="cat-field">Buscar
-     <input [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="loadOptions()"
-      placeholder="Nombre, producto o SKU"/>
-    </label>
-    <button type="button" (click)="loadOptions()">Buscar</button>
+   <p class="cat-muted">Los precios se registran por sucursal sin alterar las ventas anteriores.</p>
+   <div class="cat-toolbar gc-filter-grid">
+    <gc-search-select id="price-mode" label="Tipo de precio" [items]="modeChoices"
+     [value]="mode()" [searchable]="false" [clearable]="false" (valueChange)="setMode($event)"/>
+    <gc-search-select id="price-entity" [label]="mode()==='variant'?'Presentación':'Extra'"
+     [items]="entityChoices()" [value]="entityId()" [remote]="true" [loading]="loading()"
+     placeholder="Buscar y seleccionar…" (searchChange)="queueOptionSearch($event)"
+     (valueChange)="selectEntity($event)"/>
    </div>
-   <label class="cat-field">Seleccionar {{mode()==='variant'?'presentación':'extra'}}
-    <select [value]="entityId()" (change)="selectEntity($any($event.target).value)">
-     <option value="">Seleccionar</option>
-     @if(mode()==='variant'){
-      @for(item of variants();track item.id){
-       <option [value]="item.id" [selected]="item.id===entityId()">{{item.label??(item.producto?.nombre+' · '+item.nombre)}}</option>
-      }
-     } @else {
-      @for(item of modifiers();track item.id){<option [value]="item.id" [selected]="item.id===entityId()">{{item.grupo?.nombre}} · {{item.nombre}}</option>}
-     }
-    </select>
-   </label>
    @if(optionsMore()){<p class="cat-muted">Mostrando resultados iniciales. Refina la búsqueda para encontrar otros.</p>}
    @if(loading()){<p role="status" class="cat-muted">Consultando precios…</p>}
    @if(error()){<gc-error-state [message]="error()!" (retry)="reload()"/>}
@@ -89,8 +72,9 @@ function positivePrice(raw:string):string{
    @if(access.canPrices()){
     <section class="cat-card">
      <h2>Programar un nuevo precio</h2>
-     <p class="cat-muted">El importe nuevo se registra con fecha de inicio. Si ya existe otro precio para esas fechas, tendrás que elegir un período diferente.</p>
+     <p class="cat-muted">No se permiten períodos de vigencia superpuestos.</p>
      <form class="cat-form" (submit)="save($event)">
+      <div class="cat-form-section"><h3>1. Importe y vigencia</h3>
       <label>Precio en quetzales
        <input inputmode="decimal" [value]="amount()" (input)="amount.set($any($event.target).value)" required
         placeholder="28.00"/>
@@ -101,7 +85,7 @@ function positivePrice(raw:string):string{
       <label>Vigente hasta (opcional)
        <input type="datetime-local" [value]="to()" (input)="to.set($any($event.target).value)"/>
       </label>
-      <p class="cat-muted">Se guardarán instantes exactos ISO. Verifica la zona horaria de este equipo si programas precios futuros.</p>
+      </div>
       <button type="submit" class="cat-primary" [disabled]="loading()||!amount()||!from()">Registrar precio</button>
      </form>
     </section>
@@ -144,6 +128,19 @@ export class GcCatalogPricesPage implements OnInit{
  private readonly notice=inject(GcNotificationService);
  private readonly confirm=inject(ConfirmDialogService);
  protected readonly branchId=signal('');
+ protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
+ protected readonly modeChoices=[{id:'variant',label:'Presentaciones de productos'},{id:'modifier',label:'Extras'}];
+ private readonly optionTerms=new Subject<string>();
+ private optionGeneration=0;
+ protected queueOptionSearch(term:string){this.optionTerms.next(term)}
+ protected readonly chosenOption=signal<{id:string;label:string}|null>(null);
+ protected readonly entityChoices=computed(()=>{
+  const opts=this.mode()==='variant'?
+   this.variants().map(x=>({id:x.id,label:x.label??(x.producto?.nombre+' · '+x.nombre)})):
+   this.modifiers().map(x=>({id:x.id,label:(x.grupo?.nombre??'Extra')+' · '+x.nombre}));
+  const saved=this.chosenOption();
+  return saved&&!opts.some(x=>x.id===saved.id)?[saved,...opts]:opts;
+ });
  protected readonly mode=signal<'variant'|'modifier'>('variant');
  protected readonly search=signal('');
  protected readonly variants=signal<CatalogVariant[]>([]);
@@ -161,26 +158,42 @@ export class GcCatalogPricesPage implements OnInit{
  protected readonly loading=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly linkedGroups=computed(()=>this.selectedVariant()?.varianteGrupoModificadoresComoVariante??[]);
+ constructor(){
+  this.optionTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{this.search.set(term);void this.loadOptions()});
+ }
  async ngOnInit(){this.branchId.set(this.branch.branchId()??this.branch.branches()[0]?.id??'');await this.loadOptions()}
  protected date(v:string){try{return formatInstant(v,this.branch.branches().find(b=>b.id===this.branchId())?.zonaHoraria??'America/Guatemala')}catch{return '—'}}
  protected money(v:string,moneda:string){try{return formatCurrency(v,moneda==='USD'?'USD':'GTQ')}catch{return '—'}}
- protected setMode(v:string){this.mode.set(v==='modifier'?'modifier':'variant');this.selectEntity('');void this.loadOptions()}
- protected selectBranch(v:string){this.branchId.set(v);void this.reload()}
+ protected setMode(v:string){
+  this.mode.set(v==='modifier'?'modifier':'variant');this.search.set('');
+  this.chosenOption.set(null);this.selectEntity('');void this.loadOptions();
+ }
+ protected selectBranch(v:string){this.branchId.set(v);void this.loadOptions();void this.reload()}
  protected async loadOptions(){
+  const gen=++this.optionGeneration,mode=this.mode(),search=this.search().trim();
   this.loading.set(true);this.error.set(null);
   try{
-   if(this.mode()==='variant'){
-    const r=await firstValueFrom(this.api.variantOptions({sucursalId:this.branchId()||undefined,
-     search:this.search().trim(),limit:50}));
-    this.variants.set(r.data);this.optionsMore.set(r.meta.hasMore);
+   if(mode==='variant'){
+    const result=await firstValueFrom(this.api.variantOptions({
+     sucursalId:this.branchId()||undefined,search,limit:50
+    }));
+    if(gen!==this.optionGeneration||mode!==this.mode())return;
+    this.variants.set(result.data);this.optionsMore.set(result.meta.hasMore);
    }else{
-    const r=await firstValueFrom(this.api.modifiers({search:this.search().trim(),limit:100,page:1}));
-    this.modifiers.set(r.data);this.optionsMore.set(r.meta.total>r.data.length);
+    const result=await firstValueFrom(this.api.modifiers({search,limit:100,page:1}));
+    if(gen!==this.optionGeneration||mode!==this.mode())return;
+    this.modifiers.set(result.data);this.optionsMore.set(result.meta.total>result.data.length);
    }
-  }catch(e){this.error.set(gcErrorMessage(e))}finally{this.loading.set(false)}
+  }catch(e){if(gen===this.optionGeneration)this.error.set(gcErrorMessage(e))}
+  finally{if(gen===this.optionGeneration)this.loading.set(false)}
  }
- protected selectEntity(id:string){this.entityId.set(id);this.quoteResult.set(null);
-  this.selectedModifiers.set([]);void this.reload()}
+ protected selectEntity(id:string){
+  this.chosenOption.set(this.entityChoices().find(x=>x.id===id)??null);
+  this.entityId.set(id);this.quoteResult.set(null);this.selectedModifiers.set([]);
+  if(!id){this.history.set([]);this.resolved.set(null);this.selectedVariant.set(null);}
+  else void this.reload();
+ }
  protected async reload(){
   if(!this.entityId()||!this.branchId())return;
   const id=this.entityId(),branch=this.branchId();

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -17,12 +17,13 @@ import { DevicesApi } from '../data-access/organization-api';
 import { DEVICE_TYPES } from '../data-access/organization.models';
 import type { Device, DeviceCreate, DeviceType, DeviceUpdate } from '../data-access/organization.models';
 import { GcOrganizationNav } from '../organization-nav';
+import { GcSearchSelect } from '../../../design-system/forms/gc-search-select';
 
 interface KitchenStation {id:string;nombre:string;activa:boolean}
 
 @Component({
   selector:'gc-device-detail-page',
-  imports:[ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcErrorState,GcOrganizationNav],
+  imports:[ReactiveFormsModule,GcPageHeader,GcButtonDirective,GcErrorState,GcOrganizationNav,GcSearchSelect],
   template:`
   <div class="gc-org-page gc-org-page--form">
     <gc-page-header [title]="isNew ? 'Nuevo dispositivo' : (device.data()?.nombre ?? 'Dispositivo')"/>
@@ -34,6 +35,7 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
     @if (isNew || device.data()) {
       <section class="gc-org-card gc-org-narrow">
         <form [formGroup]="form" class="gc-org-form" (ngSubmit)="save()" novalidate>
+          <fieldset class="gc-org-section"><legend>1. Identificación del dispositivo</legend>
           <div class="gc-org-grid">
             <div class="gc-org-field">
               <label for="dv-code">Código</label>
@@ -55,36 +57,21 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
                 <small id="dv-name-error" class="gc-org-error">Introduce un nombre.</small>
               }
             </div>
-            <div class="gc-org-field">
-              <label for="dv-branch">Sucursal</label>
-              <select id="dv-branch" formControlName="sucursalId" (change)="loadStations()">
-                <option value="">Seleccionar sucursal</option>
-                @for (item of branch.branches(); track item.id) {
-                  <option [value]="item.id">{{ item.nombre }}</option>
-                }
-              </select>
-            </div>
-            <div class="gc-org-field">
-              <label for="dv-type">Tipo</label>
-              <select id="dv-type" formControlName="tipo" (change)="onType()">
-                @for (item of types; track item.value) {
-                  <option [value]="item.value">{{ item.label }}</option>
-                }
-              </select>
-            </div>
+          </div></fieldset>
+          <fieldset class="gc-org-section"><legend>2. Sucursal y función</legend>
+          <div class="gc-org-grid">
+            <gc-search-select id="dv-branch" label="Sucursal" formControlName="sucursalId"
+              [items]="branchChoices()" placeholder="Seleccionar sucursal"
+              (valueChange)="changeBranch()"/>
+            <gc-search-select id="dv-type" label="Tipo" formControlName="tipo"
+              [items]="typeChoices" [searchable]="false" [clearable]="false"
+              (valueChange)="onType()"/>
             @if (form.controls.tipo.value==='KDS') {
-              <div class="gc-org-field">
-                <label for="dv-station">Estación de preparación</label>
-                <select id="dv-station" formControlName="estacionPreparacionId">
-                  <option value="">Sin estación</option>
-                  @for (item of stations(); track item.id) {
-                    <option [value]="item.id">{{ item.nombre }}</option>
-                  }
-                </select>
-                @if (stationError()) {<small class="gc-org-error">{{ stationError() }}</small>}
-              </div>
+              <gc-search-select id="dv-station" label="Estación de preparación"
+                formControlName="estacionPreparacionId" [items]="stationChoices()"
+                placeholder="Sin estación" [error]="stationError()??''"/>
             }
-          </div>
+          </div></fieldset>
           @if (error()) {<p class="gc-org-alert" role="alert">{{ error() }}</p>}
           <div class="gc-org-actions">
             <button gcButton type="submit" [disabled]="!canManage() || !form.dirty || action.busy()">
@@ -102,21 +89,20 @@ interface KitchenStation {id:string;nombre:string;activa:boolean}
           @if (form.dirty) {
             <p class="gc-org-muted">Guarda los cambios pendientes antes de modificar el estado.</p>
           }
-          <div class="gc-org-field">
-            <label for="dv-reason">Motivo</label>
-            <input id="dv-reason" maxlength="500" [value]="reason()"
-              placeholder="Ej. Equipo en mantenimiento"
-              aria-describedby="dv-reason-help" (input)="reason.set($any($event.target).value)"/>
-            <small id="dv-reason-help">Mínimo 3 caracteres.</small>
-          </div>
-          @if (statusError()) {<p class="gc-org-alert" role="alert">{{ statusError() }}</p>}
-          <div class="gc-org-actions">
+          <div class="gc-org-inline-action">
+            <div class="gc-org-field">
+              <label for="dv-reason">Motivo</label>
+              <input id="dv-reason" maxlength="500" [value]="reason()"
+                placeholder="Ej. Equipo en mantenimiento"
+                (input)="reason.set($any($event.target).value)"/>
+            </div>
             <button type="button" gcButton [variant]="device.data()?.activo ? 'danger':'secondary'"
               [disabled]="!canManage() || statusAction.busy() || form.dirty || reason().trim().length<3"
               (click)="changeStatus()">
               {{ device.data()?.activo ? 'Desactivar dispositivo' : 'Activar dispositivo' }}
             </button>
           </div>
+          @if (statusError()) {<p class="gc-org-alert" role="alert">{{ statusError() }}</p>}
         </section>
       }
     }
@@ -136,6 +122,15 @@ export class GcDeviceDetailPage implements OnInit {
   protected readonly id=this.route.snapshot.paramMap.get('id')??'new';
   protected readonly isNew=this.id==='new';
   protected readonly types=DEVICE_TYPES;
+  protected readonly typeChoices=this.types.map(t=>({id:t.value,label:t.label}));
+  protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
+  protected readonly stationChoices=computed(()=>{
+    const options=this.stations().map(st=>({id:st.id,label:st.nombre}));
+    const saved=this.device.data();
+    return saved?.estacionPreparacionId&&saved.estacionNombre&&
+      !options.some(st=>st.id===saved.estacionPreparacionId)
+      ?[{id:saved.estacionPreparacionId,label:saved.estacionNombre},...options]:options;
+  });
   protected readonly device=new GcPageState<Device>();
   protected readonly stations=signal<readonly KitchenStation[]>([]);
   protected readonly stationError=signal<string|null>(null);
@@ -179,6 +174,10 @@ export class GcDeviceDetailPage implements OnInit {
     else void this.loadStations();
   }
   protected loadStations():void {void this.refreshStations();}
+  protected changeBranch():void{
+    this.form.controls.estacionPreparacionId.setValue('');
+    this.loadStations();
+  }
   private async refreshStations():Promise<void> {
     const branchId=this.form.controls.sucursalId.value;
     await this.checkAccess(branchId);
