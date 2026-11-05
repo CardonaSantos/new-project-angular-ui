@@ -20,7 +20,7 @@ import {PRODUCT_KINDS,type CatalogProduct,type CatalogCategory,type CatalogPage}
   <gc-catalog-nav/>
   <section class="cat-card">
    <div class="cat-row"><h2>Productos comerciales</h2>
-    @if(access.canManage()){<a class="cat-primary" routerLink="/catalog/products/new">Nuevo producto</a>}
+    @if(access.canManage()){<a class="cat-primary" routerLink="/catalog/products/new">+ Crear producto</a>}
    </div>
    <div class="cat-toolbar gc-filter-grid">
     <label class="cat-field">Buscar producto
