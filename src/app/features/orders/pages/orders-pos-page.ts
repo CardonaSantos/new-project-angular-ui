@@ -551,8 +551,10 @@ export class GcOrdersPosPage{
      }))
     :await firstValueFrom(this.api.create(dto));
    this.createdId.set(data.id);
-   this.createdTickets.set((data.comandasComoOrden??[]).map(x=>({id:x.id,numero:x.numero})));
-   const kitchenCreated=(data.comandasComoOrden??[]).length>0;
+   const previously=new Set((existing?.comandasComoOrden??[]).map(t=>t.id));
+   const newTickets=(data.comandasComoOrden??[]).filter(t=>!previously.has(t.id));
+   this.createdTickets.set(newTickets.map(x=>({id:x.id,numero:x.numero})));
+   const kitchenCreated=newTickets.length>0;
    const hasUnprocessed=(data.ordenLineasComoOrden??[]).some(line=>
     parseApiDecimal(line.cantidadEnviada).lt(parseApiDecimal(line.cantidad)));
    const status=kitchenCreated?' · Enviada a Cocina':
