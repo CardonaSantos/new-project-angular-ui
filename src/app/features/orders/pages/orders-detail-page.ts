@@ -27,6 +27,12 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
    <h1>Pedido {{order()?.numero??''}}</h1></div>
    <div class="ord-actions">
     @if(order();as o){<gc-order-status [state]="o.estado"/>}
+    @if(access.canKitchenRead()){
+     @if(primaryComanda();as ticket){
+      <a class="ord-primary ord-detail-print" [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']">
+       Imprimir comanda</a>
+     }
+    }
     <button type="button" (click)="load()" [disabled]="busy()||actionBusy()">Actualizar</button>
    </div>
   </div>
@@ -34,7 +40,7 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
   @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>
    <button type="button" (click)="load()">Reintentar</button>}
   @if(order();as o){
-   <section class="ord-card">
+   <section class="ord-card ord-detail-summary">
     <div class="ord-stat-grid">
      <div><small>Tipo de pedido</small><strong>{{o.modalidad==='MESA'?'Para una mesa':o.modalidad==='MOSTRADOR'?'Mostrador':o.modalidad==='PARA_LLEVAR'?'Para llevar':'A domicilio'}}</strong></div>
      <div><small>Productos</small><strong>{{activeLines().length}}</strong></div>
@@ -70,7 +76,7 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
      }
     }
    </section>
-   <section class="ord-card">
+   <section class="ord-card ord-detail-products">
     <div class="ord-heading"><h2>Productos del pedido</h2>
      @if(o.estado==='ABIERTA'&&(access.canManage()||access.canCreate())){
       <div class="ord-actions">
@@ -113,16 +119,22 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
      } @empty {<p>No hay productos registrados.</p>}
     </div>
     @if(o.comandasComoOrden?.length){
-     <h3>Preparación</h3>
-     <div class="ord-small-list">@for(ticket of o.comandasComoOrden??[];track ticket.id){
-      <span>Comanda {{ticket.numero}} · {{ticketStatus(ticket.estado)}}</span>
+     <details class="ord-detail-command-list">
+      <summary>Comandas ({{o.comandasComoOrden?.length}}) · ver todas</summary>
+      <div class="ord-small-list">
+       @for(ticket of o.comandasComoOrden??[];track ticket.id){
+        <div class="ord-detail-command-row">
+         <span>{{ticket.numero}} · {{ticketStatus(ticket.estado)}}</span>
+         @if(access.canKitchenRead()){
+          <a [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']">Imprimir</a>
+         }
+        </div>
+       }
+      </div>
       @if(access.canKitchenRead()){
-       <a [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']">Imprimir</a>
+       <a routerLink="/orders/kitchen">Ver preparación y entrega en Cocina</a>
       }
-     }</div>
-     @if(access.canKitchenRead()){
-      <div class="ord-actions"><a routerLink="/orders/kitchen">Ver preparación y entrega en Cocina</a></div>
-     }
+     </details>
     }
    </section>
    @if(o.estado==='ABIERTA'&&access.canManage()){
@@ -277,6 +289,10 @@ export class GcOrdersDetailPage implements OnInit {
   return this.pendingOperation.key;
  }
  protected readonly activeLines=computed(()=>this.order()?.ordenLineasComoOrden.filter(x=>!x.canceladaEn)??[]);
+ protected readonly primaryComanda=computed(()=>
+  (this.order()?.comandasComoOrden??[])
+   .filter(ticket=>ticket.estado!=='CANCELADA')
+   .sort((a,b)=>b.enviadaEn.localeCompare(a.enviadaEn))[0]??null);
  protected readonly unpaidAmount=computed(()=>{
   const accounts=this.order()?.cuentasComoOrden??[];
   const due=accounts.reduce((sum,a)=>sum.plus(

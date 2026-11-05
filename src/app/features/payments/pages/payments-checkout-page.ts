@@ -19,7 +19,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
 @Component({
  selector:'gc-payments-checkout-page',imports:[RouterLink,GcSearchSelect,GcPaymentsNav],
  template:`
- <main class="ord-page pay-page">
+ <main class="ord-page pay-page pay-checkout-compact">
  <gc-payments-nav/>
  <div class="ord-heading pay-heading">
   <div><a routerLink="/orders/list">← Pedidos</a><h1>Cobrar pedido {{order()?.numero??''}}</h1></div>
@@ -55,9 +55,11 @@ import {parseApiDecimal} from '../../../shared/formatting';
       <h3>{{selectedName()}}</h3>
       <span class="ord-status">{{account.estado==='ABIERTA'?'Abierta':'Finalizada'}}</span>
      </div>
-     <div class="pay-balance">
-      <span>Saldo pendiente</span><strong>{{money(account.saldo)}}</strong>
-     </div>
+     @if(accounts().length>1){
+      <div class="pay-balance">
+       <span>Saldo de esta cuenta</span><strong>{{money(account.saldo)}}</strong>
+      </div>
+     }
      @if(parseApiDecimalSafe(account.reembolsado)){
       <p class="ord-note">Devoluciones registradas: {{money(account.reembolsado)}}</p>
      }
@@ -243,15 +245,19 @@ import {parseApiDecimal} from '../../../shared/formatting';
     }
    </section>
    <aside class="ord-card pay-checkout-aside">
-    <h2>Resumen del pedido</h2>
-    @for(item of o.ordenLineasComoOrden;track item.id){
-     @if(!item.canceladaEn){
-      <div class="pay-detail-row"><div><strong>{{item.nombreSnapshot}}</strong>
-       <small>{{item.cantidad}} × {{money(item.precioUnitario)}}</small></div>
-       <strong>{{money(item.subtotal)}}</strong></div>
+    <div class="ord-heading pay-checkout-aside-head">
+     <h2>Resumen del pedido</h2><strong>{{money(o.total)}}</strong>
+    </div>
+    <details class="pay-details pay-checkout-items">
+     <summary>Ver productos ({{o.ordenLineasComoOrden.length}} líneas)</summary>
+     @for(item of o.ordenLineasComoOrden;track item.id){
+      @if(!item.canceladaEn){
+       <div class="pay-detail-row"><div><strong>{{item.nombreSnapshot}}</strong>
+        <small>{{item.cantidad}} × {{money(item.precioUnitario)}}</small></div>
+        <strong>{{money(item.subtotal)}}</strong></div>
+      }
      }
-    }
-    <div class="pay-total-row"><span>Total</span><strong>{{money(o.total)}}</strong></div>
+    </details>
     <a [routerLink]="['/orders/list',o.id]">Volver al pedido</a>
     @if(access.canSalesRead()&&detail()?.venta;as sale){
      <a class="ord-primary" [routerLink]="['/payments/sales',sale.id,'receipt']">

@@ -64,32 +64,40 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
   </section>
  }
  @if(prefs.view()==='tables'&&showTablePicker()){
-  <section class="ord-card ord-pos-tables">
-   <div class="ord-heading"><h2>Elegir mesa</h2>
-    <button type="button" (click)="loadTables()" [disabled]="tableBusy()">Actualizar mesas</button></div>
-   @if(!access.canTablesRead()){<p>No tienes acceso al listado de mesas.</p>}
-   @else{
-    <div class="ord-pos-table-toolbar">
-     <label for="pos-table-search">Buscar mesa o sala
-      <input id="pos-table-search" type="search" [value]="tableSearch()"
-       (input)="tableSearch.set($any($event.target).value)" placeholder="Número o nombre de sala"/>
-     </label>
-     <span class="ord-note">{{availableTableCount()}} disponibles · {{occupiedTableCount()}} ocupadas</span>
+  <section class="ord-card ord-pos-tables ord-pos-table-picker" aria-label="Elegir mesa">
+   <div class="ord-pos-table-picker-head">
+    <div class="ord-pos-table-picker-title">
+     <h2>Mesas</h2>
+     <small>{{availableTableCount()}} disponibles · {{occupiedTableCount()}} ocupadas</small>
     </div>
+    <div class="ord-pos-table-picker-tools">
+     <label class="ord-pos-table-picker-search">
+      <span class="ord-pos-sr-only">Buscar mesa o sala</span>
+      <input type="search" aria-label="Buscar mesa o sala" [value]="tableSearch()"
+       (input)="tableSearch.set($any($event.target).value)" placeholder="Buscar mesa o sala"/>
+     </label>
+     <button type="button" (click)="loadTables()" [disabled]="tableBusy()">Actualizar</button>
+     <a routerLink="/orders/tables">Ver mesas</a>
+    </div>
+   </div>
+   @if(!access.canTablesRead()){<p class="ord-note">No tienes acceso al listado de mesas.</p>}
+   @else{
     @if(tableBusy()){<p role="status" class="ord-note">Actualizando mesas…</p>}
-    <div class="ord-table-grid">
+    <div class="ord-pos-table-picker-strip" role="group" aria-label="Seleccionar mesa">
      @for(table of filteredTables();track table.id){
-      <button class="ord-table-tile" type="button" [disabled]="!table.activa" (click)="chooseTable(table)">
-       <strong>Mesa {{table.numero}}</strong><small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
-       <span [class.ord-occupied]="!!table.ocupacion">{{!table.activa?'Inactiva':table.ocupacion?'Ocupada · continuar pedido':'Disponible'}}</span>
+      <button class="ord-pos-table-pill" type="button"
+       [disabled]="!table.activa||tableBusy()"
+       (click)="chooseTable(table)"
+       [attr.aria-label]="'Mesa '+table.numero+', '+(table.ocupacion?'ocupada, continuar pedido':'disponible')">
+       <strong>Mesa {{table.numero}}</strong>
+       <small>{{table.sala.nombre}} · {{table.capacidad}} pers.</small>
+       <span [class.ord-occupied]="!!table.ocupacion">
+        {{!table.activa?'Inactiva':table.ocupacion?'Ocupada · continuar':'Disponible'}}
+       </span>
       </button>
-     } @empty {<p class="ord-empty">No se encontraron mesas con esta búsqueda.</p>}
+     } @empty {<p class="ord-note">No hay mesas con estos filtros.</p>}
     </div>
    }
-   <div class="ord-actions"><a routerLink="/orders/tables">Ver todas las mesas</a>
-    @if(selectedTable()){<span>Pedido para mesa {{selectedTable()?.numero}}</span>
-     <button type="button" [disabled]="submitting()||tableBusy()" (click)="clearSelectedTable()">Quitar mesa</button>}
-   </div>
   </section>
  }
  @if(prefs.view()==='counter'&&existingOrder();as current){
@@ -100,6 +108,12 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
     <a [routerLink]="['/orders/list',current.id]">Ver pedido</a>
     @if(paymentsAccess.canRead()){
      <a [routerLink]="['/payments/order',current.id]">Cobrar</a>
+    }
+    @if(access.canKitchenRead()){
+     @if(recentComanda();as ticket){
+      <a class="ord-pos-print-link" [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']">
+       Imprimir comanda</a>
+     }
     }
    </div>
   </div>
@@ -117,6 +131,12 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <a [routerLink]="['/orders/list',current.id]">Ver detalles</a>
      @if(paymentsAccess.canRead()){
       <a [routerLink]="['/payments/order',current.id]">Cobrar mesa</a>
+     }
+     @if(access.canKitchenRead()){
+      @if(recentComanda();as ticket){
+       <a class="ord-pos-print-link" [routerLink]="['/orders/kitchen/tickets',ticket.id,'print']">
+        Imprimir comanda</a>
+      }
      }
     }
     <button type="button" [disabled]="submitting()||tableBusy()" (click)="showTablePicker.set(true)">Cambiar mesa</button>
@@ -344,6 +364,10 @@ export class GcOrdersPosPage{
  protected readonly expressSale=signal<QuickCheckoutResult|null>(null);
  protected readonly quickDraft=signal<CreateOrderInput|null>(null);
  protected readonly existingOrder=signal<OrderDetail|null>(null);
+ protected readonly recentComanda=computed(()=>
+  (this.existingOrder()?.comandasComoOrden??[])
+   .filter(ticket=>ticket.estado!=='CANCELADA')
+   .sort((a,b)=>b.enviadaEn.localeCompare(a.enviadaEn))[0]??null);
  protected readonly activeTableOrderId=computed(()=>
   this.selectedTable()?.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA')?.id??'');
  protected readonly tableOrderReady=computed(()=>
