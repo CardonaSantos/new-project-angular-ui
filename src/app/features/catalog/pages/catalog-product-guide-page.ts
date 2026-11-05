@@ -12,6 +12,7 @@ import {RecipesAccess} from '../../recipes/data-access/recipes-access';
 import {OrganizationAccess} from '../../organization/data-access/organization-access';
 import {GcCatalogInlineRecipe} from '../components/catalog-inline-recipe';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
+import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {PRODUCT_KINDS,type CatalogKind,type CatalogProduct,type CatalogCategoryOption,
  type CatalogProductReadiness} from '../data-access/catalog.models';
@@ -71,7 +72,7 @@ interface PriceResult {state:'saved'|'review';amount:string}
       @for(variant of product.varianteProductosComoProducto??[];track variant.id){
        @if(recipesAccess.canRead()){
         <button type="button" class="cat-guide-recipe-trigger"
-         (click)="recipeVariant.set(recipeVariant()===variant.id?'':variant.id)">
+         (click)="selectRecipeVariant(variant.id)">
          <strong>Receta · {{variant.nombre}}</strong>
          <small>Configurar ingredientes y consumo sin salir</small></button>
        }@else{
@@ -91,7 +92,7 @@ interface PriceResult {state:'saved'|'review';amount:string}
      @for(variant of product.varianteProductosComoProducto??[];track variant.id){
       @if(recipeVariant()===variant.id){
        <gc-catalog-inline-recipe [variantId]="variant.id" [productName]="product.nombre"
-        [variantName]="variant.nombre" (updated)="refreshReadiness(product.id)"/>
+        [variantName]="variant.nombre" (updated)="refreshReadiness(product.id)" (pendingChange)="recipePending.set($event)"/>
       }
      }
     }
@@ -275,6 +276,7 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  protected readonly articleCode=(index:number)=>suggestedArticleCode(this.code(),index);
  private readonly api=inject(CatalogApi);
  private readonly notify=inject(GcNotificationService);
+ private readonly confirm=inject(ConfirmDialogService);
  protected readonly types=PRODUCT_KINDS;
  protected readonly kind=signal<CatalogKind>('PREPARADO');
  protected readonly name=signal('');
@@ -301,6 +303,7 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  protected readonly error=signal('');
  protected readonly created=signal<CatalogProduct|null>(null);
  protected readonly recipeVariant=signal('');
+ protected readonly recipePending=signal(false);
  protected readonly createdNewArticle=signal(false);
  protected readonly prices=signal<Record<string,PriceResult>>({});
  protected readonly priceError=signal('');
@@ -333,7 +336,7 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  }
  async ngOnInit(){await this.loadCategories('')}
  hasUnsavedChanges(){
-  return !this.created()&&(
+  return this.recipePending()||!this.created()&&(
    !!this.name().trim()||!!this.description().trim()||!!this.categoryId()||
    this.editedCode()||this.kind()!=='PREPARADO'||this.variants().length!==1||
    this.variants()[0].nombre!=='Única'||!!this.variants()[0].precio||
@@ -411,6 +414,13 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
    this.notify.show('Categoría creada y seleccionada.','success');
   }catch(e){this.categoryError.set(gcErrorMessage(e))}
   finally{this.categorySaving.set(false)}
+ }
+ protected async selectRecipeVariant(id:string){
+  if(this.recipePending()&&
+   !await this.confirm.confirm({title:'Descartar receta sin guardar',
+    message:'Los ingredientes escritos no se guardaron. ¿Cambiar de receta?',
+    confirmText:'Descartar',danger:true}))return;
+  this.recipeVariant.set(this.recipeVariant()===id?'':id);this.recipePending.set(false);
  }
  protected async refreshReadiness(productId:string){
   const branchId=this.branch.branchId();

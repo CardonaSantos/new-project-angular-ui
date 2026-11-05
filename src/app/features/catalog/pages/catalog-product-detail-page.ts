@@ -151,23 +151,23 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        @if(access.canManage()){
         <section class="cat-subsection">
          <div class="cat-row"><h3>Crear extras sin salir de esta ficha</h3>
-          <button type="button" (click)="quickExtras.set(!quickExtras())">
+          <button type="button" (click)="toggleQuickExtras()">
            {{quickExtras()?'Cerrar':'Crear y asignar grupo'}}</button></div>
          @if(quickExtras()){
           <gc-catalog-quick-extra-editor [variantId]="v.id" [kind]="product.tipo"
-           (saved)="quickGroupSaved(v.id)"/>
+           (saved)="quickGroupSaved(v.id)" (pendingChange)="quickPending.set($event)"/>
          }
         </section>
        }
        @if(product.tipo==='PREPARADO'){
         <section class="cat-subsection">
          <div class="cat-row"><h3>Preparación y consumo</h3>
-          <button type="button" (click)="inlineRecipe.set(!inlineRecipe())">
+          <button type="button" (click)="toggleRecipe()">
            {{inlineRecipe()?'Cerrar receta':'Configurar receta aquí'}}</button></div>
          @if(inlineRecipe()){
           <gc-catalog-inline-recipe [variantId]="v.id"
            [productName]="product.nombre" [variantName]="v.nombre"
-           (updated)="fetchReadiness()"/>
+           (updated)="fetchReadiness()" (pendingChange)="recipePending.set($event)"/>
          }
         </section>
        }
@@ -272,6 +272,14 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected readonly editVariant=signal<CatalogVariant|null>(null);
  protected readonly quickExtras=signal(false);
  protected readonly inlineRecipe=signal(false);
+ protected readonly quickPending=signal(false);
+ protected readonly recipePending=signal(false);
+ protected readonly linksDirty=computed(()=>{
+  const v=this.editVariant();if(!v)return false;
+  const prev=(v.varianteGrupoModificadoresComoVariante??[])
+   .map(x=>({grupoId:x.grupoId,orden:x.orden,obligatorio:x.obligatorio}));
+  return JSON.stringify(prev)!==JSON.stringify(this.links());
+ });
  protected readonly creatingVariant=signal(false);
  protected readonly variantName=signal('');
  protected readonly variantSku=signal('');
@@ -288,6 +296,11 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected readonly validCode=computed(()=>/^[A-Za-z][A-Za-z0-9_-]{0,49}$/.test(this.code().trim()));
  protected readonly variants=computed(()=>this.page.data()?.varianteProductosComoProducto??[]);
  hasUnsavedChanges(){
+  if(this.quickPending()||this.recipePending()||this.linksDirty())return true;
+  const variant=this.editVariant();
+  if(variant&&(this.variantName()!==variant.nombre||this.variantSku()!==(variant.sku??'')||
+   this.variantOrder()!==variant.orden||this.variantActive()!==variant.activo||
+   this.articleId()!==(variant.articuloInventarioId??variant.articuloInventario?.id??'')))return true;
   const d=this.page.data();
   return this.committed?false:this.isNew?!!this.code()||!!this.name():!!d&&(
    this.name()!==d.nombre||this.description()!==(d.descripcion??'')||
@@ -390,8 +403,13 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   this.articleId.set('');this.variantActive.set(true);this.links.set([]);
  }
  protected async chooseVariant(v:CatalogVariant){
+  if((this.quickPending()||this.recipePending())&&
+   !await this.confirm.confirm({title:'Descartar formulario sin guardar',
+    message:'Hay extras o ingredientes escritos sin guardar. ¿Cambiar de presentación?',
+    confirmText:'Descartar cambios',danger:true}))return;
   this.creatingVariant.set(false);this.editVariant.set(v);
   this.quickExtras.set(false);this.inlineRecipe.set(false);
+  this.quickPending.set(false);this.recipePending.set(false);
   this.variantName.set(v.nombre);this.variantSku.set(v.sku??'');this.variantOrder.set(v.orden);
   this.variantActive.set(v.activo);this.articleId.set(v.articuloInventarioId??v.articuloInventario?.id??'');
   const attached=v.varianteGrupoModificadoresComoVariante??[];
@@ -443,8 +461,22 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
    await this.refreshVariant(v.id);this.notice.show('Extras asociados.','success');
   }catch(e){this.variantError.set(gcErrorMessage(e))}finally{this.saving.set(false)}
  }
+ protected async toggleQuickExtras(){
+  if(this.quickExtras()&&this.quickPending()&&
+   !await this.confirm.confirm({title:'Descartar extras sin guardar',
+    message:'La composición y los precios escritos aún no se guardaron.',
+    confirmText:'Descartar',danger:true}))return;
+  this.quickExtras.update(v=>!v);this.quickPending.set(false);
+ }
+ protected async toggleRecipe(){
+  if(this.inlineRecipe()&&this.recipePending()&&
+   !await this.confirm.confirm({title:'Descartar ingredientes sin guardar',
+    message:'La fórmula escrita aún no se guardó ni se publicó.',
+    confirmText:'Descartar',danger:true}))return;
+  this.inlineRecipe.update(v=>!v);this.recipePending.set(false);
+ }
  protected async quickGroupSaved(variantId:string){
-  this.quickExtras.set(false);
+  this.quickPending.set(false);this.quickExtras.set(false);
   await this.searchGroups();
   await this.refreshVariant(variantId);
   this.notice.show('Grupo creado y asignado a la presentación.','success');

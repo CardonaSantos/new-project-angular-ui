@@ -47,8 +47,8 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
   </section>
   @if(newGroupMode()&&access.canManage()){
    <section class="cat-card">
-    <gc-catalog-quick-extra-editor (saved)="quickGroupSaved()"/>
-    <button type="button" (click)="closeGroup()">Cancelar</button>
+    <gc-catalog-quick-extra-editor (saved)="quickGroupSaved()" (pendingChange)="quickPending.set($event)"/>
+    <button type="button" (click)="cancelQuickGroup()">Cancelar</button>
    </section>
   }
   @if(selectedGroup()&&access.canManage()){
@@ -164,6 +164,7 @@ export class GcCatalogExtrasPage implements GcDirtyAware{
  protected readonly groupError=signal<string|null>(null);
  protected readonly selectedGroup=signal<CatalogGroup|null>(null);
  protected readonly newGroupMode=signal(false);
+ protected readonly quickPending=signal(false);
  protected readonly groupName=signal('');
  protected readonly minimum=signal(0);
  protected readonly maximum=signal('');
@@ -186,6 +187,7 @@ export class GcCatalogExtrasPage implements GcDirtyAware{
   (this.maximum()===''||(Number.isInteger(Number(this.maximum()))&&Number(this.maximum())>=this.minimum())));
  constructor(){effect(()=>{if(this.access.canRead())untracked(()=>{void this.loadGroups();void this.loadModifiers()})})}
  hasUnsavedChanges(){
+  if(this.quickPending())return true;
   const group=this.selectedGroup();
   const mod=this.selectedModifier();
   return this.newGroupMode()&&!!this.groupName()||this.newModifierMode()&&!!this.modifierName()||
@@ -223,8 +225,16 @@ export class GcCatalogExtrasPage implements GcDirtyAware{
  protected newGroup(){this.selectedGroup.set(null);this.newGroupMode.set(true);
   this.groupName.set('');this.minimum.set(0);this.maximum.set('');this.groupActive.set(true)}
  protected closeGroup(){this.selectedGroup.set(null);this.newGroupMode.set(false)}
+ protected async cancelQuickGroup(){
+  if(this.quickPending()&&!await this.confirm.confirm({
+   title:'Descartar grupo sin guardar',
+   message:'Las opciones y sus ingredientes no se guardaron.',
+   confirmText:'Descartar',danger:true
+  }))return;
+  this.quickPending.set(false);this.closeGroup();
+ }
  protected async quickGroupSaved(){
-  this.closeGroup();
+  this.quickPending.set(false);this.closeGroup();
   await Promise.all([this.loadGroups(),this.loadModifiers()]);
  }
  protected async saveGroup(event:Event){
