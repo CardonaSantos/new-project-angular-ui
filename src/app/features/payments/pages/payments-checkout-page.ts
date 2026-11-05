@@ -452,9 +452,9 @@ export class GcPaymentsCheckoutPage implements OnInit{
    message,confirmText:pending?'Registrar':'Cobrar'}))return;
   const payload={turnoId:shift.id,pagos:payments};
   const key=this.idem(combined?'collect-send':'collect',{accountId:account.id,...payload});
-  await this.operate(()=>firstValueFrom(combined
-   ?this.ordersApi.payAndSend(this.id,{...payload,claveOperacion:key})
-   :this.api.collect(account.id,{...payload,claveOperacion:key})),
+  await this.operate(()=>combined
+   ?firstValueFrom(this.ordersApi.payAndSend(this.id,{...payload,claveOperacion:key}))
+   :firstValueFrom(this.api.collect(account.id,{...payload,claveOperacion:key})),
    combined?'Cobro confirmado y productos enviados a Cocina.':
    pending?'Pago registrado; verifica las transferencias antes de darlo por pagado.':
    'Cobro registrado correctamente.');
