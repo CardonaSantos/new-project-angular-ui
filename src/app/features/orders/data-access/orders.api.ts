@@ -21,6 +21,8 @@ export const orderPaths={
  tickets:'/api/kitchen/tickets',ticket:(id:string)=>'/api/kitchen/tickets/'+encodeURIComponent(id),
  lineKitchen:(id:string)=>'/api/kitchen/lines/'+encodeURIComponent(id),
  changes:'/api/kitchen/changes',
+ queue:'/api/kitchen/queue',worklist:'/api/orders/worklist',quote:'/api/orders/quote',
+ quickCheckout:'/api/pos/quick-checkout',
 } as const;
 /** Background/read queries report errors inline and do not flood the notice queue. */
 const options={context:gcSilentRequest()};
@@ -34,6 +36,29 @@ const params=(q:object)=>{
 @Injectable({providedIn:'root'})
 export class OrdersApi{
  private readonly http=inject(HttpClient);
+ // Express APIs: backend PR #30, 2026-11-05.
+ quote(sucursalId:string,lineas:CreateOrderInput['lineas']){
+  return this.http.post<PosQuote>(orderPaths.quote,{sucursalId,lineas},options);
+ }
+ quickCheckout(dto:PosQuickCheckout){
+  return this.http.post<PosQuickResult>(orderPaths.quickCheckout,dto,mutationOptions);
+ }
+ worklist(q:OrderListQuery){
+  return this.http.get<Page<OrderWorkItem>>(orderPaths.worklist,params(q));
+ }
+ payAndSend(id:string,payload:{turnoId:string;pagos:PosQuickCheckout['pagos'];claveOperacion:string}){
+  return this.http.post<{ordenId:string;estado:string;pagoIds:string[];comandasPendientes:number}>(
+   orderPaths.order(id)+'/pay-and-send',payload,mutationOptions);
+ }
+ queue(q:{sucursalId:string;estacionId?:string;vista?:KitchenQueueView;page?:number;limit?:number}){
+  return this.http.get<KitchenQueue>(orderPaths.queue,params(q));
+ }
+ readyDeliverTicket(id:string,claveOperacion:string){
+  return this.http.post<KitchenTicket>(orderPaths.ticket(id)+'/ready-deliver',{claveOperacion},mutationOptions);
+ }
+ readyDeliverLine(id:string,claveOperacion:string){
+  return this.http.post<KitchenTicket>(orderPaths.lineKitchen(id)+'/ready-deliver',{claveOperacion},mutationOptions);
+ }
  // Orders: 10 endpoints
  list(q:OrderListQuery){return this.http.get<Page<OrderSummary>>(orderPaths.orders,params(q))}
  create(dto:CreateOrderInput){return this.http.post<OrderDetail>(orderPaths.orders,dto,mutationOptions)}
