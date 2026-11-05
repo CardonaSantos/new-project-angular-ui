@@ -11,7 +11,7 @@ import {GcOrderStatus} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import {PaymentsAccess} from '../../payments/data-access/payments-access';
-import {ORDER_MODES,ORDER_STATES,type OrderMode,type OrderState,type OrderSummary} from '../data-access/orders.models';
+import {ORDER_MODES,ORDER_STATES,type OrderMode,type OrderState,type OrderSummary,type WorkOrder} from '../data-access/orders.models';
 import {money,modeText} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-list-page',
@@ -19,11 +19,17 @@ import {money,modeText} from '../data-access/orders.helpers';
  template:`
  <main class="ord-page ord-orders-list-page"><gc-orders-nav/>
   <section class="ord-card ord-orders-list-board">
-   <div class="ord-heading"><h1>Órdenes</h1>
+   <div class="ord-heading"><h1>{{view()==='operational'?'Órdenes en curso':'Historial de órdenes'}}</h1>
     <div class="ord-actions">
      <button type="button" (click)="load()" [disabled]="busy()">Actualizar</button>
      @if(access.canCreate()){<a class="ord-primary" routerLink="/orders/pos">Nueva orden</a>}
     </div>
+   </div>
+   <div class="ord-view-switch ord-worklist-switch" role="group" aria-label="Vista de órdenes">
+    <button type="button" [class.active]="view()==='operational'"
+     [attr.aria-pressed]="view()==='operational'" (click)="switchView('operational')">En curso</button>
+    <button type="button" [class.active]="view()==='history'"
+     [attr.aria-pressed]="view()==='history'" (click)="switchView('history')">Historial</button>
    </div>
    <div class="ord-filter-grid ord-order-filters">
     <div class="ord-search-action">
@@ -35,9 +41,11 @@ import {money,modeText} from '../data-access/orders.helpers';
     </div>
     <gc-search-select id="order-list-branch" label="Sucursal" [items]="branches()"
      [value]="branchId()" [clearable]="false" (valueChange)="chooseBranch($event)"/>
-    <gc-search-select id="order-list-status" label="Estado" [items]="states"
-     [value]="state()" placeholder="Todos" [searchable]="false"
-     (valueChange)="setState($event)"/>
+    @if(view()==='history'){
+     <gc-search-select id="order-list-status" label="Estado" [items]="states"
+      [value]="state()" placeholder="Todos" [searchable]="false"
+      (valueChange)="setState($event)"/>
+    }
     <gc-search-select id="order-list-mode" label="Tipo de pedido" [items]="modes"
      [value]="mode()" placeholder="Todos" [searchable]="false"
      (valueChange)="setMode($event)"/>
@@ -52,7 +60,42 @@ import {money,modeText} from '../data-access/orders.helpers';
    }
    @if(busy()){<p role="status">Consultando pedidos…</p>}
    @if(error()){<gc-error-state [message]="error()!" (retry)="load()"/>}
-   @if(!busy()&&!error()){
+   @if(!busy()&&!error()&&view()==='operational'){
+    <div class="ord-worklist-grid" aria-label="Órdenes abiertas">
+     @for(item of workOrders();track item.id){
+      <article class="ord-worklist-tile">
+       <div class="ord-heading">
+        <strong [title]="item.numero">{{item.numero}}</strong>
+        <span class="ord-ticket-badge">Abierta</span>
+       </div>
+       <p class="ord-note">{{item.mesa?'Mesa '+item.mesa.numero+' · '+item.mesa.sala.nombre:modeText(item.modalidad)}}</p>
+       <div class="ord-worklist-money">
+        <div><span>Total</span><strong>{{money(item.total)}}</strong></div>
+        <div><span>Pendiente</span><strong>{{money(item.saldo)}}</strong></div>
+       </div>
+       @if(item.kitchen.pending||item.kitchen.preparing||item.kitchen.toDeliver||item.needsProcessing){
+        <p class="ord-note">
+         @if(item.kitchen.pending){{{item.kitchen.pending}} pendientes · }
+         @if(item.kitchen.preparing){{{item.kitchen.preparing}} preparando · }
+         @if(item.kitchen.toDeliver){{{item.kitchen.toDeliver}} para entregar · }
+         @if(item.needsProcessing){Productos por enviar}
+        </p>
+       }
+       <div class="ord-actions">
+        @if(item.mesa){
+         <a class="ord-primary" [routerLink]="['/orders/pos']"
+          [queryParams]="{mesaId:item.mesa.id}">Agregar productos</a>
+        }
+        <a [routerLink]="['/orders/list',item.id]">Ver pedido</a>
+        @if(paymentsAccess.canRead()&&paymentsAccess.canCollect()){
+         <a [routerLink]="['/payments/order',item.id]">Cobrar</a>
+        }
+       </div>
+      </article>
+     }@empty{<p class="ord-empty">No hay órdenes abiertas con estos filtros.</p>}
+    </div>
+   }
+   @if(!busy()&&!error()&&view()==='history'){
     <div class="ord-table-wrap ord-order-list-table"><table class="ord-table">
      <thead><tr><th>Número</th><th>Tipo</th><th>Fecha</th><th>Importe</th><th>Estado</th><th>Acción</th></tr></thead>
      <tbody>
@@ -75,6 +118,8 @@ import {money,modeText} from '../data-access/orders.helpers';
       </td></tr>}
      </tbody>
     </table></div>
+   }
+   @if(!busy()&&!error()){
     <div class="ord-pagination">
      <span>{{total()}} órdenes · Página {{page()}} de {{pages()||1}}</span>
      <div class="ord-actions">
@@ -101,7 +146,10 @@ export class GcOrdersListPage{
  protected readonly pageSizes=[{id:'10',label:'10'},{id:'20',label:'20'},{id:'50',label:'50'}];
  private readonly appliedSearch=signal('');
  protected readonly hasFilters=computed(()=>Boolean(this.search().trim()||this.appliedSearch()||this.mode()||this.state()));
- protected readonly items=signal<OrderSummary[]>([]);protected readonly busy=signal(false);
+ protected readonly items=signal<OrderSummary[]>([]);
+ protected readonly workOrders=signal<WorkOrder[]>([]);
+ protected readonly view=signal<'operational'|'history'>('operational');
+ protected readonly busy=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly money=money;protected readonly modeText=modeText;
  private generation=0;
@@ -110,11 +158,15 @@ export class GcOrdersListPage{
   untracked(()=>{
    if(branch&&branch!==this.branchId()){
     this.branchId.set(branch);this.page.set(1);
-    this.items.set([]);this.total.set(0);this.pages.set(0);
+    this.items.set([]);this.workOrders.set([]);this.total.set(0);this.pages.set(0);
     void this.load();
    }
   });
  })}
+ protected switchView(v:'operational'|'history'){
+  if(this.view()===v)return;
+  this.view.set(v);this.page.set(1);void this.load();
+ }
  protected chooseBranch(id:string){if(!id)return;this.branchId.set(id);this.page.set(1);void this.load()}
  protected apply(){this.appliedSearch.set(this.search().trim());this.page.set(1);void this.load()}
  protected clearFilters(){
@@ -142,11 +194,21 @@ export class GcOrdersListPage{
   if(!branch||!this.access.canRead())return;
   const gen=++this.generation;this.busy.set(true);this.error.set(null);
   try{
-   const data=await firstValueFrom(this.api.list({sucursalId:branch,search:this.appliedSearch(),
+   const q={sucursalId:branch,search:this.appliedSearch(),
     ...(this.mode()?{modalidad:this.mode() as OrderMode}:{}),
-    ...(this.state()?{estado:this.state() as OrderState}:{}),page:this.page(),limit:this.limit()}));
-   if(gen!==this.generation||branch!==this.branchId())return;
-   this.items.set(data.data);this.total.set(data.meta.total);this.pages.set(data.meta.totalPages);
+    page:this.page(),limit:this.limit()};
+   if(this.view()==='operational'){
+    const data=await firstValueFrom(this.api.worklist({...q,estado:'ABIERTA'}));
+    if(gen!==this.generation||branch!==this.branchId())return;
+    this.workOrders.set(data.data);this.items.set([]);
+    this.total.set(data.meta.total);this.pages.set(data.meta.totalPages);
+   }else{
+    const data=await firstValueFrom(this.api.list({...q,
+     ...(this.state()?{estado:this.state() as OrderState}:{})}));
+    if(gen!==this.generation||branch!==this.branchId())return;
+    this.items.set(data.data);this.workOrders.set([]);
+    this.total.set(data.meta.total);this.pages.set(data.meta.totalPages);
+   }
   }catch(e){if(gen===this.generation)this.error.set(gcErrorMessage(e))}
   finally{if(gen===this.generation)this.busy.set(false)}
  }
