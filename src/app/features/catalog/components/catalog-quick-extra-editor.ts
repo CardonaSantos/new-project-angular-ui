@@ -6,7 +6,7 @@ import {RecipesAccess} from '../../recipes/data-access/recipes-access';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {gcErrorMessage} from '../../../core/http/api-error';
-import {validPrice} from '../data-access/catalog-product-guide';
+import {quickGroupIssues} from '../data-access/catalog-r3-validation';
 import type {CatalogKind,CatalogQuickGroupSetup} from '../data-access/catalog.models';
 
 interface IngredientRow {key:number;articuloId:string;unidadId:string;cantidad:string}
@@ -180,29 +180,9 @@ export class GcCatalogQuickExtraEditor {
    }))};
  }
  private validate():string[]{
-  const d=this.draft(),errors:string[]=[];
-  if(!d.nombre)errors.push('Escribe el nombre del grupo.');
-  if(!Number.isInteger(d.maximo)||d.maximo===null||d.maximo<1||d.maximo>d.opciones.length)
-   errors.push('El máximo debe ser un número válido y no superar las opciones disponibles.');
-  const names=new Set<string>();
-  for(const [i,opt] of d.opciones.entries()){
-   const n=opt.nombre.toLowerCase();
-   if(!n||names.has(n))errors.push('La opción '+(i+1)+' necesita un nombre diferente.');
-   names.add(n);
-   if(!validPrice(opt.incrementoPrecio))errors.push('El recargo de la opción '+(i+1)+' no es válido.');
-   if(this.choices()[i].consumo&&!opt.ingredientes.length)
-    errors.push('La opción '+(i+1)+' necesita al menos un ingrediente adicional.');
-   const ingredientIds=new Set<string>();
-   for(const c of opt.ingredientes){
-    if(!c.articuloId||!c.unidadId||!/^(?!0(?:\.0{1,6})?$)(?:0|[1-9]\d{0,13})(?:\.\d{1,6})?$/.test(c.cantidad))
-     errors.push('Revisa artículo, unidad y cantidad del extra '+(i+1)+'.');
-    if(c.articuloId&&ingredientIds.has(c.articuloId))
-     errors.push('No repitas el mismo ingrediente dentro de una opción.');
-    ingredientIds.add(c.articuloId);
-   }
-  }
-  return errors;
+  return quickGroupIssues(this.draft(),this.choices().map(x=>x.consumo));
  }
+
  protected async save(event:Event){
   event.preventDefault();
   if(this.busy()||!this.access.canManage())return;
