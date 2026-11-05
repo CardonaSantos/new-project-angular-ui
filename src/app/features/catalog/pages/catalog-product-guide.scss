@@ -74,3 +74,30 @@
  .cat-guide-actions button{width:100%}
  .cat-guide :is(button,.cat-primary){min-height:44px}
 }
+
+
+/* R2 — Single product by default; stock controls inline, without leaving the page. */
+.cat-guide-single-head{display:flex;justify-content:space-between;align-items:center;gap:.4rem;
+ flex-wrap:wrap;font-size:.77rem;color:var(--gc-on-surface-variant)}
+.cat-guide-single-head button{font-size:.78rem;min-height:38px}
+.cat-guide-article-inline{display:grid;gap:.3rem;min-width:0;flex:2 1 18rem}
+.cat-guide-article-inline .cat-muted{font-size:.77rem;margin:.1rem 0}
+.cat-guide-article-choice{min-width:0;border:0;padding:0;margin:0}
+.cat-guide-article-choice legend{font-size:.8rem;font-weight:650}
+.cat-guide-article-choice label{display:inline-flex;align-items:center;gap:.3rem;
+ padding:.28rem .35rem;margin-right:.3rem;min-height:38px;
+ font-size:.78rem;cursor:pointer}
+.cat-guide-article-choice input{accent-color:var(--gc-primary)}
+.cat-guide-article-advanced{border:1px solid var(--gc-outline-variant);border-radius:.45rem;
+ padding:.4rem .5rem}
+.cat-guide-article-advanced summary{cursor:pointer;font-weight:650;font-size:.78rem}
+.cat-guide-article-advanced>label{display:flex;align-items:center;gap:.3rem;
+ min-height:38px;font-size:.78rem;margin-top:.35rem}
+.cat-guide-article-advanced>.cat-guide-field{display:grid}
+.cat-guide-stock-note{padding:.55rem .65rem;border:1px solid var(--gc-outline-variant);
+ border-radius:.45rem;font-size:.8rem}
+.cat-guide-variant-row--single>.cat-guide-field{flex:0 1 170px}
+@media(max-width:790px){
+ .cat-guide-variant-row--single>.cat-guide-field{flex:1 1 100%}
+ .cat-guide-article-inline{flex:1 1 100%}
+}
