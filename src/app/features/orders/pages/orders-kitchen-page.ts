@@ -243,7 +243,9 @@ export class GcOrdersKitchenPage{
    if(gen!==this.generation||branch!==this.branchId())return;
    this.stations.set(stations);this.tickets.set(report.data);
    this.total.set(report.meta.total);this.pages.set(report.meta.totalPages);
-   if('totals' in report)this.totals.set(report.totals);
+   if('totals' in report)this.totals.set(report.totals as {
+    pending:number;preparing:number;readyToDeliver:number;delivered:number
+   });
    if(!report.data.length&&this.page()>1){this.page.set(1);void this.reload()}
   }catch(e){if(gen===this.generation)this.error.set(orderFriendlyError(e))}
   finally{if(gen===this.generation)this.busy.set(false)}
