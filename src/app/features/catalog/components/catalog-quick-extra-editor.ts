@@ -157,7 +157,7 @@ export class GcCatalogQuickExtraEditor {
    ingredientes:v.ingredientes.filter(x=>x.key!==part)}));
  }
  private draft():CatalogQuickGroupSetup{
-  const mode=this.selectionMode(),size=this.choices().length;
+  const mode=this.selectionMode();
   return {nombre:this.groupName().trim(),
    minimo:mode==='required'?1:0,
    maximo:mode==='several'?this.maxChoices():1,
