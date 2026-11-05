@@ -1,4 +1,4 @@
-import {Component,computed,effect,inject,input,output,signal,untracked} from '@angular/core';
+import {Component,computed,effect,HostListener,inject,input,output,signal,untracked} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {firstValueFrom} from 'rxjs';
@@ -145,6 +145,8 @@ export class GcPosExpressCheckout{
    });
   });
  }
+ @HostListener('document:keydown.escape')
+ protected escape(){if(!this.working())this.dismissed.emit()}
  protected modifiers(items:OrderQuote['lineas'][number]['modificadores']){
   return items.map(x=>x.nombre).join(' · ');
  }
