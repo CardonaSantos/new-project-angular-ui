@@ -219,7 +219,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
   Ver pedido · {{cart().length}} productos · {{money(total(),currency())}}
  </button>}
  @if(quickDraft();as draft){
-  <gc-pos-express-checkout [order]="draft" (cancel)="quickDraft.set(null)"
+  <gc-pos-express-checkout [order]="draft" (dismissed)="quickDraft.set(null)"
    (completed)="completeExpress($event)"/>
  }
  @if(configuring();as item){
