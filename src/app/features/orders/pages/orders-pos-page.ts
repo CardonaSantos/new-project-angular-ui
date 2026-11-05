@@ -1,5 +1,5 @@
 import {Component,computed,effect,ElementRef,HostListener,inject,signal,viewChild} from '@angular/core';
-import {ActivatedRoute,Router,RouterLink} from '@angular/router';
+import {ActivatedRoute,RouterLink} from '@angular/router';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -13,17 +13,18 @@ import type {BranchConfig} from '../../organization/data-access/organization.mod
 import {sumDecimals,parseApiDecimal} from '../../../shared/formatting';
 import {GcOrdersNav} from '../orders-nav';
 import {GcPosProduct,GcPosCart} from '../components/orders-ui';
+import {GcPosExpressCheckout} from '../components/pos-express-checkout';
 import {asOrderLine,type PosCartEntry} from '../components/pos-cart.models';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import {PaymentsAccess} from '../../payments/data-access/payments-access';
 import {OrdersPreferences} from '../data-access/orders-preferences';
-import {ORDER_MODES,type OrderMode,type TableRecord} from '../data-access/orders.models';
+import {ORDER_MODES,type CreateOrderInput,type OrderDetail,type QuickCheckoutResult,type OrderMode,type TableRecord} from '../data-access/orders.models';
 import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpers';
 
 @Component({
  selector:'gc-orders-pos-page',
- imports:[RouterLink,CdkTrapFocus,GcOrdersNav,GcSearchSelect,GcPosProduct,GcPosCart],
+ imports:[RouterLink,CdkTrapFocus,GcOrdersNav,GcSearchSelect,GcPosProduct,GcPosCart,GcPosExpressCheckout],
  template:`
  <main class="ord-page ord-pos"><gc-orders-nav/>
  <div class="ord-heading">
@@ -41,11 +42,15 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
  @if(success()){
   <section class="ord-pos-confirmed" role="status" aria-live="polite">
    <div class="ord-pos-confirmed-content">
-    <strong>Pedido registrado correctamente</strong>
+    <strong>{{expressSale()?'Venta cobrada correctamente':'Pedido registrado correctamente'}}</strong>
     <span>{{success()}}</span>
    </div>
    <div class="ord-actions ord-pos-confirmed-actions">
     <a class="ord-primary" [routerLink]="['/orders/list',createdId()]">Ver pedido</a>
+    @if(expressSale();as sale){
+     <a [routerLink]="['/payments/sales',sale.ventaId,'receipt']">Imprimir comprobante 80 mm</a>
+     <button type="button" (click)="newSale()">Nueva venta</button>
+    }
     @if(paymentsAccess.canRead()&&paymentsAccess.canCollect()){
      <a [routerLink]="['/payments/order',createdId()]">Cobrar ahora</a>
     }
@@ -76,7 +81,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      @for(table of filteredTables();track table.id){
       <button class="ord-table-tile" type="button" [disabled]="!table.activa" (click)="chooseTable(table)">
        <strong>Mesa {{table.numero}}</strong><small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
-       <span [class.ord-occupied]="!!table.ocupacion">{{!table.activa?'Inactiva':table.ocupacion?'Ocupada · abrir pedido':'Disponible'}}</span>
+       <span [class.ord-occupied]="!!table.ocupacion">{{!table.activa?'Inactiva':table.ocupacion?'Ocupada · continuar pedido':'Disponible'}}</span>
       </button>
      } @empty {<p class="ord-empty">No se encontraron mesas con esta búsqueda.</p>}
     </div>
@@ -88,10 +93,25 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
   </section>
  }
  @if(prefs.view()==='tables'&&!showTablePicker()&&selectedTable()){
-  <div class="ord-actions"><span>Atendiendo mesa {{selectedTable()?.numero}}</span>
-   <button type="button" (click)="showTablePicker.set(true)">Cambiar mesa</button>
+  <div class="ord-pos-table-context">
+   <div><strong>Mesa {{selectedTable()?.numero}} · {{selectedTable()?.sala?.nombre}}</strong>
+    @if(existingOrder();as current){
+     <span>Orden {{current.numero}} · Total {{money(current.total,currency())}} ·
+      {{current.ordenLineasComoOrden.length}} productos registrados</span>
+    }@else{<span>Pedido nuevo</span>}
+   </div>
+   <div class="ord-actions">
+    @if(existingOrder();as current){
+     <a [routerLink]="['/orders/list',current.id]">Ver detalles</a>
+     @if(paymentsAccess.canRead()){
+      <a [routerLink]="['/payments/order',current.id]">Cobrar mesa</a>
+     }
+    }
+    <button type="button" [disabled]="submitting()||tableBusy()" (click)="showTablePicker.set(true)">Cambiar mesa</button>
+   </div>
   </div>
  }
+ @if(tableBusy()&&selectedTable()){<p class="ord-note" role="status">Cargando el pedido de la mesa…</p>}
  <div class="ord-pos-layout">
   <section class="ord-catalog" aria-label="Catálogo de productos">
    <div class="ord-toolbar">
@@ -181,15 +201,27 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
       <a routerLink="/orders/settings">Configurar cocina</a>
      }
     }
-    <button class="ord-primary ord-confirm" type="button"
-     [disabled]="submitting()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&!selectedTable())"
-     (click)="submit()">{{submitting()?'Confirmando…':'Confirmar pedido · '+money(total(),currency())}}</button>
+    @if(directOnly()&&mode()!=='MESA'&&paymentsAccess.canCollect()&&access.canCreate()){
+     <button class="ord-primary ord-confirm" type="button"
+      [disabled]="submitting()||!cart().length"
+      (click)="beginExpress()">Cobrar ahora · {{money(total(),currency())}}</button>
+     <button class="ord-secondary-action" type="button" [disabled]="submitting()"
+      (click)="submit()">Guardar sin cobrar</button>
+    }@else{
+     <button class="ord-primary ord-confirm" type="button"
+      [disabled]="submitting()||tableBusy()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&!selectedTable())"
+      (click)="submit()">{{submitting()?'Guardando…':existingOrder()?'Agregar productos al pedido':'Confirmar pedido · '+money(total(),currency())}}</button>
+    }
    </div>
   </aside>
  </div>
  @if(cart().length){<button class="ord-mobile-cart" type="button" (click)="cartOpen.set(true)">
   Ver pedido · {{cart().length}} productos · {{money(total(),currency())}}
  </button>}
+ @if(quickDraft();as draft){
+  <gc-pos-express-checkout [order]="draft" (cancel)="quickDraft.set(null)"
+   (completed)="completeExpress($event)"/>
+ }
  @if(configuring();as item){
   <div class="ord-overlay" role="presentation" (click)="configureClose()"></div>
   <section class="ord-customizer" role="dialog" aria-modal="true"
@@ -238,7 +270,6 @@ export class GcOrdersPosPage{
  private readonly branchesApi=inject(BranchesApi);
  private readonly confirm=inject(ConfirmDialogService);
  private readonly notices=inject(GcNotificationService);
- private readonly router=inject(Router);
  private readonly activatedRoute=inject(ActivatedRoute);
  protected readonly context=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
@@ -260,6 +291,9 @@ export class GcOrdersPosPage{
  protected readonly success=signal('');
  protected readonly createdId=signal('');
  protected readonly createdTickets=signal<{id:string;numero:string}[]>([]);
+ protected readonly expressSale=signal<QuickCheckoutResult|null>(null);
+ protected readonly quickDraft=signal<CreateOrderInput|null>(null);
+ protected readonly existingOrder=signal<OrderDetail|null>(null);
  protected readonly observations=signal('');
  protected readonly mode=signal<OrderMode>('MOSTRADOR');
  protected readonly selectedTable=signal<TableRecord|null>(null);
@@ -322,7 +356,11 @@ export class GcOrdersPosPage{
  constructor(){effect(()=>{
   const branch=this.context.branchId();
   this.prefs.load();
-  if(branch){this.selectedTable.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);this.invalidateKey();void this.reload()}
+  if(branch){
+   this.selectedTable.set(null);this.existingOrder.set(null);this.quickDraft.set(null);
+   this.expressSale.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);
+   this.invalidateKey();void this.reload();
+  }
  })}
  hasUnsavedChanges():boolean{return this.cart().length>0}
  @HostListener('document:keydown',['$event'])
@@ -333,17 +371,25 @@ export class GcOrdersPosPage{
     event.preventDefault();this.searchInput()?.nativeElement.focus();
   }
   if(event.key==='Escape'&&this.configuring())this.configureClose();
+  if(event.key==='Escape'&&this.quickDraft())this.quickDraft.set(null);
+  if(event.key==='F4'&&!this.configuring()&&!this.quickDraft()&&
+   !['INPUT','TEXTAREA','SELECT'].includes(t?.tagName??'')){
+   event.preventDefault();this.beginExpress();
+  }
  }
  protected setView(mode:'counter'|'tables'){
   if(this.submitting())return;
   this.prefs.setView(mode);
+  if(mode==='counter'){
+   this.selectedTable.set(null);this.existingOrder.set(null);this.mode.set('MOSTRADOR');
+  }
   this.showTablePicker.set(mode==='tables');
   if(mode==='tables')void this.loadTables();
  }
  protected chooseMode(value:string){
   if(this.submitting())return;
   const v=ORDER_MODES.find(x=>x.id===value)?.id??'MOSTRADOR';
-  this.mode.set(v);if(v!=='MESA')this.selectedTable.set(null);
+  this.mode.set(v);if(v!=='MESA'){this.selectedTable.set(null);this.existingOrder.set(null)}
   if(v==='MESA'&&!this.tables().length)void this.loadTables();
   this.invalidateKey();
  }
@@ -382,19 +428,19 @@ export class GcOrdersPosPage{
  protected chooseTable(t:TableRecord){
   if(this.submitting())return;
   const existing=t.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA');
-  if(existing){void this.router.navigate(['/orders/list',existing.id]);return}
-  this.selectedTable.set(t);this.mode.set('MESA');this.invalidateKey();
-  this.showTablePicker.set(false);
+  this.selectedTable.set(t);this.existingOrder.set(null);
+  this.mode.set('MESA');this.invalidateKey();this.showTablePicker.set(false);
+  if(existing)void this.loadExistingOrder(existing.id,t.id);
  }
  protected selectTableId(id:string){
   if(this.submitting())return;
   const t=this.tables().find(x=>x.id===id)||null;
   if(t){this.chooseTable(t);return}
-  this.selectedTable.set(null);this.invalidateKey();
+  this.selectedTable.set(null);this.existingOrder.set(null);this.invalidateKey();
  }
  protected pick(item:CatalogProjectedItem){
   if(this.submitting())return;
-  this.success.set('');this.createdId.set('');
+  this.success.set('');this.createdId.set('');this.expressSale.set(null);
   this.configError.set('');
   if(item.gruposModificadores.length){
    this.configuring.set(item);this.selectedExtras.set({});this.customQty.set(1);
@@ -475,7 +521,12 @@ export class GcOrdersPosPage{
   };
   this.submitting.set(true);this.submitError.set('');
   try{
-   const data=await firstValueFrom(this.api.create(dto));
+   const existing=this.existingOrder();
+   const data=existing
+    ?await firstValueFrom(this.api.addLines(existing.id,{
+      lineas:dto.lineas,enviarCocina:dto.enviarCocina,claveOperacion:dto.claveOperacion
+     }))
+    :await firstValueFrom(this.api.create(dto));
    this.createdId.set(data.id);
    this.createdTickets.set((data.comandasComoOrden??[]).map(x=>({id:x.id,numero:x.numero})));
    const kitchenCreated=(data.comandasComoOrden??[]).length>0;
@@ -484,14 +535,60 @@ export class GcOrdersPosPage{
    const status=kitchenCreated?' · Enviada a Cocina':
     hasUnprocessed?' · Pendiente de procesar antes de cerrar':
     ' · Procesada sin comanda de Cocina';
-   const message='Orden '+data.numero+' creada'+status+'.';
+   const message=existing
+    ?this.cart().length+' productos agregados a '+data.numero+status+'.'
+    :'Orden '+data.numero+' creada'+status+'.';
    this.success.set(message);
    this.notices.show(message,'success',7000);
-   this.cart.set([]);this.observations.set('');this.selectedTable.set(null);
-   this.mode.set('MOSTRADOR');this.operationId='';this.cartOpen.set(false);
-   this.showTablePicker.set(this.prefs.view()==='tables');
+   this.cart.set([]);this.observations.set('');
+   this.operationId='';this.cartOpen.set(false);
+   if(existing){
+    this.existingOrder.set(data);
+   }else{
+    this.selectedTable.set(null);this.existingOrder.set(null);
+    this.mode.set('MOSTRADOR');
+    this.showTablePicker.set(this.prefs.view()==='tables');
+   }
    if(this.prefs.view()==='tables')void this.loadTables();
   }catch(e){this.submitError.set(orderFriendlyError(e))}
   finally{this.submitting.set(false)}
+ }
+ protected async loadExistingOrder(id:string,tableId:string){
+  const branch=this.context.branchId();if(!branch)return;
+  this.tableBusy.set(true);this.submitError.set('');
+  try{
+   const order=await firstValueFrom(this.api.detail(id));
+   if(this.context.branchId()!==branch||this.selectedTable()?.id!==tableId)return;
+   if(order.estado!=='ABIERTA'||order.sucursalId!==branch){
+    this.submitError.set('El pedido ya no está abierto. Actualiza las mesas.');
+    return;
+   }
+   this.existingOrder.set(order);
+  }catch(e){this.submitError.set(orderFriendlyError(e))}
+  finally{if(this.context.branchId()===branch)this.tableBusy.set(false)}
+ }
+ protected beginExpress(){
+  const branch=this.context.branchId();
+  if(!branch||this.submitting()||!this.cart().length||!this.directOnly()||
+   this.mode()==='MESA'||this.mode()==='DELIVERY'||!this.paymentsAccess.canCollect()||
+   !this.access.canCreate())return;
+  this.quickDraft.set({
+   sucursalId:branch,modalidad:this.mode(),origen:'CAJA',
+   lineas:this.cart().map(asOrderLine),
+   ...(this.observations().trim()?{observaciones:this.observations().trim()}:{}),
+   enviarCocina:true,claveOperacion:operationKey('pos-express')
+  });
+ }
+ protected completeExpress(result:QuickCheckoutResult){
+  this.quickDraft.set(null);this.expressSale.set(result);
+  this.createdId.set(result.ordenId);this.createdTickets.set([]);
+  this.success.set('Venta '+result.numero+' cobrada y cerrada por '+money(result.total,this.currency())+'.');
+  this.cart.set([]);this.observations.set('');this.operationId='';
+  this.cartOpen.set(false);
+ }
+ protected newSale(){
+  this.success.set('');this.createdId.set('');this.expressSale.set(null);
+  this.query.set('');this.category.set('');
+  this.searchInput()?.nativeElement.focus();
  }
 }
