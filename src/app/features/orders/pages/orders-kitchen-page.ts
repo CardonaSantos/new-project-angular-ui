@@ -66,7 +66,7 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../
   <div class="ord-kitchen-board" aria-label="Comandas">
    @for(ticket of tickets();track ticket.id;let i=$index){
 
-    <gc-kitchen-ticket [ticket]="ticket" (open)="inspect(ticket)">
+    <gc-kitchen-ticket [ticket]="ticket" [now]="clock()" (open)="inspect(ticket)">
      @if(access.canKitchenManage()&&ticket.estado!=='CANCELADA'){
       @if(ticket.estado==='PENDIENTE'){
        <button type="button" [disabled]="actionBusy()" (click)="start(ticket)">Comenzar preparación</button>
@@ -177,6 +177,7 @@ export class GcOrdersKitchenPage{
  protected readonly limit=signal(30);protected readonly limitText=computed(()=>String(this.limit()));
  protected readonly pageSizes=[{id:'15',label:'15'},{id:'30',label:'30'},{id:'50',label:'50'}];
  protected readonly autoRefresh=signal(true);
+ protected readonly clock=signal(Date.now());
  protected readonly totals=signal({pending:0,preparing:0,readyToDeliver:0,delivered:0});
  protected readonly pendingCount=computed(()=>this.totals().pending);
  protected readonly workingCount=computed(()=>this.totals().preparing);
@@ -200,6 +201,7 @@ export class GcOrdersKitchenPage{
    });
   });
   interval(7000).pipe(takeUntilDestroyed()).subscribe(()=>{
+   this.clock.set(Date.now());
    if(this.autoRefresh()&&typeof document!=='undefined'&&!document.hidden&&
     this.branchId()&&!this.busy())void this.poll();
   });

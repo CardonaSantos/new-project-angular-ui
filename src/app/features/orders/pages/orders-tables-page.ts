@@ -58,8 +58,8 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
       @if(openOrders(table).length){
        <p class="ord-note ord-table-blocked">
         Esta mesa tiene {{openOrders(table).length===1?'un pedido abierto':'pedidos abiertos'}}.
-        Debes finalizar su preparación y cerrar {{openOrders(table).length===1?'el pedido':'los pedidos'}}
-        antes de liberarla.
+        Añade productos desde el POS o finaliza la preparación y cierra
+        {{openOrders(table).length===1?'el pedido':'los pedidos'}} antes de liberarla.
        </p>
        @if(access.canKitchenRead()){
         <a routerLink="/orders/kitchen" class="ord-table-kitchen-link">Ver comandas de cocina</a>
@@ -67,8 +67,10 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
       }
      }
      <div class="ord-actions">
-      @if(!table.ocupacion&&table.activa&&access.canCreate()){
-       <button type="button" class="ord-primary" (click)="openTable(table)">Tomar pedido</button>}
+      @if(table.activa&&access.canCreate()){
+       <button type="button" class="ord-primary" (click)="openTable(table)">
+        {{openOrders(table).length?'Añadir productos':table.ocupacion?'Atender mesa':'Tomar pedido'}}
+       </button>}
       @if(table.ocupacion&&access.canTablesManage()){
        <button type="button" (click)="release(table)"
         [disabled]="actionBusy()||openOrders(table).length>0"

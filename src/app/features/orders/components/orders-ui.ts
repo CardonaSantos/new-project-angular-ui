@@ -118,6 +118,7 @@ export class GcOrderStatus{
   <small class="ord-ticket-time">
    @if(ticket().estado==='LISTA'){Lista desde {{readyAt()|date:'HH:mm'}}}
    @else {Pedido recibido {{ticket().enviadaEn|date:'HH:mm'}}}
+   · Hace {{ageMinutes()}} min
   </small>
   <div class="ord-ticket-items">
    @for(line of ticket().comandaLineasComoComanda;track line.id){
@@ -138,6 +139,11 @@ export class GcOrderStatus{
 })
 export class GcKitchenTicket{
  readonly ticket=input.required<KitchenTicket>();
+ readonly now=input(Date.now());
+ protected readonly ageMinutes=computed(()=>{
+  const ts=Date.parse(this.ticket().enviadaEn);
+  return Number.isFinite(ts)?Math.max(0,Math.floor((this.now()-ts)/60000)):0;
+ });
  readonly open=output<void>();
  protected readonly qtyText=qtyText;
  protected readonly stage=computed(()=>kitchenStage(this.ticket()));

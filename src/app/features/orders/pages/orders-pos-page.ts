@@ -51,7 +51,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <a [routerLink]="['/payments/sales',sale.ventaId,'receipt']">Imprimir comprobante 80 mm</a>
      <button type="button" (click)="newSale()">Nueva venta</button>
     }
-    @if(paymentsAccess.canRead()&&paymentsAccess.canCollect()){
+    @if(!expressSale()&&paymentsAccess.canRead()&&paymentsAccess.canCollect()){
      <a [routerLink]="['/payments/order',createdId()]">Cobrar ahora</a>
     }
     @if(access.canKitchenRead()){
@@ -162,6 +162,23 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
   </section>
   <aside class="ord-checkout" [class.ord-checkout--open]="cartOpen()" aria-label="Resumen del pedido">
    <div class="ord-cart-close"><button type="button" (click)="cartOpen.set(false)">Cerrar resumen</button></div>
+   @if(existingOrder();as current){
+    <section class="ord-express-existing" aria-label="Productos ya registrados">
+     <strong>Pedido {{current.numero}} · productos existentes</strong>
+     <small>Total registrado {{money(current.total,currency())}}</small>
+     <details><summary>Ver líneas del pedido ({{current.ordenLineasComoOrden.length}})</summary>
+      @for(line of current.ordenLineasComoOrden;track line.id){
+       @if(!line.canceladaEn){
+        <div class="ord-express-existing-line">
+         <span>{{line.cantidad}} × {{line.nombreSnapshot}}</span>
+         <small>{{money(line.subtotal,currency())}}</small>
+        </div>
+       }
+      }
+     </details>
+     <p class="ord-note">El carrito contiene solamente los productos nuevos que vas a añadir.</p>
+    </section>
+   }
    <gc-pos-cart [items]="cart()" [total]="total()" [currency]="currency()"
     [disabled]="submitting()"
     (quantity)="changeQty($event)" (remove)="remove($event)"/>
@@ -171,11 +188,11 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <button type="button" class="ord-danger" [disabled]="submitting()" (click)="clearCart()">Vaciar carrito</button>
     </div>}
     <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes()"
-     [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()"
+     [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()||!!existingOrder()"
      (valueChange)="chooseMode($event)"/>
     @if(mode()==='MESA'){
      <gc-search-select id="pos-table" label="Mesa" [items]="tableChoices()"
-      [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()"
+      [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()||!!existingOrder()"
       placeholder="Seleccionar mesa" (valueChange)="selectTableId($event)"/>
     }
     <label>Observaciones del pedido
@@ -213,7 +230,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
       <a routerLink="/orders/settings">Configurar cocina</a>
      }
     }
-    @if(directOnly()&&mode()!=='MESA'&&paymentsAccess.canCollect()&&access.canCreate()){
+    @if(quickEligible()){
      <button class="ord-primary ord-confirm" type="button"
       [disabled]="submitting()||!cart().length"
       (click)="beginExpress()">Cobrar ahora · {{money(total(),currency())}}</button>
@@ -325,6 +342,9 @@ export class GcOrdersPosPage{
   const type=this.productTypes().get(line.variantId);
   return type==='INVENTARIABLE'||type==='SERVICIO';
  }));
+ protected readonly quickEligible=computed(()=>this.directOnly()&&!this.existingOrder()&&
+  !this.tableBusy()&&(this.mode()==='MOSTRADOR'||this.mode()==='PARA_LLEVAR')&&
+  this.access.canCreate()&&this.paymentsAccess.canCollect());
  protected readonly submitting=signal(false);
  protected readonly cartOpen=signal(false);
  protected readonly showTablePicker=signal(true);
@@ -398,22 +418,21 @@ export class GcOrdersPosPage{
  }
  protected async setView(mode:'counter'|'tables'){
   if(this.submitting()||this.prefs.view()===mode)return;
-  if(mode==='counter'&&this.selectedTable()&&this.cart().length){
-   const okay=await this.confirm.confirm({title:'Cambiar a mostrador',
-    message:'Hay productos sin guardar para la mesa seleccionada. ¿Descartarlos y cambiar de atención?',
+  if(this.cart().length&&(this.selectedTable()||this.existingOrder())){
+   const okay=await this.confirm.confirm({title:'Cambiar tipo de atención',
+    message:'Hay productos nuevos sin guardar. ¿Descartarlos y cambiar de atención?',
     confirmText:'Descartar y cambiar',danger:true});
    if(!okay)return;
    this.cart.set([]);this.invalidateKey();
   }
   this.prefs.setView(mode);
-  if(mode==='counter'){
-   this.selectedTable.set(null);this.existingOrder.set(null);this.mode.set('MOSTRADOR');
-  }
+  this.selectedTable.set(null);this.existingOrder.set(null);
+  this.mode.set(mode==='counter'?'MOSTRADOR':'MESA');
   this.showTablePicker.set(mode==='tables');
   if(mode==='tables')void this.loadTables();
  }
  protected chooseMode(value:string){
-  if(this.submitting())return;
+  if(this.submitting()||this.existingOrder())return;
   const v=ORDER_MODES.find(x=>x.id===value)?.id??'MOSTRADOR';
   this.mode.set(v);if(v!=='MESA'){this.selectedTable.set(null);this.existingOrder.set(null)}
   if(v==='MESA'&&!this.tables().length)void this.loadTables();
@@ -457,7 +476,12 @@ export class GcOrdersPosPage{
  }
  protected async chooseTable(t:TableRecord){
   if(this.submitting())return;
-  if(this.selectedTable()?.id===t.id){this.showTablePicker.set(false);return}
+  if(this.selectedTable()?.id===t.id){
+   this.showTablePicker.set(false);
+   const current=this.activeTableOrderId();
+   if(current&&!this.existingOrder()&&!this.tableBusy())void this.loadExistingOrder(current,t.id);
+   return;
+  }
   if(this.selectedTable()&&this.cart().length){
    const okay=await this.confirm.confirm({title:'Cambiar de mesa',
     message:'Los productos del carrito aún no están guardados. ¿Descartarlos para atender otra mesa?',
@@ -631,9 +655,7 @@ export class GcOrdersPosPage{
  }
  protected beginExpress(){
   const branch=this.context.branchId();
-  if(!branch||this.submitting()||!this.cart().length||!this.directOnly()||
-   this.mode()==='MESA'||this.mode()==='DELIVERY'||!this.paymentsAccess.canCollect()||
-   !this.access.canCreate())return;
+  if(!branch||this.submitting()||!this.quickEligible())return;
   this.quickDraft.set({
    sucursalId:branch,modalidad:this.mode(),origen:'CAJA',
    lineas:this.cart().map(asOrderLine),
