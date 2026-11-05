@@ -117,6 +117,7 @@ export const API_ENDPOINTS = {
     menu:(id:string)=>'/api/catalog/menus/'+segment(id),
     menuLayout:(id:string)=>'/api/catalog/menus/'+segment(id)+'/layout',
     menuCommit:(id:string)=>'/api/catalog/menus/'+segment(id)+'/commit',
+    menuValidate:(id:string)=>'/api/catalog/menus/'+segment(id)+'/validate',
     menuPublish:(id:string)=>'/api/catalog/menus/'+segment(id)+'/publish',
     menuUnpublish:(id:string)=>'/api/catalog/menus/'+segment(id)+'/unpublish',
     branchMenu:'/api/catalog/menu',

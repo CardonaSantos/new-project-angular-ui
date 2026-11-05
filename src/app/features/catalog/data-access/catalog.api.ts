@@ -12,7 +12,7 @@ import type {
  CatalogGroupAttachment,CatalogPriceCreate,CatalogPrice,CatalogResolvedPrice,
  CatalogQuoteInput,CatalogQuote,CatalogProductReadiness,CatalogPage,CatalogOptions,
  CatalogPageQuery,CatalogOptionsQuery,CatalogKind,CatalogMenu,CatalogMenuCreate,
- CatalogMenuPatch,CatalogMenuLayout,CatalogBranchMenu,CatalogSummary,CatalogPriceCoverage
+ CatalogMenuPatch,CatalogMenuLayout,CatalogMenuReadiness,CatalogBranchMenu,CatalogSummary,CatalogPriceCoverage
 } from './catalog.models';
 
 export function catalogParams(values:object):HttpParams{
@@ -59,7 +59,7 @@ export class CatalogApi {
  products(q:CatalogPageQuery&{categoriaId?:string;tipo?:CatalogKind}={}){
   return this.http.get<CatalogPage<CatalogProduct>>(this.e.products,params(q));
  }
- productOptions(q:CatalogOptionsQuery&{sucursalId?:string}={}){
+ productOptions(q:CatalogOptionsQuery&{sucursalId?:string;categoriaId?:string}={}){
   return this.http.get<CatalogOptions<CatalogProduct&{label:string}>>(this.e.productOptions,params(q));
  }
  product(id:string,sucursalId?:string){
@@ -178,6 +178,10 @@ export class CatalogApi {
  }
  replaceMenuLayout(id:string,dto:CatalogMenuLayout){
   return this.http.put<CatalogMenu>(this.e.menuLayout(id),dto,silent);
+ }
+ /** R3-C: read-only validation of unsaved sections, variants, prices and kitchen readiness. */
+ validateMenu(id:string,dto:CatalogMenuLayout){
+  return this.http.post<CatalogMenuReadiness>(this.e.menuValidate(id),dto,silent);
  }
  /** R2: commits layout + publication in one server transaction. */
  commitMenu(id:string,dto:CatalogMenuLayout){

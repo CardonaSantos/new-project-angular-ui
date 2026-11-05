@@ -1,4 +1,4 @@
-import {menuDraft,menuLayout,menuValidation,isMenuConflict,isMenuVersionConflict,menuStatus} from './catalog-menu-editor';
+import {menuDraft,menuLayout,menuValidation,isMenuConflict,isMenuVersionConflict,menuStatus,addMenuItems,moveMenuItemToSection,readableMenuIssue} from './catalog-menu-editor';
 import type {CatalogMenu} from './catalog.models';
 
 const example:CatalogMenu={
@@ -53,5 +53,31 @@ describe('CAT-A menu editor contract',()=>{
   expect(isMenuVersionConflict({status:409,message:'Menú incompleto: SIN_PRECIO'})).toBe(false);
   expect(isMenuVersionConflict({status:409,message:'Menú modificado por otra sesión'})).toBe(true);
   expect(isMenuVersionConflict({status:409,message:'La versión del menú cambió'})).toBe(true);
+ });
+});
+
+describe('R3-C menu builder navigation and data integrity',()=>{
+ it('adds multiple presentations once without overwriting existing items',()=>{
+  const draft=menuDraft(example);
+  const next=addMenuItems(draft,'s1',[
+   {varianteId:'v1',nombre:'Latte · Grande'},
+   {varianteId:'v2',nombre:'Latte · Pequeño'},
+   {varianteId:'v2',nombre:'Latte · Pequeño'},
+   {varianteId:'v3',nombre:'Flan · Única'}
+  ]);
+  expect(next.sections[0].items.map(x=>x.varianteId)).toEqual(['v1','v2','v3']);
+  expect(menuLayout(next,4).secciones[0].items.map(x=>x.orden)).toEqual([0,1,2]);
+  expect(draft.sections[0].items).toHaveLength(1);
+ });
+ it('moves a presentation to another section without duplicating it',()=>{
+  const draft=menuDraft(example);
+  draft.sections.push({key:'s2',nombre:'Postres',items:[]});
+  const moved=moveMenuItemToSection(draft,'s1','s2','v1');
+  expect(moved.sections[0].items).toHaveLength(0);
+  expect(moved.sections[1].items.map(x=>x.varianteId)).toEqual(['v1']);
+ });
+ it('displays actionable Spanish descriptions of inventory and recipe blockers',()=>{
+  expect(readableMenuIssue('SIN_RECETA_PUBLICADA')).toContain('receta');
+  expect(readableMenuIssue('EXTRA_SIN_COMPOSICION_FISICA')).toContain('ingredientes');
  });
 });

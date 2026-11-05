@@ -147,6 +147,17 @@ export interface CatalogMenuSectionItem {
 export interface CatalogMenuSection {
  id?:string;nombre:string;orden:number;activo?:boolean;items:CatalogMenuSectionItem[];
 }
+export interface CatalogMenuReadinessIssue {
+ codigo:string;mensaje:string;varianteId?:string;nombre?:string;
+ sucursalId?:string;seccion?:string;productoId?:string;
+}
+export interface CatalogMenuReadiness {
+ menuId:string;versionActual:number;publicada:boolean;lista:boolean;
+ problemas:CatalogMenuReadinessIssue[];
+ comprobadas:{varianteId:string;nombre:string;productoId:string;precio:string|null;
+  sucursalId:string;sucursal:string;seccion:string;lista:boolean;advertencias:string[]}[];
+ totalPresentaciones:number;totalSucursales:number;
+}
 export interface CatalogMenuSchedule {
  diaSemana:number;desde:string;hasta:string;activo?:boolean;
 }
