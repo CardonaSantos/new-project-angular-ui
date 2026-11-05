@@ -35,8 +35,8 @@ interface PriceResult {state:'saved'|'review';amount:string}
    <section class="cat-card cat-guide-created" role="status">
     <h2>{{product.nombre}}</h2>
     <p class="cat-muted">{{product.varianteProductosComoProducto?.length===1?'Producto único':(product.varianteProductosComoProducto?.length??0)+' presentaciones'}} · Guardado en una operación</p>
-    @if(product.tipo==='INVENTARIABLE'){
-     <p class="cat-guide-stock-note">Artículo de Inventario vinculado · <strong>stock inicial: 0</strong>. Registra una entrada cuando recibas mercancía.</p>
+    @if(product.tipo==='INVENTARIABLE'&&createdNewArticle()){
+     <p class="cat-guide-stock-note">Artículo de Inventario creado · <strong>stock inicial: 0</strong>. Registra una entrada cuando recibas mercancía.</p>
     }
     <div class="cat-guide-prices">
      @for(variant of product.varianteProductosComoProducto??[];track variant.id){
@@ -288,6 +288,7 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  protected readonly submitted=signal(false);
  protected readonly error=signal('');
  protected readonly created=signal<CatalogProduct|null>(null);
+ protected readonly createdNewArticle=signal(false);
  protected readonly prices=signal<Record<string,PriceResult>>({});
  protected readonly priceError=signal('');
  protected readonly readiness=signal<CatalogProductReadiness|null>(null);
@@ -340,10 +341,16 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
  }
  protected addVariant(){
   if(this.variants().length>=50)return;
+  const first=this.variants()[0];
+  const firstIsUntouched= !this.multiSize()&&this.variants().length===1&&
+   first.nombre==='Única'&&!first.precio&&!first.articuloInventarioId;
   this.multiSize.set(true);
-  this.variants.update(list=>[...list,{key:this.nextKey++,nombre:'',precio:'',articuloInventarioId:'',
-   articuloModo:this.kind()==='INVENTARIABLE'?
-    (this.canCreateArticle()?'nuevo':'existente'):undefined}]);
+  this.variants.update(list=>[
+   ...(firstIsUntouched?list.map((v,i)=>i===0?{...v,nombre:'Pequeño'}:v):list),
+   {key:this.nextKey++,nombre:firstIsUntouched?'Mediano':'',precio:'',articuloInventarioId:'',
+    articuloModo:this.kind()==='INVENTARIABLE'?
+     (this.canCreateArticle()?'nuevo':'existente'):undefined}
+  ]);
  }
  protected addSizes(){
   this.multiSize.set(true);
@@ -402,6 +409,8 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
    const product=await firstValueFrom(this.api.setupProduct(guidedSetupDto(
     this.draft(),canPrice?branchId:undefined)));
    this.created.set(product);
+   this.createdNewArticle.set(this.kind()==='INVENTARIABLE'&&
+    this.variants().some(v=>v.articuloModo==='nuevo'));
    this.prices.set(Object.fromEntries(product.preciosConfigurados.map(x=>[
     x.varianteId,{state:'saved' as const,amount:x.importe}])));
    this.notify.show('Producto y precios guardados en una operación.','success');
