@@ -1375,3 +1375,47 @@ gc-kitchen-ticket{display:block;min-width:0}
   color:#000!important;break-inside:avoid-page}
  .gc-thermal-line{break-inside:avoid}
 }
+
+/* ORD-UX: compact, touch-safe point of sale and quick checkout. */
+.ord-express-actions{display:grid;gap:.55rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr))}
+.ord-express-actions>button{min-height:44px;min-width:0;white-space:normal}
+.ord-express-actions>.ord-primary{font-weight:750}
+.ord-express-context{border:1px solid var(--gc-outline-variant);background:var(--gc-surface-container);
+ border-radius:.65rem;padding:.78rem;display:grid;gap:.4rem;font-size:.88rem}
+.ord-express-context>strong{font-size:.98rem}
+.ord-express-context>span{font-size:.8rem;color:var(--gc-on-surface-variant)}
+.ord-express-dialog{display:grid;align-content:start;gap:1rem;max-width:min(calc(100vw - 2rem),31rem);
+ padding:1.15rem;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain}
+.ord-express-dialog .ord-heading{align-items:start}
+.ord-express-total{background:var(--gc-surface-container);border:1px solid var(--gc-outline-variant);
+ padding:1rem;border-radius:.7rem;display:grid;gap:.28rem}
+.ord-express-total span{color:var(--gc-on-surface-variant);font-size:.82rem}
+.ord-express-total strong{font-size:clamp(1.55rem,3vw,2.2rem);line-height:1.15;
+ font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.ord-express-methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}
+.ord-express-methods button{min-width:0;min-height:44px;border:1px solid var(--gc-outline);
+ border-radius:.55rem;font-weight:650}
+.ord-express-methods button.active{background:var(--gc-primary-container);
+ color:var(--gc-on-primary-container);border-color:var(--gc-primary)}
+.ord-express-dialog label{display:grid;gap:.3rem;font-size:.84rem;font-weight:650}
+.ord-express-dialog input{width:100%;min-height:44px;border-radius:.55rem;
+ background:var(--gc-surface);border:1px solid var(--gc-outline);color:var(--gc-on-surface);
+ padding:.55rem;font-size:1rem;font-variant-numeric:tabular-nums}
+.ord-express-change{display:flex;justify-content:space-between;align-items:center;
+ border-top:1px solid var(--gc-outline-variant);padding-top:.65rem}
+.ord-express-change strong{font-size:1.25rem;font-variant-numeric:tabular-nums}
+.ord-express-dialog-actions{justify-content:flex-end;gap:.55rem}
+.ord-express-dialog-actions button{min-height:44px}
+.ord-express-dialog :is(button,input):focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+@media(min-width:1400px){
+ .ord-pos-layout{grid-template-columns:minmax(0,1fr) minmax(18rem,22rem)}
+ .ord-products{grid-template-columns:repeat(5,minmax(0,1fr));gap:.55rem}
+ .ord-product{min-width:0}
+}
+@media(max-width:760px){
+ .ord-express-dialog{position:fixed;max-width:none;width:100%;left:0;right:0;bottom:0;top:auto;
+  transform:none;border-radius:1rem 1rem 0 0;max-height:90dvh;padding:1rem}
+ .ord-express-dialog-actions{display:grid;grid-template-columns:1fr 2fr}
+ .ord-express-dialog-actions>button{width:100%}
+}
+@media(prefers-reduced-motion:reduce){.ord-express-dialog *{transition:none!important}}
