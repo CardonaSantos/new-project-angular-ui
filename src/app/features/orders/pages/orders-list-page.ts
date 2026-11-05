@@ -11,7 +11,7 @@ import {GcOrderStatus} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import {PaymentsAccess} from '../../payments/data-access/payments-access';
-import {ORDER_MODES,ORDER_STATES,type OrderMode,type OrderState,type OrderSummary} from '../data-access/orders.models';
+import {ORDER_MODES,ORDER_STATES,type OrderMode,type OrderState,type OrderSummary,type OrderWorkItem} from '../data-access/orders.models';
 import {money,modeText} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-list-page',
@@ -54,7 +54,7 @@ import {money,modeText} from '../data-access/orders.helpers';
    @if(error()){<gc-error-state [message]="error()!" (retry)="load()"/>}
    @if(!busy()&&!error()){
     <div class="ord-table-wrap ord-order-list-table"><table class="ord-table">
-     <thead><tr><th>Número</th><th>Tipo</th><th>Fecha</th><th>Importe</th><th>Estado</th><th>Acción</th></tr></thead>
+     <thead><tr><th>Número</th><th>Tipo</th><th>Fecha</th><th>Importe</th><th>Saldo</th><th>Estado</th><th>Acción</th></tr></thead>
      <tbody>
      @for(item of items();track item.id){
       <tr class="ord-order-data-row">
@@ -62,15 +62,23 @@ import {money,modeText} from '../data-access/orders.helpers';
        <td data-label="Tipo">{{modeText(item.modalidad)}}</td>
        <td data-label="Fecha">{{item.abiertaEn|date:'dd/MM/yyyy HH:mm'}}</td>
        <td data-label="Importe" class="ord-order-total">{{money(item.total)}}</td>
+       <td data-label="Saldo" class="ord-order-total">
+        @if('saldo' in item){<strong>{{money(item.saldo)}}</strong>}
+        @else{<span class="ord-note">—</span>}
+       </td>
        <td data-label="Estado"><gc-order-status [state]="item.estado"/></td>
        <td data-label="Acciones"><div class="ord-actions">
+        @if('mesa' in item&&item.mesa&&item.estado==='ABIERTA'&&access.canCreate()){
+         <a class="ord-primary" [routerLink]="['/orders/pos']"
+          [queryParams]="{mesaId:item.mesa.id}">Añadir productos</a>
+        }
         <a [routerLink]="['/orders/list',item.id]">Ver pedido</a>
         @if(item.estado==='ABIERTA'&&paymentsAccess.canRead()&&paymentsAccess.canCollect()){
          <a [routerLink]="['/payments/order',item.id]">Cobrar</a>
         }
        </div></td>
       </tr>
-     } @empty {<tr><td colspan="6" class="ord-order-empty">
+     } @empty {<tr><td colspan="7" class="ord-order-empty">
        {{hasFilters()?'No hay órdenes con estos filtros.':'No hay órdenes registradas en esta sucursal.'}}
       </td></tr>}
      </tbody>
@@ -94,14 +102,14 @@ export class GcOrdersListPage{
  protected readonly branches=computed(()=>this.context.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly modes=ORDER_MODES;protected readonly states=ORDER_STATES;
  protected readonly branchId=signal('');protected readonly search=signal('');
- protected readonly mode=signal<OrderMode|''>('');protected readonly state=signal<OrderState|''>('');
+ protected readonly mode=signal<OrderMode|''>('');protected readonly state=signal<OrderState|''>('ABIERTA');
  protected readonly page=signal(1);protected readonly pages=signal(0);protected readonly total=signal(0);
  protected readonly limit=signal(20);
  protected readonly limitText=computed(()=>String(this.limit()));
  protected readonly pageSizes=[{id:'10',label:'10'},{id:'20',label:'20'},{id:'50',label:'50'}];
  private readonly appliedSearch=signal('');
  protected readonly hasFilters=computed(()=>Boolean(this.search().trim()||this.appliedSearch()||this.mode()||this.state()));
- protected readonly items=signal<OrderSummary[]>([]);protected readonly busy=signal(false);
+ protected readonly items=signal<(OrderSummary|OrderWorkItem)[]>([]);protected readonly busy=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly money=money;protected readonly modeText=modeText;
  private generation=0;
@@ -142,9 +150,12 @@ export class GcOrdersListPage{
   if(!branch||!this.access.canRead())return;
   const gen=++this.generation;this.busy.set(true);this.error.set(null);
   try{
-   const data=await firstValueFrom(this.api.list({sucursalId:branch,search:this.appliedSearch(),
+   const query={sucursalId:branch,search:this.appliedSearch(),
     ...(this.mode()?{modalidad:this.mode() as OrderMode}:{}),
-    ...(this.state()?{estado:this.state() as OrderState}:{}),page:this.page(),limit:this.limit()}));
+    ...(this.state()?{estado:this.state() as OrderState}:{}),page:this.page(),limit:this.limit()};
+   const data=this.state()==='ABIERTA'
+    ?await firstValueFrom(this.api.worklist(query))
+    :await firstValueFrom(this.api.list(query));
    if(gen!==this.generation||branch!==this.branchId())return;
    this.items.set(data.data);this.total.set(data.meta.total);this.pages.set(data.meta.totalPages);
   }catch(e){if(gen===this.generation)this.error.set(gcErrorMessage(e))}
