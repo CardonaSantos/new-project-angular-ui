@@ -13,7 +13,7 @@ import {GcKitchenTicket,GcKitchenModifiers} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import type {KitchenTicket,Station} from '../data-access/orders.models';
-import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitchenQueue} from '../data-access/orders.helpers';
+import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-kitchen-page',imports:[RouterLink,GcOrdersNav,GcSearchSelect,GcKitchenTicket,GcKitchenModifiers,CdkTrapFocus],
  template:`
@@ -44,38 +44,40 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
    <button type="button" [class.active]="view()==='active'"
     [attr.aria-pressed]="view()==='active'" (click)="setView('active')">Por preparar</button>
    <button type="button" [class.active]="view()==='ready'"
-    [attr.aria-pressed]="view()==='ready'" (click)="setView('ready')">Listas y entregadas</button>
-   <button type="button" [class.active]="view()==='cancelled'"
-    [attr.aria-pressed]="view()==='cancelled'" (click)="setView('cancelled')">Canceladas</button>
+    [attr.aria-pressed]="view()==='ready'" (click)="setView('ready')">Listas para entregar</button>
+   <button type="button" [class.active]="view()==='delivered'"
+     [attr.aria-pressed]="view()==='delivered'" (click)="setView('delivered')">Entregadas</button>
    <button type="button" [class.active]="view()==='all'"
     [attr.aria-pressed]="view()==='all'" (click)="setView('all')">Todas</button>
   </div>
   @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
   @if(busy()){<p role="status" class="ord-muted">Consultando cocina…</p>}
-  @if(!busy()&&!error()&&tickets().length){
+  @if(!busy()&&!error()){
    <div class="ord-kitchen-summary">
     <span><strong>{{pendingCount()}}</strong> pendientes</span>
     <span><strong>{{workingCount()}}</strong> preparando</span>
     <span><strong>{{readyCount()}}</strong> para entregar</span>
     <span><strong>{{deliveredCount()}}</strong> entregadas</span>
-    <small>Conteos de comandas cargadas en esta página.</small>
+    <small>Totales de la sucursal y estación.</small>
    </div>
   }
   <div class="ord-kitchen-board" aria-label="Comandas">
-   @for(ticket of tickets();track ticket.id;let i=$index){
-    @if(view()==='ready'&&(i===0||stage(tickets()[i-1]).kind!==stage(ticket).kind)){
-     <h2 class="ord-kitchen-group-heading">{{stage(ticket).kind==='delivered'?'Ya entregadas':'Pendientes de entrega'}}</h2>
-    }
+   @for(ticket of tickets();track ticket.id){
+    
     <gc-kitchen-ticket [ticket]="ticket" (open)="inspect(ticket)">
      @if(access.canKitchenManage()&&ticket.estado!=='CANCELADA'){
       @if(ticket.estado==='PENDIENTE'){
        <button type="button" [disabled]="actionBusy()" (click)="start(ticket)">Comenzar preparación</button>
       }
       @if(ticket.estado==='PENDIENTE'||ticket.estado==='PREPARANDO'){
-       <button type="button" class="ord-primary" [disabled]="actionBusy()" (click)="ready(ticket)">Lista y entregada</button>
+       <button type="button" [disabled]="actionBusy()"
+         (click)="ready(ticket)">Marcar lista</button>
+        <button type="button" class="ord-primary" [disabled]="actionBusy()"
+         (click)="readyAndDeliver(ticket.id)">Lista y entregada</button>
       }
       @if(ticket.estado==='LISTA'&&stage(ticket).kind!=='delivered'){
-       <button type="button" class="ord-primary" (click)="inspect(ticket)">Ver y entregar</button>
+       <button type="button" class="ord-primary" [disabled]="actionBusy()"
+         (click)="readyAndDeliver(ticket.id)">Registrar entrega</button>
       }
      }
     </gc-kitchen-ticket>
@@ -87,7 +89,6 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
   @if(total()>0){
    <div class="ord-pagination">
     <span>{{total()}} comandas · Página {{page()}} de {{pages()||1}}
-     @if(view()==='active'){ · Se consultan pendientes y preparando por separado.}
     </span>
     <div class="ord-actions">
      <button type="button" [disabled]="page()<=1||busy()" (click)="changePage(-1)">Anterior</button>
@@ -142,8 +143,10 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitche
          </label>
          <button type="button" [disabled]="actionBusy()"
           (click)="startLine(line.id,line.cantidad,line.cantidadPreparada)">Preparar cantidad</button>
-         <button type="button" class="ord-primary" [disabled]="actionBusy()"
-          (click)="markReady(line.id)">Lista y entregada</button>
+         <button type="button" [disabled]="actionBusy()"
+           (click)="markReady(line.id)">Marcar lista</button>
+          <button type="button" class="ord-primary" [disabled]="actionBusy()"
+           (click)="deliverPrepared(line.id)">Lista y entregada</button>
         } @else if(!line.entregadaEn){
          <button type="button" class="ord-primary" [disabled]="actionBusy()"
           (click)="deliver(line.id)">Confirmar entrega</button>
