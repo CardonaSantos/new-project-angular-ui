@@ -13,7 +13,7 @@ import {GcKitchenTicket,GcKitchenModifiers} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import type {KitchenTicket,Station} from '../data-access/orders.models';
-import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitchenQueue,pendingDeliveryLines} from '../data-access/orders.helpers';
+import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText,sortKitchenQueue} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-kitchen-page',imports:[RouterLink,GcOrdersNav,GcSearchSelect,GcKitchenTicket,GcKitchenModifiers,CdkTrapFocus],
  template:`
@@ -167,7 +167,7 @@ export class GcOrdersKitchenPage{
  protected readonly branches=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly stationOptions=computed(()=>this.stations().filter(x=>x.activa).map(s=>({id:s.id,label:s.nombre})));
  protected readonly branchId=signal('');protected readonly stationId=signal('');
- protected readonly view=signal<'active'|'ready'|'cancelled'|'all'>('active');
+ protected readonly view=signal<'active'|'ready'|'delivered'|'all'>('active');
  protected readonly stations=signal<Station[]>([]);
  protected readonly tickets=signal<KitchenTicket[]>([]);protected readonly selected=signal<KitchenTicket|null>(null);
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
@@ -176,10 +176,12 @@ export class GcOrdersKitchenPage{
  protected readonly limit=signal(30);protected readonly limitText=computed(()=>String(this.limit()));
  protected readonly pageSizes=[{id:'15',label:'15'},{id:'30',label:'30'},{id:'50',label:'50'}];
  protected readonly autoRefresh=signal(true);
- protected readonly pendingCount=computed(()=>this.tickets().filter(t=>kitchenStage(t).kind==='pending').length);
- protected readonly workingCount=computed(()=>this.tickets().filter(t=>kitchenStage(t).kind==='working').length);
- protected readonly readyCount=computed(()=>this.tickets().filter(t=>kitchenStage(t).kind==='ready').length);
- protected readonly deliveredCount=computed(()=>this.tickets().filter(t=>kitchenStage(t).kind==='delivered').length);
+ protected readonly pendingCount=computed(()=>this.globalCounts().pending);
+ protected readonly workingCount=computed(()=>this.globalCounts().preparing);
+ protected readonly readyCount=computed(()=>this.globalCounts().readyToDeliver);
+ protected readonly deliveredCount=computed(()=>this.globalCounts().delivered);
+ protected readonly globalCounts=signal({pending:0,preparing:0,readyToDeliver:0,delivered:0});
+ private readonly actionKeys=new Map<string,string>();
  protected readonly partial=signal<Record<string,string>>({});
  protected readonly qtyText=qtyText;
  protected readonly modeText=modeText;
@@ -200,7 +202,7 @@ export class GcOrdersKitchenPage{
     this.branchId()&&!this.busy())void this.poll();
   });
  }
- protected setView(v:'active'|'ready'|'cancelled'|'all'){
+ protected setView(v:'active'|'ready'|'delivered'|'all'){
   if(v===this.view())return;
   this.view.set(v);this.page.set(1);void this.reload();
  }
@@ -226,22 +228,18 @@ export class GcOrdersKitchenPage{
   const branch=this.branchId();if(!branch||!this.access.canKitchenRead())return;
   const gen=++this.generation;this.busy.set(true);this.error.set(null);
   try{
-   const base={sucursalId:branch,estacionId:this.stationId()||undefined,
-    page:this.page(),limit:this.limit()};
-   const requested=this.view();
-   const queries=requested==='active'
-    ?[this.api.tickets({...base,estado:'PENDIENTE'}),this.api.tickets({...base,estado:'PREPARANDO'})]
-    :[this.api.tickets({...base,...(requested==='ready'?{estado:'LISTA' as const}:
-       requested==='cancelled'?{estado:'CANCELADA' as const}:{})})];
-   const [stations,results]=await Promise.all([
+   const vista=this.view()==='active'?'ACTIVAS':
+    this.view()==='ready'?'PARA_ENTREGAR':
+    this.view()==='delivered'?'ENTREGADAS':'TODAS';
+   const [stations,result]=await Promise.all([
     firstValueFrom(this.api.stations(branch)),
-    Promise.all(queries.map(q=>firstValueFrom(q)))
+    firstValueFrom(this.api.queue({sucursalId:branch,
+     estacionId:this.stationId()||undefined,vista,page:this.page(),limit:this.limit()}))
    ]);
    if(gen!==this.generation||branch!==this.branchId())return;
-   const combined=sortKitchenQueue(results.flatMap(r=>r.data),requested);
-   this.stations.set(stations);this.tickets.set(combined);
-   this.total.set(results.reduce((sum,r)=>sum+r.meta.total,0));
-   this.pages.set(Math.max(0,...results.map(r=>r.meta.totalPages)));
+   this.stations.set(stations);this.tickets.set(result.data);
+   this.total.set(result.meta.total);this.pages.set(result.meta.totalPages);
+   this.globalCounts.set(result.totals);
   }catch(e){if(gen===this.generation)this.error.set(orderFriendlyError(e))}
   finally{if(gen===this.generation)this.busy.set(false)}
  }
@@ -285,44 +283,37 @@ export class GcOrdersKitchenPage{
    confirmText:'Iniciar'}))return;
   await this.mutate(()=>firstValueFrom(this.api.startTicket(t.id)));
  }
- private async readyAndDeliver(ticketId:string,lineId?:string){
+ protected async ready(t:KitchenTicket){
+  if(!await this.confirm.confirm({title:'Marcar comanda preparada',
+   message:'La comanda quedará LISTA para servir. No se registrará entrega.',
+   confirmText:'Marcar lista'}))return;
+  await this.mutate(()=>firstValueFrom(this.api.readyTicket(t.id)));
+  if(!this.error())this.notices.show('Comanda lista, pendiente de entrega.','success',5000);
+ }
+ protected async readyAndDeliver(ticketId:string,lineId?:string){
   if(this.actionBusy())return;
   if(!await this.confirm.confirm({
-   title:'Marcar lista y entregada',
-   message:'Se preparará el producto (puede descontar ingredientes) y se registrará como entregado. Confirma solo si realmente se entrega.',
-   confirmText:'Lista y entregada'
+   title:'Confirmar preparación y entrega',
+   message:'Se preparará y marcará ENTREGADA en una sola operación. Confirma solo si ya ocurrió la entrega.',
+   confirmText:'Sí, entregada'
   }))return;
+  const identity=(lineId?'line:':'ticket:')+(lineId??ticketId);
+  const key=this.actionKeys.get(identity)??operationKey('kds-handoff');
+  this.actionKeys.set(identity,key);
   this.actionBusy.set(true);this.error.set(null);
-  let prepared=false;
-  let failure:string|null=null;
-  let delivered=0;
   try{
-   let ticket=lineId
-    ?await firstValueFrom(this.api.readyLine(lineId))
-    :await firstValueFrom(this.api.readyTicket(ticketId));
-   prepared=true;
-   const targets=pendingDeliveryLines(ticket).filter(line=>!lineId||line.id===lineId);
-   for(const line of targets){
-    ticket=await firstValueFrom(this.api.deliverLine(line.id));
-    delivered++;
-   }
+   const ticket=lineId
+    ?await firstValueFrom(this.api.readyDeliverLine(lineId,key))
+    :await firstValueFrom(this.api.readyDeliverTicket(ticketId,key));
+   this.actionKeys.delete(identity);
    if(this.selected()?.id===ticket.id)this.selected.set(ticket);
-   this.notices.show(delivered
-    ?(delivered===1?'Producto listo y entregado.':delivered+' productos listos y entregados.')
-    :'Comanda ya lista y entregada.','success',6500);
-  }catch(e){
-   failure=(prepared?'La preparación se guardó, pero falta registrar una o más entregas. ':'')
-    +orderFriendlyError(e);
-  }finally{
+   this.notices.show('Preparación y entrega registradas correctamente.','success',6500);
    await this.reload();
-   if(failure){
-    this.error.set(failure);
-    this.notices.show(failure,'error',0);
-   }
-   this.actionBusy.set(false);
-  }
+  }catch(e){
+   const msg=orderFriendlyError(e);this.error.set(msg);this.notices.show(msg,'error',0);
+   await this.reload();
+  }finally{this.actionBusy.set(false)}
  }
- protected async ready(t:KitchenTicket){await this.readyAndDeliver(t.id)}
  protected remaining(total:string,done:string){
   try{return parseApiDecimal(total).minus(parseApiDecimal(done)).toFixed(3).replace(/\.?0+$/,'')}
   catch{return total}
@@ -346,6 +337,10 @@ export class GcOrdersKitchenPage{
   if(!this.error()){this.startKeys.delete(id);this.partial.update(x=>({...x,[id]:''}))}
  }
  protected async markReady(id:string){
+  await this.mutate(()=>firstValueFrom(this.api.readyLine(id)));
+  if(!this.error())this.notices.show('Producto preparado. Falta entregar.','success',5000);
+ }
+ protected async deliverPrepared(id:string){
   const selected=this.selected();
   if(selected)await this.readyAndDeliver(selected.id,id);
  }
