@@ -47,3 +47,6 @@ git pull --ff-only origin feat/catalog-r2-atomic-setup-readiness-20261105
 npm run start:dev
 ```
 No mezclar con `main` antes de revisar tests y QA.
+
+## Integración de ramas
+El PR Angular #32 incluye R1 + R2 y tiene como base provisional `main` para ejecutar la CI completa. La rama R2 se creó sobre la rama funcional R1 del PR #31; no fusionar ambos PR de manera independiente sin revisar la historia. El backend de pruebas debe arrancarse desde el PR #31 del repositorio servidor, no desde backend `main`.
