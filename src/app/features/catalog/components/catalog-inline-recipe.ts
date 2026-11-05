@@ -21,7 +21,7 @@ interface Ingredient {
  imports:[GcInventoryPicker],
  template:`
  <section class="cat-inline-recipe" aria-label="Receta y consumo de ingredientes">
-  <div class="cat-row">
+  <div class="cat-inline-recipe-header">
    <div><h3>Receta · {{variantName()||productName()}}</h3>
     <p class="cat-muted">Aquí defines qué ingredientes se descontarán cuando se procese la preparación.</p></div>
    @if(currentPublished()){<span class="cat-inline-recipe-published">Receta publicada</span>}
@@ -43,7 +43,7 @@ interface Ingredient {
       <span>Versión {{version.numero}} publicada · Rinde {{version.rendimiento}} {{version.unidadRendimiento?.nombre??'unidades'}}</span>
      }@else{<span>Todavía no hay una fórmula publicada.</span>}
      @if(access.canManage()&&!editing()){
-      <button type="button" (click)="startEditing()">Crear nueva versión</button>
+      <button type="button" class="gc-button gc-button--outline" (click)="startEditing()">Crear nueva versión</button>
      }
     </div>
    }
@@ -57,9 +57,15 @@ interface Ingredient {
        label="Unidad de rendimiento" [value]="yieldUnit()" [disabled]="saving()"
        (valueChange)="yieldUnit.set($event)"/>
      </div>
-     <div class="cat-row"><strong>Ingredientes consumidos</strong>
-      <button type="button" (click)="addIngredient()" [disabled]="saving()||parts().length>=100">
-       + Ingrediente</button></div>
+     <div class="cat-inline-recipe-ingredients-heading">
+      <div>
+       <h4>Ingredientes que se consumirán</h4>
+       <p class="cat-muted">Añade cada artículo físico con su cantidad y unidad.</p>
+      </div>
+      <span class="cat-inline-recipe-counter" aria-live="polite">
+       {{parts().length}} {{parts().length===1?'ingrediente':'ingredientes'}}
+      </span>
+     </div>
      @for(part of parts();track part.key;let i=$index){
       <fieldset class="cat-inline-recipe-line">
        <legend>Ingrediente {{i+1}}</legend>
@@ -74,7 +80,7 @@ interface Ingredient {
          <input inputmode="decimal" [disabled]="saving()" [value]="part.cantidad" required
           (input)="editPart(part.key,{cantidad:$any($event.target).value})"
           placeholder="Ej. 150"/></label>
-        <button type="button" [disabled]="saving()||parts().length===1"
+        <button type="button" class="gc-button gc-button--outline" [disabled]="saving()||parts().length===1"
          (click)="removePart(part.key)" [attr.aria-label]="'Quitar ingrediente '+(i+1)">Quitar</button>
        </div>
        <details class="cat-inline-recipe-more">
@@ -85,6 +91,13 @@ interface Ingredient {
        </details>
       </fieldset>
      }
+     <div class="cat-inline-recipe-add-row">
+      <button type="button" class="gc-button gc-button--outline cat-inline-recipe-add"
+       aria-label="Agregar otro ingrediente a la receta"
+       (click)="addIngredient()" [disabled]="saving()||parts().length>=100">
+       + Agregar otro ingrediente
+      </button>
+     </div>
      <p class="cat-muted">Las cantidades corresponden al rendimiento indicado. El servidor calcula la proporción cuando se prepara una orden.</p>
      @if(access.canPublish()){
       <label class="cat-check"><input type="checkbox" [checked]="publishNow()" [disabled]="saving()"
@@ -94,11 +107,12 @@ interface Ingredient {
       <p class="cat-muted">Se guardará como borrador. Publicarla requiere permiso de publicación de Recetas.</p>
      }
      @if(problem()){<p role="alert" class="cat-alert">{{problem()}}</p>}
-     <div class="cat-actions">
-      <button class="cat-primary" type="submit" [disabled]="saving()">
-       {{saving()?'Validando y guardando…':publishNow()?'Guardar y publicar fórmula':'Guardar fórmula como borrador'}}</button>
+     <div class="cat-inline-recipe-actions">
+      <button class="gc-button cat-inline-recipe-submit" type="submit" [disabled]="saving()">
+       {{saving()?'Validando y guardando…':publishNow()?'Guardar y publicar receta':'Guardar receta como borrador'}}</button>
       @if(existing()){
-       <button type="button" (click)="cancelEditing()" [disabled]="saving()">Cancelar edición</button>
+       <button class="gc-button gc-button--outline" type="button"
+        (click)="cancelEditing()" [disabled]="saving()">Cancelar edición</button>
       }
      </div>
     </form>
@@ -108,7 +122,7 @@ interface Ingredient {
    @if(currentPublished();as published){
     <div class="cat-inline-recipe-check">
      @if(branch.branchId()){
-      <button type="button" [disabled]="checking()" (click)="checkStock(published)">
+      <button type="button" class="gc-button gc-button--outline" [disabled]="checking()" (click)="checkStock(published)">
        {{checking()?'Comprobando…':'Consultar consumo y disponibilidad'}}</button>
      }
      @if(preview();as result){
@@ -145,6 +159,32 @@ interface Ingredient {
  .cat-inline-recipe-more>label{margin-top:.35rem;max-width:180px}
  .cat-inline-recipe-check{display:grid;gap:.35rem}
  .cat-inline-recipe-check p{margin:0}
+ .cat-inline-recipe-header,.cat-inline-recipe-ingredients-heading{
+  display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+ .cat-inline-recipe-header h3,.cat-inline-recipe-ingredients-heading h4{font-size:1rem;line-height:1.4;margin:0}
+ .cat-inline-recipe-ingredients-heading{border-bottom:1px solid var(--gc-outline-variant);padding-bottom:.55rem}
+ .cat-inline-recipe-ingredients-heading p{margin:.2rem 0 0}
+ .cat-inline-recipe-counter{font-size:.85rem;color:var(--gc-on-surface-variant);white-space:nowrap}
+ .cat-inline-recipe-form{gap:1rem}
+ .cat-inline-recipe .cat-muted{color:var(--gc-on-surface-variant);font-size:.85rem;line-height:1.4}
+ .cat-inline-recipe .cat-inline-recipe-field{font-size:.9rem;line-height:1.35}
+ .cat-inline-recipe-field input{
+  background:var(--gc-surface);color:var(--gc-on-surface);
+  border:1px solid var(--gc-outline);border-radius:.5rem;
+  min-height:44px;padding:.5rem .65rem;font-size:.95rem}
+ .cat-inline-recipe .cat-check{display:flex;align-items:flex-start;gap:.6rem;line-height:1.4;font-size:.9rem}
+ .cat-inline-recipe .cat-check input{width:18px;height:18px;flex:none;accent-color:var(--gc-primary);margin-top:.14rem}
+ .cat-inline-recipe-line{padding:.7rem;display:grid;gap:.55rem}
+ .cat-inline-recipe-line legend{font-size:.85rem}
+ .cat-inline-recipe-add-row{display:flex;justify-content:flex-start;padding:.2rem 0}
+ .cat-inline-recipe .gc-button{font-size:.9rem;min-height:44px;line-height:1.25}
+ .cat-inline-recipe-add{border-style:dashed}
+ .cat-inline-recipe-actions{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;
+  padding-top:.8rem;border-top:1px solid var(--gc-outline-variant)}
+ .cat-inline-recipe-submit{font-weight:700;min-width:225px}
+ @media(max-width:560px){.cat-inline-recipe-actions>.gc-button{width:100%}
+  .cat-inline-recipe-add{width:100%}}
+
  .cat-inline-recipe :is(input,button,summary):focus-visible{outline:2px solid var(--gc-primary);outline-offset:2px}
  @media(max-width:800px){.cat-inline-recipe-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
  @media(max-width:560px){.cat-inline-recipe-yield,.cat-inline-recipe-fields{grid-template-columns:1fr}}
