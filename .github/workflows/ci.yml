@@ -1,9 +1,9 @@
 name: Angular Foundation CI
 on:
   push:
-    branches: [main, chore/angular-foundation, feat/reports-dashboard-ui-20261104, feat/thermal-receipts-pos-ui-20261104]
+    branches: [main, chore/angular-foundation, feat/reports-dashboard-ui-20261104, feat/thermal-receipts-pos-ui-20261104, refactor/pos-orders-kds-express-ui-20261105]
   pull_request:
-    branches: [main, refactor/organization-design-system-selects-20261103, feat/orders-pos-ui-20261103, feat/payments-cash-ui-20261103, refactor/orders-ux-r1-20261104, feat/purchases-supply-ui-20261104, feat/reports-dashboard-ui-20261104]
+    branches: [main, refactor/organization-design-system-selects-20261103, feat/orders-pos-ui-20261103, feat/payments-cash-ui-20261103, refactor/orders-ux-r1-20261104, feat/purchases-supply-ui-20261104, feat/reports-dashboard-ui-20261104, feat/thermal-receipts-pos-ui-20261104]
 
 jobs:
   validate:
