@@ -17,7 +17,7 @@ import {guidedProductDto,suggestedProductCode,validateGuidedProduct,validPrice,
  type GuidedVariant} from '../data-access/catalog-product-guide';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 
-type PriceResult={state:'saved'|'review';amount:string};
+interface PriceResult {state:'saved'|'review';amount:string}
 
 /** A task-oriented entry point; advanced product editing remains at /catalog/products/:id. */
 @Component({
