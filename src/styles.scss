@@ -1469,3 +1469,9 @@ gc-kitchen-ticket{display:block;min-width:0}
  .ord-worklist-tile .ord-actions a,.pos-express-dialog button,
  .ord-kitchen .ord-ticket-actions button{min-height:44px}
 }
+
+/* Five POS product tiles where regular desktop width permits legible cards. */
+@media(min-width:1300px){
+ .ord-pos .ord-products{grid-template-columns:repeat(5,minmax(0,1fr))}
+ .ord-pos .ord-products--compact{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
