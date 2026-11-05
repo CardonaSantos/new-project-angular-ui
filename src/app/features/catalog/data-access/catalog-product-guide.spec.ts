@@ -1,4 +1,4 @@
-import {guidedProductDto,suggestedProductCode,validateGuidedProduct,validPrice,
+import {guidedProductDto,guidedSetupDto,suggestedArticleCode,suggestedProductCode,validateGuidedProduct,validPrice,
  type GuidedProductDraft} from './catalog-product-guide';
 
 const draft=():GuidedProductDraft=>({
@@ -40,6 +40,32 @@ describe('CAT R1 guided product creation',()=>{
   expect(validPrice('0.00')).toBe(true);
   expect(validPrice('24.50')).toBe(true);
   expect(validPrice('24.500')).toBe(false);
+ });
+ it('creates one flan plus its physical article and price in a single setup payload',()=>{
+  const d=draft();d.nombre='Flan de dulce de leche';d.codigo='FLAN-001';
+  d.tipo='INVENTARIABLE';d.variantes=[{key:1,nombre:'Única',precio:'20.00',
+   articuloInventarioId:'',articuloModo:'nuevo',controlarLote:true,controlarVencimiento:true}];
+  expect(validateGuidedProduct(d)).toEqual([]);
+  const payload=guidedSetupDto(d,'branch1');
+  expect(payload.variantes).toHaveLength(1);
+  expect(payload.variantes[0].nuevoArticulo?.nombre).toBe('Flan de dulce de leche');
+  expect(payload.variantes[0].nuevoArticulo?.codigo).toBe('ART-FLAN-001-1');
+  expect(payload.variantes[0].precio).toBe('20.00');
+  expect(payload.sucursalId).toBe('branch1');
+  expect(suggestedArticleCode('X'.repeat(50),1).length).toBeLessThanOrEqual(50);
+ });
+ it('does not invent starting inventory when creating a finished article',()=>{
+  const d=draft();d.tipo='INVENTARIABLE';d.variantes=[{key:1,nombre:'Única',
+   precio:'',articuloInventarioId:'',articuloModo:'nuevo'}];
+  const payload=guidedSetupDto(d);
+  expect(payload.variantes[0].nuevoArticulo).toBeDefined();
+  expect(Object.keys(payload.variantes[0].nuevoArticulo??{})).not.toContain('stockInicial');
+ });
+ it('requires lote when expiry is tracked',()=>{
+  const d=draft();d.tipo='INVENTARIABLE';d.variantes=[{key:1,nombre:'Única',
+   precio:'',articuloInventarioId:'',articuloModo:'nuevo',controlarVencimiento:true}];
+  expect(validateGuidedProduct(d)).toContain(
+   'Presentación 1: para controlar vencimientos activa primero el control por lotes.');
  });
  it('allows a draft with no prices, but never without a presentation',()=>{
   const d=draft();d.variantes.forEach(x=>x.precio='');

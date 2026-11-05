@@ -61,6 +61,22 @@ export interface CatalogProductCreate {
  codigo:string;nombre:string;descripcion?:string|null;categoriaId?:string|null;
  tipo:CatalogKind;variantes?:CatalogVariantInput[];
 }
+export interface CatalogInlineArticle {
+ codigo:string;nombre:string;unidadBaseId?:string;
+ requiereLote?:boolean;requiereVencimiento?:boolean;
+}
+export interface CatalogSetupVariant extends CatalogVariantInput {
+ precio?:string;nuevoArticulo?:CatalogInlineArticle;
+}
+export interface CatalogProductSetup extends Omit<CatalogProductCreate,'variantes'> {
+ sucursalId?:string;variantes:CatalogSetupVariant[];
+}
+export interface CatalogProductSetupResult extends CatalogProduct{
+ preciosConfigurados:{varianteId:string;nombre:string;importe:string;sucursalId:string}[];
+}
+export interface CatalogBatchPriceResult {
+ guardados:number;precios:{id:string;varianteId:string;sucursalId:string;importe:string}[];
+}
 export type CatalogProductPatch=Partial<Pick<CatalogProduct,'nombre'|'descripcion'|'categoriaId'|'visibleEnMenu'>>;
 export type CatalogVariantPatch=Partial<CatalogVariantInput>&{activo?:boolean};
 export interface CatalogVariantBranchPatch {
@@ -109,7 +125,7 @@ export type CatalogReadinessWarning=
  'ARTICULO_FISICO_INVALIDO'|'VARIANTE_NO_EXISTE'|string;
 export interface CatalogVariantReadiness {
  varianteId:string;sucursalId:string;lista:boolean;advertencias:CatalogReadinessWarning[];
- precio?:string|null;receta?:string;stock?:string;
+ precio?:string|null;receta?:string;cocina?:string;stock?:string;
 }
 export interface CatalogProductReadiness {
  productoId:string;sucursalId:string;lista:boolean;variantes:CatalogVariantReadiness[];

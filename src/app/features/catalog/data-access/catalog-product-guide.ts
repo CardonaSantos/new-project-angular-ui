@@ -1,7 +1,9 @@
-import type {CatalogKind,CatalogProductCreate} from './catalog.models';
+import type {CatalogKind,CatalogProductCreate,CatalogProductSetup} from './catalog.models';
 
 export interface GuidedVariant {
  key:number;nombre:string;precio:string;articuloInventarioId:string;
+ articuloModo?:'nuevo'|'existente';articuloCodigo?:string;articuloNombre?:string;
+ controlarLote?:boolean;controlarVencimiento?:boolean;
 }
 export interface GuidedProductDraft {
  nombre:string;codigo:string;tipo:CatalogKind;categoriaId:string;
@@ -29,8 +31,15 @@ export function validateGuidedProduct(input:GuidedProductDraft):string[]{
   if(!name||name.length>120)errors.push(at+': nombre obligatorio (hasta 120 caracteres).');
   if(name&&used.has(name))errors.push(at+': el nombre está repetido.');
   used.add(name);
-  if(input.tipo==='INVENTARIABLE'&&!variant.articuloInventarioId)
-   errors.push(at+': selecciona el artículo físico del inventario.');
+  if(input.tipo==='INVENTARIABLE'&&variant.articuloModo!=='nuevo'&&!variant.articuloInventarioId)
+   errors.push(at+': selecciona un artículo existente o crea uno nuevo.');
+  if(input.tipo==='INVENTARIABLE'&&variant.articuloModo==='nuevo'){
+   const code=variant.articuloCodigo?.trim()||suggestedArticleCode(input.codigo,index);
+   if(!/^[A-Za-z][A-Za-z0-9_-]{1,49}$/.test(code))
+    errors.push(at+': el código del artículo físico debe tener de 2 a 50 caracteres.');
+   if(variant.controlarVencimiento&&!variant.controlarLote)
+    errors.push(at+': para controlar vencimientos activa primero el control por lotes.');
+  }
   if(variant.precio.trim()&&!validPrice(variant.precio))
    errors.push(at+': usa un precio como 24.50.');
  }
@@ -43,6 +52,30 @@ export function guidedProductDto(input:GuidedProductDraft):CatalogProductCreate 
   variantes:input.variantes.map((v,orden)=>({
    nombre:v.nombre.trim(),orden,
    ...(input.tipo==='INVENTARIABLE'?{articuloInventarioId:v.articuloInventarioId}:{}),
+  }))
+ };
+}
+
+/** Stable article code per presentation; safe length even with a 50-character product code. */
+export function suggestedArticleCode(productCode:string,index:number){
+ return ('ART-'+productCode.trim().toUpperCase().slice(0,39)+'-'+(index+1)).slice(0,50);
+}
+export function guidedSetupDto(input:GuidedProductDraft,sucursalId?:string):CatalogProductSetup {
+ return {
+  codigo:input.codigo.trim().toUpperCase(),nombre:input.nombre.trim(),tipo:input.tipo,
+  descripcion:input.descripcion.trim()||null,categoriaId:input.categoriaId||null,
+  ...(sucursalId?{sucursalId}:{}),
+  variantes:input.variantes.map((v,index)=>({
+   nombre:v.nombre.trim(),orden:index,
+   ...(v.precio.trim()&&sucursalId?{precio:v.precio.trim()}:{}),
+   ...(input.tipo==='INVENTARIABLE'?
+    v.articuloModo==='nuevo'?{nuevoArticulo:{
+     codigo:(v.articuloCodigo?.trim()||suggestedArticleCode(input.codigo,index)).toUpperCase(),
+     nombre:v.articuloNombre?.trim()||(
+      input.nombre.trim()+(input.variantes.length>1?' · '+v.nombre.trim():'')
+     ),
+     requiereLote:!!v.controlarLote,requiereVencimiento:!!v.controlarVencimiento
+    }}:{articuloInventarioId:v.articuloInventarioId}:{})
   }))
  };
 }

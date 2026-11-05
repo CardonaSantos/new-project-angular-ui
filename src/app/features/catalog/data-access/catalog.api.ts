@@ -5,7 +5,8 @@ import {API_ENDPOINTS} from '../../../core/http/api-endpoints';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
  CatalogCategory,CatalogCategoryOption,CatalogCategoryCreate,CatalogCategoryPatch,CatalogProduct,
- CatalogProductCreate,CatalogProductPatch,CatalogVariant,CatalogVariantInput,
+ CatalogProductCreate,CatalogProductSetup,CatalogProductSetupResult,CatalogBatchPriceResult,
+ CatalogProductPatch,CatalogVariant,CatalogVariantInput,
  CatalogVariantPatch,CatalogVariantBranchPatch,CatalogGroup,CatalogGroupCreate,
  CatalogGroupPatch,CatalogModifier,CatalogModifierCreate,CatalogModifierPatch,
  CatalogGroupAttachment,CatalogPriceCreate,CatalogPrice,CatalogResolvedPrice,
@@ -67,6 +68,10 @@ export class CatalogApi {
  }
  createProduct(dto:CatalogProductCreate){
   return this.http.post<CatalogProduct>(this.e.products,dto,silent);
+ }
+ /** R2: one atomic write for product, variants, physical article(s) and optional prices. */
+ setupProduct(dto:CatalogProductSetup){
+  return this.http.post<CatalogProductSetupResult>(this.e.productSetup,dto,silent);
  }
  updateProduct(id:string,dto:CatalogProductPatch){
   return this.http.patch<CatalogProduct>(this.e.product(id),dto,silent);
@@ -137,6 +142,9 @@ export class CatalogApi {
  createVariantPrice(dto:CatalogPriceCreate){
   return this.http.post<CatalogPrice>(this.e.variantPrices,dto,silent);
  }
+ batchVariantPrices(precios:CatalogPriceCreate[]){
+  return this.http.post<CatalogBatchPriceResult>(this.e.variantPricesBatch,{precios},silent);
+ }
  createModifierPrice(dto:CatalogPriceCreate){
   return this.http.post<CatalogPrice>(this.e.modifierPrices,dto,silent);
  }
@@ -166,6 +174,10 @@ export class CatalogApi {
  }
  replaceMenuLayout(id:string,dto:CatalogMenuLayout){
   return this.http.put<CatalogMenu>(this.e.menuLayout(id),dto,silent);
+ }
+ /** R2: commits layout + publication in one server transaction. */
+ commitMenu(id:string,dto:CatalogMenuLayout){
+  return this.http.post<CatalogMenu>(this.e.menuCommit(id),dto,silent);
  }
  publishMenu(id:string,expectedVersion:number){
   return this.http.post<CatalogMenu>(this.e.menuPublish(id),{expectedVersion},silent);
