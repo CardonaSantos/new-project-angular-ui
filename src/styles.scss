@@ -1419,3 +1419,11 @@ gc-kitchen-ticket{display:block;min-width:0}
  .ord-express-dialog-actions>button{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.ord-express-dialog *{transition:none!important}}
+
+.ord-express-existing{border-top:1px solid var(--gc-outline-variant);padding:.48rem 0}
+.ord-express-existing summary{cursor:pointer;font-size:.85rem;font-weight:650}
+.ord-express-existing summary:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+.ord-express-existing-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:.35rem .5rem;
+ padding:.4rem 0;border-bottom:1px solid var(--gc-outline-variant);font-size:.8rem}
+.ord-express-existing-line>strong{flex:1 1 60%;min-width:0;overflow-wrap:anywhere}
+.ord-express-existing-line>small{flex:1 1 100%;color:var(--gc-on-surface-variant)}
