@@ -1,5 +1,6 @@
-import {Component,computed,inject,input,output,signal} from '@angular/core';
+import {Component,computed,HostListener,inject,input,output,signal} from '@angular/core';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
+import {RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
@@ -13,7 +14,7 @@ import type {OrderMode,PosQuickResult,PosQuote} from '../data-access/orders.mode
 /** Embedded checkout: quoted by NestJS, same-operation retry and no navigation. */
 @Component({
  selector:'gc-pos-express-checkout',
- imports:[CdkTrapFocus],
+ imports:[CdkTrapFocus,RouterLink],
  template:`
  @if(open()){
   <button type="button" class="ord-overlay" aria-label="Cerrar cobro" (click)="close()"></button>
@@ -61,6 +62,8 @@ import type {OrderMode,PosQuickResult,PosQuote} from '../data-access/orders.mode
     }
    }
    @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
+   @if(!cash.ownShift()){<a routerLink="/payments/cash/open" (click)="close()">
+    Abrir turno de caja</a>}
    <div class="ord-actions ord-express-dialog-actions">
     <button type="button" [disabled]="busy()" (click)="close()">Volver</button>
     <button type="button" class="ord-primary" [disabled]="!canConfirm()"
@@ -92,6 +95,8 @@ export class GcPosExpressCheckout{
  private generation=0;
  private key='';
  private signature='';
+ private quotedBranch='';
+ private quotedCart='';
  protected readonly money=money;
  protected readonly validCash=computed(()=>{
   try{return !!this.quote()&&parseApiDecimal(this.received()||'0').gte(
@@ -107,6 +112,7 @@ export class GcPosExpressCheckout{
   const id=this.branch.branchId();if(!id||!this.items().length||this.busy())return;
   const generation=++this.generation;
   this.open.set(true);this.quote.set(null);this.error.set('');this.loading.set(true);
+  this.quotedBranch='';this.quotedCart='';
   await this.cash.refresh(true);
   if(generation!==this.generation||id!==this.branch.branchId())return;
   if(!this.cash.ownShift()){
@@ -116,11 +122,13 @@ export class GcPosExpressCheckout{
    const quote=await firstValueFrom(this.api.quote(id,this.items().map(asOrderLine)));
    if(generation!==this.generation||id!==this.branch.branchId())return;
    this.quote.set(quote);this.received.set(quote.total);this.key='';this.signature='';
+   this.quotedBranch=id;this.quotedCart=JSON.stringify(this.items().map(asOrderLine));
   }catch(e){
    if(generation===this.generation)this.error.set(orderFriendlyError(e));
   }finally{if(generation===this.generation)this.loading.set(false)}
  }
  close(){if(!this.busy()){this.generation++;this.open.set(false);this.quote.set(null);this.error.set('')}}
+ @HostListener('document:keydown.escape') onEscape(){if(this.open())this.close()}
  chooseMethod(method:'EFECTIVO'|'TARJETA'|'OTRO'){
   this.method.set(method);this.key='';this.signature='';
  }
@@ -131,6 +139,9 @@ export class GcPosExpressCheckout{
   if(!this.canConfirm())return;
   const id=this.branch.branchId(),shift=this.cash.ownShift(),quote=this.quote();
   if(!id||!shift||!quote)return;
+  if(this.quotedBranch!==id||this.quotedCart!==JSON.stringify(this.items().map(asOrderLine))){
+   this.error.set('El pedido o la sucursal cambió. Vuelve a calcular el cobro.');return;
+  }
   const part={metodo:this.method(),monto:quote.total,
    ...(this.method()==='EFECTIVO'?{efectivoRecibido:this.received().trim()}:{}),
    ...(this.method()==='TARJETA'?{codigoAutorizacion:this.authorization().trim()}:{}),
