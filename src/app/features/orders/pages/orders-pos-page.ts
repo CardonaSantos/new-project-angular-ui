@@ -92,6 +92,18 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
    </div>
   </section>
  }
+ @if(prefs.view()==='counter'&&existingOrder();as current){
+  <div class="ord-pos-table-context">
+   <div><strong>Ampliando {{current.numero}}</strong>
+    <span>Pedido abierto · Total anterior {{money(current.total,currency())}}</span></div>
+   <div class="ord-actions">
+    <a [routerLink]="['/orders/list',current.id]">Ver pedido</a>
+    @if(paymentsAccess.canRead()){
+     <a [routerLink]="['/payments/order',current.id]">Cobrar</a>
+    }
+   </div>
+  </div>
+ }
  @if(prefs.view()==='tables'&&!showTablePicker()&&selectedTable()){
   <div class="ord-pos-table-context">
    <div><strong>Mesa {{selectedTable()?.numero}} · {{selectedTable()?.sala?.nombre}}</strong>
@@ -325,6 +337,7 @@ export class GcOrdersPosPage{
  private operationId='';
  private loadingGeneration=0;private tableGeneration=0;
  private pendingTableFromUrl=this.activatedRoute.snapshot.queryParamMap.get('mesaId')??'';
+ private pendingOrderFromUrl=this.activatedRoute.snapshot.queryParamMap.get('ordenId')??'';
  protected readonly money=money;
  protected readonly categories=computed(()=>{
   const categories=new Set<string>();
@@ -417,6 +430,10 @@ export class GcOrdersPosPage{
   try{const c=await firstValueFrom(this.branchesApi.config(branch));if(gen===this.loadingGeneration)this.config.set(c)}
   catch{if(gen===this.loadingGeneration)this.config.set(null)}
   if(this.prefs.view()==='tables'||this.pendingTableFromUrl)void this.loadTables();
+  if(this.pendingOrderFromUrl){
+   const orderId=this.pendingOrderFromUrl;this.pendingOrderFromUrl='';
+   void this.openExistingFromUrl(orderId);
+  }
  }
  protected async loadTables(){
   const branch=this.context.branchId();
@@ -577,6 +594,26 @@ export class GcOrdersPosPage{
    if(this.prefs.view()==='tables')void this.loadTables();
   }catch(e){this.submitError.set(orderFriendlyError(e))}
   finally{this.submitting.set(false)}
+ }
+ protected async openExistingFromUrl(id:string){
+  const branch=this.context.branchId();if(!branch)return;
+  this.tableBusy.set(true);this.submitError.set('');
+  try{
+   const order=await firstValueFrom(this.api.detail(id));
+   if(this.context.branchId()!==branch)return;
+   if(order.estado!=='ABIERTA'||order.sucursalId!==branch)
+    throw new Error('El pedido ya no está abierto en esta sucursal.');
+   if(order.modalidad==='MESA'){
+    this.pendingTableFromUrl=order.ocupacionMesa?.mesa?.id??'';
+    if(!this.pendingTableFromUrl)throw new Error('La mesa del pedido no está disponible.');
+    this.prefs.setView('tables');this.tableBusy.set(false);void this.loadTables();
+    return;
+   }
+   this.prefs.setView('counter');this.showTablePicker.set(false);
+   this.selectedTable.set(null);this.mode.set(order.modalidad);
+   this.existingOrder.set(order);
+  }catch(e){if(this.context.branchId()===branch)this.submitError.set(orderFriendlyError(e))}
+  finally{if(this.context.branchId()===branch)this.tableBusy.set(false)}
  }
  protected async loadExistingOrder(id:string,tableId:string){
   const branch=this.context.branchId();if(!branch)return;
