@@ -75,9 +75,9 @@ import {money,modeText} from '../data-access/orders.helpers';
        </div>
        @if(item.kitchen.pending||item.kitchen.preparing||item.kitchen.toDeliver||item.needsProcessing){
         <p class="ord-note">
-         @if(item.kitchen.pending){{{item.kitchen.pending}} pendientes · }
-         @if(item.kitchen.preparing){{{item.kitchen.preparing}} preparando · }
-         @if(item.kitchen.toDeliver){{{item.kitchen.toDeliver}} para entregar · }
+         @if(item.kitchen.pending){ {{item.kitchen.pending}} pendientes · }
+         @if(item.kitchen.preparing){ {{item.kitchen.preparing}} preparando · }
+         @if(item.kitchen.toDeliver){ {{item.kitchen.toDeliver}} para entregar · }
          @if(item.needsProcessing){Productos por enviar}
         </p>
        }
