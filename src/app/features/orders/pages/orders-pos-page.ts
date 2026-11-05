@@ -88,7 +88,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
    }
    <div class="ord-actions"><a routerLink="/orders/tables">Ver todas las mesas</a>
     @if(selectedTable()){<span>Pedido para mesa {{selectedTable()?.numero}}</span>
-     <button type="button" (click)="selectedTable.set(null);mode.set('MOSTRADOR');invalidateKey()">Quitar mesa</button>}
+     <button type="button" [disabled]="submitting()||tableBusy()" (click)="clearSelectedTable()">Quitar mesa</button>}
    </div>
   </section>
  }
@@ -495,10 +495,24 @@ export class GcOrdersPosPage{
   if(existing)void this.loadExistingOrder(existing.id,t.id);
  }
  protected selectTableId(id:string){
-  if(this.submitting())return;
+  if(this.submitting()||this.tableBusy())return;
   const t=this.tables().find(x=>x.id===id)||null;
-  if(t){this.chooseTable(t);return}
-  this.selectedTable.set(null);this.existingOrder.set(null);this.invalidateKey();
+  if(t){void this.chooseTable(t);return}
+  void this.clearSelectedTable();
+ }
+ protected async clearSelectedTable(){
+  if(this.submitting()||this.tableBusy())return;
+  if(this.selectedTable()&&this.cart().length){
+   const okay=await this.confirm.confirm({title:'Quitar mesa del pedido',
+    message:'Hay productos nuevos sin guardar para esta mesa. ¿Descartarlos y quitar la mesa?',
+    confirmText:'Descartar y quitar',danger:true});
+   if(!okay)return;
+   this.cart.set([]);this.invalidateKey();
+  }
+  this.selectedTable.set(null);this.existingOrder.set(null);
+  this.mode.set(this.prefs.view()==='tables'?'MESA':'MOSTRADOR');
+  this.showTablePicker.set(this.prefs.view()==='tables');
+  this.invalidateKey();
  }
  protected pick(item:CatalogProjectedItem){
   if(this.submitting())return;
