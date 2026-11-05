@@ -150,15 +150,20 @@ import type {CatalogMenu,CatalogVariant,CatalogProduct} from '../data-access/cat
     <section class="cat-card">
      <h2>Guardar configuración de la carta</h2>
      @for(message of validation().errors;track message){<p class="cat-muted">{{message}}</p>}
-     <p class="cat-muted">Al guardar estos cambios, la carta dejará de estar publicada hasta que decidas volver a mostrarla.</p>
+     <p class="cat-muted">Guarda y publica en una sola operación. Si falla la validación, la carta anterior seguirá visible.</p>
      @if(errorText()){<p class="cat-alert" role="alert">{{errorText()}}</p>}
      @if(conflict()){
       <p class="cat-alert" role="alert">Esta carta cambió mientras la editabas. Copia los ajustes que necesites antes de volver a cargarla.</p>
       <button type="button" (click)="reload()">Descartar mis cambios y volver a cargar</button>
      }
      @if(access.canMenus()){
-      <button type="button" class="cat-primary" (click)="saveLayout()"
-       [disabled]="busy()||conflict()||!validation().valid||!layoutDirty()">Guardar distribución y horarios</button>
+      <div class="cat-actions">
+       <button type="button" class="cat-primary" (click)="commitLayout()"
+        [disabled]="busy()||conflict()||!validation().valid||!layoutDirty()||!active()">Guardar y publicar</button>
+       <button type="button" (click)="saveLayout()"
+        [disabled]="busy()||conflict()||!validation().valid||!layoutDirty()">
+        Guardar borrador{{page.data()?.publicadoEn?' (retira del POS)':''}}</button>
+      </div>
      }
     </section>
     <section class="cat-card">
@@ -368,11 +373,28 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
   }catch(e){if(gen===this.variantGeneration)this.lookupError.set(gcErrorMessage(e))}
   finally{if(gen===this.variantGeneration)this.lookingUp.set(false)}
  }
+ protected async commitLayout(){
+  const current=this.page.data();
+  if(!current||!this.access.canMenus()||this.busy()||this.conflict()||
+    !this.validation().valid||!this.active())return;
+  const ok=await this.confirm.confirm({title:'Guardar y publicar carta',
+   message:'Se comprobarán las sucursales, recetas, precios y Cocina. Si la actualización falla, se mantiene visible la carta actual.',
+   confirmText:'Guardar y publicar'});
+  if(!ok)return;
+  this.busy.set(true);this.errorText.set(null);this.publishError.set(null);
+  try{
+   await firstValueFrom(this.api.commitMenu(current.id,menuLayout(this.draft(),current.version)));
+   await this.reload();this.notify.show('Carta guardada y publicada correctamente.','success');
+  }catch(e){
+   if(isMenuVersionConflict(e))this.conflict.set(true);
+   this.errorText.set(catalogUiError(e));
+  }finally{this.busy.set(false)}
+ }
  protected async saveLayout(){
   const current=this.page.data();
   if(!current||!this.access.canMenus()||this.busy()||this.conflict()||!this.validation().valid)return;
   const ok=await this.confirm.confirm({title:'Guardar distribución',
-   message:'Se guardarán las secciones, los horarios y las sucursales. Si la carta ya estaba publicada, tendrás que publicarla de nuevo.',
+   message:'Guardar solamente como borrador retirará la versión vigente del POS. Si quieres conservarla visible, usa «Guardar y publicar».',
    confirmText:'Guardar cambios'});
   if(!ok)return;
   this.busy.set(true);this.errorText.set(null);
