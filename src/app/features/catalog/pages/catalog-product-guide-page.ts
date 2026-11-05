@@ -316,6 +316,8 @@ export class GcCatalogProductGuidePage implements OnInit,GcDirtyAware {
    OCULTA_EN_MENU:'Habilitar visibilidad en la carta',
    ARTICULO_FISICO_INVALIDO:'Vincular un artículo físico activo',
    ARTICULO_UNIDAD_INCOMPATIBLE:'El artículo debe medirse por unidades',
+   EXTRA_SIN_COMPOSICION_FISICA:'Un extra requiere ingredientes que faltan',
+   EXTRA_FISICO_REQUIERE_PREPARADO:'Los extras físicos requieren un producto preparado',
    PRODUCTO_O_VARIANTE_INACTIVA:'Activar producto y presentación',
    PAUSADA_EN_SUCURSAL:'Habilitar el producto en esta sucursal'
   };
