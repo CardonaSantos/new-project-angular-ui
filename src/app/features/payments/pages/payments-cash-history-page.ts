@@ -17,7 +17,7 @@ import type {CashShift} from '../data-access/payments.models';
   <div class="ord-heading"><h1>Historial de turnos</h1>
    <button type="button" (click)="load()" [disabled]="busy()">Actualizar</button>
   </div>
-  <section class="ord-card">
+  <section class="ord-card pay-cash-list-card">
    @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
    @if(busy()){<p role="status">Consultando turnos…</p>}
    <div class="pay-cash-history">

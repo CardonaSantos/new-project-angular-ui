@@ -24,7 +24,7 @@ import type {CashShift} from '../data-access/payments.models';
   @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
   @if(busy()){<p role="status">Consultando movimientos…</p>}
   @if(detail();as shift){
-   <section class="ord-card">
+   <section class="ord-card pay-cash-hero">
     <div class="ord-heading">
      <div><h2>{{shift.caja?.nombre??'Caja'}}</h2>
       <p class="ord-muted">Desde {{shift.abiertaEn|date:'dd/MM/yyyy HH:mm'}}</p></div>
@@ -57,7 +57,7 @@ import type {CashShift} from '../data-access/payments.models';
      </div>
     }
    </section>
-   <section class="ord-card">
+   <section class="ord-card pay-cash-list-card">
     <div class="ord-heading"><h2>Entradas y salidas</h2>
      <span class="ord-muted">{{(shift.movimientoCajasComoTurno??[]).length}} movimientos</span></div>
     <div class="pay-cash-ledger">

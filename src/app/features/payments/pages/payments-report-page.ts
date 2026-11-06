@@ -24,7 +24,7 @@ import {methodLabel} from '../data-access/payments.models';
      <div><small>Devoluciones</small><strong>{{money(data.reembolsado)}}</strong></div>
     </div>
    </section>
-   <section class="ord-card">
+   <section class="ord-card pay-cash-list-card">
     <h2>Cobros por método</h2>
     @for(item of data.porMetodo;track item.metodo){
      <div class="pay-history-row">
@@ -34,7 +34,7 @@ import {methodLabel} from '../data-access/payments.models';
      </div>
     } @empty {<p class="ord-empty">Sin cobros registrados.</p>}
    </section>
-   <section class="ord-card">
+   <section class="ord-card pay-cash-list-card">
     <h2>Control de caja</h2>
     <div class="pay-summary">
      <div><small>Turnos cerrados</small><strong>{{data.turnosCerrados}}</strong></div>
