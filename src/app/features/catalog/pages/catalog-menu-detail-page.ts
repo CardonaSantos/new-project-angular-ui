@@ -32,6 +32,7 @@ import {GcCatalogMenuProductPicker,type MenuPickedVariant} from '../components/c
       [class.is-active]="view()==='edit'" (click)="view.set('edit')">Editar carta</button>
      <button type="button" [attr.aria-pressed]="view()==='draft'"
       [class.is-active]="view()==='draft'" (click)="view.set('draft')">Vista previa del borrador</button>
+     <a href="#cat-menu-save-panel">Revisar y publicar</a>
      <a routerLink="/catalog/preview">Ver carta publicada</a>
     </nav>
    }
@@ -205,7 +206,7 @@ import {GcCatalogMenuProductPicker,type MenuPickedVariant} from '../components/c
      } @empty {<p class="cat-muted">Sin restricciones horarias.</p>}
      </details>
     </section>
-    <section class="cat-card cat-menu-save-panel">
+    <section id="cat-menu-save-panel" class="cat-card cat-menu-save-panel">
      <div class="cat-menu-save-intro">
       <div><h2>Revisar y publicar</h2>
        <p>Antes de publicar comprobamos precios, fotografías, recetas y Cocina por sucursal. Si algo falla, la carta anterior sigue visible.</p></div>
