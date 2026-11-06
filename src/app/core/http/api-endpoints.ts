@@ -80,6 +80,17 @@ export const API_ENDPOINTS = {
     reports:{masters:'/api/inventory/reports/masters',valuation:'/api/inventory/reports/valuation',
       expiry:'/api/inventory/reports/expiry',reconciliation:'/api/inventory/reports/reconciliation'},
   },
+  finance: {
+    intents:'/api/finance/operation-intents',
+    accounts:'/api/finance/accounts',
+    account:(id:string)=>'/api/finance/accounts/'+segment(id),
+    accountMovements:(id:string)=>'/api/finance/accounts/'+segment(id)+'/movements',
+    expenses:'/api/finance/expenses',
+    expense:(id:string)=>'/api/finance/expenses/'+segment(id),
+    reconciliationPending:'/api/finance/reconciliation/pending',
+    reconciliationPost:'/api/finance/reconciliation/post',
+    routing:'/api/finance/routing',
+  },
   catalog: {
     categories:'/api/catalog/categories',
     categoryTree:'/api/catalog/categories/tree',

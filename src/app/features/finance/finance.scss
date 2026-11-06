@@ -1,0 +1,53 @@
+
+:host{display:block;width:100%;min-width:0}
+.fin-page{display:grid;gap:.8rem;min-width:0;width:100%}
+.fin-narrow{width:min(100%,68rem);margin-inline:auto}
+.fin-tabs{display:flex;gap:.3rem;flex-wrap:wrap;border-bottom:1px solid var(--gc-outline-variant)}
+.fin-tabs a{display:inline-flex;align-items:center;min-height:44px;padding:.4rem .65rem;text-decoration:none;border-bottom:2px solid transparent;color:var(--gc-on-surface-variant);font-size:.875rem}
+.fin-tabs a.active{color:var(--gc-primary);border-bottom-color:var(--gc-primary);font-weight:650}
+.fin-card{background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius);padding:clamp(.7rem,1.5vw,1rem);display:grid;gap:.75rem;min-width:0}
+.fin-card h2,.fin-card h3{font-size:1.1rem;margin:0}
+.fin-row,.fin-actions,.fin-toolbar{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}
+.fin-row{justify-content:space-between}.fin-toolbar{align-items:end}.fin-toolbar>:first-child{flex:1 1 14rem}
+.fin-field{display:grid;gap:.28rem;min-width:0;align-content:start}.fin-field label{font-size:.88rem;font-weight:600}
+.fin-field input,.fin-field select,.fin-field textarea{width:100%;min-width:0;min-height:40px;padding:.42rem .65rem;border:1px solid var(--gc-outline);border-radius:.6rem;background:var(--gc-surface);color:var(--gc-on-surface);font:inherit}
+.fin-field input:focus-visible,.fin-field select:focus-visible,.fin-field textarea:focus-visible,.fin-tabs a:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+.fin-field input[aria-invalid=true]{border-color:var(--gc-error)}
+.fin-muted,.fin-field small{font-size:.85rem;color:var(--gc-on-surface-variant)}.fin-error{color:var(--gc-error);font-size:.88rem}
+.fin-alert{border:1px solid var(--gc-error);border-radius:.6rem;padding:.75rem;color:var(--gc-error);overflow-wrap:anywhere}
+.fin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.fin-form,.fin-stack{display:grid;gap:.75rem}
+.fin-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem}
+.fin-metric{display:grid;gap:.2rem;background:var(--gc-surface);border:1px solid var(--gc-outline-variant);border-radius:.7rem;padding:.75rem}.fin-metric strong{font-size:1.35rem;font-variant-numeric:tabular-nums}.fin-metric span{font-size:.83rem;color:var(--gc-on-surface-variant)}
+.fin-kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}.fin-kv dt{font-size:.85rem;color:var(--gc-on-surface-variant)}.fin-kv dd{margin:.2rem 0 0;overflow-wrap:anywhere;font-weight:600}
+.fin-actions button,.fin-actions a{min-height:44px}.fin-link{display:inline-flex;min-height:44px;align-items:center}
+@media(max-width:640px){.fin-grid{grid-template-columns:1fr}.fin-actions{align-items:stretch;flex-direction:column}.fin-actions button,.fin-actions a{width:100%}.fin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+@media(pointer:coarse){.fin-field input,.fin-field select,.fin-field textarea{min-height:44px}}
+
+/* Consistent, readable filter choices (including Firefox dark native menus). */
+.fin-field select option{background:var(--gc-surface);color:var(--gc-on-surface)}
+
+/* Active-row highlight, matching the convention used across other modules
+   (.inv-table-row--active, .rec-table-row--active, .cat-table-row--active). */
+.fin-table-row--active{background:var(--gc-surface-container-high,var(--gc-surface-container));box-shadow:inset 3px 0 0 var(--gc-primary)}
+.fin-page legend[tabindex="-1"]:focus-visible,.fin-page [tabindex="-1"]:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+
+.fin-section{min-width:0;border:1px solid var(--gc-outline-variant);border-radius:.65rem;padding:.85rem;display:grid;gap:.7rem;margin:0}
+.fin-section>legend{font-size:.94rem;font-weight:700;padding:0 .45rem;color:var(--gc-on-surface)}
+.fin-section>.fin-muted{margin:0}
+@media(max-width:650px){.fin-section{padding:.65rem}}
+
+/* The finance list filters use the shared two-column filter grid. */
+.fin-toolbar.gc-filter-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.7rem .85rem;align-items:end;
+}
+.fin-toolbar.gc-filter-grid > *{min-width:0;max-width:100%;width:100%}
+.fin-toolbar.gc-filter-grid > button{width:auto;justify-self:start}
+@media(max-width:640px){
+ .fin-toolbar.gc-filter-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Pending/posted state badges on expense and movement rows. */
+.fin-state-badge{font-size:.82rem;font-weight:650;color:var(--gc-on-surface-variant);white-space:nowrap}
+.fin-state-badge--reversed{color:var(--gc-error)}
