@@ -1,5 +1,5 @@
 
-import {Component,computed,effect,inject,signal} from '@angular/core';
+import {Component,computed,effect,inject,signal,viewChild,ElementRef} from '@angular/core';
 import {FormControl,FormGroup,ReactiveFormsModule,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
@@ -47,7 +47,7 @@ import {toApiDecimal} from '../../../shared/formatting';
    </div>
    @if(page.status()==='error'){<gc-error-state [message]="readError()" (retry)="reload()"/>}
    @else{
-    <gc-data-table [columns]="columns()" [rows]="page.data()?.rows??[]" [loading]="page.busy()">
+    <gc-data-table [columns]="columns()" [rows]="page.data()?.rows??[]" [loading]="page.busy()" [rowClass]="rowClass">
      <ng-template gcTableCell="action" let-row>
       @if(section()==='units'){<button gcButton variant="outline" type="button" (click)="select(row['id'])">Editar</button>}
      </ng-template>
@@ -58,12 +58,14 @@ import {toApiDecimal} from '../../../shared/formatting';
   </section>
   @if(section()==='units'){
    <section class="inv-card inv-narrow">
-    <h2>{{editId()?'Renombrar unidad':'Crear unidad'}}</h2>
+    <h2 #unitFormHeading tabindex="-1">{{editId()?'Renombrar unidad':'Crear unidad'}}</h2>
     <form class="inv-form" [formGroup]="unitForm" (ngSubmit)="saveUnit()" novalidate>
      <fieldset class="inv-section"><legend>1. Identificación y dimensión</legend>
      <div class="inv-grid">
       <div class="inv-field"><label for="unit-code">Código</label>
-       <input id="unit-code" formControlName="codigo" maxlength="50" placeholder="Ej. KG"/></div>
+       <input id="unit-code" formControlName="codigo" maxlength="50" placeholder="Ej. KG"/>
+       @if(editId()){<small class="inv-muted">El código y la dimensión no se pueden cambiar; solo el nombre.</small>}
+      </div>
       <div class="inv-field"><label for="unit-name">Nombre</label>
        <input id="unit-name" formControlName="nombre" maxlength="120" placeholder="Ej. Kilogramo"/></div>
       <gc-search-select id="unit-dimension" label="Dimensión" formControlName="dimension"
@@ -93,9 +95,10 @@ import {toApiDecimal} from '../../../shared/formatting';
        <input id="conversion-qty" formControlName="cantidad" inputmode="decimal" placeholder="Ej. 2.5"/></div>
      </div>
      </fieldset>
-     @if(previewData();as data){
-      <div class="inv-card"><strong>Vista previa</strong>
-       @for(item of previewEntries(data);track item.key){<p>{{item.key}}: {{item.value}}</p>}
+     @if(previewSummary();as summary){
+      <div class="inv-card">
+       <strong>{{summary.headline}}</strong>
+       @if(summary.factor){<span class="inv-muted">{{summary.factor}}</span>}
       </div>
      }
      @if(error()){<p class="inv-alert" role="alert">{{error()}}</p>}
@@ -129,6 +132,27 @@ export class GcInventoryUnitsPage {
  protected readonly dimensionChoices=this.dimensions.map(d=>({id:d.value,label:d.label}));
  protected readonly origin=signal('');protected readonly destination=signal('');
  protected readonly previewData=signal<Record<string,unknown>|null>(null);
+ protected readonly previewSummary=computed(()=>{
+  const d=this.previewData();if(!d)return null;
+  const origen=d['origen'] as {codigo?:string;nombre?:string}|undefined;
+  const destino=d['destino'] as {codigo?:string;nombre?:string}|undefined;
+  const cantidadOrigen=d['cantidadOrigen'],cantidadDestino=d['cantidadDestino'],factor=d['factor'];
+  if(!origen||!destino||typeof cantidadOrigen!=='string'||typeof cantidadDestino!=='string')return null;
+  const originLabel=origen.codigo??origen.nombre??'origen',destLabel=destino.codigo??destino.nombre??'destino';
+  return {
+   headline:cantidadOrigen+' '+originLabel+' = '+cantidadDestino+' '+destLabel,
+   factor:typeof factor==='string'?'Factor: 1 '+originLabel+' = '+factor+' '+destLabel:null
+  };
+ });
+ private readonly unitFormHeading=viewChild<ElementRef<HTMLElement>>('unitFormHeading');
+ protected readonly rowClass=(row:GcTableRow)=>
+  this.editId()&&String(row['id'])===this.editId()?'inv-table-row--active':null;
+ private focusUnitHeading(){
+  setTimeout(()=>{
+   const el=this.unitFormHeading()?.nativeElement;if(!el)return;
+   el.focus({preventScroll:true});el.scrollIntoView({block:'nearest'});
+  });
+ }
  protected readonly columns=computed<GcTableColumn[]>(()=>
   this.section()==='units'?
    [{key:'codigo',label:'Código'},{key:'nombre',label:'Nombre'},
@@ -175,6 +199,7 @@ export class GcInventoryUnitsPage {
    this.unitForm.controls.codigo.disable();
    this.unitForm.controls.dimension.disable();
    this.unitForm.controls.esBase.disable();
+   this.focusUnitHeading();
   }catch(e){this.error.set(gcErrorMessage(e))}
  }
  protected resetUnit(){
@@ -193,10 +218,6 @@ export class GcInventoryUnitsPage {
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.error.set(gcErrorMessage(r.error));return}
   this.resetUnit();this.notice.show('Unidad guardada.','success');await this.load('units');
- }
- protected previewEntries(data:Record<string,unknown>){
-  return Object.entries(data).filter(([,v])=>typeof v==='string'||typeof v==='number')
-   .map(([key,value])=>({key,value:String(value)}));
  }
  protected async preview(){
   this.error.set(null);
