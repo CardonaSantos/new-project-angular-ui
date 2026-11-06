@@ -169,7 +169,7 @@ import {GcCatalogMenuProductPicker,type MenuPickedVariant} from '../components/c
          </div>
          @if(pickerSectionKey()===section.key){
           <gc-catalog-menu-product-picker [existingVariantIds]="sectionIds(section)"
-           (added)="addPicked(section.key,$event)" (close)="pickerSectionKey.set(null)"/>
+           (added)="addPicked(section.key,$event)" (dismissed)="pickerSectionKey.set(null)"/>
          }
         }
        </section>
