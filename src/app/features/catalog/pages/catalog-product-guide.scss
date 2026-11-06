@@ -40,7 +40,7 @@
 .cat-guide-variant-row>.cat-guide-field{flex:1 1 12rem}
 .cat-guide-variant-row>.cat-guide-field:has(input[inputmode=decimal]){flex:0 1 140px}
 .cat-guide-variant-row>gc-inventory-picker{min-width:180px;flex:1 1 16rem}
-.cat-guide-variant-row>button{min-height:40px;flex:0 0 auto}
+.cat-guide-variant-row>button{min-height:44px;flex:0 0 auto}
 .cat-guide-actions{display:flex;justify-content:space-between;align-items:center;
  gap:.75rem;flex-wrap:wrap;border-top:1px solid var(--gc-outline-variant);padding-top:.65rem}
 .cat-guide-actions button{min-height:44px;padding:.5rem .9rem}

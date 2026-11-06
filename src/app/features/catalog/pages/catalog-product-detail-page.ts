@@ -1,4 +1,4 @@
-import {Component,computed,inject,signal,OnInit} from '@angular/core';
+import {Component,computed,inject,signal,viewChild,ElementRef,OnInit} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
@@ -29,11 +29,22 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
  <main class="cat-page">
   <gc-catalog-nav/>
   <a routerLink="/catalog/products">Volver a productos</a>
+  @if(!isNew&&page.data()){
+   <nav class="cat-detail-index" aria-label="Secciones del producto">
+    <a href="#product-presentaciones">Presentaciones</a>
+    @if(editVariant()||creatingVariant()){<a href="#product-variant-editor">Editar presentación</a>}
+    <a href="#product-revision">Revisión</a>
+    <a href="#product-estado">Estado</a>
+   </nav>
+  }
   @if(page.busy()){<p role="status" class="cat-muted">Consultando detalles del producto…</p>}
   @if(page.status()==='error'){<gc-error-state [message]="error()" (retry)="reload()"/>}
   @if(isNew||page.data()){
-   <section class="cat-card">
-    <h2>{{isNew?'Nuevo producto':'Datos comerciales'}}</h2>
+   <section class="cat-card" id="product-datos">
+    <div class="cat-row"><div>
+     @if(!isNew){<p class="cat-detail-eyebrow"><strong>{{name()||'Producto sin nombre'}}</strong> · {{code()}}</p>}
+     <h2>{{isNew?'Nuevo producto':'Datos comerciales'}}</h2>
+    </div></div>
     <form class="cat-form" (submit)="save($event)">
      <div class="cat-form-section"><h3>1. Identificación comercial</h3>
      <label>Código
@@ -71,26 +82,28 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
     <p class="cat-muted">El código y el tipo no se modifican después de crear el producto. Las existencias físicas se administran en Inventario.</p>
    </section>
    @if(page.data();as product){
-    <gc-catalog-gallery [entityId]="product.id" kind="product" [photos]="product.imagenes??[]"
+    <gc-catalog-gallery id="product-fotos" [entityId]="product.id" kind="product" [photos]="product.imagenes??[]"
      [editable]="access.canManage()" (updated)="reload()"/>
-    <section class="cat-card">
+    <section class="cat-card" id="product-presentaciones">
      <div class="cat-row"><h2>Presentaciones y tamaños</h2>
       <span class="cat-muted">{{variants().length}} presentaciones</span></div>
      <div class="cat-table-wrap"><table class="cat-table"><thead><tr>
-      <th>Presentación</th><th>Artículo de inventario</th><th>Estado</th><th>Acción</th>
+      <th>Presentación</th>@if(product.tipo==='INVENTARIABLE'){<th>Artículo de inventario</th>}<th>Estado</th><th>Acción</th>
      </tr></thead><tbody>
       @for(v of variants();track v.id){
-       <tr><td>{{v.nombre}} @if(v.sku){<span class="cat-muted">· {{v.sku}}</span>}</td>
-       <td>{{product.tipo==='INVENTARIABLE'?(v.articuloInventario?.nombre??'Sin artículo asociado'):'No corresponde'}}</td>
+       <tr [class.cat-table-row--active]="editVariant()?.id===v.id">
+       <td>{{v.nombre}} @if(v.sku){<span class="cat-muted">· {{v.sku}}</span>}</td>
+       @if(product.tipo==='INVENTARIABLE'){<td>{{v.articuloInventario?.nombre??'Sin artículo asociado'}}</td>}
        <td>{{v.activo?'Activa':'Inactiva'}}</td>
-       <td><button type="button" (click)="chooseVariant(v)">Configurar</button></td></tr>
-      } @empty {<tr><td colspan="4">Todavía no hay presentaciones.</td></tr>}
+       <td><button type="button" [attr.aria-label]="'Configurar presentación '+v.nombre"
+        (click)="chooseVariant(v)">Configurar</button></td></tr>
+      } @empty {<tr><td [attr.colspan]="product.tipo==='INVENTARIABLE'?4:3">Todavía no hay presentaciones.</td></tr>}
      </tbody></table></div>
      @if(access.canManage()){<button type="button" (click)="newVariant()">Agregar presentación</button>}
     </section>
     @if(editVariant()||creatingVariant()){
-     <section class="cat-card">
-      <h2>{{creatingVariant()?'Nueva presentación':'Editar presentación'}}</h2>
+     <section class="cat-card" id="product-variant-editor">
+      <h2 #variantEditorHeading tabindex="-1">{{creatingVariant()?'Nueva presentación':'Editar presentación'}}</h2>
       <form class="cat-form" (submit)="saveVariant($event)">
        <div class="cat-form-section"><h3>1. Datos de la presentación</h3>
        <label>Nombre
@@ -127,8 +140,8 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        </div>
       </form>
       @if(editVariant();as v){
-       <hr/>
-       <h2>Extras disponibles para {{v.nombre}}</h2>
+       <section class="cat-subsection" id="product-extras">
+       <h3>Extras disponibles para {{v.nombre}}</h3>
        <div class="cat-extra-config">
         @for(link of links();track link.grupoId){
          <div class="cat-extra-group-row">
@@ -148,6 +161,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
           Guardar extras</button>
         </div>
        </div>
+       </section>
        @if(access.canManage()){
         <section class="cat-subsection">
          <div class="cat-row"><h3>Crear extras sin salir de esta ficha</h3>
@@ -177,8 +191,8 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
        <gc-catalog-gallery [entityId]="v.id" kind="variant" [photos]="v.imagenes??[]"
         [editable]="access.canManage()" (updated)="refreshVariant(v.id)"/>
        @if(branch.branchId()){
-        <section class="cat-subsection">
-         <h2>Disponibilidad en {{branch.active()?.nombre}}</h2>
+        <section class="cat-subsection" id="product-disponibilidad">
+         <h3>Disponibilidad en {{branch.active()?.nombre}}</h3>
          <label class="cat-check"><input type="checkbox" [checked]="branchEnabled()"
           (change)="branchEnabled.set($any($event.target).checked)" [disabled]="!access.canManageBranch()"/>
           Habilitada para vender en esta sucursal</label>
@@ -199,7 +213,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       }
      </section>
     }
-    <section class="cat-card">
+    <section class="cat-card" id="product-revision">
      <h2>Revisión del producto</h2>
      @if(readiness();as r){
       <strong>{{r.lista?'Listo para publicar':'Requiere atención'}}</strong>
@@ -208,7 +222,7 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
       }
      } @else {<p class="cat-muted">Selecciona una sucursal para revisar este producto.</p>}
     </section>
-    <section class="cat-card">
+    <section class="cat-card" id="product-estado">
      <h2>Estado del producto</h2>
      <strong>{{product.activo?'Activo':'Inactivo'}}</strong>
      <div class="cat-inline-form">
@@ -273,6 +287,17 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected readonly saving=signal(false);
  protected readonly saveError=signal<string|null>(null);
  protected readonly editVariant=signal<CatalogVariant|null>(null);
+ /** Lets keyboard/screen-reader users land on the variant editor instead of having
+  *  to find it by scrolling after pressing "Configurar"/"Agregar presentación". */
+ private readonly variantEditorHeading=viewChild<ElementRef<HTMLElement>>('variantEditorHeading');
+ private focusVariantEditor(){
+  setTimeout(()=>{
+   const el=this.variantEditorHeading()?.nativeElement;
+   if(!el)return;
+   el.focus({preventScroll:true});
+   el.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+ }
  protected readonly quickExtras=signal(false);
  protected readonly inlineRecipe=signal(false);
  protected readonly quickPending=signal(false);
@@ -406,6 +431,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  protected newVariant(){this.editVariant.set(null);this.creatingVariant.set(true);
   this.variantName.set('');this.variantSku.set('');this.variantOrder.set(this.variants().length);
   this.articleId.set('');this.variantActive.set(true);this.links.set([]);
+  this.focusVariantEditor();
  }
  protected async chooseVariant(v:CatalogVariant){
   if((this.quickPending()||this.recipePending()||this.linksDirty())&&
@@ -415,6 +441,7 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
   this.creatingVariant.set(false);this.editVariant.set(v);
   this.quickExtras.set(false);this.inlineRecipe.set(false);
   this.quickPending.set(false);this.recipePending.set(false);
+  this.focusVariantEditor();
   this.variantName.set(v.nombre);this.variantSku.set(v.sku??'');this.variantOrder.set(v.orden);
   this.variantActive.set(v.activo);this.articleId.set(v.articuloInventarioId??v.articuloInventario?.id??'');
   const attached=v.varianteGrupoModificadoresComoVariante??[];

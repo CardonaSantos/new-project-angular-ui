@@ -24,10 +24,12 @@ import {PRODUCT_KINDS,type CatalogProduct,type CatalogCategory,type CatalogPage}
    </div>
    <div class="cat-toolbar gc-filter-grid">
     <label class="cat-field">Buscar producto
-     <input [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="applySearch()"
-      maxlength="120" placeholder="Nombre o código"/>
+     <span class="cat-search-inline">
+      <input [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="applySearch()"
+       maxlength="120" placeholder="Nombre o código"/>
+      <button type="button" (click)="applySearch()">Buscar</button>
+     </span>
     </label>
-    <button type="button" (click)="applySearch()">Buscar</button>
     <gc-search-select id="cat-products-category" label="Categoría" [items]="categoryChoices()"
      [value]="category()" placeholder="Todas" (valueChange)="patch({categoriaId:$event||null,page:null})"/>
     <gc-search-select id="cat-products-kind" label="Tipo" [items]="kindChoices"
@@ -57,7 +59,7 @@ import {PRODUCT_KINDS,type CatalogProduct,type CatalogCategory,type CatalogPage}
        <td>{{kindLabel(item.tipo)}}</td>
        <td>{{item.varianteProductosComoProducto?.length??0}}</td>
        <td>{{item.activo?(item.visibleEnMenu?'Visible en menú':'Activo, no visible'):'Inactivo'}}</td>
-       <td><a [routerLink]="['/catalog/products',item.id]">Detalles</a></td></tr>
+       <td><a [routerLink]="['/catalog/products',item.id]" [attr.aria-label]="'Detalles de '+item.nombre">Detalles</a></td></tr>
       } @empty {<tr><td colspan="7">No hay productos con estos filtros.</td></tr>}
      </tbody></table>
     </div>
