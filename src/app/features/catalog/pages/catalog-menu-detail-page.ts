@@ -413,17 +413,6 @@ export class GcCatalogMenuDetailPage implements OnInit,GcDirtyAware {
  protected removeItem(sectionIndex:number,itemIndex:number){
   this.changeSection(sectionIndex,s=>({...s,items:s.items.filter((_,i)=>i!==itemIndex)}))
  }
- protected appendItem(sectionIndex:number){
-  const variant=this.variants().find(x=>x.id===this.variantId());
-  if(!variant)return;
-  this.changeSection(sectionIndex,s=>{
-   if(s.items.some(x=>x.varianteId===variant.id))return s;
-   return {...s,items:[...s.items,{
-    varianteId:variant.id,nombre:(variant.producto?.nombre??'Producto')+' · '+variant.nombre,
-    orden:s.items.length
-   }]};
-  });
- }
  protected addSchedule(){this.draft.update(d=>({...d,schedule:[...d.schedule,{diaSemana:1,desde:'08:00',hasta:'18:00'}]}))}
  protected removeSchedule(index:number){this.draft.update(d=>({...d,schedule:d.schedule.filter((_,i)=>i!==index)}))}
  protected setDay(index:number,day:number){this.updateSchedule(index,{diaSemana:day})}
