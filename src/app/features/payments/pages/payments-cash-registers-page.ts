@@ -16,7 +16,7 @@ import {PaymentsAccess} from '../data-access/payments-access';
     <a class="ord-primary" routerLink="/payments/cash/registers/new">Nueva caja</a>
    }
   </div>
-  <section class="ord-card">
+  <section class="ord-card pay-cash-list-card">
    @if(cash.error()){<p class="ord-alert" role="alert">{{cash.error()}}</p>}
    @if(cash.loading()){<p role="status">Consultando cajas…</p>}
    <div class="pay-cash-history">
@@ -25,7 +25,8 @@ import {PaymentsAccess} from '../data-access/payments-access';
       <div><strong>{{register.nombre}}</strong>
        <small>{{register.codigo}} · {{register.activa?'Activa':'Inactiva'}}</small></div>
       @if(access.canCashManage()){
-       <a [routerLink]="['/payments/cash/registers',register.id]">Configurar</a>
+       <a [routerLink]="['/payments/cash/registers',register.id]"
+        [attr.aria-label]="'Configurar '+register.nombre">Configurar</a>
       }
      </div>
     } @empty {

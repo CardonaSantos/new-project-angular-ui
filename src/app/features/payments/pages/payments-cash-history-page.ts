@@ -17,7 +17,7 @@ import type {CashShift} from '../data-access/payments.models';
   <div class="ord-heading"><h1>Historial de turnos</h1>
    <button type="button" (click)="load()" [disabled]="busy()">Actualizar</button>
   </div>
-  <section class="ord-card">
+  <section class="ord-card pay-cash-list-card">
    @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
    @if(busy()){<p role="status">Consultando turnos…</p>}
    <div class="pay-cash-history">
@@ -27,9 +27,11 @@ import type {CashShift} from '../data-access/payments.models';
        <small>{{s.abiertaEn|date:'dd/MM/yyyy HH:mm'}} · {{s.cerradaEn?'Cerrado':'Abierto'}}</small>
        <small>Fondo inicial: {{money(s.fondoInicial)}}</small></div>
       <div class="ord-actions">
-       <a [routerLink]="['/payments/cash/shift',s.id]">Ver movimientos</a>
+       <a [routerLink]="['/payments/cash/shift',s.id]"
+        [attr.aria-label]="'Ver movimientos de '+(s.caja?.nombre??'caja')+' del '+(s.abiertaEn|date:'dd/MM/yyyy')">Ver movimientos</a>
        @if(s.cerradaEn){
-        <a [routerLink]="['/payments/cash/shift',s.id,'receipt']">Comprobante</a>
+        <a [routerLink]="['/payments/cash/shift',s.id,'receipt']"
+         [attr.aria-label]="'Ver comprobante de '+(s.caja?.nombre??'caja')+' del '+(s.abiertaEn|date:'dd/MM/yyyy')">Comprobante</a>
        }
       </div>
      </div>
