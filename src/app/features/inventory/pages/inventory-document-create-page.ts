@@ -1,5 +1,5 @@
 
-import {Component,computed,inject,signal} from '@angular/core';
+import {Component,computed,inject,signal,viewChildren,ElementRef} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {FormControl,FormGroup,ReactiveFormsModule,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
@@ -72,7 +72,8 @@ function emptyLine():DocumentLine {
     <div class="inv-lines">
      @for(line of lines();track line.key;let i=$index){
       <fieldset class="inv-card">
-       <legend>Artículo {{i+1}}</legend>
+       <legend #lineHeading tabindex="-1">Artículo {{i+1}}</legend>
+       <span class="inv-muted" [class.inv-error]="!lineComplete(line)">{{lineStatus(line)}}</span>
        <div class="inv-grid">
         <gc-inventory-picker [id]="'line-art-'+line.key" label="Artículo" kind="article"
          [value]="line.articuloId"
@@ -156,8 +157,38 @@ export class GcInventoryDocumentCreatePage {
  protected setTargetBranch(id:string){this.targetBranch.set(id);this.targetWarehouse.set('');this.lines.set([emptyLine()])}
  protected setWarehouse(id:string){this.warehouseId.set(id);this.lines.set([emptyLine()])}
  protected resetLines(){this.lines.set([emptyLine()])}
- protected addLine(){this.lines.update(current=>[...current,emptyLine()])}
+ private readonly lineHeadings=viewChildren<ElementRef<HTMLElement>>('lineHeading');
+ protected addLine(){
+  this.lines.update(current=>{
+   const next=emptyLine();
+   const prev=current[current.length-1];
+   // Transfers usually move several articles between the same two locations;
+   // carrying the previous line's locations forward saves re-picking them every time.
+   if(!this.isCount&&prev){next.ubicacionOrigenId=prev.ubicacionOrigenId;next.ubicacionDestinoId=prev.ubicacionDestinoId}
+   return [...current,next];
+  });
+  setTimeout(()=>{
+   const list=this.lineHeadings(),last=list[list.length-1]?.nativeElement;
+   if(!last)return;
+   last.focus({preventScroll:true});last.scrollIntoView({block:'nearest'});
+  });
+ }
  protected removeLine(key:string){this.lines.update(current=>current.filter(l=>l.key!==key))}
+ protected lineComplete(line:DocumentLine):boolean{
+  if(!line.articuloId)return false;
+  if(this.isCount?!line.ubicacionId:!(line.ubicacionOrigenId&&line.ubicacionDestinoId))return false;
+  try{
+   const n=parseApiDecimal(line.cantidad);
+   return this.isCount?n.greaterThanOrEqualTo(0):n.greaterThan(0);
+  }catch{return false}
+ }
+ protected lineStatus(line:DocumentLine):string{
+  if(!line.articuloId)return 'Falta seleccionar artículo';
+  if(this.isCount?!line.ubicacionId:!(line.ubicacionOrigenId&&line.ubicacionDestinoId))
+   return 'Falta seleccionar ubicación';
+  if(!line.cantidad.trim())return this.isCount?'Falta la cantidad contada':'Falta la cantidad a enviar';
+  return this.lineComplete(line)?'Línea completa':'Cantidad inválida';
+ }
  protected setLine(key:string,update:Partial<DocumentLine>){
   this.lines.update(current=>current.map(line=>line.key===key?{...line,...update}:line))
  }
@@ -165,14 +196,7 @@ export class GcInventoryDocumentCreatePage {
  protected valid(){
   if(!this.warehouseId()||this.form.invalid||!this.lines().length)return false;
   if(!this.isCount&&(!this.targetBranch()||!this.targetWarehouse()||this.targetWarehouse()===this.warehouseId()))return false;
-  return this.lines().every(line=>{
-   if(!line.articuloId||!(this.isCount?line.ubicacionId:line.ubicacionOrigenId&&line.ubicacionDestinoId))
-    return false;
-   try{
-    const n=parseApiDecimal(line.cantidad);
-    return this.isCount?n.greaterThanOrEqualTo(0):n.greaterThan(0);
-   }catch{return false}
-  });
+  return this.lines().every(line=>this.lineComplete(line));
  }
  protected async save(){
   if(!this.valid()){this.form.markAllAsTouched();this.error.set('Completa el documento antes de crearlo.');return}

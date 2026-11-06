@@ -44,19 +44,24 @@ import {articleChanges,articleRelations} from '../data-access/inventory-article-
        <input id="article-code" formControlName="codigo" placeholder="Ej. CAFE-001" maxlength="50"
         [attr.aria-invalid]="form.controls.codigo.touched&&form.controls.codigo.invalid"/>
        @if(form.controls.codigo.touched&&form.controls.codigo.invalid){<small class="inv-error">Código válido de 2 a 50 caracteres, empezando por letra.</small>}
+       <small class="inv-muted">{{isNew?'No podrás cambiarlo después de guardar.':'El código no se puede cambiar después de creado.'}}</small>
       </div>
       <div class="inv-field"><label for="article-name">Nombre</label>
        <input id="article-name" formControlName="nombre" maxlength="160" placeholder="Ej. Café molido"
         [attr.aria-invalid]="form.controls.nombre.touched&&form.controls.nombre.invalid"/>
        @if(form.controls.nombre.touched&&form.controls.nombre.invalid){<small class="inv-error">Introduce un nombre.</small>}
       </div>
-      <gc-search-select id="article-kind" label="Tipo de artículo"
-       formControlName="tipo" [searchable]="false" [clearable]="false" [items]="kindChoices"/>
+      <div class="inv-field">
+       <gc-search-select id="article-kind" label="Tipo de artículo"
+        formControlName="tipo" [searchable]="false" [clearable]="false" [items]="kindChoices"/>
+       <small class="inv-muted">{{isNew?'No podrás cambiarlo después de guardar; afecta cómo se usa en recetas y producción.':'El tipo no se puede cambiar; afecta cómo se usa en recetas y producción.'}}</small>
+      </div>
       <div class="inv-field">
        <gc-search-select id="article-unit" label="Unidad base" formControlName="unidadBaseId"
         [items]="unitChoices()" [remote]="true" placeholder="Buscar unidad base…"
         (searchChange)="queueUnitSearch($event)"/>
        @if(form.controls.unidadBaseId.touched&&form.controls.unidadBaseId.invalid){<small class="inv-error">Selecciona una unidad base.</small>}
+       <small class="inv-muted">{{isNew?'No podrás cambiarla después de guardar.':'La unidad base no se puede cambiar; las existencias ya se contabilizan con ella.'}}</small>
       </div>
      </div></fieldset>
      <fieldset class="inv-section"><legend>2. Existencias y costos</legend>
@@ -76,6 +81,7 @@ import {articleChanges,articleRelations} from '../data-access/inventory-article-
      <div class="inv-stack">
       <label><input type="checkbox" formControlName="requiereLote"/> Controlar por lotes</label>
       <label><input type="checkbox" formControlName="requiereVencimiento"/> Controlar fecha de vencimiento</label>
+      @if(!form.controls.requiereLote.value){<small class="inv-muted">Activa primero "Controlar por lotes" para poder controlar vencimiento.</small>}
      </div></fieldset>
      @if(saveError()){<p role="alert" class="inv-alert">{{saveError()}}</p>}
      <div class="inv-actions"><button gcButton type="submit"
@@ -204,11 +210,23 @@ export class GcInventoryArticlePage implements OnInit {
   stockMinimo:new FormControl('',{nonNullable:true,validators:Validators.pattern(/^(?:\d+(?:\.\d{1,6})?)?$/)}),
   costoReferencia:new FormControl('',{nonNullable:true,validators:Validators.pattern(/^(?:\d+(?:\.\d{1,6})?)?$/)}),
   requiereLote:new FormControl(false,{nonNullable:true}),
-  requiereVencimiento:new FormControl(false,{nonNullable:true})
+  requiereVencimiento:new FormControl({value:false,disabled:true},{nonNullable:true})
  });
  constructor(){
   this.unitSearchTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
    .subscribe(term=>void this.findUnits(term));
+  // Vencimiento without lote control is rejected server-side; disabling it here
+  // prevents the person from hitting that error after filling the whole form.
+  this.form.controls.requiereLote.valueChanges.pipe(takeUntilDestroyed())
+   .subscribe(()=>this.syncVencimientoAvailability());
+ }
+ private syncVencimientoAvailability(){
+  const vencimiento=this.form.controls.requiereVencimiento;
+  if(this.form.controls.requiereLote.value){if(this.canManage())vencimiento.enable({emitEvent:false})}
+  else{
+   if(vencimiento.value)vencimiento.setValue(false,{emitEvent:false});
+   vencimiento.disable({emitEvent:false});
+  }
  }
  async ngOnInit(){
   await this.findUnits('');
@@ -226,6 +244,7 @@ export class GcInventoryArticlePage implements OnInit {
    unidadBaseId:d.unidadBase?.id??'',stockMinimo:d.stockMinimo??'',
    costoReferencia:d.costoReferencia??'',requiereLote:d.requiereLote,
    requiereVencimiento:d.requiereVencimiento});
+  this.syncVencimientoAvailability();
   this.form.controls.codigo.disable();this.form.controls.tipo.disable();this.form.controls.unidadBaseId.disable();
   if(!this.canManage())this.form.disable();
   if(!this.canManageCost())this.form.controls.costoReferencia.disable();

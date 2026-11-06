@@ -57,6 +57,16 @@
 .inv-report-ok{padding:.75rem 1rem;border:1px solid var(--gc-outline-variant);
  border-radius:.65rem;background:var(--gc-surface-container);font-weight:600}
 
+/* Active-row highlight, matching the convention used across other modules
+   (.rec-table-row--active, .cat-table-row--active, .pay-history-row--active). */
+.inv-table-row--active{background:var(--gc-surface-container-high,var(--gc-surface-container));box-shadow:inset 3px 0 0 var(--gc-primary)}
+.inv-page legend[tabindex="-1"]:focus-visible,.inv-page [tabindex="-1"]:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+
+/* Vencimientos: expired lots get an urgent red treatment; others show their due date plainly. */
+.inv-expiry-row--expired{border-color:var(--gc-error);background:color-mix(in srgb,var(--gc-error) 7%,var(--gc-surface-container-low))}
+.inv-expiry-badge{font-size:.82rem;font-weight:650;color:var(--gc-on-surface-variant);white-space:nowrap}
+.inv-expiry-badge--expired{color:var(--gc-error)}
+
 .inv-section{min-width:0;border:1px solid var(--gc-outline-variant);border-radius:.65rem;padding:.85rem;display:grid;gap:.7rem;margin:0}
 .inv-section>legend{font-size:.94rem;font-weight:700;padding:0 .45rem;color:var(--gc-on-surface)}
 .inv-section>.inv-muted{margin:0}
