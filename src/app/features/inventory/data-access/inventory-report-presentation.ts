@@ -47,6 +47,30 @@ export function inventoryTypes(data:Record<string,unknown>):InventoryReportMetri
   }):[];
 }
 
+export interface InventoryExpiryRow {
+ key:string;codigo:string;nombre:string;lote:string;vencimiento:string;
+ cantidad:string;ubicacion:string;bloqueado:boolean;vencido:boolean;
+}
+/** Soonest-to-expire first, so the most urgent lots never require scrolling to find. */
+export function inventoryExpiryRows(data:Record<string,unknown>):InventoryExpiryRow[]{
+ const value=data['lotes'];
+ if(!Array.isArray(value))return [];
+ return value.map((entry:unknown,index:number)=>{
+  const item=object(entry);
+  return {
+   key:String(index+1),
+   codigo:typeof item['codigo']==='string'?item['codigo']:'—',
+   nombre:typeof item['nombre']==='string'?item['nombre']:'—',
+   lote:typeof item['lote']==='string'?item['lote']:'—',
+   vencimiento:typeof item['vencimiento']==='string'?item['vencimiento']:'',
+   cantidad:amount(item['cantidad']),
+   ubicacion:typeof item['ubicacion']==='string'?item['ubicacion']:'—',
+   bloqueado:item['bloqueado']===true,
+   vencido:item['vencido']===true
+  };
+ }).sort((a,b)=>a.vencimiento.localeCompare(b.vencimiento));
+}
+
 export interface InventoryReconciliationDifference {
  key:string;article:string;location:string;lot:string;
  expected:string;actual:string;

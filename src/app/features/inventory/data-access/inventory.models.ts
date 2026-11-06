@@ -48,7 +48,8 @@ export interface CountListItem extends RecordId {
 export interface CountLine extends RecordId {articulo:{id:string;nombre:string;codigo:string};
  ubicacion:{id:string;nombre:string};lote?:{id:string;codigoLote:string}|null;
  cantidadTeorica:string;cantidadContada:string;delta:string;costoUnitarioEntrada?:string|null}
-export interface CountDetail extends RecordId {almacenId:string;estado:CountStatus;nota:string|null;creadoEn:string;
+export interface CountDetail extends RecordId {almacenId:string;
+ almacen?:{id:string;codigo:string;nombre:string};estado:CountStatus;nota:string|null;creadoEn:string;
  confirmadoEn:string|null;lineas:CountLine[]}
 export interface TransferListItem extends RecordId {
  numero:string;estado:TransferStatus;nota:string|null;origen:Warehouse;destino:Warehouse;

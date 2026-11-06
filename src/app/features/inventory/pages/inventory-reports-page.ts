@@ -15,7 +15,7 @@ import {InventoryUrlState} from '../data-access/inventory-url-state';
 
 import {GcDataTable,type GcTableColumn} from '../../../design-system/data/gc-data-table';
 import {inventoryCalendar,inventoryMoney,inventoryValuationRows,valuationMethod} from '../data-access/inventory-presentation';
-import {inventoryMasterGroups,inventoryTypes,inventoryReconciliationRows} from '../data-access/inventory-report-presentation';
+import {inventoryMasterGroups,inventoryTypes,inventoryReconciliationRows,inventoryExpiryRows} from '../data-access/inventory-report-presentation';
 function valuationRowsMissingNames(rows:ReturnType<typeof inventoryValuationRows>):boolean{
  return rows.some(row=>row.nombre==='Nombre no proporcionado por el servidor');
 }
@@ -108,6 +108,27 @@ function valueText(value:unknown,key:string):string {
        </dl>
       </section>
      }
+    } @else if(type()==='expiry'){
+     <div class="inv-row"><h2>Lotes con vencimiento registrado</h2>
+      <span class="inv-muted">{{expiryRows().length}} lotes · ordenados por vencimiento más próximo</span></div>
+     @if(expiryVencidos()){
+      <p class="inv-alert" role="status">{{expiryVencidos()}} {{expiryVencidos()===1?'lote ya venció':'lotes ya vencieron'}}. Revísalos antes de seguir despachando.</p>
+     }
+     <div class="inv-stack">
+      @for(row of expiryRows();track row.key){
+       <div class="inv-card" [class.inv-expiry-row--expired]="row.vencido">
+        <div class="inv-row">
+         <strong>{{row.nombre}}</strong>
+         <span class="inv-expiry-badge" [class.inv-expiry-badge--expired]="row.vencido">
+          {{row.vencido?'Vencido':'Vence '+calendar(row.vencimiento)}}
+         </span>
+        </div>
+        <span class="inv-muted">Código: {{row.codigo}} · Lote: {{row.lote}} · Ubicación: {{row.ubicacion}}</span>
+        <div class="inv-row"><span>Cantidad: {{row.cantidad}}</span>
+         @if(row.bloqueado){<span class="inv-muted">Lote bloqueado</span>}</div>
+       </div>
+      } @empty {<p class="inv-muted">No hay lotes con vencimiento registrado en esta sucursal.</p>}
+     </div>
     } @else if(type()==='reconciliation'){
      @if(data['conciliado']===true){
       <p class="inv-report-ok" role="status">Inventario conciliado. No se encontraron diferencias entre existencias, Kardex y capas de costo.</p>
@@ -179,6 +200,7 @@ export class GcInventoryReportsPage {
  protected readonly labels=names;
  protected readonly money=inventoryMoney;
  protected readonly method=valuationMethod;
+ protected readonly calendar=inventoryCalendar;
  protected readonly valuationColumns:GcTableColumn[]=[
   {key:'nombre',label:'Artículo'},{key:'codigo',label:'Código'},
   {key:'valor',label:'Valor (GTQ)',numeric:true},
@@ -190,6 +212,8 @@ export class GcInventoryReportsPage {
  protected readonly valuationMissingNames=computed(()=>valuationRowsMissingNames(this.valuationRows()));
  protected readonly masterGroups=computed(()=>inventoryMasterGroups(this.page.data()??{}));
  protected readonly masterTypes=computed(()=>inventoryTypes(this.page.data()??{}));
+ protected readonly expiryRows=computed(()=>inventoryExpiryRows(this.page.data()??{}));
+ protected readonly expiryVencidos=computed(()=>this.expiryRows().filter(r=>r.vencido).length);
  protected readonly reconKardex=computed(()=>inventoryReconciliationRows(this.page.data()??{},'diferenciasKardex'));
  protected readonly reconLayers=computed(()=>inventoryReconciliationRows(this.page.data()??{},'diferenciasCapas'));
  protected readonly metrics=computed(()=>Object.entries(this.page.data()??{})

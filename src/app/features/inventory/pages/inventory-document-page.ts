@@ -113,7 +113,7 @@ export class GcInventoryDocumentPage implements OnInit {
  }
  protected info(data:CountDetail|TransferDetail|InventoryMovement){
   if('almacenId' in data)return [
-   {label:'Almacén',value:data.almacenId},{label:'Estado',value:data.estado},
+   {label:'Almacén',value:data.almacen?.nombre??data.almacenId},{label:'Estado',value:data.estado},
    {label:'Nota',value:data.nota??'—'},{label:'Fecha',value:this.date(data.creadoEn)}];
   if('numero' in data)return [
    {label:'Número',value:data.numero},{label:'Origen',value:data.origen.nombre},
