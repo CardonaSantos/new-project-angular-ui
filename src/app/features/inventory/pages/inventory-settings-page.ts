@@ -1,5 +1,5 @@
 
-import {Component,computed,effect,inject,signal} from '@angular/core';
+import {Component,computed,effect,inject,signal,viewChild,ElementRef} from '@angular/core';
 import {ReactiveFormsModule,FormControl,FormGroup,Validators} from '@angular/forms';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -53,7 +53,7 @@ type Scope='warehouses'|'locations';
    </div>
    @if(page.status()==='error'){<gc-error-state [message]="errorMessage()" (retry)="reload()"/>}
    @else{
-    <gc-data-table [columns]="columns()" [rows]="page.data()?.rows??[]" [loading]="page.busy()">
+    <gc-data-table [columns]="columns()" [rows]="page.data()?.rows??[]" [loading]="page.busy()" [rowClass]="rowClass">
      <ng-template gcTableCell="actions" let-row>
       <button type="button" gcButton variant="outline" (click)="select(row['id'])">Ver y editar</button>
      </ng-template>
@@ -63,7 +63,7 @@ type Scope='warehouses'|'locations';
    }
   </section>
   <section class="inv-card inv-narrow">
-   <div class="inv-row"><h2>{{selectedId()?'Editar':'Registrar'}} {{scope()==='warehouses'?'almacén':'ubicación'}}</h2>
+   <div class="inv-row"><h2 #formHeading tabindex="-1">{{selectedId()?'Editar':'Registrar'}} {{scope()==='warehouses'?'almacén':'ubicación'}}</h2>
     @if(selectedId()){<button gcButton variant="outline" type="button" (click)="clear()">Nuevo</button>}
    </div>
    <form class="inv-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
@@ -78,6 +78,7 @@ type Scope='warehouses'|'locations';
       <input id="warehouse-code" formControlName="codigo" maxlength="50"
        placeholder="Ej. BOD-01"
        [attr.aria-invalid]="form.controls.codigo.invalid&&form.controls.codigo.touched"/>
+      @if(selectedId()){<small class="inv-muted">El código no se puede cambiar después de creado.</small>}
      </div>
      <div class="inv-field"><label for="warehouse-name">Nombre</label>
       <input id="warehouse-name" formControlName="nombre" maxlength="150"
@@ -132,6 +133,15 @@ export class GcInventorySettingsPage {
  protected readonly statusError=signal<string|null>(null);
  protected readonly reason=signal('');
  protected readonly action=new GcConfirmedAction();
+ private readonly formHeading=viewChild<ElementRef<HTMLElement>>('formHeading');
+ protected readonly rowClass=(row:GcTableRow)=>
+  this.selectedId()&&String(row['id'])===this.selectedId()?'inv-table-row--active':null;
+ private focusHeading(){
+  setTimeout(()=>{
+   const el=this.formHeading()?.nativeElement;if(!el)return;
+   el.focus({preventScroll:true});el.scrollIntoView({block:'nearest'});
+  });
+ }
  protected readonly columns=computed<GcTableColumn[]>(()=>[
   {key:'codigo',label:'Código'},{key:'nombre',label:this.scope()==='warehouses'?'Almacén':'Ubicación'},
   {key:'estado',label:'Estado'}, ...(this.scope()==='locations'?[{key:'recepcion',label:'Recepción'}]:[]),
@@ -187,6 +197,7 @@ export class GcInventorySettingsPage {
     this.form.reset({codigo:row.codigo,nombre:row.nombre,esRecepcion:row.esRecepcion});
    }
    this.form.controls.codigo.disable();
+   this.focusHeading();
   }catch(e){this.saveError.set(gcErrorMessage(e))}
  }
  protected clear(){
