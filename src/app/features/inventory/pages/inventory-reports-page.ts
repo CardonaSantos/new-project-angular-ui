@@ -16,9 +16,6 @@ import {InventoryUrlState} from '../data-access/inventory-url-state';
 import {GcDataTable,type GcTableColumn} from '../../../design-system/data/gc-data-table';
 import {inventoryCalendar,inventoryMoney,inventoryValuationRows,valuationMethod} from '../data-access/inventory-presentation';
 import {inventoryMasterGroups,inventoryTypes,inventoryReconciliationRows,inventoryExpiryRows} from '../data-access/inventory-report-presentation';
-function valuationRowsMissingNames(rows:ReturnType<typeof inventoryValuationRows>):boolean{
- return rows.some(row=>row.nombre==='Nombre no proporcionado por el servidor');
-}
 type Report='masters'|'valuation'|'expiry'|'reconciliation';
 const names:Record<Report,string>={
  masters:'Maestros',valuation:'Valoración',expiry:'Vencimientos',reconciliation:'Conciliación'
@@ -79,9 +76,6 @@ function valueText(value:unknown,key:string):string {
       <h2>Valor por artículo</h2>
       <span class="inv-muted">{{valuationRows().length}} artículos</span>
      </div>
-     @if(valuationMissingNames()){
-      <p class="inv-alert" role="status">El servidor todavía no proporciona nombres de artículos en este reporte. Actualiza el backend para visualizar los nombres y códigos.</p>
-     }
      <gc-data-table [rows]="valuationRows()" [columns]="valuationColumns"/>
      @if(data['nota']){<p class="inv-muted">{{data['nota']}}</p>}
     } @else if(type()==='masters'){
@@ -209,7 +203,6 @@ export class GcInventoryReportsPage {
   this.url.filters().tipo as Report:'masters');
  protected readonly visible=signal(25);
  protected readonly valuationRows=computed(()=>inventoryValuationRows(this.page.data()??{}));
- protected readonly valuationMissingNames=computed(()=>valuationRowsMissingNames(this.valuationRows()));
  protected readonly masterGroups=computed(()=>inventoryMasterGroups(this.page.data()??{}));
  protected readonly masterTypes=computed(()=>inventoryTypes(this.page.data()??{}));
  protected readonly expiryRows=computed(()=>inventoryExpiryRows(this.page.data()??{}));

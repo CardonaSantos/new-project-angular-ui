@@ -59,11 +59,30 @@ import type {StockSummary} from '../data-access/inventory.models';
     }
    </section>
   }
+  @if(blocked().length){
+   <section class="inv-card">
+    <div class="inv-row">
+     <h2>Con existencias bloqueadas</h2>
+     <a routerLink="/inventory/stock/lots" class="inv-link">Revisar lotes</a>
+    </div>
+    @for(item of blocked().slice(0,12);track item.articuloId){
+     <div class="inv-row">
+      <div class="inv-stack">
+       <strong>{{item.nombre}}</strong><span class="inv-muted">{{item.codigo}}</span>
+      </div>
+      <div><strong>{{quantity(item.cantidadBloqueada)}}</strong>
+       <span class="inv-muted"> {{item.unidad}} bloqueado de {{quantity(item.cantidad)}}</span></div>
+     </div>
+    }
+   </section>
+  }
   <section class="inv-card">
    <h2>Accesos rápidos</h2>
    <nav class="inv-subnav" aria-label="Acciones de inventario">
     <a routerLink="/inventory/articles">Artículos</a>
+    <a routerLink="/inventory/articles/new">Nuevo artículo</a>
     <a routerLink="/inventory/stock/lots">Lotes</a>
+    <a routerLink="/inventory/operations/manual">Registrar movimiento</a>
     <a routerLink="/inventory/operations/counts">Conteos</a>
     <a routerLink="/inventory/operations/transfers">Transferencias</a>
     <a routerLink="/inventory/reports">Reportes</a>
