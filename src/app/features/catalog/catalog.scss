@@ -121,31 +121,3 @@
 
 
 
-/* Keep less-used tariff history accessible without crowding the primary navigation. */
-.cat-nav-advanced{position:relative;min-width:0}
-.cat-nav-advanced>summary{display:flex;align-items:center;min-height:44px;padding:.45rem .7rem;
- cursor:pointer;font-size:.9rem;font-weight:600;border:1px solid var(--gc-outline-variant);
- border-radius:.5rem;color:var(--gc-on-surface)}
-.cat-nav-advanced[open]>summary{border-color:var(--gc-primary)}
-.cat-nav-advanced-links{display:grid;gap:.25rem;padding:.45rem;
- border:1px solid var(--gc-outline-variant);background:var(--gc-surface-container-low);
- border-radius:.55rem;position:absolute;top:calc(100% + .4rem);right:0;z-index:30;min-width:250px;
- box-shadow:0 12px 30px rgba(0,0,0,.16)}
-.cat-nav .cat-nav-advanced-links a{border:0;display:flex;align-items:center;
- border-radius:.4rem;min-height:44px;padding:.5rem .75rem;line-height:1.35}
-.cat-nav .cat-nav-advanced-links a.active{background:var(--gc-surface-container)}
-.cat-nav :is(summary,a):focus-visible{outline:3px solid var(--gc-primary);outline-offset:2px}
-@media(max-width:560px){.cat-nav-advanced-links{right:auto;left:0;min-width:min(80vw,250px)}}
-
-.cat-menu-list{display:grid;gap:.65rem}
-.cat-menu-list-card{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
- padding:1rem;border:1px solid var(--gc-outline-variant);border-radius:.6rem;gap:.65rem}
-.cat-menu-list-card>div:first-child{display:grid;gap:.25rem}
-.cat-menu-list-card strong{font-size:1rem}
-.cat-menu-list-card span{color:var(--gc-on-surface-variant);font-size:.85rem}
-.cat-menu-list-actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
-.cat-menu-list .cat-menu-action{display:inline-flex;align-items:center;justify-content:center;
- min-height:44px;padding:.5rem .85rem;text-decoration:none;font-size:.9rem;font-weight:700;
- border:1px solid var(--gc-outline);color:var(--gc-on-surface);border-radius:.5rem}
-.cat-menu-list .cat-menu-action--primary{background:var(--gc-primary);color:var(--gc-on-primary);
- border-color:var(--gc-primary)}
