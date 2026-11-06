@@ -9,14 +9,16 @@ import {InventoryApi} from '../../inventory/data-access/inventory.api';
 import type {Warehouse} from '../../inventory/data-access/inventory.models';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
-import {parseApiDecimal,formatDecimal,formatCurrency,toApiDecimal} from '../../../shared/formatting';
+import {parseApiDecimal,formatDecimal,toApiDecimal} from '../../../shared/formatting';
 import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
 import {RecipesAccess} from '../data-access/recipes-access';
 import {RecipesApi} from '../data-access/recipes.api';
 import type {RecipeOption,RecipeStockPreview,ProductionInput} from '../data-access/recipes.models';
 import {GcRecipesNav} from '../recipes-nav';
+import {GcRecipeStockPreview} from '../components/recipe-stock-preview';
 @Component({
- selector:'gc-recipes-production-form-page',imports:[GcRecipesNav,RouterLink,GcInventoryPicker,GcSearchSelect],
+ selector:'gc-recipes-production-form-page',
+ imports:[GcRecipesNav,RouterLink,GcInventoryPicker,GcSearchSelect,GcRecipeStockPreview],
  template:`<main class="rec-page">
   <gc-recipes-nav/><a class="rec-link" routerLink="/recipes/production">Volver al historial</a>
   <section class="rec-card">
@@ -80,35 +82,8 @@ import {GcRecipesNav} from '../recipes-nav';
   </section>
   @if(preview();as result){
    <section class="rec-card">
-    <div class="rec-top"><h2>Ingredientes necesarios</h2>
-     <strong>{{result.disponible===true?'Hay existencias suficientes':result.disponible===false?'Faltan ingredientes':'Revisión de ingredientes'}}</strong>
-    </div>
-    @if(result.insuficientes?.length){
-     <div class="rec-table-wrap"><table class="rec-table">
-      <thead><tr><th>Ingrediente</th><th>Necesario</th><th>Disponible</th><th>Faltante</th></tr></thead>
-      <tbody>@for(x of result.insuficientes??[];track x.articuloId){
-       <tr><td>{{x.articulo?.nombre??'Ingrediente'}}</td>
-        <td>{{quantity(x.requerido,x.articulo?.unidadBase?.codigo)}}</td>
-        <td>{{quantity(x.disponible,x.articulo?.unidadBase?.codigo)}}</td>
-        <td>{{quantity(x.faltante,x.articulo?.unidadBase?.codigo)}}</td></tr>
-      }</tbody></table></div>
-    }
-    <div class="rec-table-wrap"><table class="rec-table">
-     <thead><tr><th>Ingrediente</th><th>Cantidad prevista</th><th>Ubicación</th><th>Lote</th>
-      @if(result.costoEstimado!==undefined&&access.canSeeCosts()){<th>Costo estimado</th>}
-     </tr></thead>
-     <tbody>@for(x of result.consumos??[];track $index){
-      <tr><td>{{x.articulo?.nombre??'Ingrediente'}}</td>
-       <td>{{quantity(x.cantidad,x.articulo?.unidadBase?.codigo)}}</td>
-       <td>{{x.ubicacion?.nombre??'Por determinar'}}</td>
-       <td>{{x.lote?.codigoLote??'Sin lote'}}</td>
-       @if(result.costoEstimado!==undefined&&access.canSeeCosts()){<td>{{x.costoTotal?currency(x.costoTotal):'—'}}</td>}
-      </tr>
-     } @empty {<tr><td colspan="5">No hay consumos calculados.</td></tr>}</tbody>
-    </table></div>
-    @if(result.costoEstimado!==undefined&&result.costoEstimado!==null&&access.canSeeCosts()){
-     <p><strong>Costo estimado: {{currency(result.costoEstimado)}}</strong></p>}
-    <p class="rec-note">Esta comprobación no reserva ingredientes ni descuenta inventario.</p>
+    <gc-recipe-stock-preview [result]="result" [canSeeCosts]="access.canSeeCosts()" [showLots]="true"
+     title="Ingredientes necesarios"/>
    </section>
   }
  </main>`,styleUrl:'../recipes.scss'
@@ -146,7 +121,6 @@ export class GcRecipesProductionFormPage implements GcDirtyAware {
  protected readonly locked=signal(false);
  protected readonly error=signal<string|null>(null);
  protected readonly preview=signal<RecipeStockPreview|null>(null);
- protected readonly currency=formatCurrency;
  protected readonly quantity=(n:string|null|undefined,u?:string)=>{
   try{return n?formatDecimal(n)+' '+(u??''):'—'}catch{return '—'}
  };

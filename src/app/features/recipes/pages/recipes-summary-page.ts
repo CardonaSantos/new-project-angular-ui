@@ -30,10 +30,12 @@ import type {RecipeCoverage} from '../data-access/recipes.models';
    <div class="rec-top"><h2>Productos que necesitan receta</h2><span class="rec-muted">Presentaciones de la carta</span></div>
    <div class="rec-filters">
     <label class="rec-field">Buscar producto
-     <input [value]="search()" maxlength="120" (input)="search.set($any($event.target).value)"
-      (keydown.enter)="$event.preventDefault();apply()"/>
+     <span class="rec-search-inline">
+      <input [value]="search()" maxlength="120" (input)="search.set($any($event.target).value)"
+       (keydown.enter)="$event.preventDefault();apply()"/>
+      <button type="button" (click)="apply()">Buscar</button>
+     </span>
     </label>
-    <button type="button" (click)="apply()">Buscar</button>
    </div>
    @if(data();as r){
     <div class="rec-table-wrap"><table class="rec-table">
@@ -43,7 +45,8 @@ import type {RecipeCoverage} from '../data-access/recipes.models';
        <tr><td>{{item.producto.nombre}}</td><td>{{item.nombre}}</td>
         <td>Sin receta publicada</td><td>
          @if(access.canManage()){<a class="rec-link" routerLink="/recipes/list/new"
-          [queryParams]="{varianteId:item.id}">Crear receta</a>}
+          [queryParams]="{varianteId:item.id}"
+          [attr.aria-label]="'Crear receta para '+item.producto.nombre+' '+item.nombre">Crear receta</a>}
         </td></tr>
       } @empty {<tr><td colspan="4">No hay presentaciones pendientes con estos filtros.</td></tr>}
      </tbody>

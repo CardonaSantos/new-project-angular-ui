@@ -1,4 +1,4 @@
-import {Component,computed,inject,OnInit,signal} from '@angular/core';
+import {Component,computed,ElementRef,inject,OnInit,signal,viewChild} from '@angular/core';
 import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
@@ -42,12 +42,13 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
     <thead><tr><th>Regla</th><th>Entrega</th><th>Se aplica a</th><th>Sucursal</th><th>Estado</th><th></th></tr></thead>
     <tbody>
      @for(item of shown();track item.id){
-      <tr><td><strong>{{item.nombre}}</strong></td>
+      <tr [class.rec-table-row--active]="editing()&&selected()?.id===item.id">
+       <td><strong>{{item.nombre}}</strong></td>
        <td>{{modeName(item.modalidad)}}</td>
        <td>{{item.alcance==='ORDEN'?'Al pedido completo':item.variante?.producto?.nombre+' · '+item.variante?.nombre}}</td>
        <td>{{item.sucursal?.nombre??'Todas las sucursales'}}</td>
        <td>{{item.activa?'Activa':'Inactiva'}}</td>
-       <td><button type="button" (click)="open(item)">Detalles</button></td>
+       <td><button type="button" (click)="open(item)" [attr.aria-label]="'Detalles de '+item.nombre">Detalles</button></td>
       </tr>
      } @empty {<tr><td colspan="6">No hay reglas con estos filtros.</td></tr>}
     </tbody>
@@ -55,7 +56,7 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
   </section>
   @if(editing()){
    <section class="rec-card">
-    <div class="rec-top"><h2>{{selected()?'Editar regla':'Nueva regla'}}</h2>
+    <div class="rec-top"><h2 #ruleEditorHeading tabindex="-1">{{selected()?'Editar regla':'Nueva regla'}}</h2>
      <button type="button" (click)="close()" [disabled]="busy()">Cerrar</button>
     </div>
     <div class="rec-section"><h3>1. Datos y alcance de la regla</h3>
@@ -165,6 +166,15 @@ export class GcRecipesPackagingPage implements OnInit,GcDirtyAware {
  protected readonly saveError=signal<string|null>(null);
  private nextKey=0;
  private baseline='';
+ private readonly ruleEditorHeading=viewChild<ElementRef<HTMLElement>>('ruleEditorHeading');
+ private focusRuleEditor(){
+  setTimeout(()=>{
+   const el=this.ruleEditorHeading()?.nativeElement;
+   if(!el)return;
+   el.focus({preventScroll:true});
+   el.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+ }
  protected readonly availableVariants=computed(()=>{
   const result=[...this.variants()];
   const current=this.selected()?.variante;
@@ -208,6 +218,7 @@ export class GcRecipesPackagingPage implements OnInit,GcDirtyAware {
   this.selected.set(null);this.editing.set(true);
   this.name.set('');this.scope.set('ORDEN');this.mode.set('PARA_LLEVAR');
   this.branchId.set('');this.variantId.set('');this.materials.set([]);this.baseline=JSON.stringify(this.snapshot());
+  this.focusRuleEditor();
  }
  protected async open(rule:PackagingRule){
   if(this.dirty()){
@@ -225,6 +236,7 @@ export class GcRecipesPackagingPage implements OnInit,GcDirtyAware {
     cantidad:line.cantidad,unidad:line.articulo?.unidadBase?.codigo??''
    })));
    this.baseline=JSON.stringify(this.snapshot());
+   this.focusRuleEditor();
   }catch(e){this.saveError.set(gcErrorMessage(e))}
   finally{this.busy.set(false)}
  }

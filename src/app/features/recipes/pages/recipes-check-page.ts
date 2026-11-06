@@ -11,14 +11,15 @@ import {InventoryApi} from '../../inventory/data-access/inventory.api';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
 import type {CatalogGroup} from '../../catalog/data-access/catalog.models';
 import type {Warehouse} from '../../inventory/data-access/inventory.models';
-import {formatDecimal,formatCurrency,parseApiDecimal,toApiDecimal} from '../../../shared/formatting';
+import {parseApiDecimal,toApiDecimal} from '../../../shared/formatting';
 import {RecipesApi} from '../data-access/recipes.api';
 import {RecipesAccess} from '../data-access/recipes-access';
 import type {RecipeOption,PackagingMode,RecipeStockPreview} from '../data-access/recipes.models';
 import {PACKAGING_MODES} from '../data-access/recipes.models';
 import {GcRecipesNav} from '../recipes-nav';
+import {GcRecipeStockPreview} from '../components/recipe-stock-preview';
 @Component({
- selector:'gc-recipes-check-page',imports:[GcRecipesNav,GcInventoryPicker,GcSearchSelect],
+ selector:'gc-recipes-check-page',imports:[GcRecipesNav,GcInventoryPicker,GcSearchSelect,GcRecipeStockPreview],
  template:`<main class="rec-page"><gc-recipes-nav/>
  <section class="rec-card">
   <div class="rec-top"><h2>Comprobar ingredientes de la carta</h2></div>
@@ -54,7 +55,7 @@ import {GcRecipesNav} from '../recipes-nav';
    </div>
   </div>
   @if(groups().length){
-   <h3>Extras</h3>
+   <h3>3. Extras disponibles</h3>
    @for(group of groups();track group.id){
     <div class="rec-line">
      <strong>{{group.nombre}}</strong>
@@ -78,33 +79,8 @@ import {GcRecipesNav} from '../recipes-nav';
  </section>
  @if(result();as r){
   <section class="rec-card">
-   <div class="rec-top"><h2>Resultado de la comprobación</h2>
-    <strong>{{r.requiereUbicacion?'Elige una ubicación':r.disponible===true?'Hay ingredientes suficientes':'Faltan ingredientes'}}</strong>
-   </div>
-   @if(r.insuficientes?.length){
-    <div class="rec-table-wrap"><table class="rec-table">
-     <thead><tr><th>Ingrediente</th><th>Necesario</th><th>Disponible</th><th>Faltante</th></tr></thead><tbody>
-     @for(x of r.insuficientes??[];track x.articuloId){<tr>
-      <td>{{x.articulo?.nombre??'Ingrediente'}}</td>
-      <td>{{qty(x.requerido,x.articulo?.unidadBase?.codigo)}}</td>
-      <td>{{qty(x.disponible,x.articulo?.unidadBase?.codigo)}}</td>
-      <td>{{qty(x.faltante,x.articulo?.unidadBase?.codigo)}}</td>
-     </tr>}</tbody></table></div>
-   }
-   <div class="rec-table-wrap"><table class="rec-table">
-    <thead><tr><th>Ingrediente</th><th>Cantidad necesaria</th><th>Ubicación</th>
-     @if(r.costoEstimado!==undefined&&access.canSeeCosts()){<th>Costo estimado</th>}</tr></thead>
-    <tbody>
-    @for(x of r.consumos??[];track $index){<tr><td>{{x.articulo?.nombre??'Ingrediente'}}</td>
-     <td>{{qty(x.cantidad,x.articulo?.unidadBase?.codigo)}}</td>
-     <td>{{x.ubicacion?.nombre??'—'}}</td>
-     @if(r.costoEstimado!==undefined&&access.canSeeCosts()){
-      <td>{{x.costoTotal!==null&&x.costoTotal!==undefined?money(x.costoTotal):'—'}}</td>}
-    </tr>} @empty {<tr><td colspan="4">No hay consumos calculados para mostrar.</td></tr>}
-    </tbody>
-   </table></div>
-   @if(r.costoEstimado!==null&&r.costoEstimado!==undefined&&access.canSeeCosts()){<strong>Costo estimado: {{money(r.costoEstimado)}}</strong>}
-   <p class="rec-note">Esta comprobación no reserva ingredientes ni crea ventas.</p>
+   <gc-recipe-stock-preview [result]="r" [canSeeCosts]="access.canSeeCosts()"
+    note="Esta comprobación no reserva ingredientes ni crea ventas."/>
   </section>
  }
  </main>`,styleUrl:'../recipes.scss'
@@ -158,10 +134,6 @@ export class GcRecipesCheckPage {
  protected readonly result=signal<RecipeStockPreview|null>(null);
  protected readonly busy=signal(false);
  protected readonly error=signal<string|null>(null);
- protected readonly money=formatCurrency;
- protected readonly qty=(n?:string|null,unit?:string)=>{
-  try{return n==null?'—':formatDecimal(n)+' '+(unit??'')}catch{return '—'}
- };
  protected readonly valid=computed(()=>{
   if(!this.branchId()||!this.locationId()||!this.recipes().find(x=>x.id===this.recipeId())?.versionActivaId)return false;
   try{return parseApiDecimal(this.amount()).gt(0)}catch{return false}

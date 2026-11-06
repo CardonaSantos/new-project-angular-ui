@@ -1,4 +1,4 @@
-import {Component,inject,OnInit,signal,computed} from '@angular/core';
+import {Component,ElementRef,inject,OnInit,signal,computed,viewChild} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
@@ -28,21 +28,25 @@ interface ExtraLine {
   <section class="rec-card">
    <div class="rec-top"><h2>Ingredientes de extras</h2>
     <a class="rec-link" routerLink="/catalog/extras">Administrar extras</a></div>
-      <div class="rec-filters">
+   <div class="rec-filters">
     <label class="rec-field">Buscar extra
-     <input [value]="search()" (input)="search.set($any($event.target).value)" maxlength="120"
-      (keydown.enter)="$event.preventDefault();applySearch()"/>
-    </label><button type="button" (click)="applySearch()">Buscar</button>
+     <span class="rec-search-inline">
+      <input [value]="search()" (input)="search.set($any($event.target).value)" maxlength="120"
+       (keydown.enter)="$event.preventDefault();applySearch()"/>
+      <button type="button" (click)="applySearch()">Buscar</button>
+     </span>
+    </label>
    </div>
    @if(listBusy()){<p class="rec-muted" role="status">Cargando extras…</p>}
    @if(listError()){<p class="rec-alert" role="alert">{{listError()}}</p>}
    <div class="rec-table-wrap"><table class="rec-table">
     <thead><tr><th>Extra</th><th>Grupo</th><th>Estado</th><th></th></tr></thead><tbody>
      @for(mod of options();track mod.id){
-      <tr><td><strong>{{mod.nombre}}</strong></td>
+      <tr [class.rec-table-row--active]="selected()?.id===mod.id">
+       <td><strong>{{mod.nombre}}</strong></td>
        <td>{{mod.grupo?.nombre??'Extra del catálogo'}}</td>
        <td>{{mod.activo?'Activo':'Inactivo'}}</td>
-       <td><button type="button" (click)="choose(mod)">Ingredientes</button></td>
+       <td><button type="button" (click)="choose(mod)" [attr.aria-label]="'Editar ingredientes de '+mod.nombre">Ingredientes</button></td>
       </tr>
      } @empty {<tr><td colspan="4">No se encontraron extras.</td></tr>}
     </tbody>
@@ -56,13 +60,13 @@ interface ExtraLine {
   </section>
   @if(selected();as mod){
    <section class="rec-card">
-    <div class="rec-top"><h2>{{mod.nombre}}</h2>
+    <div class="rec-top"><h2 #extraEditorHeading tabindex="-1">{{mod.nombre}}</h2>
      <span class="rec-muted">{{lines().length}} ingredientes configurados</span></div>
 
-    <div class="rec-section"><h3>1. Composición física</h3>
+    <div class="rec-section"><h3>Composición física</h3>
     @for(item of lines();track item.key;let i=$index){
      <div class="rec-line">
-      <strong>Ajuste {{i+1}}</strong>
+      <strong>Ingrediente {{i+1}}</strong>
       <div class="rec-line-grid">
        <gc-search-select [id]="'extra-effect-'+item.key" label="Acción sobre la preparación"
         [items]="effectChoices" [value]="item.efecto" [searchable]="false" [clearable]="false"
@@ -122,6 +126,15 @@ export class GcRecipesExtrasPage implements OnInit,GcDirtyAware{
  protected setEffect(index:number,value:string){this.changeLine(index,{efecto:value as ModifierEffect})}
  protected readonly busy=signal(false);
  protected readonly error=signal<string|null>(null);
+ private readonly extraEditorHeading=viewChild<ElementRef<HTMLElement>>('extraEditorHeading');
+ private focusExtraEditor(){
+  setTimeout(()=>{
+   const el=this.extraEditorHeading()?.nativeElement;
+   if(!el)return;
+   el.focus({preventScroll:true});
+   el.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+ }
  private original='';
  private key=0;
  protected readonly dirty=computed(()=>!!this.selected()&&JSON.stringify(this.lines())!==this.original);
@@ -169,6 +182,7 @@ export class GcRecipesExtrasPage implements OnInit,GcDirtyAware{
     sustituyeLabel:x.sustituyeArticulo?.nombre??''
    })));
    this.original=JSON.stringify(this.lines());
+   this.focusExtraEditor();
   }catch(e){this.error.set(gcErrorMessage(e))}
   finally{this.busy.set(false)}
  }
