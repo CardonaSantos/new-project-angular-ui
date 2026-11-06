@@ -65,6 +65,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/inventory/inventory.routes').then(m => m.INVENTORY_ROUTES),
       },
       {
+        path: 'finance', canActivate: [gcSessionGuard], data: { breadcrumb: 'Finanzas' },
+        loadChildren: () => import('./features/finance/finance.routes').then(m => m.FINANCE_ROUTES),
+      },
+      {
         path: 'organization',
         canActivate: [gcSessionGuard],
         loadChildren: () =>
