@@ -85,7 +85,7 @@ type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
         @if(error()){<p role="alert" class="inv-alert">{{error()}}</p>}
     <div class="inv-actions">
      <button type="submit" gcButton [disabled]="action.busy()||form.invalid||!articleId()||!locationId()||!canWrite()">
-      {{action.busy()?'Registrando…':'Revisar y registrar'}}
+      {{action.busy()?'Registrando…':'Registrar movimiento'}}
      </button>
      <a routerLink="/inventory/operations/movements">Volver al Kardex</a>
     </div>

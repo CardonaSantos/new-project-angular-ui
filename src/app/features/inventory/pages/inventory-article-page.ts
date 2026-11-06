@@ -44,19 +44,24 @@ import {articleChanges,articleRelations} from '../data-access/inventory-article-
        <input id="article-code" formControlName="codigo" placeholder="Ej. CAFE-001" maxlength="50"
         [attr.aria-invalid]="form.controls.codigo.touched&&form.controls.codigo.invalid"/>
        @if(form.controls.codigo.touched&&form.controls.codigo.invalid){<small class="inv-error">Código válido de 2 a 50 caracteres, empezando por letra.</small>}
+       @if(!isNew){<small class="inv-muted">El código no se puede cambiar después de creado.</small>}
       </div>
       <div class="inv-field"><label for="article-name">Nombre</label>
        <input id="article-name" formControlName="nombre" maxlength="160" placeholder="Ej. Café molido"
         [attr.aria-invalid]="form.controls.nombre.touched&&form.controls.nombre.invalid"/>
        @if(form.controls.nombre.touched&&form.controls.nombre.invalid){<small class="inv-error">Introduce un nombre.</small>}
       </div>
-      <gc-search-select id="article-kind" label="Tipo de artículo"
-       formControlName="tipo" [searchable]="false" [clearable]="false" [items]="kindChoices"/>
+      <div class="inv-field">
+       <gc-search-select id="article-kind" label="Tipo de artículo"
+        formControlName="tipo" [searchable]="false" [clearable]="false" [items]="kindChoices"/>
+       @if(!isNew){<small class="inv-muted">El tipo no se puede cambiar; afecta cómo se usa en recetas y producción.</small>}
+      </div>
       <div class="inv-field">
        <gc-search-select id="article-unit" label="Unidad base" formControlName="unidadBaseId"
         [items]="unitChoices()" [remote]="true" placeholder="Buscar unidad base…"
         (searchChange)="queueUnitSearch($event)"/>
        @if(form.controls.unidadBaseId.touched&&form.controls.unidadBaseId.invalid){<small class="inv-error">Selecciona una unidad base.</small>}
+       @if(!isNew){<small class="inv-muted">La unidad base no se puede cambiar; las existencias ya se contabilizan con ella.</small>}
       </div>
      </div></fieldset>
      <fieldset class="inv-section"><legend>2. Existencias y costos</legend>
