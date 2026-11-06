@@ -1,5 +1,5 @@
 
-import {Component,computed,effect,inject,isDevMode,signal} from '@angular/core';
+import {Component,computed,effect,inject,isDevMode,signal,viewChild,ElementRef} from '@angular/core';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {MatDialog} from '@angular/material/dialog';
@@ -103,7 +103,7 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
    @if(!canRead()){<p role="alert" class="inv-alert">No tienes permiso para consultar inventario en esta sucursal.</p>}
    @else if(page.status()==='error'){<gc-error-state [message]="errorMessage()" (retry)="reload()"/>}
    @else{
-    <gc-data-table [columns]="config.columns" [rows]="page.data()?.rows??[]" [loading]="page.busy()">
+    <gc-data-table [columns]="config.columns" [rows]="page.data()?.rows??[]" [loading]="page.busy()" [rowClass]="lotRowClass">
      <ng-template gcTableCell="nombre" let-row>
       <div class="inv-photo">
        @if(image(row['imagen']);as photoUrl){
@@ -118,8 +118,8 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
      <ng-template gcTableCell="acciones" let-row>
       @if(link(row['id']);as url){<a class="inv-link" [routerLink]="url">Ver detalle</a>}
       @else if(view==='lots'&&access.canGlobal('inventory.articles.manage')){
-       <button type="button" gcButton variant="outline" [disabled]="action.busy()||lotReason().trim().length<3"
-        (click)="toggleLot(row)">{{row['bloqueado']?'Desbloquear':'Bloquear'}}</button>
+       <button type="button" gcButton variant="outline" [disabled]="action.busy()"
+        (click)="selectLot(row)">{{row['bloqueado']?'Desbloquear':'Bloquear'}}</button>
       }
      </ng-template>
     </gc-data-table>
@@ -129,10 +129,18 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
 
    @if(view==='lots'&&access.canGlobal('inventory.articles.manage')){
     <div class="inv-field">
-     <label for="lot-block-reason">Motivo para bloquear o desbloquear un lote</label>
-     <input id="lot-block-reason" [value]="lotReason()" maxlength="500"
+     <label for="lot-block-reason">{{activeLotLabel()?'Motivo para '+(activeLotBlocked()?'desbloquear':'bloquear')+' '+activeLotLabel():'Motivo para bloquear o desbloquear un lote'}}</label>
+     <input id="lot-block-reason" #lotReasonInput [value]="lotReason()" maxlength="500"
       (input)="lotReason.set($any($event.target).value)"
       placeholder="Ej. Retiro preventivo por calidad"/>
+     @if(!activeLotId()){<small class="inv-muted">Usa "Bloquear"/"Desbloquear" en un lote de la tabla para seleccionarlo aquí.</small>}
+     @else {
+      <div class="inv-actions">
+       <button type="button" gcButton [disabled]="action.busy()||lotReason().trim().length<3"
+        (click)="confirmSelectedLot()">{{activeLotBlocked()?'Confirmar desbloqueo':'Confirmar bloqueo'}}</button>
+       <button type="button" gcButton variant="outline" [disabled]="action.busy()" (click)="cancelLotSelection()">Cancelar</button>
+      </div>
+     }
     </div>
    }
    @if(view==='stock'){<p class="inv-muted">Existencias físicas, no reservas de pedidos.</p>}
@@ -199,6 +207,15 @@ export class GcInventoryListPage {
  protected readonly newLotExpiry=signal('');
  protected readonly lotError=signal<string|null>(null);
  protected readonly lotReason=signal('');
+ protected readonly activeLotId=signal<string|null>(null);
+ protected readonly activeLotBlocked=signal(false);
+ protected readonly activeLotLabel=computed(()=>{
+  const id=this.activeLotId();if(!id)return null;
+  const row=(this.page.data()?.rows??[]).find(r=>objectValue(r['id'])===id);
+  return row?objectValue(row['nombre'])+' (lote '+objectValue(row['codigo'])+')':null;
+ });
+ protected readonly lotRowClass=(row:GcTableRow)=>objectValue(row['id'])===this.activeLotId()?'inv-table-row--active':null;
+ private readonly lotReasonInput=viewChild<ElementRef<HTMLInputElement>>('lotReasonInput');
  protected readonly states=computed(()=>{
   if(this.view==='articles')return [{value:'true',label:'Activos'},{value:'false',label:'Inactivos'}];
   if(this.view==='counts')return ['BORRADOR','CONFIRMADO','CANCELADO'].map(v=>({value:v,label:v.replaceAll('_',' ')}));
@@ -326,10 +343,18 @@ export class GcInventoryListPage {
   await this.url.patch({articuloId:article,page:1});
   await this.load(this.url.filters());
  }
- protected async toggleLot(row:GcTableRow){
-  if(this.lotReason().trim().length<3)return;
-  const id=objectValue(row['id']);const current=row['bloqueado']===true;
-  const next=!current;
+ protected selectLot(row:GcTableRow){
+  this.activeLotId.set(objectValue(row['id']));
+  this.activeLotBlocked.set(row['bloqueado']===true);
+  setTimeout(()=>this.lotReasonInput()?.nativeElement.focus({preventScroll:false}));
+ }
+ protected cancelLotSelection(){
+  this.activeLotId.set(null);this.lotReason.set('');this.lotError.set(null);
+ }
+ protected async confirmSelectedLot(){
+  const id=this.activeLotId();
+  if(!id||this.lotReason().trim().length<3)return;
+  const next=!this.activeLotBlocked();
   const r=await this.action.runConfirmed(this.dialog,{
    title:next?'Bloquear lote':'Desbloquear lote',
    message:next?'El lote quedará fuera de la cantidad utilizable. ¿Continuar?':
@@ -338,6 +363,7 @@ export class GcInventoryListPage {
   },()=>firstValueFrom(this.api.blockLot(id,next,this.lotReason().trim())));
   if(!r)return;
   if(!r.ok){if(r.reason==='error')this.notice.show(gcErrorMessage(r.error),'error');return}
-  this.lotReason.set('');this.notice.show('Estado del lote actualizado.','success');await this.load(this.url.filters());
+  this.activeLotId.set(null);this.lotReason.set('');
+  this.notice.show('Estado del lote actualizado.','success');await this.load(this.url.filters());
  }
 }

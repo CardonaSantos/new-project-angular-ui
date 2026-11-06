@@ -41,6 +41,8 @@ export class GcDataTable {
   readonly loading = input(false);
   readonly sort = input<GcSort | null>(null);
   readonly sortChange = output<GcSort>();
+  /** Optional per-row class (e.g. to highlight the row a side form is acting on). */
+  readonly rowClass = input<((row: GcTableRow) => string | null | undefined) | null>(null);
 
   private readonly cellTemplates = contentChildren(GcTableCellDirective);
   protected readonly templatesByKey = computed(() =>
@@ -49,6 +51,10 @@ export class GcDataTable {
   protected readonly columnsByKey = computed(() =>
     new Map(this.columns().map((column) => [column.key, column])),
   );
+
+  protected rowClassFor(row: GcTableRow): string | null {
+    return this.rowClass()?.(row) ?? null;
+  }
 
   protected cellText(row: GcTableRow, key: string): string {
     const value = row[key];

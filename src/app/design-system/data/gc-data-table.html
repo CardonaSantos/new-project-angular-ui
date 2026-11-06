@@ -29,7 +29,7 @@
         </thead>
         <tbody>
           @for (row of table.getRowModel().rows; track row.id) {
-            <tr>
+            <tr [class]="rowClassFor(row.original)">
               @for (cell of row.getAllCells(); track cell.id) {
                 <td [class.numeric]="columnsByKey().get(cell.column.id)?.numeric">
                   @if (templatesByKey().get(cell.column.id); as template) {
