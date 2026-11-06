@@ -35,7 +35,7 @@ const SOURCE_CHOICES:{id:FinanceExternalSourceType;label:string}[]=[
  template:`
  <div class="fin-page">
   <gc-page-header title="Conciliación"
-   description="Operaciones externas confirmadas (cobros, reembolsos y pagos a proveedores) que aún no se han imputado a una cuenta financiera."/>
+   description="Operaciones externas confirmadas (cobros, reembolsos y pagos a proveedores). Imputarlas les asigna la cuenta financiera donde se registrará su movimiento."/>
   <gc-finance-nav/>
   <section class="fin-card">
    <div class="fin-toolbar">
@@ -48,7 +48,11 @@ const SOURCE_CHOICES:{id:FinanceExternalSourceType;label:string}[]=[
    @else{
     <gc-data-table [columns]="columns" [rows]="page.data()?.rows??[]" [loading]="page.busy()" [rowClass]="rowClass">
      <ng-template gcTableCell="actions" let-row>
-      <button type="button" gcButton variant="outline" (click)="select(row)">Imputar a cuenta</button>
+      @if(row['pending']){
+       <button type="button" gcButton variant="outline" (click)="select(row)">Imputar a cuenta</button>
+      }@else{
+       <span class="fin-muted">Ya imputada</span>
+      }
      </ng-template>
     </gc-data-table>
     <gc-pagination [index]="url.filters().page-1" [size]="url.filters().limit"
@@ -106,7 +110,7 @@ export class GcFinanceReconciliationPage {
  private operationId='';
  protected readonly columns:GcTableColumn[]=[
   {key:'fecha',label:'Fecha'},{key:'metodo',label:'Método'},{key:'referencia',label:'Referencia'},
-  {key:'monto',label:'Monto',numeric:true},{key:'actions',label:'Acciones'}];
+  {key:'monto',label:'Monto',numeric:true},{key:'estado',label:'Estado'},{key:'actions',label:'Acciones'}];
  protected readonly rowClass=(row:GcTableRow)=>
   this.selected()&&row['id']===this.selected()?.sourceId?'fin-table-row--active':null;
  constructor(){
@@ -122,10 +126,16 @@ export class GcFinanceReconciliationPage {
   const f=this.url.filters();
   const zone=this.zone();
   await this.page.load(async()=>{
-   const r=await firstValueFrom(this.api.pendingExternal({
-    sucursalId:f.sucursalId,sourceType:f.sourceType as FinanceExternalSourceType,page:f.page,limit:f.limit}));
+   const [r,accounts]=await Promise.all([
+    firstValueFrom(this.api.pendingExternal({
+     sucursalId:f.sucursalId,sourceType:f.sourceType as FinanceExternalSourceType,page:f.page,limit:f.limit})),
+    firstValueFrom(this.api.accounts({sucursalId:f.sucursalId,limit:100})),
+   ]);
+   const nameById=new Map(accounts.data.map(a=>[a.id,a.nombre]));
    return {total:r.meta.total,rows:r.data.map(x=>({id:x.sourceId,sourceId:x.sourceId,fecha:formatInstant(x.fecha,zone),
-    metodo:this.methodLabel(x.metodo),referencia:x.referencia??'—',monto:formatCurrency(x.monto),actions:x.sourceId}))};
+    metodo:this.methodLabel(x.metodo),referencia:x.referencia??'—',monto:formatCurrency(x.monto),
+    estado:x.estado==='REGISTRADO'?'Registrada en '+(nameById.get(x.cuentaFinancieraId??'')??'cuenta eliminada'):'Pendiente',
+    pending:x.estado!=='REGISTRADO'}))};
   },v=>v.rows.length===0);
  }
  protected async select(row:GcTableRow){
