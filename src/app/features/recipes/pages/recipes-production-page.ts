@@ -76,7 +76,14 @@ export class GcRecipesProductionPage {
   this.branch.branches().find(x=>x.id===this.branchId())?.zonaHoraria??'America/Guatemala');
  protected readonly gcError=gcErrorMessage;
  private readonly token=signal(0);
- constructor(){effect(()=>{
+ constructor(){
+  // Default to the operator's current branch instead of making them
+  // reselect it every time, matching /recipes/production/new.
+  effect(()=>{
+   const selected=this.branch.branchId();
+   if(selected&&!this.branchId())this.branchId.set(selected);
+  });
+  effect(()=>{
   const id=this.branchId(),pg=this.page(),from=this.from(),to=this.to();
   this.token();
   if(!id){this.state.reset();return}

@@ -29,13 +29,22 @@ interface IngredientForm {
  imports:[RouterLink,GcRecipesNav,GcInventoryPicker,GcSearchSelect],
  template:`<main class="rec-page">
   <gc-recipes-nav/><a class="rec-link" routerLink="/recipes/list">Volver a recetas</a>
+  @if(!isNew&&page.data()){
+   <nav class="rec-detail-index" aria-label="Secciones de la receta">
+    <a href="#recipe-datos">Datos</a>
+    <a href="#recipe-historial">Historial de fórmulas</a>
+    @if(publishedVersion()){<a href="#recipe-siguiente-paso">Siguiente paso</a>}
+    @if(editingFormula()){<a href="#recipe-formula">Fórmula</a>}
+    @if(viewingVersion()){<a href="#recipe-version">Versión</a>}
+   </nav>
+  }
   @if(page.busy()){<p role="status" class="rec-muted">Consultando receta…</p>}
   @if(page.status()==='error'){
    <section class="rec-card"><p class="rec-alert">{{pageError()}}</p>
     <button type="button" (click)="reload()">Reintentar</button></section>
   }
   @if(isNew||page.data()){
-   <section class="rec-card">
+   <section class="rec-card" id="recipe-datos">
     <div class="rec-top"><h2>{{isNew?'Nueva receta':'Datos de la receta'}}</h2>
      @if(page.data();as item){<span>{{item.activa?'Activa':'Inactiva'}}</span>}
     </div>
@@ -47,9 +56,23 @@ interface IngredientForm {
        [disabled]="!access.canManage()" required maxlength="160" minlength="3"/>
      </label>
      @if(isNew){
-      <gc-search-select class="rec-wide" id="recipe-kind" label="¿Para qué se utiliza?"
-       [value]="kind()" [items]="kindChoices" [searchable]="false" [clearable]="false"
-       [disabled]="!access.canManage()" (valueChange)="changeKind($event)"/>
+      <fieldset class="rec-type-grid rec-wide">
+       <legend>¿Para qué se utiliza?</legend>
+       <div class="rec-type-options">
+        <label [class.active]="kind()==='VENTA'">
+         <input type="radio" name="recipeKind" value="VENTA" [checked]="kind()==='VENTA'"
+          [disabled]="!access.canManage()" (change)="changeKind('VENTA')"/>
+         <strong>Producto de la carta</strong>
+         <small>Se vende a clientes; puedes comprobar ingredientes o revisar reglas de empaque.</small>
+        </label>
+        <label [class.active]="kind()==='PRODUCCION'">
+         <input type="radio" name="recipeKind" value="PRODUCCION" [checked]="kind()==='PRODUCCION'"
+          [disabled]="!access.canManage()" (change)="changeKind('PRODUCCION')"/>
+         <strong>Preparación de inventario</strong>
+         <small>Rinde un artículo del Inventario que alimenta otros productos.</small>
+        </label>
+       </div>
+      </fieldset>
       @if(kind()==='VENTA'){
 
        <gc-search-select class="rec-wide" id="recipe-variant" label="Presentación"
@@ -82,7 +105,7 @@ interface IngredientForm {
    </section>
 
    @if(!isNew){
-    <section class="rec-card">
+    <section class="rec-card" id="recipe-historial">
      <div class="rec-top"><h2>Historial de fórmulas</h2>
       @if(access.canManage()&&page.data()?.activa){<button type="button" (click)="startNewVersion()" [disabled]="busy()">Nueva fórmula</button>}
      </div>
@@ -122,7 +145,7 @@ interface IngredientForm {
 
    @if(!isNew&&page.data();as recipe){
     @if(publishedVersion();as version){
-     <section class="rec-card">
+     <section class="rec-card" id="recipe-siguiente-paso">
       <h2>Siguiente paso</h2>
       @if(recipe.tipo==='VENTA'){
        <p class="rec-note">Esta receta está publicada y lista para venderse. Puedes comprobar que haya ingredientes suficientes o revisar sus reglas de empaque.</p>
@@ -143,12 +166,12 @@ interface IngredientForm {
    }
 
    @if(isNew||editingFormula()){
-    <section class="rec-card">
+    <section class="rec-card" id="recipe-formula">
      <div class="rec-top">
       <h2 #formulaEditorHeading tabindex="-1">{{isNew?'Ingredientes de la receta':formulaVersionId()?'Fórmula en borrador':'Nueva fórmula'}}</h2>
       @if(!isNew){<button type="button" (click)="discardFormula()" [disabled]="busy()">Cerrar</button>}
      </div>
-     <div class="rec-section"><h3>Rendimiento de la fórmula</h3>
+     <div class="rec-section"><h3>{{isNew?'2. Rendimiento de la fórmula':'Rendimiento de la fórmula'}}</h3>
      <div class="rec-form rec-yield-grid">
       <gc-inventory-picker id="yield-unit" kind="unit" label="Unidad de rendimiento"
        [unitDimension]="kind()==='VENTA'?'UNIDAD':''"
@@ -209,7 +232,7 @@ interface IngredientForm {
     </section>
    }
    @if(viewingVersion();as selected){
-    <section class="rec-card">
+    <section class="rec-card" id="recipe-version">
      <div class="rec-top"><h2 #versionViewerHeading tabindex="-1">Ingredientes · Versión {{selected.numero}}</h2>
       <button type="button" (click)="viewingVersion.set(null)">Cerrar</button></div>
      <div class="rec-table-wrap"><table class="rec-table">
@@ -245,10 +268,6 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected readonly page=new GcPageState<RecipeRecord>();
  protected readonly name=signal('');
  protected readonly kind=signal<RecipeKind>('VENTA');
- protected readonly kindChoices=[
-  {id:'VENTA',label:'Producto de la carta'},
-  {id:'PRODUCCION',label:'Preparación de inventario'}
- ];
  protected readonly active=signal(true);
  protected readonly targetId=signal('');
  protected readonly variantSearch=signal('');

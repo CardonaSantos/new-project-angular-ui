@@ -91,3 +91,18 @@
 .rec-detail-eyebrow strong{color:var(--gc-on-surface)}
 
 h2[tabindex="-1"]:focus-visible,h3[tabindex="-1"]:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+
+/* Binary/few-choice decisions read clearer as selectable cards than as a
+ * dropdown with two entries — same convention as catalog's .cat-guide-types. */
+.rec-type-grid{border:0;padding:0;margin:0;min-width:0;display:grid;gap:.5rem}
+.rec-type-grid legend{font-size:.84rem;font-weight:650;margin-bottom:.1rem}
+.rec-type-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
+.rec-type-options label{display:grid;grid-template-columns:auto minmax(0,1fr);
+ gap:.1rem .45rem;align-items:center;min-width:0;cursor:pointer;
+ border:1px solid var(--gc-outline);padding:.55rem .62rem;border-radius:.55rem}
+.rec-type-options label.active{border-color:var(--gc-primary);background:var(--gc-surface-container)}
+.rec-type-options input{grid-row:1/3;accent-color:var(--gc-primary)}
+.rec-type-options strong{font-size:.84rem}
+.rec-type-options small{font-size:.73rem;color:var(--gc-on-surface-variant)}
+.rec-type-options label:focus-within{outline:2px solid var(--gc-primary);outline-offset:2px}
+@media(max-width:560px){.rec-type-options{grid-template-columns:1fr}}
