@@ -159,6 +159,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
     <label class="ord-pos-search-label"><span class="ord-pos-sr-only">Buscar producto</span>
      <input #productSearch type="search" aria-label="Buscar producto" [value]="query()" (input)="query.set($any($event.target).value)"
       placeholder="Nombre o presentación" autocomplete="off"/>
+     <span class="ord-pos-search-hint" aria-hidden="true">Atajo <kbd>/</kbd> para buscar</span>
     </label>
     <div class="ord-actions ord-pos-view-controls" role="group" aria-label="Visualización del catálogo">
      <button type="button" [class.active]="prefs.productLayout()==='visual'"
