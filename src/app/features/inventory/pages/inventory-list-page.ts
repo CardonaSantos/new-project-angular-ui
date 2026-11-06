@@ -75,6 +75,7 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
      <div class="inv-field"><label for="inv-search">Buscar artículo</label>
       <input id="inv-search" [value]="search()" (input)="search.set($any($event.target).value)"
        maxlength="100" placeholder="Nombre o código"/></div>
+     <button gcButton type="submit" variant="outline">Buscar</button>
     }
     @if(view!=='articles'){
      <gc-search-select id="inv-branch" label="Sucursal" [items]="branchChoices()"
@@ -98,7 +99,6 @@ function objectValue(value:GcTableRow[string]):string{return value==null?'':Stri
       [value]="url.filters().articuloId" placeholder="Todos los artículos"
       (valueChange)="setFilter('articuloId',$event)"/>
     }
-    @if(view==='articles'||view==='movements'){<button gcButton type="submit" variant="outline">Buscar</button>}
    </form>
    @if(!canRead()){<p role="alert" class="inv-alert">No tienes permiso para consultar inventario en esta sucursal.</p>}
    @else if(page.status()==='error'){<gc-error-state [message]="errorMessage()" (retry)="reload()"/>}
