@@ -203,4 +203,5 @@ export class GcReservationDetailPage implements OnInit {
   this.reservation.set(res.value);this.markingNoShow.set(false);
   this.notices.show('Reservación marcada como no asistió.','success');
  }
+ hasUnsavedChanges(){return (this.cancelling()||this.markingNoShow())&&!this.action.busy()}
 }
