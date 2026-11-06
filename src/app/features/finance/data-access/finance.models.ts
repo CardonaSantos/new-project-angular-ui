@@ -42,3 +42,32 @@ export type FinanceIntentAction='FIN_ACCOUNT_CREATE'|'FIN_ACCOUNT_RENAME'|'FIN_E
  'FIN_ROUTING_UPSERT'|'FIN_DAY_CLOSE'|'FIN_STATEMENT_IMPORT'|'FIN_STATEMENT_MATCH'|
  'FIN_STATEMENT_UNMATCH'|'FIN_LEDGER_REVERSE';
 export interface FinanceIntent{operationId:string;accion:FinanceIntentAction;sucursalId:string;expiresAt:string}
+
+export interface FinanceClosingSummary{
+ sucursalId:string;fechaOperativa:string;zonaHoraria:string;horaCorteOperativo:string;
+ periodoUtc:{desde:string;hastaExclusivo:string};
+ ventas:{cantidad:number;total:string};cobros:{cantidad:number;total:string};
+ reembolsos:{cantidad:number;total:string};pagosProveedor:{cantidad:number;total:string};
+ gastosOperativos:{cantidad:number;total:string};
+ libroFinanciero:{cantidadMovimientos:number;netoFirmado:string};
+ ajustesPorReversa:{cantidad:number;totalFirmado:string};
+ caja:{turnos:number;turnosAbiertos:number;ingresos:string;egresos:string;diferenciaArqueo:string};
+ ordenesAbiertas:number;puedeCerrar:boolean;advertencias:string[];nota:string;
+}
+export interface FinanceClosePreview{cerrado:boolean;cierreId?:string;cerradoEn?:string;resumen:FinanceClosingSummary}
+export interface FinanceClosing{
+ id:string;sucursalId:string;fechaOperativa:string;cerradoEn:string;
+ cerradoPorId:string;resumen:FinanceClosingSummary;
+}
+
+export type FinanceBankLineState='PENDIENTE'|'CONCILIADO';
+export interface FinanceBankLine{
+ id:string;cuentaFinancieraId:string;claveExterna:string;fecha:string;monto:string;
+ referencia:string|null;descripcion:string|null;movimientoFinancieroId:string|null;
+ importadoPorId:string;conciliadoPorId:string|null;conciliadoEn:string|null;
+ validacionReferencia:string|null;justificacionConciliacion:string|null;
+ creadoEn:string;estado:FinanceBankLineState;
+}
+export interface FinanceUnmatchedMovement{
+ id:string;referenciaTipo:string;referenciaId:string;monto:string;creadoEn:string;
+}

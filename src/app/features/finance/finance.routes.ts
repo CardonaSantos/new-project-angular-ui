@@ -26,5 +26,9 @@ export const FINANCE_ROUTES:Routes=[
   loadComponent:()=>import('./pages/finance-reconciliation-page').then(m=>m.GcFinanceReconciliationPage)},
  {path:'routing',data:{breadcrumb:'Enrutamiento'},title:'Enrutamiento — Gastro Core',
   canDeactivate:[gcUnsavedChangesGuard],
-  loadComponent:()=>import('./pages/finance-routing-page').then(m=>m.GcFinanceRoutingPage)}
+  loadComponent:()=>import('./pages/finance-routing-page').then(m=>m.GcFinanceRoutingPage)},
+ {path:'closing',data:{breadcrumb:'Cierre'},title:'Cierre diario — Gastro Core',
+  loadComponent:()=>import('./pages/finance-closing-page').then(m=>m.GcFinanceClosingPage)},
+ {path:'statements',data:{breadcrumb:'Extractos'},title:'Extractos bancarios — Gastro Core',
+  loadComponent:()=>import('./pages/finance-statements-page').then(m=>m.GcFinanceStatementsPage)}
 ];

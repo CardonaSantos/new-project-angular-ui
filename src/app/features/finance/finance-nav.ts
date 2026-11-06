@@ -12,6 +12,8 @@ import {RouterLink,RouterLinkActive} from '@angular/router';
   <a routerLink="/finance/expenses" routerLinkActive="active" ariaCurrentWhenActive="page">Gastos</a>
   <a routerLink="/finance/reconciliation" routerLinkActive="active" ariaCurrentWhenActive="page">Conciliación</a>
   <a routerLink="/finance/routing" routerLinkActive="active" ariaCurrentWhenActive="page">Enrutamiento</a>
+  <a routerLink="/finance/closing" routerLinkActive="active" ariaCurrentWhenActive="page">Cierre</a>
+  <a routerLink="/finance/statements" routerLinkActive="active" ariaCurrentWhenActive="page">Extractos</a>
  </nav>`,
  styleUrl:'./finance.scss'
 })

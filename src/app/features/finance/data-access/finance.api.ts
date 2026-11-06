@@ -6,7 +6,8 @@ import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
  FinancePage,FinanceAccount,FinanceAccountType,FinanceMovement,FinanceExpense,FinanceExpenseDetail,
  FinanceExpenseOrigin,FinanceExpenseState,FinancePendingExternal,FinanceExternalSourceType,FinanceRoute,FinanceRouteMethod,
- FinanceIntent,FinanceIntentAction
+ FinanceIntent,FinanceIntentAction,FinanceClosePreview,FinanceClosing,FinanceBankLine,FinanceBankLineState,
+ FinanceUnmatchedMovement
 } from './finance.models';
 
 export function financeParams(input:object):HttpParams{
@@ -64,5 +65,39 @@ export class FinanceApi{
  upsertRoute(dto:{operationId:string;sucursalId:string;metodo:FinanceRouteMethod;
   cuentaFinancieraId:string;activa?:boolean}){
   return this.http.put<FinanceRoute>(this.e.routing,dto,silent);
+ }
+ closingPreview(q:{sucursalId:string;fechaOperativa:string}){
+  return this.http.get<FinanceClosePreview>(this.e.closingPreview,{params:financeParams(q),...silent});
+ }
+ closingDetail(q:{sucursalId:string;fechaOperativa:string}){
+  return this.http.get<FinanceClosing>(this.e.closing,{params:financeParams(q),...silent});
+ }
+ confirmClosing(dto:{operationId:string;sucursalId:string;fechaOperativa:string}){
+  return this.http.post<FinanceClosing>(this.e.closing,dto,silent);
+ }
+ bankStatements(q:{sucursalId:string;cuentaFinancieraId:string;estado?:FinanceBankLineState;
+  page?:number;limit?:number}){
+  return this.http.get<FinancePage<FinanceBankLine>>(this.e.bankStatements,{params:financeParams(q),...silent});
+ }
+ bankLedgerPending(q:{sucursalId:string;cuentaFinancieraId:string;page?:number;limit?:number}){
+  return this.http.get<FinancePage<FinanceUnmatchedMovement>>(this.e.bankLedgerPending,{params:financeParams(q),...silent});
+ }
+ importBankLines(dto:{operationId:string;sucursalId:string;cuentaFinancieraId:string;lineas:{
+  claveExterna:string;fecha:string;monto:string;referencia?:string;descripcion?:string}[]}){
+  return this.http.post<{cuentaFinancieraId:string;importadas:number;lineaIds:string[]}>(
+   this.e.bankImport,dto,silent);
+ }
+ matchBankLine(dto:{operationId:string;sucursalId:string;lineaId:string;movimientoId:string;
+  forzarConciliacion?:boolean;justificacion?:string}){
+  return this.http.post<{lineaId:string;movimientoId:string;estado:string;validacionReferencia:string}>(
+   this.e.bankMatch,dto,silent);
+ }
+ unmatchBankLine(dto:{operationId:string;sucursalId:string;lineaId:string;motivo:string}){
+  return this.http.post<{lineaId:string;estado:string;movimientoAnteriorId:string}>(
+   this.e.bankUnmatch,dto,silent);
+ }
+ reverseMovement(dto:{operationId:string;sucursalId:string;movimientoId:string;motivo:string}){
+  return this.http.post<{reversaId:string;movimientoOriginalId:string;
+   movimientoReversaId:string;monto:string}>(this.e.reversals,dto,silent);
  }
 }
