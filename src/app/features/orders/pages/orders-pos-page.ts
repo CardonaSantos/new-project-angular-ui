@@ -678,7 +678,7 @@ export class GcOrdersPosPage{
     hasUnprocessed?' · Pendiente de procesar antes de cerrar':
     ' · Procesada sin comanda de Cocina';
    const message=existing
-    ?this.cart().length+' productos agregados a '+data.numero+status+'.'
+    ?dto.lineas.length+(dto.lineas.length===1?' producto agregado a ':' productos agregados a ')+data.numero+status+'.'
     :'Orden '+data.numero+' creada'+status+'.';
    this.success.set(message);
    this.notices.show(message,'success',7000);
