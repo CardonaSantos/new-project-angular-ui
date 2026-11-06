@@ -1,0 +1,41 @@
+
+:host{display:block;width:100%;min-width:0}
+.rsv-page{display:grid;gap:.8rem;min-width:0;width:100%}
+.rsv-narrow{width:min(100%,56rem);margin-inline:auto}
+.rsv-card{background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius);padding:clamp(.7rem,1.5vw,1rem);display:grid;gap:.75rem;min-width:0}
+.rsv-card h2,.rsv-card h3{font-size:1.1rem;margin:0}
+.rsv-row,.rsv-actions,.rsv-toolbar{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}
+.rsv-row{justify-content:space-between}.rsv-toolbar{align-items:end}.rsv-toolbar>:first-child{flex:1 1 14rem}
+.rsv-field{display:grid;gap:.28rem;min-width:0;align-content:start}.rsv-field label{font-size:.88rem;font-weight:600}
+.rsv-field input,.rsv-field select,.rsv-field textarea{width:100%;min-width:0;min-height:40px;padding:.42rem .65rem;border:1px solid var(--gc-outline);border-radius:.6rem;background:var(--gc-surface);color:var(--gc-on-surface);font:inherit}
+.rsv-field input:focus-visible,.rsv-field select:focus-visible,.rsv-field textarea:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+.rsv-muted,.rsv-field small{font-size:.85rem;color:var(--gc-on-surface-variant)}
+.rsv-alert{border:1px solid var(--gc-error);border-radius:.6rem;padding:.75rem;color:var(--gc-error);overflow-wrap:anywhere}
+.rsv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.rsv-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+.rsv-kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}.rsv-kv dt{font-size:.85rem;color:var(--gc-on-surface-variant)}.rsv-kv dd{margin:.2rem 0 0;overflow-wrap:anywhere;font-weight:600}
+.rsv-actions button,.rsv-actions a{min-height:44px}
+.rsv-state-badge{font-size:.82rem;font-weight:650;color:var(--gc-on-surface-variant);white-space:nowrap}
+.rsv-state-badge--pending{color:var(--gc-on-surface-variant)}
+.rsv-state-badge--confirmed{color:var(--gc-primary)}
+.rsv-state-badge--done{color:var(--gc-primary)}
+.rsv-state-badge--cancelled,.rsv-state-badge--noshow{color:var(--gc-error)}
+@media(max-width:640px){.rsv-grid,.rsv-grid-3{grid-template-columns:1fr}.rsv-actions{align-items:stretch;flex-direction:column}.rsv-actions button,.rsv-actions a{width:100%}}
+@media(pointer:coarse){.rsv-field input,.rsv-field select,.rsv-field textarea{min-height:44px}}
+.rsv-field select option{background:var(--gc-surface);color:var(--gc-on-surface)}
+
+/* The reservations list filters use the shared two-column filter grid. */
+.rsv-toolbar.gc-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem .85rem;align-items:end}
+.rsv-toolbar.gc-filter-grid > *{min-width:0;max-width:100%;width:100%}
+.rsv-toolbar.gc-filter-grid > button{width:auto;justify-self:start}
+@media(max-width:640px){.rsv-toolbar.gc-filter-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Table-availability chips on the create/edit form. */
+.rsv-table-chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.rsv-table-chip{border:1px solid var(--gc-outline);border-radius:.6rem;padding:.4rem .7rem;font-size:.85rem;cursor:pointer;background:var(--gc-surface)}
+.rsv-table-chip--selected{border-color:var(--gc-primary);color:var(--gc-primary);font-weight:650}
+.rsv-table-chip--unavailable{opacity:.5;cursor:not-allowed;text-decoration:line-through}
+
+/* Audit-event timeline on the reservation detail page. */
+.rsv-timeline{display:grid;gap:.5rem;list-style:none;margin:0;padding:0}
+.rsv-timeline li{border-left:2px solid var(--gc-outline-variant);padding-left:.75rem}

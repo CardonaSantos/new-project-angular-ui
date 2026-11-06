@@ -70,3 +70,22 @@ export function formatInstant(
 export function calendarDateAtBranch(value: string, timeZone: string): string {
   return parseIsoInstant(value).tz(checkedTimeZone(timeZone)).format('YYYY-MM-DD');
 }
+
+/** Clock time (HH:mm) a given instant falls on in the branch zone, for prefilling time inputs. */
+export function clockTimeAtBranch(value: string, timeZone: string): string {
+  return parseIsoInstant(value).tz(checkedTimeZone(timeZone)).format('HH:mm');
+}
+
+/**
+ * Build a zoned ISO instant (with explicit UTC offset) from a calendar date and a
+ * HH:mm clock time, both interpreted in the given branch IANA time zone. Used by
+ * forms that let the user pick a local date/time (e.g. a reservation window) and
+ * must submit an instant the backend's strict offset-bearing ISO8601 validator accepts.
+ */
+export function zonedInstantFrom(date: string, time: string, timeZone: string): string {
+  parseCalendarDate(date);
+  if (!/^\d{2}:\d{2}$/.test(time)) throw new Error('Hora inválida: se requiere HH:mm.');
+  const zoned = dayjs.tz(`${date} ${time}`, 'YYYY-MM-DD HH:mm', checkedTimeZone(timeZone));
+  if (!zoned.isValid()) throw new Error('Fecha u hora inexistente.');
+  return zoned.format();
+}
