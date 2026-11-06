@@ -32,11 +32,9 @@ const AMOUNT_PATTERN=/^(?:0|[1-9]\d{0,13})(?:\.\d{1,2})?$/;
   <gc-finance-nav/>
   <form class="fin-card fin-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
    <fieldset class="fin-section"><legend>1. Origen del gasto</legend>
-    <div class="fin-row">
-     <button type="button" gcButton [variant]="form.controls.origen.value==='CAJA'?'primary':'outline'"
-      (click)="setOrigin('CAJA')">Desde caja</button>
-     <button type="button" gcButton [variant]="form.controls.origen.value==='CUENTA_FINANCIERA'?'primary':'outline'"
-      (click)="setOrigin('CUENTA_FINANCIERA')">Desde cuenta financiera</button>
+    <div class="fin-row" role="radiogroup" aria-label="Origen del gasto">
+     <label><input type="radio" name="origen" value="CAJA" formControlName="origen"/> Desde caja</label>
+     <label><input type="radio" name="origen" value="CUENTA_FINANCIERA" formControlName="origen"/> Desde cuenta financiera</label>
     </div>
     @if(form.controls.origen.value==='CAJA'){
      @if(ownShift()){
@@ -59,7 +57,8 @@ const AMOUNT_PATTERN=/^(?:0|[1-9]\d{0,13})(?:\.\d{1,2})?$/;
        [attr.aria-invalid]="form.controls.monto.invalid&&form.controls.monto.touched"/>
      </div>
      <div class="fin-field"><label for="expense-category">Categoría</label>
-      <input id="expense-category" formControlName="categoria" maxlength="100" placeholder="Ej. Mantenimiento"/>
+      <input id="expense-category" formControlName="categoria" maxlength="100" placeholder="Ej. Mantenimiento"
+       [attr.aria-invalid]="form.controls.categoria.invalid&&form.controls.categoria.touched"/>
      </div>
     </div>
     <div class="fin-field"><label for="expense-description">Descripción</label>
@@ -74,7 +73,8 @@ const AMOUNT_PATTERN=/^(?:0|[1-9]\d{0,13})(?:\.\d{1,2})?$/;
        (valueChange)="supplierId.set($event)" (searchChange)="supplierSearch.next($event)"/>
      </div>
      <div class="fin-field"><label for="expense-document">Documento de referencia (opcional)</label>
-      <input id="expense-document" formControlName="documentoReferencia" maxlength="100" placeholder="Ej. Factura 00123"/>
+      <input id="expense-document" formControlName="documentoReferencia" maxlength="100" placeholder="Ej. Factura 00123"
+       [attr.aria-invalid]="form.controls.documentoReferencia.invalid&&form.controls.documentoReferencia.touched"/>
      </div>
     </div>
    </fieldset>
@@ -83,6 +83,7 @@ const AMOUNT_PATTERN=/^(?:0|[1-9]\d{0,13})(?:\.\d{1,2})?$/;
     <button type="submit" gcButton [disabled]="!canSubmit()">
      {{action.busy()?'Registrando…':'Registrar gasto'}}</button>
    </div>
+   @if(!canSubmit()&&blockedReason();as reason){<small class="fin-muted">{{reason}}</small>}
   </form>
  </div>`,
  styleUrl:'../finance.scss'
@@ -115,18 +116,30 @@ export class GcFinanceExpenseCreatePage implements OnInit {
   origen:new FormControl<FinanceExpenseOrigin>('CAJA',{nonNullable:true}),
   cuentaFinancieraId:new FormControl('',{nonNullable:true}),
   monto:new FormControl('',{nonNullable:true,validators:[Validators.required,Validators.pattern(AMOUNT_PATTERN)]}),
-  categoria:new FormControl('',{nonNullable:true}),
-  descripcion:new FormControl('',{nonNullable:true,validators:Validators.required}),
-  documentoReferencia:new FormControl('',{nonNullable:true}),
+  categoria:new FormControl('',{nonNullable:true,validators:Validators.minLength(2)}),
+  descripcion:new FormControl('',{nonNullable:true,validators:[Validators.required,Validators.minLength(3)]}),
+  documentoReferencia:new FormControl('',{nonNullable:true,validators:Validators.minLength(2)}),
  });
  protected canSubmit(){
   if(this.form.invalid||this.action.busy()||!this.intentReady())return false;
   if(this.form.controls.origen.value==='CAJA')return !!this.ownShift();
   return !!this.form.controls.cuentaFinancieraId.value;
  }
+ protected blockedReason(){
+  if(!this.intentReady())return 'Preparando el formulario…';
+  if(this.form.controls.origen.value==='CAJA'&&!this.ownShift())
+   return 'Abre un turno de caja en esta sucursal para continuar.';
+  if(this.form.controls.origen.value==='CUENTA_FINANCIERA'&&!this.form.controls.cuentaFinancieraId.value)
+   return 'Selecciona una cuenta financiera.';
+  if(this.form.invalid&&this.form.touched)return 'Revisa los campos marcados en rojo.';
+  return null;
+ }
  constructor(){
   this.supplierSearch.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
    .subscribe(term=>void this.searchSuppliers(term));
+  this.form.controls.origen.valueChanges.pipe(takeUntilDestroyed()).subscribe(origen=>{
+   if(origen==='CAJA')this.form.controls.cuentaFinancieraId.setValue('');
+  });
   effect(()=>{if(this.branch.branchId())void untracked(()=>this.cash.refresh(true))});
  }
  async ngOnInit(){
@@ -142,10 +155,6 @@ export class GcFinanceExpenseCreatePage implements OnInit {
    this.accounts.set(accounts.data.filter(a=>a.activa));
   }catch(e){this.saveError.set(gcErrorMessage(e))}
   finally{this.accountsBusy.set(false)}
- }
- protected setOrigin(origen:FinanceExpenseOrigin){
-  this.form.controls.origen.setValue(origen);
-  if(origen==='CAJA')this.form.controls.cuentaFinancieraId.setValue('');
  }
  private async searchSuppliers(term:string){
   const gen=++this.supplierGeneration;this.supplierBusy.set(true);

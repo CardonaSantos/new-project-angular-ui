@@ -5,7 +5,7 @@ import {API_ENDPOINTS} from '../../../core/http/api-endpoints';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
  FinancePage,FinanceAccount,FinanceAccountType,FinanceMovement,FinanceExpense,FinanceExpenseDetail,
- FinanceExpenseOrigin,FinancePendingExternal,FinanceExternalSourceType,FinanceRoute,FinanceRouteMethod,
+ FinanceExpenseOrigin,FinanceExpenseState,FinancePendingExternal,FinanceExternalSourceType,FinanceRoute,FinanceRouteMethod,
  FinanceIntent,FinanceIntentAction
 } from './finance.models';
 
@@ -31,10 +31,14 @@ export class FinanceApi{
  createAccount(dto:{operationId:string;sucursalId:string;nombre:string;tipo:FinanceAccountType}){
   return this.http.post<FinanceAccount>(this.e.accounts,dto,silent);
  }
+ updateAccount(id:string,dto:{operationId:string;nombre:string}){
+  return this.http.patch<FinanceAccount>(this.e.account(id),dto,silent);
+ }
  accountMovements(id:string,q:{page?:number;limit?:number}={}){
   return this.http.get<FinancePage<FinanceMovement>>(this.e.accountMovements(id),{params:financeParams(q),...silent});
  }
- expenses(q:{sucursalId:string;page?:number;limit?:number}){
+ expenses(q:{sucursalId:string;page?:number;limit?:number;origen?:FinanceExpenseOrigin;
+  estado?:FinanceExpenseState;categoria?:string;desde?:string;hasta?:string}){
   return this.http.get<FinancePage<FinanceExpense>>(this.e.expenses,{params:financeParams(q),...silent});
  }
  expense(id:string){return this.http.get<FinanceExpenseDetail>(this.e.expense(id))}

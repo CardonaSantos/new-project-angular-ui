@@ -14,7 +14,7 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
-import {formatCurrency,formatCalendarDate} from '../../../shared/formatting';
+import {formatCurrency,formatInstant} from '../../../shared/formatting';
 import {GcFinanceNav} from '../finance-nav';
 import {FinanceUrlState} from '../data-access/finance-url-state';
 import {FinanceApi} from '../data-access/finance.api';
@@ -62,7 +62,7 @@ const SOURCE_CHOICES:{id:FinanceExternalSourceType;label:string}[]=[
     <dl class="fin-kv">
      <div><dt>Método</dt><dd>{{methodLabel(sel.metodo)}}</dd></div>
      <div><dt>Monto</dt><dd>{{formatCurrency(sel.monto)}}</dd></div>
-     <div><dt>Fecha</dt><dd>{{formatCalendarDate(sel.fecha)}}</dd></div>
+     <div><dt>Fecha</dt><dd>{{formatInstant(sel.fecha,zone())}}</dd></div>
      <div><dt>Referencia</dt><dd>{{sel.referencia??'—'}}</dd></div>
     </dl>
     <div class="fin-field"><label for="rec-account">Cuenta financiera destino</label>
@@ -99,7 +99,9 @@ export class GcFinanceReconciliationPage {
  protected readonly intentReady=signal(false);
  protected readonly action=new GcConfirmedAction();
  protected readonly formatCurrency=formatCurrency;
- protected readonly formatCalendarDate=formatCalendarDate;
+ protected readonly formatInstant=formatInstant;
+ protected readonly zone=computed(()=>
+  this.branch.branches().find(b=>b.id===this.url.filters().sucursalId)?.zonaHoraria??'America/Guatemala');
  protected readonly methodLabel=(m:string)=>METODO_LABEL[m]??m;
  private operationId='';
  protected readonly columns:GcTableColumn[]=[
@@ -118,10 +120,11 @@ export class GcFinanceReconciliationPage {
  protected async onPage(e:GcPageChange){await this.url.patch({page:e.index+1,limit:e.size})}
  private async load(){
   const f=this.url.filters();
+  const zone=this.zone();
   await this.page.load(async()=>{
    const r=await firstValueFrom(this.api.pendingExternal({
     sucursalId:f.sucursalId,sourceType:f.sourceType as FinanceExternalSourceType,page:f.page,limit:f.limit}));
-   return {total:r.meta.total,rows:r.data.map(x=>({id:x.sourceId,sourceId:x.sourceId,fecha:formatCalendarDate(x.fecha),
+   return {total:r.meta.total,rows:r.data.map(x=>({id:x.sourceId,sourceId:x.sourceId,fecha:formatInstant(x.fecha,zone),
     metodo:this.methodLabel(x.metodo),referencia:x.referencia??'—',monto:formatCurrency(x.monto),actions:x.sourceId}))};
   },v=>v.rows.length===0);
  }

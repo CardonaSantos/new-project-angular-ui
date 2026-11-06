@@ -38,7 +38,7 @@ export interface FinanceRoute{
  cuentaFinancieraId:string;cuentaNombre:string;activa:boolean;actualizadoEn:string;
 }
 
-export type FinanceIntentAction='FIN_ACCOUNT_CREATE'|'FIN_EXPENSE_CREATE'|'FIN_EXTERNAL_POST'|
+export type FinanceIntentAction='FIN_ACCOUNT_CREATE'|'FIN_ACCOUNT_RENAME'|'FIN_EXPENSE_CREATE'|'FIN_EXTERNAL_POST'|
  'FIN_ROUTING_UPSERT'|'FIN_DAY_CLOSE'|'FIN_STATEMENT_IMPORT'|'FIN_STATEMENT_MATCH'|
  'FIN_STATEMENT_UNMATCH'|'FIN_LEDGER_REVERSE';
 export interface FinanceIntent{operationId:string;accion:FinanceIntentAction;sucursalId:string;expiresAt:string}
