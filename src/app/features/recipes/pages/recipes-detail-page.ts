@@ -117,20 +117,20 @@ interface IngredientForm {
    }
 
    @if(!isNew&&page.data();as recipe){
-    @if(recipe.versionPublicada){
+    @if(publishedVersion();as version){
      <section class="rec-card">
       <h2>Siguiente paso</h2>
       @if(recipe.tipo==='VENTA'){
        <p class="rec-note">Esta receta está publicada y lista para venderse. Puedes comprobar que haya ingredientes suficientes o revisar sus reglas de empaque.</p>
        <div class="rec-actions">
-        <a class="rec-button rec-primary" routerLink="/recipes/check" [queryParams]="checkQueryParams(recipe)">
+        <a class="rec-button rec-primary" routerLink="/recipes/check" [queryParams]="checkQueryParams(recipe,version)">
          Comprobar ingredientes</a>
         @if(recipe.varianteId){<a class="rec-button" routerLink="/recipes/packaging">Reglas de empaque</a>}
        </div>
       }@else{
        <p class="rec-note">Esta preparación está publicada. Puedes registrar una producción con esta fórmula.</p>
        <div class="rec-actions">
-        <a class="rec-button rec-primary" routerLink="/recipes/production/new" [queryParams]="productionQueryParams(recipe)">
+        <a class="rec-button rec-primary" routerLink="/recipes/production/new" [queryParams]="productionQueryParams(recipe,version)">
          Registrar producción</a>
        </div>
       }
@@ -281,6 +281,11 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected readonly destination=recipeDestination;
  protected readonly quantity=readableQuantity;
  protected readonly versions=computed(()=>this.page.data()?.recetaVersionesComoReceta??[]);
+ /** The record's `versionPublicada` convenience field isn't reliably populated;
+  *  every other published-version lookup in this file (e.g. startNewVersion)
+  *  derives it from the versions list instead, so "Siguiente paso" does too. */
+ protected readonly publishedVersion=computed(()=>
+  this.versions().find(v=>v.activa&&v.publicadaEn)??null);
  protected readonly validation=computed(()=>validateFormula(this.versionDto(),this.kind()==='PRODUCCION'?this.targetId():undefined));
  private formulaInitial='';
  private saved=false;
@@ -314,12 +319,12 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  }
  /** Hands the published formula's identity to /recipes/check so it lands
   *  pre-selected instead of making the operator search for it again. */
- protected checkQueryParams(recipe:RecipeRecord){
-  return {recetaId:recipe.id,recetaVersionId:recipe.versionPublicada?.id??'',
+ protected checkQueryParams(recipe:RecipeRecord,version:RecipeVersion){
+  return {recetaId:recipe.id,recetaVersionId:version.id,
    varianteId:recipe.varianteId??'',nombre:recipe.nombre};
  }
- protected productionQueryParams(recipe:RecipeRecord){
-  return {recetaId:recipe.id,recetaVersionId:recipe.versionPublicada?.id??'',nombre:recipe.nombre};
+ protected productionQueryParams(recipe:RecipeRecord,version:RecipeVersion){
+  return {recetaId:recipe.id,recetaVersionId:version.id,nombre:recipe.nombre};
  }
  protected pageError(){return gcErrorMessage(this.page.error())}
  protected async reload(){
