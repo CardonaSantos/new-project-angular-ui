@@ -1,5 +1,5 @@
 import {Component,computed,effect,inject,signal} from '@angular/core';
-import {Router,RouterLink} from '@angular/router';
+import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
@@ -22,6 +22,7 @@ import {GcRecipesNav} from '../recipes-nav';
   <section class="rec-card">
    <h2>Registrar producción</h2>
    <p class="rec-note">Prepara un lote para el inventario. Puedes guardarlo para revisar o confirmarlo directamente.</p>
+   @if(arrivedFromRecipe()){<p class="rec-note"><strong>Preparación preseleccionada</strong> desde su ficha. Elige la sucursal y ubicación para continuar.</p>}
 
    <div class="rec-section">
     <h3>1. Preparación a producir</h3>
@@ -118,7 +119,9 @@ export class GcRecipesProductionFormPage implements GcDirtyAware {
  private readonly api=inject(RecipesApi);
  private readonly inventory=inject(InventoryApi);
  private readonly router=inject(Router);
+ private readonly route=inject(ActivatedRoute);
  private readonly dialog=inject(ConfirmDialogService);
+ protected readonly arrivedFromRecipe=signal(false);
  protected readonly branchId=signal('');
  protected readonly recipeId=signal('');
  protected readonly recipes=signal<RecipeOption[]>([]);
@@ -163,6 +166,17 @@ export class GcRecipesProductionFormPage implements GcDirtyAware {
   this.recipeSearchTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
    .subscribe(term=>{this.search.set(term);void this.searchRecipes()});
   void this.searchRecipes();
+  // Arriving from a recipe's "Siguiente paso" link: preselect it instead of
+  // making the operator search for the same preparation they just came from.
+  const qp=this.route.snapshot.queryParamMap;
+  const recetaId=qp.get('recetaId'),recetaVersionId=qp.get('recetaVersionId');
+  if(recetaId&&recetaVersionId){
+   this.recipes.update(list=>[{id:recetaId,label:qp.get('nombre')||'Preparación seleccionada',
+    tipo:'PRODUCCION',activa:true,versionActiva:null,versionActivaId:recetaVersionId,
+    destino:{id:null,nombre:''},rendimiento:null},...list]);
+   this.arrivedFromRecipe.set(true);
+   this.chooseRecipe(recetaId);
+  }
  }
  hasUnsavedChanges(){return !this.saved&&!!(this.recipeId()||this.destinationId()||this.originId()||this.expiry()||this.pending)}
  protected clearPreview(){this.preview.set(null)}

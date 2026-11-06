@@ -116,6 +116,28 @@ interface IngredientForm {
     </section>
    }
 
+   @if(!isNew&&page.data();as recipe){
+    @if(recipe.versionPublicada){
+     <section class="rec-card">
+      <h2>Siguiente paso</h2>
+      @if(recipe.tipo==='VENTA'){
+       <p class="rec-note">Esta receta está publicada y lista para venderse. Puedes comprobar que haya ingredientes suficientes o revisar sus reglas de empaque.</p>
+       <div class="rec-actions">
+        <a class="rec-button rec-primary" routerLink="/recipes/check" [queryParams]="checkQueryParams(recipe)">
+         Comprobar ingredientes</a>
+        @if(recipe.varianteId){<a class="rec-button" routerLink="/recipes/packaging">Reglas de empaque</a>}
+       </div>
+      }@else{
+       <p class="rec-note">Esta preparación está publicada. Puedes registrar una producción con esta fórmula.</p>
+       <div class="rec-actions">
+        <a class="rec-button rec-primary" routerLink="/recipes/production/new" [queryParams]="productionQueryParams(recipe)">
+         Registrar producción</a>
+       </div>
+      }
+     </section>
+    }
+   }
+
    @if(isNew||editingFormula()){
     <section class="rec-card">
      <div class="rec-top">
@@ -289,6 +311,15 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
    return;
   }
   await this.reload();
+ }
+ /** Hands the published formula's identity to /recipes/check so it lands
+  *  pre-selected instead of making the operator search for it again. */
+ protected checkQueryParams(recipe:RecipeRecord){
+  return {recetaId:recipe.id,recetaVersionId:recipe.versionPublicada?.id??'',
+   varianteId:recipe.varianteId??'',nombre:recipe.nombre};
+ }
+ protected productionQueryParams(recipe:RecipeRecord){
+  return {recetaId:recipe.id,recetaVersionId:recipe.versionPublicada?.id??'',nombre:recipe.nombre};
  }
  protected pageError(){return gcErrorMessage(this.page.error())}
  protected async reload(){

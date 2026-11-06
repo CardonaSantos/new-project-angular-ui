@@ -29,7 +29,8 @@ import {GcRecipesNav} from '../recipes-nav';
      <div class="rec-metric"><span>Cantidad elaborada</span>
       <strong>{{number(doc.cantidadProducida)}} {{doc.articuloResultado?.unidadBase?.codigo??''}}</strong></div>
      <div class="rec-metric"><span>Receta utilizada</span>
-      <strong>{{doc.recetaVersion.receta.nombre}}</strong></div>
+      <a class="rec-link" [routerLink]="['/recipes/list',doc.recetaVersion.receta.id]">
+       {{doc.recetaVersion.receta.nombre}}</a></div>
      <div class="rec-metric"><span>Ubicación de destino</span>
       <strong>{{doc.ubicacionDestino.nombre}}</strong></div>
      <div class="rec-metric"><span>Fecha</span><strong>{{date(doc.creadoEn)}}</strong></div>

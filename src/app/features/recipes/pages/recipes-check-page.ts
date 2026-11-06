@@ -1,4 +1,5 @@
 import {Component,computed,inject,signal} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
 import {Subject,debounceTime,distinctUntilChanged} from 'rxjs';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
@@ -22,6 +23,7 @@ import {GcRecipesNav} from '../recipes-nav';
  <section class="rec-card">
   <div class="rec-top"><h2>Comprobar ingredientes de la carta</h2></div>
   <p class="rec-note">Comprueba cuántos ingredientes se necesitarían para preparar un producto, incluidos los extras y los materiales de entrega. No registra un pedido ni descuenta existencias.</p>
+  @if(arrivedFromRecipe()){<p class="rec-note"><strong>Receta preseleccionada</strong> desde su ficha. Elige una sucursal para continuar.</p>}
 
   <div class="rec-section">
    <h3>1. Producto y sucursal</h3>
@@ -120,12 +122,25 @@ export class GcRecipesCheckPage {
  protected readonly warehouseChoices=computed(()=>this.warehouses().map(w=>({id:w.id,label:w.nombre})));
  protected readonly modeChoices=PACKAGING_MODES.map(m=>({id:m.value,label:m.label}));
  protected readonly searchBusy=signal(false);
+ protected readonly arrivedFromRecipe=signal(false);
+ private readonly route=inject(ActivatedRoute);
  private readonly recipeSearchTerms=new Subject<string>();
  private recipeQueryGeneration=0;
  constructor(){
   this.recipeSearchTerms.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
    .subscribe(term=>{this.search.set(term);void this.loadRecipes()});
   void this.loadRecipes();
+  // Arriving from a recipe's "Siguiente paso" link: preselect it instead of
+  // making the operator search for the same recipe they just came from.
+  const qp=this.route.snapshot.queryParamMap;
+  const recetaId=qp.get('recetaId'),recetaVersionId=qp.get('recetaVersionId');
+  if(recetaId&&recetaVersionId){
+   this.recipes.update(list=>[{id:recetaId,label:qp.get('nombre')||'Receta seleccionada',
+    tipo:'VENTA',activa:true,versionActiva:null,versionActivaId:recetaVersionId,
+    destino:{id:qp.get('varianteId')||null,nombre:''},rendimiento:null},...list]);
+   this.arrivedFromRecipe.set(true);
+   void this.chooseRecipe(recetaId);
+  }
  }
  protected queueRecipeSearch(value:string){this.recipeSearchTerms.next(value)}
  protected setMode(value:string){this.mode.set(value as PackagingMode);this.clear()}

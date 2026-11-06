@@ -1,4 +1,5 @@
 import {Component,inject,OnInit,signal,computed} from '@angular/core';
+import {RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
 import {InventoryApi} from '../../inventory/data-access/inventory.api';
@@ -21,12 +22,12 @@ interface ExtraLine {
  sustituyeArticuloId:string;sustituyeLabel:string;
 }
 @Component({
- selector:'gc-recipes-extras-page',imports:[GcRecipesNav,GcInventoryPicker,GcSearchSelect],
+ selector:'gc-recipes-extras-page',imports:[RouterLink,GcRecipesNav,GcInventoryPicker,GcSearchSelect],
  template:`<main class="rec-page">
   <gc-recipes-nav/>
   <section class="rec-card">
    <div class="rec-top"><h2>Ingredientes de extras</h2>
-    <a class="rec-link" href="/catalog/extras">Administrar extras</a></div>
+    <a class="rec-link" routerLink="/catalog/extras">Administrar extras</a></div>
       <div class="rec-filters">
     <label class="rec-field">Buscar extra
      <input [value]="search()" (input)="search.set($any($event.target).value)" maxlength="120"
