@@ -1,4 +1,4 @@
-import {Component,computed,inject,OnInit,signal} from '@angular/core';
+import {Component,computed,ElementRef,inject,OnInit,signal,viewChild} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
@@ -29,13 +29,22 @@ interface IngredientForm {
  imports:[RouterLink,GcRecipesNav,GcInventoryPicker,GcSearchSelect],
  template:`<main class="rec-page">
   <gc-recipes-nav/><a class="rec-link" routerLink="/recipes/list">Volver a recetas</a>
+  @if(!isNew&&page.data()){
+   <nav class="rec-detail-index" aria-label="Secciones de la receta">
+    <a href="#recipe-datos">Datos</a>
+    <a href="#recipe-historial">Historial de fórmulas</a>
+    @if(publishedVersion()){<a href="#recipe-siguiente-paso">Siguiente paso</a>}
+    @if(editingFormula()){<a href="#recipe-formula">Fórmula</a>}
+    @if(viewingVersion()){<a href="#recipe-version">Versión</a>}
+   </nav>
+  }
   @if(page.busy()){<p role="status" class="rec-muted">Consultando receta…</p>}
   @if(page.status()==='error'){
    <section class="rec-card"><p class="rec-alert">{{pageError()}}</p>
     <button type="button" (click)="reload()">Reintentar</button></section>
   }
   @if(isNew||page.data()){
-   <section class="rec-card">
+   <section class="rec-card" id="recipe-datos">
     <div class="rec-top"><h2>{{isNew?'Nueva receta':'Datos de la receta'}}</h2>
      @if(page.data();as item){<span>{{item.activa?'Activa':'Inactiva'}}</span>}
     </div>
@@ -47,9 +56,23 @@ interface IngredientForm {
        [disabled]="!access.canManage()" required maxlength="160" minlength="3"/>
      </label>
      @if(isNew){
-      <gc-search-select class="rec-wide" id="recipe-kind" label="¿Para qué se utiliza?"
-       [value]="kind()" [items]="kindChoices" [searchable]="false" [clearable]="false"
-       [disabled]="!access.canManage()" (valueChange)="changeKind($event)"/>
+      <fieldset class="rec-type-grid rec-wide">
+       <legend>¿Para qué se utiliza?</legend>
+       <div class="rec-type-options">
+        <label [class.active]="kind()==='VENTA'">
+         <input type="radio" name="recipeKind" value="VENTA" [checked]="kind()==='VENTA'"
+          [disabled]="!access.canManage()" (change)="changeKind('VENTA')"/>
+         <strong>Producto de la carta</strong>
+         <small>Se vende a clientes; puedes comprobar ingredientes o revisar reglas de empaque.</small>
+        </label>
+        <label [class.active]="kind()==='PRODUCCION'">
+         <input type="radio" name="recipeKind" value="PRODUCCION" [checked]="kind()==='PRODUCCION'"
+          [disabled]="!access.canManage()" (change)="changeKind('PRODUCCION')"/>
+         <strong>Preparación de inventario</strong>
+         <small>Rinde un artículo del Inventario que alimenta otros productos.</small>
+        </label>
+       </div>
+      </fieldset>
       @if(kind()==='VENTA'){
 
        <gc-search-select class="rec-wide" id="recipe-variant" label="Presentación"
@@ -82,7 +105,7 @@ interface IngredientForm {
    </section>
 
    @if(!isNew){
-    <section class="rec-card">
+    <section class="rec-card" id="recipe-historial">
      <div class="rec-top"><h2>Historial de fórmulas</h2>
       @if(access.canManage()&&page.data()?.activa){<button type="button" (click)="startNewVersion()" [disabled]="busy()">Nueva fórmula</button>}
      </div>
@@ -91,22 +114,26 @@ interface IngredientForm {
       <thead><tr><th>Fórmula</th><th>Rinde</th><th>Ingredientes</th><th>Estado</th><th></th></tr></thead>
       <tbody>
        @for(v of versions();track v.id){
-        <tr><td>Versión {{v.numero}}</td>
+        <tr [class.rec-table-row--active]="viewingVersion()?.id===v.id||(editingFormula()&&formulaVersionId()===v.id)">
+         <td>Versión {{v.numero}}</td>
          <td>{{quantity(v.rendimiento,v.unidadRendimiento?.codigo)}}</td>
          <td>{{v.recetaComponentesComoRecetaVersion?.length??0}}</td>
          <td>{{v.activa&&v.publicadaEn?'Publicada':v.publicadaEn?'Anterior':'Borrador'}}</td>
          <td><div class="rec-actions">
-          <button type="button" (click)="selectVersion(v)" [disabled]="busy()">
+          <button type="button" (click)="selectVersion(v)" [disabled]="busy()"
+           [attr.aria-label]="(v.publicadaEn?'Ver ingredientes de la versión ':access.canManage()?'Editar borrador de la versión ':'Ver ingredientes de la versión ')+v.numero">
            {{v.publicadaEn?'Ver ingredientes':access.canManage()?'Editar borrador':'Ver ingredientes'}}</button>
           @if(v.publicadaEn&&v.activa&&access.canPublish()){
-           <button type="button" (click)="unpublishVersion(v)" [disabled]="busy()||hasUnsavedChanges()">Retirar del uso</button>
+           <button type="button" (click)="unpublishVersion(v)" [disabled]="busy()||hasUnsavedChanges()"
+            [attr.aria-label]="'Retirar del uso la versión '+v.numero">Retirar del uso</button>
           }
           @if(!v.publicadaEn&&access.canManage()){
-           <button type="button" (click)="discardVersion(v)" [disabled]="busy()||hasUnsavedChanges()">Descartar borrador</button>
+           <button type="button" (click)="discardVersion(v)" [disabled]="busy()||hasUnsavedChanges()"
+            [attr.aria-label]="'Descartar borrador de la versión '+v.numero">Descartar borrador</button>
           }
           @if(!v.publicadaEn&&access.canPublish()&&page.data()?.activa){
-           <button type="button" (click)="publishVersion(v)" [disabled]="busy()||formulaDirty()">
-            Publicar</button>
+           <button type="button" (click)="publishVersion(v)" [disabled]="busy()||formulaDirty()"
+            [attr.aria-label]="'Publicar la versión '+v.numero">Publicar</button>
           }
          </div></td>
         </tr>
@@ -116,13 +143,35 @@ interface IngredientForm {
     </section>
    }
 
+   @if(!isNew&&page.data();as recipe){
+    @if(publishedVersion();as version){
+     <section class="rec-card" id="recipe-siguiente-paso">
+      <h2>Siguiente paso</h2>
+      @if(recipe.tipo==='VENTA'){
+       <p class="rec-note">Esta receta está publicada y lista para venderse. Puedes comprobar que haya ingredientes suficientes o revisar sus reglas de empaque.</p>
+       <div class="rec-actions">
+        <a class="rec-button rec-primary" routerLink="/recipes/check" [queryParams]="checkQueryParams(recipe,version)">
+         Comprobar ingredientes</a>
+        @if(recipe.varianteId){<a class="rec-button" routerLink="/recipes/packaging">Reglas de empaque</a>}
+       </div>
+      }@else{
+       <p class="rec-note">Esta preparación está publicada. Puedes registrar una producción con esta fórmula.</p>
+       <div class="rec-actions">
+        <a class="rec-button rec-primary" routerLink="/recipes/production/new" [queryParams]="productionQueryParams(recipe,version)">
+         Registrar producción</a>
+       </div>
+      }
+     </section>
+    }
+   }
+
    @if(isNew||editingFormula()){
-    <section class="rec-card">
+    <section class="rec-card" id="recipe-formula">
      <div class="rec-top">
-      <h2>{{isNew?'Ingredientes de la receta':formulaVersionId()?'Fórmula en borrador':'Nueva fórmula'}}</h2>
+      <h2 #formulaEditorHeading tabindex="-1">{{isNew?'Ingredientes de la receta':formulaVersionId()?'Fórmula en borrador':'Nueva fórmula'}}</h2>
       @if(!isNew){<button type="button" (click)="discardFormula()" [disabled]="busy()">Cerrar</button>}
      </div>
-     <div class="rec-section"><h3>Rendimiento de la fórmula</h3>
+     <div class="rec-section"><h3>{{isNew?'2. Rendimiento de la fórmula':'Rendimiento de la fórmula'}}</h3>
      <div class="rec-form rec-yield-grid">
       <gc-inventory-picker id="yield-unit" kind="unit" label="Unidad de rendimiento"
        [unitDimension]="kind()==='VENTA'?'UNIDAD':''"
@@ -183,8 +232,8 @@ interface IngredientForm {
     </section>
    }
    @if(viewingVersion();as selected){
-    <section class="rec-card">
-     <div class="rec-top"><h2>Ingredientes · Versión {{selected.numero}}</h2>
+    <section class="rec-card" id="recipe-version">
+     <div class="rec-top"><h2 #versionViewerHeading tabindex="-1">Ingredientes · Versión {{selected.numero}}</h2>
       <button type="button" (click)="viewingVersion.set(null)">Cerrar</button></div>
      <div class="rec-table-wrap"><table class="rec-table">
       <thead><tr><th>Ingrediente</th><th>Cantidad</th><th>Pérdida estimada</th></tr></thead><tbody>
@@ -219,10 +268,6 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected readonly page=new GcPageState<RecipeRecord>();
  protected readonly name=signal('');
  protected readonly kind=signal<RecipeKind>('VENTA');
- protected readonly kindChoices=[
-  {id:'VENTA',label:'Producto de la carta'},
-  {id:'PRODUCCION',label:'Preparación de inventario'}
- ];
  protected readonly active=signal(true);
  protected readonly targetId=signal('');
  protected readonly variantSearch=signal('');
@@ -259,7 +304,22 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected readonly destination=recipeDestination;
  protected readonly quantity=readableQuantity;
  protected readonly versions=computed(()=>this.page.data()?.recetaVersionesComoReceta??[]);
+ /** The record's `versionPublicada` convenience field isn't reliably populated;
+  *  every other published-version lookup in this file (e.g. startNewVersion)
+  *  derives it from the versions list instead, so "Siguiente paso" does too. */
+ protected readonly publishedVersion=computed(()=>
+  this.versions().find(v=>v.activa&&v.publicadaEn)??null);
  protected readonly validation=computed(()=>validateFormula(this.versionDto(),this.kind()==='PRODUCCION'?this.targetId():undefined));
+ private readonly formulaEditorHeading=viewChild<ElementRef<HTMLElement>>('formulaEditorHeading');
+ private readonly versionViewerHeading=viewChild<ElementRef<HTMLElement>>('versionViewerHeading');
+ private focusHeading(get:()=>ElementRef<HTMLElement>|undefined){
+  setTimeout(()=>{
+   const el=get()?.nativeElement;
+   if(!el)return;
+   el.focus({preventScroll:true});
+   el.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+ }
  private formulaInitial='';
  private saved=false;
  protected readonly formulaDirty=computed(()=>this.editingFormula()&&
@@ -289,6 +349,15 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
    return;
   }
   await this.reload();
+ }
+ /** Hands the published formula's identity to /recipes/check so it lands
+  *  pre-selected instead of making the operator search for it again. */
+ protected checkQueryParams(recipe:RecipeRecord,version:RecipeVersion){
+  return {recetaId:recipe.id,recetaVersionId:version.id,
+   varianteId:recipe.varianteId??'',nombre:recipe.nombre};
+ }
+ protected productionQueryParams(recipe:RecipeRecord,version:RecipeVersion){
+  return {recetaId:recipe.id,recetaVersionId:version.id,nombre:recipe.nombre};
  }
  protected pageError(){return gcErrorMessage(this.page.error())}
  protected async reload(){
@@ -388,6 +457,7 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
   this.loadVersion(base);
   this.editingFormula.set(true);this.publishNow.set(false);this.formulaError.set(null);
   this.formulaInitial=JSON.stringify(this.formulaSnapshot());
+  this.focusHeading(()=>this.formulaEditorHeading());
  }
  protected async selectVersion(v:RecipeVersion){
   if(this.formulaDirty()){
@@ -395,12 +465,14 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
     message:'Se perderán los cambios que todavía no has guardado.',confirmText:'Continuar',danger:true});
    if(!ok)return;
   }
-  if(v.publicadaEn){this.viewingVersion.set(v);this.editingFormula.set(false);return}
-  if(!this.access.canManage()){this.viewingVersion.set(v);return}
+  if(v.publicadaEn){this.viewingVersion.set(v);this.editingFormula.set(false);
+   this.focusHeading(()=>this.versionViewerHeading());return}
+  if(!this.access.canManage()){this.viewingVersion.set(v);this.focusHeading(()=>this.versionViewerHeading());return}
   this.viewingVersion.set(null);this.formulaVersionId.set(v.id);
   this.loadVersion(v);this.editingFormula.set(true);this.publishNow.set(false);
   this.formulaError.set(null);
   this.formulaInitial=JSON.stringify(this.formulaSnapshot());
+  this.focusHeading(()=>this.formulaEditorHeading());
  }
  private loadVersion(v?:RecipeVersion){
   this.unitId.set(v?.unidadRendimientoId??'');

@@ -21,10 +21,12 @@ import type {RecipeKind,RecipePage,RecipeRecord} from '../data-access/recipes.mo
    </div>
    <div class="rec-filters" role="group" aria-label="Filtros de recetas">
     <label class="rec-field">Buscar por nombre
-     <input [value]="search()" maxlength="120" placeholder="Buscar receta"
-      (input)="search.set($any($event.target).value)" (keydown.enter)="$event.preventDefault();apply()"/>
+     <span class="rec-search-inline">
+      <input [value]="search()" maxlength="120" placeholder="Buscar receta"
+       (input)="search.set($any($event.target).value)" (keydown.enter)="$event.preventDefault();apply()"/>
+      <button type="button" (click)="apply()">Buscar</button>
+     </span>
     </label>
-    <button type="button" (click)="apply()">Buscar</button>
     <gc-search-select id="recipes-filter-kind" label="Tipo" [items]="kindChoices"
      [value]="kind()" placeholder="Todas" [searchable]="false"
      (valueChange)="updateQuery({tipo:$event||null,page:null})"/>
@@ -42,7 +44,8 @@ import type {RecipeKind,RecipePage,RecipeRecord} from '../data-access/recipes.mo
         <td>{{destination(row)}}</td>
         <td>@if(published(row);as v){ {{quantity(v.rendimiento,v.unidadRendimiento?.codigo)}} } @else {—}</td>
         <td>{{!row.activa?'Inactiva':published(row)?'Publicada':'Sin fórmula publicada'}}</td>
-        <td><a class="rec-link" [routerLink]="['/recipes/list',row.id]">Detalles</a></td></tr>
+        <td><a class="rec-link" [routerLink]="['/recipes/list',row.id]"
+          [attr.aria-label]="'Detalles de '+row.nombre">Detalles</a></td></tr>
       } @empty {<tr><td colspan="5">No hay recetas con estos filtros.</td></tr>}
      </tbody>
     </table></div>

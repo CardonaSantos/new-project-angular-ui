@@ -63,10 +63,18 @@ export class GcRecipesProductionReportPage {
  protected readonly decimal=formatDecimal;
  protected readonly currency=formatCurrency;
  private gen=0;
- constructor(){effect(()=>{
-  this.branchId();this.from();this.to();
-  this.gen++;this.report.set(null);this.error.set(null);
- })}
+ constructor(){
+  // Default to the operator's current branch instead of making them
+  // reselect it every time, matching /recipes/production/new.
+  effect(()=>{
+   const selected=this.branch.branchId();
+   if(selected&&!this.branchId())this.branchId.set(selected);
+  });
+  effect(()=>{
+   this.branchId();this.from();this.to();
+   this.gen++;this.report.set(null);this.error.set(null);
+  });
+ }
  protected async load(){
   if(!this.branchId())return;
   const gen=++this.gen;
