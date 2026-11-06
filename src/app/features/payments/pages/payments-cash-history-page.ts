@@ -27,9 +27,11 @@ import type {CashShift} from '../data-access/payments.models';
        <small>{{s.abiertaEn|date:'dd/MM/yyyy HH:mm'}} · {{s.cerradaEn?'Cerrado':'Abierto'}}</small>
        <small>Fondo inicial: {{money(s.fondoInicial)}}</small></div>
       <div class="ord-actions">
-       <a [routerLink]="['/payments/cash/shift',s.id]">Ver movimientos</a>
+       <a [routerLink]="['/payments/cash/shift',s.id]"
+        [attr.aria-label]="'Ver movimientos de '+(s.caja?.nombre??'caja')+' del '+(s.abiertaEn|date:'dd/MM/yyyy')">Ver movimientos</a>
        @if(s.cerradaEn){
-        <a [routerLink]="['/payments/cash/shift',s.id,'receipt']">Comprobante</a>
+        <a [routerLink]="['/payments/cash/shift',s.id,'receipt']"
+         [attr.aria-label]="'Ver comprobante de '+(s.caja?.nombre??'caja')+' del '+(s.abiertaEn|date:'dd/MM/yyyy')">Comprobante</a>
        }
       </div>
      </div>

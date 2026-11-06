@@ -86,7 +86,8 @@ import {parseApiDecimal} from '../../../shared/formatting';
            <button type="button" (click)="inspect(s.id)"
             [disabled]="busy()||detailBusy()"
             [attr.aria-label]="'Ver detalle de venta '+s.numero">Ver detalle</button>
-           <a [routerLink]="['/payments/sales',s.id,'receipt']">Imprimir</a>
+           <a [routerLink]="['/payments/sales',s.id,'receipt']"
+            [attr.aria-label]="'Imprimir comprobante de venta '+s.numero">Imprimir</a>
           </div>
          </td>
         </tr>

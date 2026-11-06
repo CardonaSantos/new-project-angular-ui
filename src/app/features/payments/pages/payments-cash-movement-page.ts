@@ -63,7 +63,7 @@ export class GcPaymentsCashMovementPage{
  protected readonly positive=positive;
  protected readonly types=[{id:'INGRESO',label:'Entrada de efectivo'},
   {id:'EGRESO',label:'Salida de efectivo'}];
- protected readonly kind=signal<'INGRESO'|'EGRESO'>('EGRESO');
+ protected readonly kind=signal<'INGRESO'|'EGRESO'>('INGRESO');
  protected readonly value=signal('');
  protected readonly reason=signal('');
  protected readonly busy=signal(false);

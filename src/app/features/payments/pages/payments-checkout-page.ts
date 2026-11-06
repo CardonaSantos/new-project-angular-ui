@@ -1,4 +1,4 @@
-import {Component,computed,inject,OnInit,signal} from '@angular/core';
+import {Component,computed,ElementRef,inject,OnInit,signal,viewChild} from '@angular/core';
 import {RouterLink,ActivatedRoute} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
@@ -171,22 +171,26 @@ import {parseApiDecimal} from '../../../shared/formatting';
       <section class="pay-history">
        <h3>Pagos pendientes de comprobación</h3>
        @for(attempt of account.intentos;track attempt.id){
-        <div class="pay-history-row">
+        <div class="pay-history-row" [class.pay-history-row--active]="attemptId()===attempt.id">
          <div><strong>{{methodLabel(attempt.metodo)}} · {{money(attempt.monto)}}</strong>
           <small>{{attempt.estado==='PENDIENTE'?'Pendiente':attempt.estado==='CONFIRMADO'?'Confirmado':'Cancelado'}}</small>
           @if(attempt.referenciaExterna){<small>Referencia: {{attempt.referenciaExterna}}</small>}
          </div>
          @if(attempt.estado==='PENDIENTE'&&access.canVerify()){
           <div class="ord-actions">
-           <button type="button" [disabled]="working()||!cash.ownShift()" (click)="startAttempt(attempt.id,'confirm')">Confirmar recibido</button>
-           <button type="button" class="ord-danger" [disabled]="working()" (click)="startAttempt(attempt.id,'cancel')">Cancelar</button>
+           <button type="button" [disabled]="working()||!cash.ownShift()"
+            [attr.aria-label]="'Confirmar recibido de '+methodLabel(attempt.metodo)+' '+money(attempt.monto)"
+            (click)="startAttempt(attempt.id,'confirm')">Confirmar recibido</button>
+           <button type="button" class="ord-danger" [disabled]="working()"
+            [attr.aria-label]="'Cancelar intento de '+methodLabel(attempt.metodo)+' '+money(attempt.monto)"
+            (click)="startAttempt(attempt.id,'cancel')">Cancelar</button>
           </div>
          }
         </div>
        }
        @if(attemptAction()){
         <fieldset class="ord-section">
-         <legend>{{attemptAction()==='confirm'?'Verificar transferencia':'Cancelar intento'}}</legend>
+         <legend #attemptHeading tabindex="-1">{{attemptAction()==='confirm'?'Verificar transferencia':'Cancelar intento'}}</legend>
          <label>Motivo
           <textarea rows="2" maxlength="500" [value]="attemptReason()"
            (input)="attemptReason.set($any($event.target).value)" placeholder="Ej. Transferencia comprobada"></textarea>
@@ -201,7 +205,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
      @if(account.pagos.length){
       <section class="pay-history"><h3>Pagos registrados</h3>
        @for(payment of account.pagos;track payment.id){
-        <div class="pay-history-row">
+        <div class="pay-history-row" [class.pay-history-row--active]="refundPayment()?.id===payment.id">
          <div><strong>{{methodLabel(payment.metodo)}} · {{money(payment.monto)}}</strong>
           @if(payment.vuelto){<small>Vuelto: {{money(payment.vuelto)}}</small>}
           @if(payment.reembolsoPagosComoPago?.length){
@@ -209,12 +213,14 @@ import {parseApiDecimal} from '../../../shared/formatting';
           }
          </div>
          @if(access.canRefund()&&parsePositive(refundable(payment))){
-          <button type="button" [disabled]="working()" (click)="startRefund(payment)">Devolver</button>
+          <button type="button" [disabled]="working()"
+           [attr.aria-label]="'Devolver pago de '+methodLabel(payment.metodo)+' '+money(payment.monto)"
+           (click)="startRefund(payment)">Devolver</button>
          }
         </div>
        }
        @if(refundPayment();as payment){
-        <fieldset class="ord-section"><legend>Devolución · {{methodLabel(payment.metodo)}}</legend>
+        <fieldset class="ord-section"><legend #refundHeading tabindex="-1">Devolución · {{methodLabel(payment.metodo)}}</legend>
          <div class="pay-amount-grid">
           <label>Importe a devolver
            <input inputmode="decimal" [value]="refundAmount()" (input)="refundAmount.set($any($event.target).value)"/>
@@ -323,6 +329,16 @@ export class GcPaymentsCheckoutPage implements OnInit{
  protected readonly refundAmount=signal('');protected readonly refundReason=signal('');
  protected readonly refundReference=signal('');
  private key:{signature:string;value:string}|null=null;
+ private readonly attemptHeading=viewChild<ElementRef<HTMLElement>>('attemptHeading');
+ private readonly refundHeading=viewChild<ElementRef<HTMLElement>>('refundHeading');
+ private focusHeading(get:()=>ElementRef<HTMLElement>|undefined){
+  setTimeout(()=>{
+   const el=get()?.nativeElement;
+   if(!el)return;
+   el.focus({preventScroll:true});
+   el.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+ }
  protected readonly selectedName=computed(()=>this.accounts().find(x=>x.id===this.selectedId())?.nombre||'Cuenta principal');
  protected readonly totalPending=computed(()=>this.accounts().reduce((v,a)=>v.plus(
   parseApiDecimal(a.total).minus(parseApiDecimal(a.pagado))),parseApiDecimal('0')).toFixed(2));
@@ -495,6 +511,7 @@ export class GcPaymentsCheckoutPage implements OnInit{
  }
  protected startAttempt(id:string,action:'confirm'|'cancel'){
   this.attemptId.set(id);this.attemptAction.set(action);this.attemptReason.set('');
+  this.focusHeading(()=>this.attemptHeading());
  }
  protected async resolveAttempt(){
   const id=this.attemptId(),action=this.attemptAction(),reason=this.attemptReason().trim();
@@ -526,6 +543,7 @@ export class GcPaymentsCheckoutPage implements OnInit{
  protected startRefund(payment:PaymentRecord){
   this.refundPayment.set(payment);this.refundAmount.set(this.refundable(payment));
   this.refundReason.set('');this.refundReference.set('');
+  this.focusHeading(()=>this.refundHeading());
  }
  protected async refund(){
   const p=this.refundPayment(),a=positive(this.refundAmount()),why=this.refundReason().trim();

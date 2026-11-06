@@ -715,6 +715,11 @@ gc-kitchen-ticket{display:block;min-width:0}
  padding:.7rem .2rem;min-width:0}
 .pay-history-row>* ,.pay-detail-row>*{min-width:0;overflow-wrap:anywhere}
 .pay-history-row small,.pay-detail-row small{display:block;color:var(--gc-on-surface-variant)}
+/* Highlights the intento/pago row whose inline form (verify/cancel/devolver) is open below —
+   same convention as .ord-setting-row--active / .rec-table-row--active. */
+.pay-history-row--active{background:var(--gc-surface-container-high,var(--gc-surface-container));
+ box-shadow:inset 3px 0 0 var(--gc-primary);border-radius:.4rem}
+.pay-page legend[tabindex="-1"]:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
 .pay-details{border:1px solid var(--gc-outline-variant);padding:.75rem;
  border-radius:.65rem;display:block;min-width:0}
 .pay-details>summary{font-weight:650;cursor:pointer;padding:.25rem 0}
