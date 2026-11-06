@@ -21,5 +21,10 @@ export const FINANCE_ROUTES:Routes=[
    loadComponent:()=>import('./pages/finance-expense-create-page').then(m=>m.GcFinanceExpenseCreatePage)},
   {path:':id',data:{breadcrumb:'Detalle del gasto'},title:'Gasto — Gastro Core',
    loadComponent:()=>import('./pages/finance-expense-detail-page').then(m=>m.GcFinanceExpenseDetailPage)}
- ]}
+ ]},
+ {path:'reconciliation',data:{breadcrumb:'Conciliación'},title:'Conciliación — Gastro Core',
+  loadComponent:()=>import('./pages/finance-reconciliation-page').then(m=>m.GcFinanceReconciliationPage)},
+ {path:'routing',data:{breadcrumb:'Enrutamiento'},title:'Enrutamiento — Gastro Core',
+  canDeactivate:[gcUnsavedChangesGuard],
+  loadComponent:()=>import('./pages/finance-routing-page').then(m=>m.GcFinanceRoutingPage)}
 ];

@@ -10,6 +10,8 @@ import {RouterLink,RouterLinkActive} from '@angular/router';
  <nav class="fin-tabs" aria-label="Módulo de finanzas">
   <a routerLink="/finance/accounts" routerLinkActive="active" ariaCurrentWhenActive="page">Cuentas</a>
   <a routerLink="/finance/expenses" routerLinkActive="active" ariaCurrentWhenActive="page">Gastos</a>
+  <a routerLink="/finance/reconciliation" routerLinkActive="active" ariaCurrentWhenActive="page">Conciliación</a>
+  <a routerLink="/finance/routing" routerLinkActive="active" ariaCurrentWhenActive="page">Enrutamiento</a>
  </nav>`,
  styleUrl:'./finance.scss'
 })
