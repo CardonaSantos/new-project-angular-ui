@@ -14,7 +14,7 @@ export interface MenuPickedVariant {varianteId:string;nombre:string}
   <div class="menu-picker-heading">
    <div><h4>Agregar productos</h4><p>Busca por nombre o categoría y marca los tamaños que quieres mostrar.</p></div>
    <button type="button" class="menu-picker-btn menu-picker-btn--outline"
-    (click)="close.emit()">Cerrar selector</button>
+    (click)="dismissed.emit()">Cerrar selector</button>
   </div>
   <div class="menu-picker-filters">
    <label>Buscar producto
@@ -69,7 +69,7 @@ export interface MenuPickedVariant {varianteId:string;nombre:string}
 export class GcCatalogMenuProductPicker implements OnInit {
  readonly existingVariantIds=input<string[]>([]);
  readonly added=output<MenuPickedVariant[]>();
- readonly close=output<void>();
+ readonly dismissed=output<void>();
  private readonly api=inject(CatalogApi);
  private readonly searchEvents=new Subject<string>();
  private generation=0;
