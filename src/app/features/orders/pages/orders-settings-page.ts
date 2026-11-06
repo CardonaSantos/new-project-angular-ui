@@ -1,4 +1,4 @@
-import {Component,computed,effect,inject,signal} from '@angular/core';
+import {Component,computed,effect,ElementRef,inject,signal,viewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {firstValueFrom,Subject,debounceTime,distinctUntilChanged} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -39,14 +39,15 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
   </div>
   <div class="ord-small-list">
    @for(st of stations();track st.id){
-    <div class="ord-setting-row">
+    <div class="ord-setting-row" [class.ord-setting-row--active]="stationForm()&&editStationId()===st.id">
      <div><strong>{{st.nombre}}</strong>
       <small>{{st.ubicacionConsumo?.nombre??'Sin ubicación de ingredientes'}}</small></div>
      <span>{{st.activa?'Activa':'Inactiva'}}</span>
      @if(access.canKitchenManage()){
       <div class="ord-actions">
-       <button type="button" (click)="editStation(st)">Editar</button>
-       <button type="button" [disabled]="actionBusy()" (click)="toggleStation(st)">
+       <button type="button" (click)="editStation(st)" [attr.aria-label]="'Editar estación '+st.nombre">Editar</button>
+       <button type="button" [disabled]="actionBusy()" (click)="toggleStation(st)"
+        [attr.aria-label]="(st.activa?'Desactivar':'Activar')+' estación '+st.nombre">
         {{st.activa?'Desactivar':'Activar'}}
        </button>
       </div>}
@@ -54,7 +55,7 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
    } @empty {<p>No hay estaciones configuradas.</p>}
   </div>
   @if(access.canKitchenManage()&&stationForm()){
-   <fieldset class="ord-section ord-settings-editor"><legend>{{editStationId()?'Editar estación':'Nueva estación'}}</legend>
+   <fieldset class="ord-section ord-settings-editor"><legend #stationEditorHeading tabindex="-1">{{editStationId()?'Editar estación':'Nueva estación'}}</legend>
     <div class="ord-form-grid">
      <label>Nombre
       <input [value]="stationName()" maxlength="100" (input)="stationName.set($any($event.target).value)"
@@ -86,19 +87,21 @@ import type {KitchenRoute,Station} from '../data-access/orders.models';
   </div>
   <div class="ord-small-list">
    @for(route of routes();track route.id){
-    <div class="ord-setting-row">
+    <div class="ord-setting-row" [class.ord-setting-row--active]="routeForm()&&editRouteId()===route.id">
      <div><strong>{{route.variante?.nombre??route.categoria?.nombre??'Destino configurado'}}</strong>
       <small>{{route.estacion?.nombre}} · Prioridad {{route.prioridad}}</small></div>
      @if(access.canKitchenManage()){
       <div class="ord-actions">
-       <button type="button" (click)="editRoute(route)">Editar</button>
-       <button type="button" class="ord-danger" [disabled]="actionBusy()" (click)="removeRoute(route)">Quitar</button>
+       <button type="button" (click)="editRoute(route)"
+        [attr.aria-label]="'Editar ruta de '+(route.variante?.nombre??route.categoria?.nombre??'destino configurado')">Editar</button>
+       <button type="button" class="ord-danger" [disabled]="actionBusy()" (click)="removeRoute(route)"
+        [attr.aria-label]="'Quitar ruta de '+(route.variante?.nombre??route.categoria?.nombre??'destino configurado')">Quitar</button>
       </div>}
     </div>
    } @empty {<p>No hay rutas específicas. Una sola estación activa puede ser utilizada de forma predeterminada.</p>}
   </div>
   @if(access.canKitchenManage()&&routeForm()){
-   <fieldset class="ord-section ord-settings-editor"><legend>{{editRouteId()?'Editar ruta':'Asignar preparación'}}</legend>
+   <fieldset class="ord-section ord-settings-editor"><legend #routeEditorHeading tabindex="-1">{{editRouteId()?'Editar ruta':'Asignar preparación'}}</legend>
     <div class="ord-form-grid">
      <gc-search-select id="route-station" label="Estación" [items]="stationChoices()"
       [value]="routeStationId()" placeholder="Seleccionar estación"
@@ -159,6 +162,16 @@ export class GcOrdersSettingsPage{
  protected readonly categoryChoices=computed(()=>this.categories().map(c=>({id:c.id,label:c.label})));
  protected readonly variantSearch=new Subject<string>();protected readonly categorySearch=new Subject<string>();
  private readonly locationSearch=new Subject<string>();private generation=0;
+ private readonly stationEditorHeading=viewChild<ElementRef<HTMLElement>>('stationEditorHeading');
+ private readonly routeEditorHeading=viewChild<ElementRef<HTMLElement>>('routeEditorHeading');
+ private focusHeading(get:()=>ElementRef<HTMLElement>|undefined){
+  setTimeout(()=>{
+   const el=get()?.nativeElement;
+   if(!el)return;
+   el.focus({preventScroll:true});
+   el.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+ }
  private locationGeneration=0;private variantGeneration=0;private categoryGeneration=0;
  constructor(){
   effect(()=>{if(this.branch.branchId())void this.load()});
@@ -210,6 +223,7 @@ export class GcOrdersSettingsPage{
  }
  protected beginStation(){
   this.clearStation();this.stationForm.set(true);this.section.set('stations');
+  this.focusHeading(()=>this.stationEditorHeading());
  }
  protected editStation(s:Station){
   this.section.set('stations');this.stationForm.set(true);
@@ -217,6 +231,7 @@ export class GcOrdersSettingsPage{
   this.locationId.set(s.ubicacionConsumoId??'');
   if(s.ubicacionConsumo&&!this.locations().some(x=>x.id===s.ubicacionConsumo!.id))
    this.locations.update(a=>[{id:s.ubicacionConsumo!.id,label:s.ubicacionConsumo!.nombre},...a]);
+  this.focusHeading(()=>this.stationEditorHeading());
  }
  protected clearStation(){
   this.editStationId.set('');this.stationName.set('');this.locationId.set('');this.stationForm.set(false);
@@ -243,10 +258,12 @@ export class GcOrdersSettingsPage{
  protected setTargetKind(v:string){this.targetKind.set(v==='category'?'category':'variant');this.targetId.set('')}
  protected beginRoute(){
   this.resetRoute();this.routeForm.set(true);this.section.set('routes');
+  this.focusHeading(()=>this.routeEditorHeading());
  }
  protected editRoute(r:KitchenRoute){
   this.section.set('routes');this.routeForm.set(true);
   this.editRouteId.set(r.id);this.routeStationId.set(r.estacionId);this.priority.set(r.prioridad);
+  this.focusHeading(()=>this.routeEditorHeading());
  }
  protected resetRoute(){
   this.editRouteId.set('');this.routeStationId.set('');this.targetId.set('');

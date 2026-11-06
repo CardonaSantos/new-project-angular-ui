@@ -1,4 +1,4 @@
-import {Component,computed,effect,inject,signal} from '@angular/core';
+import {Component,computed,effect,ElementRef,inject,signal,viewChild} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
@@ -100,16 +100,17 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
   <h3>Salas</h3>
   <div class="ord-small-list">
    @for(room of rooms();track room.id){
-    <div class="ord-setting-row">
+    <div class="ord-setting-row" [class.ord-setting-row--active]="roomId()===room.id">
      <strong>{{room.nombre}}</strong><span>{{room.activa?'Activa':'Inactiva'}}</span>
      <div class="ord-actions">
-      <button type="button" (click)="editRoom(room)">Renombrar</button>
-      <button type="button" (click)="toggleRoom(room)" [disabled]="actionBusy()">{{room.activa?'Desactivar':'Activar'}}</button>
+      <button type="button" (click)="editRoom(room)" [attr.aria-label]="'Renombrar sala '+room.nombre">Renombrar</button>
+      <button type="button" (click)="toggleRoom(room)" [disabled]="actionBusy()"
+       [attr.aria-label]="(room.activa?'Desactivar':'Activar')+' sala '+room.nombre">{{room.activa?'Desactivar':'Activar'}}</button>
      </div>
     </div>
    }
   </div>
-  <fieldset class="ord-section"><legend>{{roomId()?'Editar sala':'Nueva sala'}}</legend>
+  <fieldset class="ord-section"><legend #roomEditorHeading tabindex="-1">{{roomId()?'Editar sala':'Nueva sala'}}</legend>
    <label>Nombre de la sala
     <input [value]="roomName()" (input)="roomName.set($any($event.target).value)"
      maxlength="100" placeholder="Ej. Terraza"/>
@@ -124,15 +125,16 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
   @if(manageTab()==='tables'){
   <div class="ord-small-list">
    @for(t of tables();track t.id){
-    <div class="ord-setting-row">
+    <div class="ord-setting-row" [class.ord-setting-row--active]="tableId()===t.id">
      <div><strong>Mesa {{t.numero}}</strong>
       <small>{{t.sala.nombre}} · {{t.capacidad}} personas · {{t.activa?'Activa':'Inactiva'}}</small>
      </div>
-     <button type="button" (click)="editTable(t)" [disabled]="actionBusy()">Editar</button>
+     <button type="button" (click)="editTable(t)" [disabled]="actionBusy()"
+      [attr.aria-label]="'Editar mesa '+t.numero">Editar</button>
     </div>
    } @empty {<p>No hay mesas configuradas.</p>}
   </div>
-  <fieldset class="ord-section"><legend>{{tableId()?'Editar mesa':'Nueva mesa'}}</legend>
+  <fieldset class="ord-section"><legend #tableEditorHeading tabindex="-1">{{tableId()?'Editar mesa':'Nueva mesa'}}</legend>
    <div class="ord-form-grid">
     <gc-search-select id="room-for-table" label="Sala" [items]="roomOptions()"
      [value]="tableRoom()" placeholder="Seleccionar sala"
@@ -183,6 +185,16 @@ export class GcOrdersTablesPage{
  protected readonly inactiveCount=computed(()=>this.tables().filter(t=>!t.activa).length);
  protected readonly roomOptions=computed(()=>this.rooms().filter(x=>x.activa).map(x=>({id:x.id,label:x.nombre})));
  protected readonly editingTable=computed(()=>this.tables().find(x=>x.id===this.tableId()));
+ private readonly roomEditorHeading=viewChild<ElementRef<HTMLElement>>('roomEditorHeading');
+ private readonly tableEditorHeading=viewChild<ElementRef<HTMLElement>>('tableEditorHeading');
+ private focusHeading(get:()=>ElementRef<HTMLElement>|undefined){
+  setTimeout(()=>{
+   const el=get()?.nativeElement;
+   if(!el)return;
+   el.focus({preventScroll:true});
+   el.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+ }
  private generation=0;
  constructor(){effect(()=>{
   const id=this.branch.branchId();
@@ -216,6 +228,7 @@ export class GcOrdersTablesPage{
  }
  protected editRoom(room:Room){
   this.manageTab.set('rooms');this.roomId.set(room.id);this.roomName.set(room.nombre);
+  this.focusHeading(()=>this.roomEditorHeading());
  }
  protected async toggleRoom(room:Room){
   if(room.activa&&!await this.confirm.confirm({title:'Desactivar sala',message:'No podrá desactivarse una sala con mesas ocupadas.',danger:true,confirmText:'Desactivar'}))return;
@@ -232,6 +245,7 @@ export class GcOrdersTablesPage{
  protected editTable(table:TableRecord){
   this.manageTab.set('tables');this.tableId.set(table.id);this.tableRoom.set(table.sala.id);
   this.tableNumber.set(table.numero);this.capacity.set(table.capacidad);
+  this.focusHeading(()=>this.tableEditorHeading());
  }
  protected resetTableForm(){this.tableId.set('');this.tableRoom.set('');this.tableNumber.set('');this.capacity.set(2)}
  protected async saveTable(){
