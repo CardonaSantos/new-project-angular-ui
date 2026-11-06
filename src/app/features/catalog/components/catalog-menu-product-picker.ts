@@ -43,7 +43,7 @@ export interface MenuPickedVariant {varianteId:string;nombre:string}
       @for(v of product.varianteProductosComoProducto??[];track v.id){
        <label class="menu-picker-variant" [class.menu-picker-variant--checked]="!!selected()[v.id]">
         <input type="checkbox" [checked]="!!selected()[v.id]"
-         [disabled]="existingVariantIds().includes(v.id)"
+         [disabled]="existingVariantIds().includes(v.id)||(!selected()[v.id]&&selectionCount()>=room())"
          (change)="toggle(v.id,product.nombre+' · '+v.nombre,$any($event.target).checked)"/>
         <span>{{v.nombre}}</span>
         @if(existingVariantIds().includes(v.id)){<small>Ya incluido</small>}
@@ -57,7 +57,7 @@ export interface MenuPickedVariant {varianteId:string;nombre:string}
   </div>
   @if(more()){<p class="menu-picker-muted">Hay más resultados. Escribe un nombre más específico para encontrarlos.</p>}
   <div class="menu-picker-footer">
-   <strong aria-live="polite">{{selectionCount()}} seleccionadas</strong>
+   <strong aria-live="polite">{{selectionCount()}} seleccionadas · {{room()}} espacios máximos</strong>
    <button type="button" class="menu-picker-btn menu-picker-btn--primary"
     [disabled]="selectionCount()===0" (click)="confirmSelection()">
     Agregar {{selectionCount()}} {{selectionCount()===1?'presentación':'presentaciones'}} a la sección
@@ -82,6 +82,7 @@ export class GcCatalogMenuProductPicker implements OnInit {
  protected readonly error=signal('');
  protected readonly more=signal(false);
  protected readonly selectionCount=computed(()=>Object.keys(this.selected()).length);
+ protected readonly room=computed(()=>Math.max(0,100-this.existingVariantIds().length));
  constructor(){
   this.searchEvents.pipe(debounceTime(250),distinctUntilChanged(),takeUntilDestroyed())
    .subscribe(()=>void this.loadProducts());
@@ -110,7 +111,8 @@ export class GcCatalogMenuProductPicker implements OnInit {
  protected toggle(varianteId:string,nombre:string,checked:boolean){
   this.selected.update(current=>{
    const next={...current};
-   if(checked&&!this.existingVariantIds().includes(varianteId))
+   if(checked&&!this.existingVariantIds().includes(varianteId)&&
+    (next[varianteId]||Object.keys(next).length<this.room()))
     next[varianteId]={varianteId,nombre};
    else delete next[varianteId];
    return next;
