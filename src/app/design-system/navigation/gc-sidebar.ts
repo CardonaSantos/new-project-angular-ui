@@ -5,7 +5,7 @@ import { GcBrandLogo } from '../branding/gc-brand-logo';
 import {
  LucideHouse,LucideShoppingBag,LucideBookOpen,LucideClipboardList,LucideWallet,
  LucideShoppingCart,LucidePackage,LucideChartColumn,LucideUsers,LucideSettings,LucideLandmark,
- LucideContact,LucideCalendarClock
+ LucideContact,LucideCalendarClock,LucideBike
 } from '@lucide/angular';
 
 @Component({
@@ -13,7 +13,7 @@ import {
   imports: [RouterLink, RouterLinkActive, GcBrandLogo,
    LucideHouse,LucideShoppingBag,LucideBookOpen,LucideClipboardList,LucideWallet,
    LucideShoppingCart,LucidePackage,LucideChartColumn,LucideUsers,LucideSettings,LucideLandmark,
-   LucideContact,LucideCalendarClock],
+   LucideContact,LucideCalendarClock,LucideBike],
   template: `
     <aside class="gc-sidebar" aria-label="Navegación principal">
       <gc-brand-logo [name]="brandName()" [logoUrl]="logoUrl()"
@@ -37,6 +37,7 @@ import {
                @case('finance'){<svg lucideLandmark class="gc-nav-icon"></svg>}
                @case('customers'){<svg lucideContact class="gc-nav-icon"></svg>}
                @case('reservations'){<svg lucideCalendarClock class="gc-nav-icon"></svg>}
+               @case('delivery'){<svg lucideBike class="gc-nav-icon"></svg>}
                @case('reports'){<svg lucideChartColumn class="gc-nav-icon"></svg>}
                @case('users'){<svg lucideUsers class="gc-nav-icon"></svg>}
                @case('settings'){<svg lucideSettings class="gc-nav-icon"></svg>}

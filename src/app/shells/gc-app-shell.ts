@@ -24,6 +24,7 @@ import { ReportsAccess } from '../features/reports/data-access/reports-access';
 import { FinanceAccess } from '../features/finance/data-access/finance-access';
 import { CustomersAccess } from '../features/customers/data-access/customers-access';
 import { ReservationsAccess } from '../features/reservations/data-access/reservations-access';
+import { DeliveryAccess } from '../features/delivery/data-access/delivery-access';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
@@ -52,6 +53,7 @@ export class GcAppShell {
   protected readonly financeAccess = inject(FinanceAccess);
   protected readonly customersAccess = inject(CustomersAccess);
   protected readonly reservationsAccess = inject(ReservationsAccess);
+  protected readonly deliveryAccess = inject(DeliveryAccess);
   private readonly avatar=inject(GcCurrentAvatarStore);
   private readonly usersApi=inject(UsersApi);
   private readonly realtime = inject(GcRealtimeService);
@@ -80,6 +82,8 @@ export class GcAppShell {
          ? [{label:'Clientes',path:'/customers',initials:'CL',icon:'customers',exact:false}]:[]),
         ...(this.reservationsAccess.canEnter()
          ? [{label:'Reservaciones',path:'/reservations',initials:'RS',icon:'reservations',exact:false}]:[]),
+        ...(this.deliveryAccess.canEnter()
+         ? [{label:'Entregas',path:'/delivery',initials:'EN',icon:'delivery',exact:false}]:[]),
         ...((this.usersAccess.canRead()||this.usersAccess.canGlobal('roles.read')||
           this.usersAccess.canGlobal('users.reports.read'))
           ? [{label:'Usuarios',path:'/users',initials:'US',icon:'users',exact:false}]:[]),

@@ -77,6 +77,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/reservations/reservations.routes').then(m => m.RESERVATIONS_ROUTES),
       },
       {
+        path: 'delivery', canActivate: [gcSessionGuard], data: { breadcrumb: 'Entregas' },
+        loadChildren: () => import('./features/delivery/delivery.routes').then(m => m.DELIVERY_ROUTES),
+      },
+      {
         path: 'organization',
         canActivate: [gcSessionGuard],
         loadChildren: () =>
