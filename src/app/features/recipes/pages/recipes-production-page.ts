@@ -20,11 +20,22 @@ import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
    <div class="rec-top"><h2>Producciones</h2>
     @if(access.canProduce()){<a routerLink="/recipes/production/new" class="rec-button rec-primary">Registrar producción</a>}
    </div>
+   <p class="rec-note">Historial de lotes preparados manualmente (ej. salsas, bases). No incluye lo vendido al POS — eso se descuenta aparte, al iniciar cada orden en cocina.</p>
 
    <div class="rec-filters" role="group" aria-label="Filtros de producción">
     <gc-search-select id="production-filter-branch" label="Sucursal" [items]="branchChoices()"
      [value]="branchId()" placeholder="Seleccionar sucursal" [clearable]="false"
      (valueChange)="branchId.set($event);page.set(1)"/>
+    <label class="rec-field">Buscar
+     <span class="rec-search-inline">
+      <input [value]="search()" maxlength="60" placeholder="Receta o artículo"
+       (input)="search.set($any($event.target).value)" (keydown.enter)="$event.preventDefault();applySearch()"/>
+      <button type="button" (click)="applySearch()">Buscar</button>
+     </span>
+    </label>
+    <gc-search-select id="production-filter-estado" label="Estado" [items]="estadoChoices"
+     [value]="estado()" placeholder="Todos" [searchable]="false"
+     (valueChange)="estado.set($event);page.set(1)"/>
     <label class="rec-field">Desde
      <input type="date" [value]="from()" (change)="from.set($any($event.target).value);page.set(1)"/>
     </label>
@@ -68,6 +79,12 @@ export class GcRecipesProductionPage {
  protected readonly branchId=signal('');
  protected readonly from=signal('');
  protected readonly to=signal('');
+ protected readonly search=signal('');
+ protected readonly appliedSearch=signal('');
+ protected readonly estado=signal('');
+ protected readonly estadoChoices=[
+  {id:'BORRADOR',label:'Pendiente'},{id:'CONFIRMADA',label:'Confirmada'},{id:'CANCELADA',label:'Cancelada'}
+ ];
  protected readonly page=signal(1);
  protected readonly state=new GcPageState<RecipePage<ProductionListItem>>();
  protected readonly busy=computed(()=>this.state.busy());
@@ -84,14 +101,18 @@ export class GcRecipesProductionPage {
    if(selected&&!this.branchId())this.branchId.set(selected);
   });
   effect(()=>{
-  const id=this.branchId(),pg=this.page(),from=this.from(),to=this.to();
+  const id=this.branchId(),pg=this.page(),from=this.from(),to=this.to(),
+   search=this.appliedSearch(),estado=this.estado();
   this.token();
   if(!id){this.state.reset();return}
   void this.state.load(()=>firstValueFrom(this.api.productionList({
    sucursalId:id,page:pg,limit:20,
+   ...(search.trim()?{search:search.trim()}:{}),
+   ...(estado==='BORRADOR'||estado==='CONFIRMADA'||estado==='CANCELADA'?{estado}:{}),
    ...inclusiveBranchPeriod(from,to,
     this.branch.branches().find(x=>x.id===id)?.zonaHoraria??'America/Guatemala')
   })));
  })}
  protected reload(){this.token.update(n=>n+1)}
+ protected applySearch(){this.appliedSearch.set(this.search().trim());this.page.set(1)}
 }

@@ -63,13 +63,13 @@ interface IngredientForm {
          <input type="radio" name="recipeKind" value="VENTA" [checked]="kind()==='VENTA'"
           [disabled]="!access.canManage()" (change)="changeKind('VENTA')"/>
          <strong>Producto de la carta</strong>
-         <small>Se vende a clientes; puedes comprobar ingredientes o revisar reglas de empaque.</small>
+         <small>Se vende a clientes. Al vender, cocina descuenta los ingredientes automáticamente al iniciar la preparación — no hace falta producir nada antes.</small>
         </label>
         <label [class.active]="kind()==='PRODUCCION'">
          <input type="radio" name="recipeKind" value="PRODUCCION" [checked]="kind()==='PRODUCCION'"
           [disabled]="!access.canManage()" (change)="changeKind('PRODUCCION')"/>
          <strong>Preparación de inventario</strong>
-         <small>Rinde un artículo del Inventario que alimenta otros productos.</small>
+         <small>Rinde un artículo del Inventario (ej. una salsa base) para que otras recetas lo usen como ingrediente. Hay que "Registrar producción" manualmente para generar ese stock; no ocurre solo.</small>
         </label>
        </div>
       </fieldset>
@@ -91,6 +91,7 @@ interface IngredientForm {
       @if(access.canManage()){
        <label class="rec-inline rec-wide"><input type="checkbox" [checked]="active()"
         (change)="active.set($any($event.target).checked)"/> Receta activa</label>
+       <p class="rec-note rec-wide">No existe "eliminar": desactivar es la forma de retirar una receta. Las fórmulas y producciones ya hechas con ella se conservan como historial; solo se bloquea para uso futuro.</p>
       }
      }
       </div>
@@ -113,7 +114,7 @@ interface IngredientForm {
      <div class="rec-table-wrap"><table class="rec-table">
       <thead><tr><th>Fórmula</th><th>Rinde</th><th>Ingredientes</th><th>Estado</th><th></th></tr></thead>
       <tbody>
-       @for(v of versions();track v.id){
+       @for(v of visibleVersions();track v.id){
         <tr [class.rec-table-row--active]="viewingVersion()?.id===v.id||(editingFormula()&&formulaVersionId()===v.id)">
          <td>Versión {{v.numero}}</td>
          <td>{{quantity(v.rendimiento,v.unidadRendimiento?.codigo)}}</td>
@@ -137,9 +138,14 @@ interface IngredientForm {
           }
          </div></td>
         </tr>
-       } @empty {<tr><td colspan="5">Esta receta aún no tiene fórmulas.</td></tr>}
+       } @empty {<tr><td colspan="5">{{versions().length?'Todas las fórmulas de esta receta son anteriores — usa el botón de abajo para verlas.':'Esta receta aún no tiene fórmulas.'}}</td></tr>}
       </tbody>
      </table></div>
+     @if(olderVersionsCount()>0){
+      <button type="button" (click)="showOlderVersions.set(!showOlderVersions())">
+       {{showOlderVersions()?'Ocultar versiones anteriores':'Ver versiones anteriores ('+olderVersionsCount()+')'}}
+      </button>
+     }
     </section>
    }
 
@@ -304,6 +310,14 @@ export class GcRecipesDetailPage implements OnInit,GcDirtyAware {
  protected readonly destination=recipeDestination;
  protected readonly quantity=readableQuantity;
  protected readonly versions=computed(()=>this.page.data()?.recetaVersionesComoReceta??[]);
+ /** "Anterior" = once published, now superseded (publicadaEn set, activa false). Those are a
+  *  permanent audit trail (see recipes list note) that clutters day-to-day use, so they're
+  *  collapsed behind a toggle; Publicada/Borrador rows always show. */
+ protected readonly showOlderVersions=signal(false);
+ protected readonly olderVersionsCount=computed(()=>
+  this.versions().filter(v=>v.publicadaEn&&!v.activa).length);
+ protected readonly visibleVersions=computed(()=>this.showOlderVersions()?this.versions():
+  this.versions().filter(v=>!(v.publicadaEn&&!v.activa)));
  /** The record's `versionPublicada` convenience field isn't reliably populated;
   *  every other published-version lookup in this file (e.g. startNewVersion)
   *  derives it from the versions list instead, so "Siguiente paso" does too. */

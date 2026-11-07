@@ -23,7 +23,8 @@ import {GcRecipeStockPreview} from '../components/recipe-stock-preview';
   <gc-recipes-nav/><a class="rec-link" routerLink="/recipes/production">Volver al historial</a>
   <section class="rec-card">
    <h2>Registrar producción</h2>
-   <p class="rec-note">Prepara un lote para el inventario. Puedes guardarlo para revisar o confirmarlo directamente.</p>
+   <p class="rec-note">Esto es un paso manual: prepara por adelantado un lote de un semi-elaborado (ej. una salsa) para que quede disponible en Inventario y otras recetas puedan usarlo como ingrediente. No se dispara solo desde una venta ni desde el POS — regístralo cuando cocina vaya a preparar el lote.</p>
+   <p class="rec-note"><strong>Guardar para revisar</strong> deja la producción pendiente, sin tocar el inventario todavía. <strong>Confirmar producción</strong> descuenta los ingredientes y suma el resultado al inventario de inmediato.</p>
    @if(arrivedFromRecipe()){<p class="rec-note"><strong>Preparación preseleccionada</strong> desde su ficha. Elige la sucursal y ubicación para continuar.</p>}
 
    <div class="rec-section">
