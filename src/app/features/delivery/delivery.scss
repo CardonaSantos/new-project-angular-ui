@@ -1,0 +1,34 @@
+
+:host{display:block;width:100%;min-width:0}
+.del-page{display:grid;gap:.8rem;min-width:0;width:100%}
+.del-narrow{width:min(100%,56rem);margin-inline:auto}
+.del-card{background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius);padding:clamp(.7rem,1.5vw,1rem);display:grid;gap:.75rem;min-width:0}
+.del-card h2,.del-card h3{font-size:1.1rem;margin:0}
+.del-row,.del-actions,.del-toolbar{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}
+.del-row{justify-content:space-between}.del-toolbar{align-items:end}.del-toolbar>:first-child{flex:1 1 14rem}
+.del-field{display:grid;gap:.28rem;min-width:0;align-content:start}.del-field label{font-size:.88rem;font-weight:600}
+.del-field input,.del-field select,.del-field textarea{width:100%;min-width:0;min-height:40px;padding:.42rem .65rem;border:1px solid var(--gc-outline);border-radius:.6rem;background:var(--gc-surface);color:var(--gc-on-surface);font:inherit}
+.del-field input:focus-visible,.del-field select:focus-visible,.del-field textarea:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+.del-muted,.del-field small{font-size:.85rem;color:var(--gc-on-surface-variant)}
+.del-alert{border:1px solid var(--gc-error);border-radius:.6rem;padding:.75rem;color:var(--gc-error);overflow-wrap:anywhere}
+.del-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.del-kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}.del-kv dt{font-size:.85rem;color:var(--gc-on-surface-variant)}.del-kv dd{margin:.2rem 0 0;overflow-wrap:anywhere;font-weight:600}
+.del-actions button,.del-actions a{min-height:44px}
+.del-state-badge{font-size:.82rem;font-weight:650;color:var(--gc-on-surface-variant);white-space:nowrap}
+.del-state-badge--pending{color:var(--gc-on-surface-variant)}
+.del-state-badge--progress{color:var(--gc-primary)}
+.del-state-badge--done{color:var(--gc-primary)}
+.del-state-badge--cancelled{color:var(--gc-error)}
+.del-timeline{display:grid;gap:.5rem}
+.del-timeline-item{border-left:2px solid var(--gc-outline-variant);padding-left:.65rem;display:grid;gap:.1rem}
+.del-blockers{display:grid;gap:.4rem;list-style:none;margin:0;padding:0}
+.del-blockers li{border:1px solid var(--gc-outline-variant);border-radius:.5rem;padding:.5rem .65rem;font-size:.9rem}
+@media(max-width:640px){.del-grid{grid-template-columns:1fr}.del-actions{align-items:stretch;flex-direction:column}.del-actions button,.del-actions a{width:100%}}
+@media(pointer:coarse){.del-field input,.del-field select,.del-field textarea{min-height:44px}}
+.del-field select option{background:var(--gc-surface);color:var(--gc-on-surface)}
+
+/* Filters on the deliveries board use the shared two-column filter grid. */
+.del-toolbar.gc-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem .85rem;align-items:end}
+.del-toolbar.gc-filter-grid > *{min-width:0;max-width:100%;width:100%}
+.del-toolbar.gc-filter-grid > button{width:auto;justify-self:start}
+@media(max-width:640px){.del-toolbar.gc-filter-grid{grid-template-columns:minmax(0,1fr)}}
