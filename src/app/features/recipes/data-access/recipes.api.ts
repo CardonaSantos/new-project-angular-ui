@@ -39,7 +39,7 @@ const silent={context:gcSilentRequest()};
 const params=(query:object)=>({...silent,params:recipeParams(query)});
 export interface RecipeListQuery {
  page?:number;limit?:number;search?:string;tipo?:RecipeKind;
- varianteId?:string;articuloResultadoId?:string;vista?:'RESUMEN'|'COMPLETA';
+ varianteId?:string;articuloResultadoId?:string;vista?:'RESUMEN'|'COMPLETA';activa?:boolean;
 }
 @Injectable({providedIn:'root'})
 export class RecipesApi {
@@ -70,7 +70,8 @@ export class RecipesApi {
  quote(dto:RecipeQuoteInput){
   return this.http.post<RecipeStockPreview>(recipePaths.preview,dto,silent);
  }
- productionList(q:{sucursalId:string;page?:number;limit?:number;fechaDesde?:string;fechaHasta?:string}){
+ productionList(q:{sucursalId:string;page?:number;limit?:number;fechaDesde?:string;fechaHasta?:string;
+  estado?:'BORRADOR'|'CONFIRMADA'|'CANCELADA';search?:string}){
   return this.http.get<RecipePage<ProductionListItem>>(recipePaths.production,params(q));
  }
  productionDetail(id:string){return this.http.get<ProductionDetail>(recipePaths.productionOne(id),silent)}

@@ -19,6 +19,7 @@ import type {RecipeKind,RecipePage,RecipeRecord} from '../data-access/recipes.mo
    <div class="rec-top"><h2>Recetas</h2>
     @if(access.canManage()){<a class="rec-button rec-primary" routerLink="/recipes/list/new">Nueva receta</a>}
    </div>
+   <p class="rec-note">Cada receta puede tener varias fórmulas versionadas; solo la <strong>publicada</strong> se usa para vender o producir. Las fórmulas anteriores quedan como historial y no se pueden eliminar.</p>
    <div class="rec-filters" role="group" aria-label="Filtros de recetas">
     <label class="rec-field">Buscar por nombre
      <span class="rec-search-inline">
@@ -30,6 +31,9 @@ import type {RecipeKind,RecipePage,RecipeRecord} from '../data-access/recipes.mo
     <gc-search-select id="recipes-filter-kind" label="Tipo" [items]="kindChoices"
      [value]="kind()" placeholder="Todas" [searchable]="false"
      (valueChange)="updateQuery({tipo:$event||null,page:null})"/>
+    <gc-search-select id="recipes-filter-activa" label="Estado" [items]="activeChoices"
+     [value]="activeFilter()" placeholder="Todas" [searchable]="false"
+     (valueChange)="updateQuery({activa:$event||null,page:null})"/>
    </div>
    @if(state.busy()){<p role="status" class="rec-muted">Cargando recetas…</p>}
    @if(state.status()==='error'){
@@ -71,23 +75,29 @@ export class GcRecipesListPage {
  protected readonly kindChoices=[
   {id:'VENTA',label:'Productos de la carta'},{id:'PRODUCCION',label:'Preparaciones de inventario'}
  ];
+ protected readonly activeChoices=[{id:'true',label:'Activas'},{id:'false',label:'Inactivas'}];
  protected readonly currentPage=computed(()=>Math.max(1,Number(this.query().get('page')??'1')||1));
  protected readonly kind=computed(()=>this.query().get('tipo')??'');
+ protected readonly activeFilter=computed(()=>this.query().get('activa')??'');
  protected readonly destination=recipeDestination;
  protected readonly published=recipePublished;
  protected readonly typeLabel=recipeKind;
  protected readonly quantity=readableQuantity;
  constructor(){effect(()=>{
-  const page=this.currentPage(),kind=this.kind(),search=this.query().get('search')??'';
+  const page=this.currentPage(),kind=this.kind(),active=this.activeFilter(),search=this.query().get('search')??'';
   this.search.set(search);
   void this.state.load(()=>firstValueFrom(this.api.list({
-   page,limit:20,search,tipo:kind==='VENTA'||kind==='PRODUCCION'?kind as RecipeKind:undefined
+   page,limit:20,search,tipo:kind==='VENTA'||kind==='PRODUCCION'?kind as RecipeKind:undefined,
+   activa:active==='true'?true:active==='false'?false:undefined
   })));
  })}
  protected message(){return gcErrorMessage(this.state.error())}
- protected reload(){void this.state.load(()=>firstValueFrom(this.api.list({
+ protected reload(){
+  const active=this.activeFilter();
+  void this.state.load(()=>firstValueFrom(this.api.list({
   page:this.currentPage(),limit:20,search:this.query().get('search')??'',
-  tipo:this.kind()==='VENTA'||this.kind()==='PRODUCCION'?this.kind() as RecipeKind:undefined
+  tipo:this.kind()==='VENTA'||this.kind()==='PRODUCCION'?this.kind() as RecipeKind:undefined,
+  activa:active==='true'?true:active==='false'?false:undefined
  })))}
  protected apply(){this.updateQuery({search:this.search().trim()||null,page:null})}
  protected move(n:number){this.updateQuery({page:String(Math.max(1,this.currentPage()+n))})}
