@@ -4,4 +4,5 @@ export {
 export type { DecimalDisplayOptions } from './decimal';
 export {
   parseCalendarDate, formatCalendarDate, parseIsoInstant, formatInstant, calendarDateAtBranch,
+  zonedInstantFrom, clockTimeAtBranch,
 } from './date-time';

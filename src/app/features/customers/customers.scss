@@ -1,0 +1,31 @@
+
+:host{display:block;width:100%;min-width:0}
+.cus-page{display:grid;gap:.8rem;min-width:0;width:100%}
+.cus-narrow{width:min(100%,56rem);margin-inline:auto}
+.cus-card{background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius);padding:clamp(.7rem,1.5vw,1rem);display:grid;gap:.75rem;min-width:0}
+.cus-card h2,.cus-card h3{font-size:1.1rem;margin:0}
+.cus-row,.cus-actions,.cus-toolbar{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}
+.cus-row{justify-content:space-between}.cus-toolbar{align-items:end}.cus-toolbar>:first-child{flex:1 1 14rem}
+.cus-field{display:grid;gap:.28rem;min-width:0;align-content:start}.cus-field label{font-size:.88rem;font-weight:600}
+.cus-field input,.cus-field select,.cus-field textarea{width:100%;min-width:0;min-height:40px;padding:.42rem .65rem;border:1px solid var(--gc-outline);border-radius:.6rem;background:var(--gc-surface);color:var(--gc-on-surface);font:inherit}
+.cus-field input:focus-visible,.cus-field select:focus-visible,.cus-field textarea:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+.cus-muted,.cus-field small{font-size:.85rem;color:var(--gc-on-surface-variant)}
+.cus-alert{border:1px solid var(--gc-error);border-radius:.6rem;padding:.75rem;color:var(--gc-error);overflow-wrap:anywhere}
+.cus-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.cus-kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}.cus-kv dt{font-size:.85rem;color:var(--gc-on-surface-variant)}.cus-kv dd{margin:.2rem 0 0;overflow-wrap:anywhere;font-weight:600}
+.cus-actions button,.cus-actions a{min-height:44px}
+.cus-state-badge{font-size:.82rem;font-weight:650;color:var(--gc-on-surface-variant);white-space:nowrap}
+.cus-state-badge--primary{color:var(--gc-primary)}
+.cus-state-badge--inactive{color:var(--gc-error)}
+@media(max-width:640px){.cus-grid{grid-template-columns:1fr}.cus-actions{align-items:stretch;flex-direction:column}.cus-actions button,.cus-actions a{width:100%}}
+@media(pointer:coarse){.cus-field input,.cus-field select,.cus-field textarea{min-height:44px}}
+.cus-field select option{background:var(--gc-surface);color:var(--gc-on-surface)}
+
+/* The customers list filters use the shared two-column filter grid. */
+.cus-toolbar.gc-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem .85rem;align-items:end}
+.cus-toolbar.gc-filter-grid > *{min-width:0;max-width:100%;width:100%}
+.cus-toolbar.gc-filter-grid > button{width:auto;justify-self:start}
+@media(max-width:640px){.cus-toolbar.gc-filter-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* One address card inside the customer detail page. */
+.cus-address-card{border:1px solid var(--gc-outline-variant);border-radius:.65rem;padding:.75rem;display:grid;gap:.5rem}

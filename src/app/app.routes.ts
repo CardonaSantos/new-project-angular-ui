@@ -69,6 +69,14 @@ export const routes: Routes = [
         loadChildren: () => import('./features/finance/finance.routes').then(m => m.FINANCE_ROUTES),
       },
       {
+        path: 'customers', canActivate: [gcSessionGuard], data: { breadcrumb: 'Clientes' },
+        loadChildren: () => import('./features/customers/customers.routes').then(m => m.CUSTOMERS_ROUTES),
+      },
+      {
+        path: 'reservations', canActivate: [gcSessionGuard], data: { breadcrumb: 'Reservaciones' },
+        loadChildren: () => import('./features/reservations/reservations.routes').then(m => m.RESERVATIONS_ROUTES),
+      },
+      {
         path: 'organization',
         canActivate: [gcSessionGuard],
         loadChildren: () =>
