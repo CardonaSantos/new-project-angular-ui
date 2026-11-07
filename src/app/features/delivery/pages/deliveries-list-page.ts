@@ -5,7 +5,7 @@ import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
 import {GcButtonDirective} from '../../../design-system/components/button/gc-button.directive';
-import {GcDataTable,type GcTableRow,type GcTableColumn} from '../../../design-system/data/gc-data-table';
+import {GcDataTable,type GcCellValue,type GcTableRow,type GcTableColumn} from '../../../design-system/data/gc-data-table';
 import {GcTableCellDirective} from '../../../design-system/data/gc-table-cell.directive';
 import {GcPagination,type GcPageChange} from '../../../design-system/data/gc-pagination';
 import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
@@ -83,7 +83,7 @@ export class GcDeliveriesListPage {
  protected async changeEstado(id:string){await this.url.patch({estado:id||null,page:1})}
  protected applySearch(e:Event){e.preventDefault();void this.url.patch({search:this.search().trim()||null,page:1})}
  protected async onPage(e:GcPageChange){await this.url.patch({page:e.index+1,limit:e.size})}
- protected badgeClass(estado:string){
+ protected badgeClass(estado:GcCellValue){
   if(estado==='EN_REPARTO')return 'del-state-badge--progress';
   if(estado==='ENTREGADA')return 'del-state-badge--done';
   if(estado==='CANCELADA')return 'del-state-badge--cancelled';
