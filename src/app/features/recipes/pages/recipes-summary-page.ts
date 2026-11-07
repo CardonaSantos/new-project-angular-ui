@@ -14,6 +14,7 @@ import type {RecipeCoverage} from '../data-access/recipes.models';
   <section class="rec-card">
    <div class="rec-top"><h2>Resumen de recetas</h2>
     <a class="rec-button rec-primary" routerLink="/recipes/list">Ver recetas</a></div>
+   <p class="rec-note">Panorama de cobertura: qué tan completo está el menú en cuanto a recetas publicadas, y qué productos todavía no tienen una.</p>
    @if(loading()){<p class="rec-muted" role="status">Consultando recetas…</p>}
    @if(error()){<p class="rec-alert" role="alert">{{error()}} <button type="button" (click)="load()">Reintentar</button></p>}
    @if(data();as report){

@@ -27,7 +27,7 @@ interface Material {key:number;articuloId:string;nombre:string;cantidad:string;u
    <div class="rec-top"><h2>Reglas de empaque</h2>
     @if(access.canManage()){<button class="rec-primary" type="button" (click)="createNew()">Nueva regla</button>}
    </div>
-
+   <p class="rec-note">Agrega materiales de empaque (cajas, bolsas, vasos) automáticamente a una orden, según el tipo de entrega. Se aplican a todo el pedido o a una presentación específica.</p>
    <div class="rec-filters">
     <gc-search-select id="packaging-filter-branch" label="Sucursal" [items]="branchChoices()"
      [value]="filterBranch()" placeholder="Todas las sucursales"
