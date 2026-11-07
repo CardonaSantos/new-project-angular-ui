@@ -87,7 +87,7 @@ export class PurchasesApi {
  cancelReceipt(id:string,key:string){
   return this.http.post<PurchaseReceiptSaved>(purchasePaths.receipt(id)+'/cancel',{claveOperacion:key});
  }
- requisitions(q:{sucursalId:string;page?:number;limit?:number}){
+ requisitions(q:{sucursalId:string;estado?:'ABIERTA'|'ATENDIDA'|'CANCELADA'|'';search?:string;page?:number;limit?:number}){
   return this.http.get<PurchasePage<SupplyRequisition>>(purchasePaths.requisitions,query(q));
  }
  createRequisition(body:{almacenDestinoId:string;nota?:string;claveOperacion:string;

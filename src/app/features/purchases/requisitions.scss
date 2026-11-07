@@ -1,0 +1,32 @@
+
+:host{display:block;width:100%;min-width:0}
+.req-page{display:grid;gap:.8rem;min-width:0;width:100%}
+.req-narrow{width:min(100%,56rem);margin-inline:auto}
+.req-card{background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius);padding:clamp(.7rem,1.5vw,1rem);display:grid;gap:.75rem;min-width:0}
+.req-card h2,.req-card h3{font-size:1.1rem;margin:0}
+.req-row,.req-actions,.req-toolbar{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}
+.req-row{justify-content:space-between}.req-toolbar{align-items:end}.req-toolbar>:first-child{flex:1 1 14rem}
+.req-field{display:grid;gap:.28rem;min-width:0;align-content:start}.req-field label{font-size:.88rem;font-weight:600}
+.req-field input,.req-field select,.req-field textarea{width:100%;min-width:0;min-height:40px;padding:.42rem .65rem;border:1px solid var(--gc-outline);border-radius:.6rem;background:var(--gc-surface);color:var(--gc-on-surface);font:inherit}
+.req-field input:focus-visible,.req-field select:focus-visible,.req-field textarea:focus-visible{outline:2px solid var(--gc-primary);outline-offset:3px}
+.req-muted,.req-field small{font-size:.85rem;color:var(--gc-on-surface-variant)}
+.req-alert{border:1px solid var(--gc-error);border-radius:.6rem;padding:.75rem;color:var(--gc-error);overflow-wrap:anywhere}
+.req-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.req-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+.req-kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}.req-kv dt{font-size:.85rem;color:var(--gc-on-surface-variant)}.req-kv dd{margin:.2rem 0 0;overflow-wrap:anywhere;font-weight:600}
+.req-actions button,.req-actions a{min-height:44px}
+.req-state-badge{font-size:.82rem;font-weight:650;color:var(--gc-on-surface-variant);white-space:nowrap}
+.req-state-badge--open{color:var(--gc-on-surface-variant)}
+.req-state-badge--progress{color:var(--gc-primary)}
+.req-state-badge--done{color:var(--gc-primary)}
+.req-state-badge--cancelled{color:var(--gc-error)}
+.req-line{border:1px solid var(--gc-outline-variant);border-radius:.6rem;padding:.65rem;display:grid;gap:.5rem}
+@media(max-width:640px){.req-grid,.req-grid-3{grid-template-columns:1fr}.req-actions{align-items:stretch;flex-direction:column}.req-actions button,.req-actions a{width:100%}}
+@media(pointer:coarse){.req-field input,.req-field select,.req-field textarea{min-height:44px}}
+.req-field select option{background:var(--gc-surface);color:var(--gc-on-surface)}
+
+/* The requisitions list filters use the shared two-column filter grid. */
+.req-toolbar.gc-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem .85rem;align-items:end}
+.req-toolbar.gc-filter-grid > *{min-width:0;max-width:100%;width:100%}
+.req-toolbar.gc-filter-grid > button{width:auto;justify-self:start}
+@media(max-width:640px){.req-toolbar.gc-filter-grid{grid-template-columns:minmax(0,1fr)}}
