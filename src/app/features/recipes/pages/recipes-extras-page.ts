@@ -28,6 +28,7 @@ interface ExtraLine {
   <section class="rec-card">
    <div class="rec-top"><h2>Ingredientes de extras</h2>
     <a class="rec-link" routerLink="/catalog/extras">Administrar extras</a></div>
+   <p class="rec-note">Aquí defines qué le hace cada extra del catálogo (ej. "extra queso", "sin cebolla") al ingrediente de una receta cuando se elige en una orden. El extra en sí se crea en Catálogo; esto solo conecta ese extra con el inventario.</p>
    <div class="rec-filters">
     <label class="rec-field">Buscar extra
      <span class="rec-search-inline">
