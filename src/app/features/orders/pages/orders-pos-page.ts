@@ -97,6 +97,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
        <span [class.ord-occupied]="!!table.ocupacion">
         {{!table.activa?'Inactiva':table.ocupacion?'Ocupada · continuar':'Disponible'}}
        </span>
+       @if(tableClient(table);as nombre){<small class="ord-pos-table-client">{{nombre}}</small>}
       </button>
      } @empty {<p class="ord-note">No hay mesas con estos filtros.</p>}
     </div>
@@ -106,7 +107,8 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
  @if(prefs.view()==='counter'&&existingOrder();as current){
   <div class="ord-pos-table-context">
    <div><strong>Ampliando {{current.numero}}</strong>
-    <span>Pedido abierto · Total anterior {{money(current.total,currency())}}</span></div>
+    <span>Pedido abierto · Total anterior {{money(current.total,currency())}}
+     {{current.cliente?' · '+current.cliente.nombre:''}}</span></div>
    <div class="ord-actions">
     <a class="ord-pos-context-button" [routerLink]="['/orders/list',current.id]">Ver detalles</a>
     @if(paymentsAccess.canRead()){
@@ -129,7 +131,8 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
    <div><strong>Mesa {{selectedTable()?.numero}} · {{selectedTable()?.sala?.nombre}}</strong>
     @if(existingOrder();as current){
      <span>Orden {{current.numero}} · Total {{money(current.total,currency())}} ·
-      {{current.ordenLineasComoOrden.length}} productos registrados</span>
+      {{current.ordenLineasComoOrden.length}} productos registrados
+      {{current.cliente?' · '+current.cliente.nombre:''}}</span>
     }@else{<span>Pedido nuevo</span>}
    </div>
    <div class="ord-actions">
@@ -468,6 +471,9 @@ export class GcOrdersPosPage{
  protected readonly tableChoices=computed(()=>this.tables().filter(x=>x.activa).map(t=>({
   id:t.id,label:t.sala.nombre+' · Mesa '+t.numero+(t.ocupacion?' (ocupada)':'')
  })));
+ protected tableClient(table:TableRecord){
+  return table.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA')?.cliente?.nombre??null;
+ }
  protected readonly total=computed(()=>{
   const amounts=this.cart().map(line=>parseApiDecimal(line.price).mul(line.quantity).minus(line.discount||'0').toFixed());
   return sumDecimals(amounts);

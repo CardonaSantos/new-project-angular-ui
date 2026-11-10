@@ -115,7 +115,8 @@ export class GcOrderStatus{
      [class.ord-ticket-badge--working]="stage().kind==='working'">{{stage().label}}</span>
   </div>
   <small>{{ticket().estacion?.nombre??'Cocina'}} · {{ticket().orden?.ocupacionMesa?.mesa?.numero?
-    'Mesa '+ticket().orden?.ocupacionMesa?.mesa?.numero:'Sin mesa'}}</small>
+    'Mesa '+ticket().orden?.ocupacionMesa?.mesa?.numero:'Sin mesa'}}
+   @if(ticket().orden?.cliente){ · {{ticket().orden?.cliente?.nombre}}}</small>
   <small class="ord-ticket-time">
    @if(ticket().estado==='LISTA'){Lista desde {{readyAt()|date:'HH:mm'}}}
    @else {Pedido recibido {{ticket().enviadaEn|date:'HH:mm'}}}

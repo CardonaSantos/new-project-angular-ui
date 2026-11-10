@@ -46,6 +46,9 @@ import {printableKitchenLines,kitchenModifierNames} from '../printing/thermal-pr
      @if(data.orden?.ocupacionMesa?.mesa?.numero){
       <div><span>Mesa</span><strong>{{data.orden?.ocupacionMesa?.mesa?.numero}}</strong></div>
      }
+     @if(data.orden?.cliente){
+      <div><span>Cliente</span><strong>{{data.orden?.cliente?.nombre}}</strong></div>
+     }
      <div><span>Recibida</span><span>{{time(data.enviadaEn)}}</span></div>
      <div><span>Estado</span><strong>{{data.estado}}</strong></div>
     </section>
