@@ -14,6 +14,7 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {formatInstant} from '../../../shared/formatting';
 import {DeliveryApi} from '../data-access/delivery.api';
+import {DeliveryAccess} from '../data-access/delivery-access';
 import {DELIVERY_STATE_LABEL,type DeliveryState} from '../data-access/delivery.models';
 import {DeliveriesUrlState} from '../data-access/deliveries-url-state';
 
@@ -27,7 +28,11 @@ const ESTADO_CHOICES=(Object.keys(DELIVERY_STATE_LABEL) as DeliveryState[]).map(
   GcPagination,GcErrorState,GcSearchSelect],
  template:`
  <main class="del-page">
-  <gc-page-header title="Entregas" description="Tablero de pedidos a domicilio y de plataformas externas."/>
+  <gc-page-header title="Entregas" description="Tablero de pedidos a domicilio y de plataformas externas.">
+   @if(access.canSettlementsRead()||access.canSettlementsManage()){
+    <a gcPageActions gcButton variant="outline" routerLink="/delivery/settlements">Liquidar repartidor</a>
+   }
+  </gc-page-header>
   <section class="del-card">
    <div class="del-toolbar gc-filter-grid">
     <gc-search-select id="del-branch" label="Sucursal" [items]="branchChoices()"
@@ -60,6 +65,7 @@ const ESTADO_CHOICES=(Object.keys(DELIVERY_STATE_LABEL) as DeliveryState[]).map(
  styleUrl:'../delivery.scss'
 })
 export class GcDeliveriesListPage {
+ protected readonly access=inject(DeliveryAccess);
  protected readonly url=inject(DeliveriesUrlState);
  protected readonly branch=inject(GcBranchContext);
  protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
