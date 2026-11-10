@@ -48,7 +48,9 @@ export class OrdersReadyAlertService{
  private readonly announced=new Set<string>();
 
  constructor(){
+  console.log('[ready-alert] servicio arrancado, esperando KITCHEN_TICKET_UPDATED');
   this.realtime.listen<{comandaId?:string}>('KITCHEN_TICKET_UPDATED',payload=>{
+   console.log('[ready-alert] evento recibido',payload);
    const id=payload?.comandaId;
    if(id)void this.check(id);
   });
@@ -58,6 +60,7 @@ export class OrdersReadyAlertService{
   try{
    const ticket=await firstValueFrom(this.api.ticket(ticketId));
    const stage=kitchenStage(ticket).kind;
+   console.log('[ready-alert] ticket',ticketId,'stage=',stage,'ya anunciado=',this.announced.has(ticketId));
    if(stage!=='ready'){this.announced.delete(ticketId);return}
    if(this.announced.has(ticketId))return;
    this.announced.add(ticketId);
@@ -65,9 +68,10 @@ export class OrdersReadyAlertService{
    this.notices.show(
     (numero?'Pedido '+numero:'Una comanda')+' ya está lista para entregar.','success',8000);
    playReadyChime();
-  }catch{
+  }catch(e){
    // A viewer without kitchen.read (or a transient network hiccup) just gets no alert this time;
    // the next event (or the existing Cocina poll) will catch up regardless.
+   console.log('[ready-alert] no se pudo consultar el ticket',ticketId,e);
   }
  }
 }
