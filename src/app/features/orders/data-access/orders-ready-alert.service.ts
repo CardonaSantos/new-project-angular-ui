@@ -72,13 +72,18 @@ export class OrdersReadyAlertService{
    const ticket=await firstValueFrom(this.api.ticket(ticketId));
    const stage=kitchenStage(ticket).kind;
    console.log('[ready-alert] ticket',ticketId,'stage=',stage,'ya anunciado=',this.announced.has(ticketId));
-   if(stage!=='ready'){this.announced.delete(ticketId);return}
+   // "Lista y entregada" (readyDeliver) jumps straight to 'delivered' in one step — it never passes
+   // through 'ready' at all — but POS still needs to collect payment either way, so both stages
+   // trigger the same alert. Only 'pending'/'working'/'cancelled' reset the dedup guard.
+   if(stage!=='ready'&&stage!=='delivered'){this.announced.delete(ticketId);return}
    if(this.announced.has(ticketId))return;
    this.announced.add(ticketId);
    if(!this.onRelevantScreen())return;
    const numero=ticket.orden?.numero;
+   const label=numero?'Pedido '+numero:'Una comanda';
    this.notices.show(
-    (numero?'Pedido '+numero:'Una comanda')+' ya está lista para entregar.','success',8000,
+    stage==='delivered'?label+' fue entregado — ya puedes cobrarlo.':label+' ya está lista para entregar.',
+    'success',8000,
     ticket.ordenId?{label:'Cobrar',path:['/orders/list',ticket.ordenId]}:undefined);
    playReadyChime();
   }catch(e){
