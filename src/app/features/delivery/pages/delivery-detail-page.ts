@@ -11,10 +11,14 @@ import {GcSearchSelect,type GcSelectOption} from '../../../design-system/forms/g
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {gcErrorMessage} from '../../../core/http/api-error';
-import {formatInstant} from '../../../shared/formatting';
+import {formatInstant,parseApiDecimal} from '../../../shared/formatting';
+import {money} from '../../orders/data-access/orders.helpers';
 import {UsersApi} from '../../users/data-access/users.api';
+import {PaymentsApi} from '../../payments/data-access/payments.api';
+import type {AccountSummary} from '../../payments/data-access/payments.models';
 import {DeliveryApi} from '../data-access/delivery.api';
 import {DeliveryAccess} from '../data-access/delivery-access';
+import {DeliverySettlementsApi} from '../data-access/delivery-settlements.api';
 import type {DeliveryRecord,DeliveryEvent,ClosureReadiness} from '../data-access/delivery.models';
 import {DELIVERY_STATE_LABEL,CLOSURE_BLOCKER_LABEL} from '../data-access/delivery.models';
 
@@ -72,6 +76,30 @@ const EVENT_LABEL:Record<string,string>={DELIVERY_CREATED:'Entrega creada',
      }
     </div>
    </section>
+
+   @if(canCollectCash(r)&&openAccount();as acc){
+    <section class="del-card">
+     <h2>Cobrar efectivo contra entrega</h2>
+     <p class="del-muted">El cobro queda a nombre del repartidor y se liquida después contra una caja abierta.</p>
+     @if(accountChoices().length>1){
+      <div class="del-field">
+       <gc-search-select id="del-cash-account" label="Cuenta" [items]="accountChoices()"
+        [value]="selectedAccountId()" [searchable]="false" (valueChange)="selectAccount($event)"/>
+      </div>
+     }
+     <div class="del-field">
+      <label for="del-cash-amount">Monto a cobrar</label>
+      <input id="del-cash-amount" [value]="cashAmount()" inputmode="decimal"
+       (input)="cashAmount.set($any($event.target).value)"/>
+      <small>Saldo pendiente de esta cuenta: {{money(remainder(acc))}}</small>
+     </div>
+     @if(cashError()){<p class="del-alert" role="alert">{{cashError()}}</p>}
+     <div class="del-actions">
+      <button type="button" gcButton [disabled]="cashBusy()||!canSubmitCash()" (click)="collectCash()">
+       {{cashBusy()?'Cobrando…':'Registrar cobro'}}</button>
+     </div>
+    </section>
+   }
 
    @if(showCancel()){
     <section class="del-card">
@@ -132,8 +160,11 @@ export class GcDeliveryDetailPage implements OnInit {
  private readonly session=inject(GcSessionService);
  private readonly api=inject(DeliveryApi);
  private readonly users=inject(UsersApi);
+ private readonly payments=inject(PaymentsApi);
+ private readonly settlements=inject(DeliverySettlementsApi);
  private readonly notice=inject(GcNotificationService);
  private readonly dialogs=inject(ConfirmDialogService);
+ protected readonly money=money;
  protected readonly row=signal<DeliveryRecord|null>(null);
  protected readonly loadError=signal<string|null>(null);
  protected readonly readiness=signal<ClosureReadiness|null>(null);
@@ -142,7 +173,12 @@ export class GcDeliveryDetailPage implements OnInit {
  protected readonly courierBusy=signal(false);
  protected readonly actionBusy=signal(false);protected readonly actionError=signal('');
  protected readonly showCancel=signal(false);protected readonly cancelReason=signal('');
+ protected readonly accounts=signal<AccountSummary[]>([]);
+ protected readonly selectedAccountId=signal('');
+ protected readonly cashAmount=signal('0.00');
+ protected readonly cashBusy=signal(false);protected readonly cashError=signal('');
  private assignKey=crypto.randomUUID();private actionKey=crypto.randomUUID();private cancelKey=crypto.randomUUID();
+ private cashKey=crypto.randomUUID();
  private readonly courierSearch=new Subject<string>();
  constructor(){
   this.courierSearch.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed()).subscribe(term=>{
@@ -165,6 +201,60 @@ export class GcDeliveryDetailPage implements OnInit {
   if(this.access.canManage())return true;
   return this.access.canCourier()&&r.repartidorId===this.session.user()?.id;
  }
+ protected canCollectCash(r:DeliveryRecord){
+  if(r.estado!=='EN_REPARTO'&&r.estado!=='ENTREGADA')return false;
+  if(r.canalExterno)return false;
+  if(this.access.canManage())return true;
+  return this.access.canCourier()&&r.repartidorId===this.session.user()?.id;
+ }
+ protected remainder(a:AccountSummary){
+  try{return parseApiDecimal(a.total).minus(parseApiDecimal(a.pagado)).toFixed(2)}catch{return '0.00'}
+ }
+ /** Only accounts still open and with a balance left can receive a courier cash collection. */
+ protected accountChoices(){
+  return this.accounts().filter(a=>a.estado==='ABIERTA'&&parseApiDecimal(this.remainder(a)).gt(0))
+   .map(a=>({id:a.id,label:(a.nombre??'Cuenta')+' — '+this.money(this.remainder(a))}));
+ }
+ protected openAccount(){
+  return this.accounts().find(a=>a.id===this.selectedAccountId())??null;
+ }
+ protected selectAccount(id:string){
+  this.selectedAccountId.set(id);
+  const acc=this.accounts().find(a=>a.id===id);
+  if(acc)this.cashAmount.set(this.remainder(acc));
+ }
+ protected canSubmitCash(){
+  const acc=this.openAccount();if(!acc)return false;
+  try{
+   const n=parseApiDecimal(this.cashAmount()||'0');
+   return n.gt(0)&&n.lte(parseApiDecimal(this.remainder(acc)));
+  }catch{return false}
+ }
+ protected async collectCash(){
+  const r=this.row();const acc=this.openAccount();
+  if(!r||!acc||this.cashBusy()||!this.canSubmitCash())return;
+  this.cashBusy.set(true);this.cashError.set('');
+  try{
+   await firstValueFrom(this.settlements.collectCash(r.id,
+    {cuentaId:acc.id,monto:this.cashAmount().trim(),claveOperacion:this.cashKey}));
+   this.cashKey=crypto.randomUUID();
+   this.notice.show('Efectivo cobrado. Queda pendiente de liquidar.','success');
+   await this.loadAccounts(r.ordenId);
+  }catch(e){this.cashError.set(gcErrorMessage(e))}
+  finally{this.cashBusy.set(false)}
+ }
+ private async loadAccounts(ordenId:string){
+  try{
+   const accounts=await firstValueFrom(this.payments.accounts(ordenId));
+   this.accounts.set(accounts);
+   const choices=this.accountChoices();
+   const stillValid=choices.some(c=>c.id===this.selectedAccountId());
+   const first=choices[0];
+   if(!stillValid&&first){this.selectedAccountId.set(first.id);this.cashAmount.set(this.remainder(
+    accounts.find(a=>a.id===first.id)!));}
+   else if(!first){this.selectedAccountId.set('');this.cashAmount.set('0.00');}
+  }catch{this.accounts.set([])}
+ }
  protected async load(){
   const id=this.route.snapshot.paramMap.get('id');if(!id)return;
   this.loadError.set(null);
@@ -177,6 +267,7 @@ export class GcDeliveryDetailPage implements OnInit {
      firstValueFrom(this.api.closureReadiness(id)).catch(()=>null):Promise.resolve(null),
    ]);
    this.events.set(events.data);this.readiness.set(readiness);
+   if(this.canCollectCash(r))await this.loadAccounts(r.ordenId);
   }catch(e){this.loadError.set(gcErrorMessage(e))}
  }
  protected searchCouriers(term:string){this.courierSearch.next(term)}

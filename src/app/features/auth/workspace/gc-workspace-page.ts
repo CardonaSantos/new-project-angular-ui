@@ -7,6 +7,7 @@ import {formatInstant} from '../../../shared/formatting';
 import {OrdersAccess} from '../../orders/data-access/orders-access';
 import {PaymentsAccess} from '../../payments/data-access/payments-access';
 import {PurchasesAccess} from '../../purchases/data-access/purchases-access';
+import {DeliveryAccess} from '../../delivery/data-access/delivery-access';
 import {ReportsAccess} from '../../reports/data-access/reports-access';
 import {ReportsApi} from '../../reports/data-access/reports.api';
 import type {OperationalDashboard,ReportsOverview} from '../../reports/data-access/reports.models';
@@ -135,6 +136,7 @@ export class GcWorkspacePage {
  private readonly orders=inject(OrdersAccess);
  private readonly payments=inject(PaymentsAccess);
  private readonly purchases=inject(PurchasesAccess);
+ private readonly delivery=inject(DeliveryAccess);
  protected readonly operational=signal<OperationalDashboard|null>(null);
  protected readonly today=signal<ReportsOverview|null>(null);
  protected readonly opError=signal('');
@@ -151,6 +153,10 @@ export class GcWorkspacePage {
   if(this.payments.canSalesRead())results.push({path:'/payments/sales',title:'Ventas',detail:'Historial de ventas'});
   if(this.purchases.canQuickEntry())results.push({path:'/purchases/quick',title:'Entrada de stock',detail:'Ingresar insumos'});
   if(this.branch.has('inventory.read'))results.push({path:'/inventory',title:'Inventario',detail:'Revisar existencias'});
+  if(this.delivery.canCourier()&&!this.delivery.canManage()&&!this.delivery.canRead())
+   results.push({path:'/delivery',title:'Mis entregas',detail:'Ver y actualizar tus repartos'});
+  else if(this.delivery.canEnter())
+   results.push({path:'/delivery',title:'Entregas',detail:'Tablero de repartos'});
   return results;
  });
  constructor(){

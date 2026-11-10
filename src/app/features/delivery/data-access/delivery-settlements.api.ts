@@ -2,11 +2,12 @@ import {HttpClient,HttpParams} from '@angular/common/http';
 import {Injectable,inject} from '@angular/core';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
- CourierPendingPage,CourierSettlementDetail,CourierSettlementDirectResult,
- DirectCourierSettlementInput,PlatformChannel,RegisterChannelInput
+ CourierCashCollectInput,CourierCashCollectResult,CourierPendingPage,CourierSettlementDetail,
+ CourierSettlementDirectResult,DirectCourierSettlementInput,PlatformChannel,RegisterChannelInput
 } from './delivery-settlements.models';
 
 export const settlementPaths={
+ collectCash:(id:string)=>'/api/deliveries/'+encodeURIComponent(id)+'/collect-cash',
  pending:'/api/deliveries/settlements/couriers/pending',
  closeDirect:'/api/deliveries/settlements/couriers/close-direct',
  courierDetail:(id:string)=>'/api/deliveries/settlements/couriers/'+encodeURIComponent(id),
@@ -30,6 +31,9 @@ export interface CourierPendingQuery{
 @Injectable({providedIn:'root'})
 export class DeliverySettlementsApi{
  private readonly http=inject(HttpClient);
+ collectCash(entregaId:string,d:CourierCashCollectInput){
+  return this.http.post<CourierCashCollectResult>(settlementPaths.collectCash(entregaId),d,silent);
+ }
  pending(q:CourierPendingQuery){
   return this.http.get<CourierPendingPage>(settlementPaths.pending,params(q));
  }

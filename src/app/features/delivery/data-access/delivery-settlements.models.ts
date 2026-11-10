@@ -4,6 +4,8 @@ export interface CourierPendingPayment{
  pagoId:string;cuentaId:string;entregaId:string|null;repartidorId:string|null;
  monto:string;cobradoEn:string;
 }
+export interface CourierCashCollectInput{cuentaId:string;monto:string;claveOperacion:string}
+export interface CourierCashCollectResult{pagoId:string;cuentaId:string;monto:string}
 export interface CourierPendingPage{
  data:CourierPendingPayment[];meta:{page:number;limit:number;total:number;totalPages:number};
 }
