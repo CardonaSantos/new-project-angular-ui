@@ -66,7 +66,8 @@ export interface KitchenTicket{
   ocupacionMesa?:{mesa:{numero:string}}|null;cliente?:OrderCustomer|null};
  comandaLineasComoComanda:KitchenLine[];
 }
-export interface OrderListQuery{sucursalId:string;estado?:OrderState;modalidad?:OrderMode;search?:string;page?:number;limit?:number}
+export interface OrderListQuery{sucursalId:string;estado?:OrderState;modalidad?:OrderMode;search?:string;
+ clienteId?:string;page?:number;limit?:number}
 export interface TicketListQuery{sucursalId:string;estacionId?:string;estado?:TicketState;page?:number;limit?:number}
 export interface OrderQuoteLine{
  varianteId:string;nombre:string;cantidad:string;precioUnitario:string;subtotal:string;

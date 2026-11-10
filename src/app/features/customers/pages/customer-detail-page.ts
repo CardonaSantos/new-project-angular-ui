@@ -1,6 +1,6 @@
 
 import {Component,computed,inject,OnInit,signal} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcPageHeader} from '../../../design-system/components/page-header/gc-page-header';
@@ -10,16 +10,30 @@ import {GcConfirmedAction} from '../../../core/ux/gc-confirmed-action';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
+import {DatePipe} from '@angular/common';
+import {GcDataTable,type GcTableRow,type GcTableColumn} from '../../../design-system/data/gc-data-table';
+import {GcTableCellDirective} from '../../../design-system/data/gc-table-cell.directive';
+import {GcPagination,type GcPageChange} from '../../../design-system/data/gc-pagination';
 import {CustomersApi} from '../data-access/customers.api';
 import {CustomersAccess} from '../data-access/customers-access';
 import type {CustomerAddress,CustomerDetail} from '../data-access/customers.models';
+import {CustomerOrderHistory} from '../data-access/customer-order-history';
+import type {CustomerOrderHistoryItem,CustomerOrderMode,CustomerOrderState} from '../data-access/customer-order-history';
+import {formatCurrency,formatInstant} from '../../../shared/formatting';
 
 const coordinate=/^-?(?:0|[1-9]\d{0,2})(?:\.\d{1,7})?$/;
 const operationKey=(kind:string)=>kind+':'+crypto.randomUUID();
+const ORDER_MODE_LABEL:Record<CustomerOrderMode,string>={
+ MESA:'Mesa',MOSTRADOR:'Mostrador',PARA_LLEVAR:'Para llevar',DELIVERY:'Delivery'
+};
+const ORDER_STATE_LABEL:Record<CustomerOrderState,string>={
+ ABIERTA:'Abierta',CERRADA:'Cerrada',CANCELADA:'Cancelada'
+};
 
 @Component({
  selector:'gc-customer-detail-page',
- imports:[GcPageHeader,GcButtonDirective,GcErrorState],
+ imports:[GcPageHeader,GcButtonDirective,GcErrorState,DatePipe,RouterLink,
+  GcDataTable,GcTableCellDirective,GcPagination],
  template:`
  <div class="cus-page cus-narrow">
   <gc-page-header [title]="customer()?.nombre??'Cliente'"/>
@@ -35,6 +49,7 @@ const operationKey=(kind:string)=>kind+':'+crypto.randomUUID();
       <div><dt>NIT</dt><dd>{{c.nit??'—'}}</dd></div>
       <div><dt>Teléfono</dt><dd>{{c.telefono??'—'}}</dd></div>
       <div><dt>Email</dt><dd>{{c.email??'—'}}</dd></div>
+      <div><dt>Cliente desde</dt><dd>{{c.creadoEn|date:'dd/MM/yyyy'}}</dd></div>
      </dl>
      <p class="cus-muted">{{c.notas??'Sin notas.'}}</p>
      @if(canManage()){
@@ -163,6 +178,23 @@ const operationKey=(kind:string)=>kind+':'+crypto.randomUUID();
      </div>
     }
    </section>
+
+   <section class="cus-card">
+    <div class="cus-row"><h2>Historial de pedidos</h2>
+     <span class="cus-muted">{{ordersTotal()}} en total</span></div>
+    @if(ordersError()){<gc-error-state [message]="ordersError()!" (retry)="loadOrders()"/>}
+    @else{
+     @if(!ordersBusy()&&!orders().length){<p class="cus-muted">Este cliente aún no tiene pedidos registrados.</p>}
+     @else{
+      <gc-data-table [columns]="orderColumns" [rows]="orderRows()" [loading]="ordersBusy()">
+       <ng-template gcTableCell="numero" let-row>
+        <a [routerLink]="['/orders/list',row['id']]">{{row['numero']}}</a>
+       </ng-template>
+      </gc-data-table>
+      <gc-pagination [index]="ordersPage()-1" [size]="10" [total]="ordersTotal()" (pageChange)="onOrdersPage($event)"/>
+     }
+    }
+   </section>
   }
  </div>`,
  styleUrl:'../customers.scss'
@@ -171,12 +203,31 @@ export class GcCustomerDetailPage implements OnInit {
  private readonly route=inject(ActivatedRoute);
  private readonly branch=inject(GcBranchContext);
  private readonly api=inject(CustomersApi);
+ private readonly orderHistory=inject(CustomerOrderHistory);
  private readonly access=inject(CustomersAccess);
  private readonly dialog=inject(ConfirmDialogService);
  private readonly notices=inject(GcNotificationService);
  protected readonly customer=signal<CustomerDetail|null>(null);
  protected readonly addresses=signal<CustomerAddress[]>([]);
  protected readonly loadError=signal<string|null>(null);
+ protected readonly orders=signal<CustomerOrderHistoryItem[]>([]);
+ protected readonly ordersBusy=signal(false);
+ protected readonly ordersError=signal<string|null>(null);
+ protected readonly ordersPage=signal(1);
+ protected readonly ordersPages=signal(0);
+ protected readonly ordersTotal=signal(0);
+ protected readonly money=(v:string)=>formatCurrency(v);
+ protected modeLabel(m:CustomerOrderMode){return ORDER_MODE_LABEL[m]}
+ protected stateLabel(s:CustomerOrderState){return ORDER_STATE_LABEL[s]}
+ protected readonly orderColumns:GcTableColumn[]=[
+  {key:'numero',label:'Número'},{key:'modalidad',label:'Tipo'},{key:'abiertaEn',label:'Fecha'},
+  {key:'total',label:'Importe'},{key:'estado',label:'Estado'}];
+ protected readonly orderRows=computed<GcTableRow[]>(()=>{
+  const zone=this.branch.branches().find(b=>b.id===this.sucursalId)?.zonaHoraria??'America/Guatemala';
+  return this.orders().map(o=>({id:o.id,numero:o.numero,modalidad:this.modeLabel(o.modalidad),
+   abiertaEn:formatInstant(o.abiertaEn,zone,'DD/MM/YYYY HH:mm'),total:this.money(o.total),
+   estado:this.stateLabel(o.estado)}));
+ });
  protected readonly action=new GcConfirmedAction();
  private get id(){return this.route.snapshot.paramMap.get('id')??''}
  private get sucursalId(){return this.branch.branchId()??''}
@@ -218,7 +269,7 @@ export class GcCustomerDetailPage implements OnInit {
   (!this.eLatitud().trim()||coordinate.test(this.eLatitud().trim()))&&
   (!this.eLongitud().trim()||coordinate.test(this.eLongitud().trim())));
 
- async ngOnInit(){await this.load()}
+ async ngOnInit(){await this.load();await this.loadOrders()}
  protected async load(){
   this.loadError.set(null);
   try{
@@ -228,6 +279,19 @@ export class GcCustomerDetailPage implements OnInit {
    ]);
    this.customer.set(c);this.addresses.set(a.data);
   }catch(e){this.loadError.set(gcErrorMessage(e))}
+ }
+ protected async loadOrders(){
+  this.ordersBusy.set(true);this.ordersError.set(null);
+  try{
+   const page=await firstValueFrom(this.orderHistory.list(
+    {sucursalId:this.sucursalId,clienteId:this.id,page:this.ordersPage(),limit:10}));
+   this.orders.set(page.data);this.ordersTotal.set(page.meta.total);this.ordersPages.set(page.meta.totalPages);
+  }catch(e){this.ordersError.set(gcErrorMessage(e))}
+  finally{this.ordersBusy.set(false)}
+ }
+ protected async onOrdersPage(e:GcPageChange){
+  this.ordersPage.set(e.index+1);
+  await this.loadOrders();
  }
  protected startEdit(){
   const c=this.customer();if(!c)return;
