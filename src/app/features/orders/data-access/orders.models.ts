@@ -18,7 +18,7 @@ export interface CreateOrderInput{
  enviarCocina?:boolean;claveOperacion:string;
  // Solo leídos por el backend cuando modalidad==='DELIVERY'; encadena la creación
  // de la Entrega en la misma transacción que la orden (ver OrderStore.createCoreTx).
- direccionTexto?:string;referenciaDireccion?:string;telefonoContacto?:string;
+ direccionTexto?:string;referenciaDireccion?:string;telefonoContacto?:string;repartidorId?:string;
 }
 export interface AddLinesInput{lineas:OrderLineInput[];enviarCocina?:boolean;claveOperacion:string}
 export interface EditLineInput extends Partial<Omit<OrderLineInput,'varianteId'>>{claveOperacion:string}

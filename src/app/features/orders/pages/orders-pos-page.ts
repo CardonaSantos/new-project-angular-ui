@@ -1,16 +1,19 @@
 import {Component,computed,effect,ElementRef,HostListener,inject,signal,viewChild} from '@angular/core';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
-import {firstValueFrom} from 'rxjs';
+import {Subject,debounceTime,distinctUntilChanged,firstValueFrom} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
-import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
+import {GcSearchSelect,type GcSelectOption} from '../../../design-system/forms/gc-search-select';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {CatalogApi} from '../../catalog/data-access/catalog.api';
 import type {CatalogBranchMenu,CatalogProjectedGroup,CatalogProjectedItem} from '../../catalog/data-access/catalog.models';
 import {BranchesApi} from '../../organization/data-access/organization-api';
 import type {BranchConfig} from '../../organization/data-access/organization.models';
 import {sumDecimals,parseApiDecimal} from '../../../shared/formatting';
+import {UsersApi} from '../../users/data-access/users.api';
+import {DeliveryApi} from '../../delivery/data-access/delivery.api';
 import {GcOrdersNav} from '../orders-nav';
 import {GcPosProduct,GcPosCart} from '../components/orders-ui';
 import {GcPosExpressCheckout} from '../components/pos-express-checkout';
@@ -251,8 +254,13 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
         <input type="tel" maxlength="45" [value]="telefonoContacto()" [disabled]="submitting()"
          (input)="telefonoContacto.set($any($event.target).value);invalidateKey()"/>
        </label>
+       <gc-search-select id="pos-courier" label="Repartidor (opcional)" [items]="courierChoices()"
+        [value]="repartidorId()" [remote]="true" [loading]="courierBusy()" [disabled]="submitting()"
+        placeholder="Buscar repartidor por nombre…"
+        (valueChange)="selectCourier($event)" (searchChange)="searchCouriers($event)" (opened)="searchCouriers('')"/>
        <p class="ord-note">
-        La entrega se crea junto con el pedido. Podrás asignar repartidor desde Entregas.
+        La entrega se crea junto con el pedido.
+        @if(!repartidorId()){Si no asignas repartidor ahora, podrás hacerlo después desde Entregas.}
        </p>
       </div>
      }
@@ -374,6 +382,8 @@ export class GcOrdersPosPage{
  private readonly confirm=inject(ConfirmDialogService);
  private readonly notices=inject(GcNotificationService);
  private readonly activatedRoute=inject(ActivatedRoute);
+ private readonly usersApi=inject(UsersApi);
+ private readonly deliveryApi=inject(DeliveryApi);
  protected readonly context=inject(GcBranchContext);
  protected readonly access=inject(OrdersAccess);
  protected readonly paymentsAccess=inject(PaymentsAccess);
@@ -413,6 +423,10 @@ export class GcOrdersPosPage{
  protected readonly direccionTexto=signal('');
  protected readonly referenciaDireccion=signal('');
  protected readonly telefonoContacto=signal('');
+ protected readonly repartidorId=signal('');
+ protected readonly courierChoices=signal<GcSelectOption[]>([]);
+ protected readonly courierBusy=signal(false);
+ private readonly courierSearch=new Subject<string>();
  protected readonly sendKitchen=signal(true);
  protected readonly productTypes=computed(()=>new Map(
   (this.menu()?.menus??[]).flatMap(menu=>menu.secciones.flatMap(section=>
@@ -473,13 +487,18 @@ export class GcOrdersPosPage{
   return sumDecimals(amounts);
  });
  protected readonly currency=computed(()=>this.cart()[0]?.currency??this.config()?.moneda??'GTQ');
- constructor(){effect(()=>{
+ constructor(){
+  this.courierSearch.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed()).subscribe(term=>{
+   void this.loadCouriers(term);
+  });
+  effect(()=>{
   const branch=this.context.branchId();
   this.prefs.load();
   if(branch){
    this.selectedTable.set(null);this.existingOrder.set(null);this.quickDraft.set(null);
    this.expressSale.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);
    this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
+   this.repartidorId.set('');this.courierChoices.set([]);
    this.invalidateKey();void this.reload();
   }
  })}
@@ -519,6 +538,7 @@ export class GcOrdersPosPage{
   this.mode.set(v);if(v!=='MESA'){this.selectedTable.set(null);this.existingOrder.set(null)}
   if(v!=='DELIVERY'){
    this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
+   this.repartidorId.set('');this.courierChoices.set([]);
   }
   if(v==='MESA'&&!this.tables().length)void this.loadTables();
   this.invalidateKey();
@@ -667,6 +687,21 @@ export class GcOrdersPosPage{
  }
  protected remove(id:string){if(this.submitting())return;this.cart.update(lines=>lines.filter(x=>x.key!==id));this.invalidateKey()}
  protected invalidateKey(){if(!this.submitting())this.operationId=''}
+ protected searchCouriers(term:string){this.courierSearch.next(term)}
+ private async loadCouriers(term:string){
+  const branch=this.context.branchId();if(!branch)return;
+  this.courierBusy.set(true);
+  try{
+   const result=await firstValueFrom(this.usersApi.options(
+    {sucursalId:branch,purpose:'delivery.courier',search:term||undefined,limit:20}));
+   this.courierChoices.set(result.data.map(u=>({id:u.id,label:u.label})));
+  }catch{/* non-critical: the picker just stays empty, courier assignment is optional */}
+  finally{this.courierBusy.set(false)}
+ }
+ protected selectCourier(id:string){
+  if(this.submitting())return;
+  this.repartidorId.set(id);this.invalidateKey();
+ }
  protected async clearCart(){
   if(this.submitting()||!this.cart().length)return;
   if(!await this.confirm.confirm({title:'Vaciar pedido actual',
@@ -694,6 +729,7 @@ export class GcOrdersPosPage{
     direccionTexto:this.direccionTexto().trim(),
     ...(this.referenciaDireccion().trim()?{referenciaDireccion:this.referenciaDireccion().trim()}:{}),
     ...(this.telefonoContacto().trim()?{telefonoContacto:this.telefonoContacto().trim()}:{}),
+    ...(this.repartidorId()?{repartidorId:this.repartidorId()}:{}),
    }:{}),
    lineas:this.cart().map(asOrderLine),enviarCocina:shouldProcess,claveOperacion:this.operationId
   };
@@ -725,14 +761,34 @@ export class GcOrdersPosPage{
    if(existing){
     this.existingOrder.set(data);
    }else{
+    const wasDeliveryWithoutCourier=this.mode()==='DELIVERY'&&!this.repartidorId();
     this.selectedTable.set(null);this.existingOrder.set(null);
     this.mode.set('MOSTRADOR');
     this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
+    this.repartidorId.set('');this.courierChoices.set([]);
     this.showTablePicker.set(this.prefs.view()==='tables');
+    if(wasDeliveryWithoutCourier)void this.notifyMissingCourier(branch,data.id,data.numero);
    }
    if(this.prefs.view()==='tables')void this.loadTables();
   }catch(e){this.submitError.set(orderFriendlyError(e))}
   finally{this.submitting.set(false)}
+ }
+ /** Delivery orders can be sent without a courier (assigning one is optional in the POS
+  * form). When that happens, surface a toast that stays up until dismissed, with a link
+  * straight to where the courier gets assigned later — rather than letting the order
+  * silently sit unassigned until someone happens to check Entregas. */
+ private async notifyMissingCourier(sucursalId:string,ordenId:string,numero:string){
+  try{
+   const page=await firstValueFrom(this.deliveryApi.list({sucursalId,ordenId,limit:1}));
+   const entregaId=page.data[0]?.id;
+   if(entregaId){
+    this.notices.show('El pedido '+numero+' es delivery y no tiene repartidor asignado.',
+     'warning',0,{label:'Asignar repartidor',path:['/delivery',entregaId]});
+    return;
+   }
+  }catch{/* fall through to the link-less notice below */}
+  this.notices.show('El pedido '+numero+' es delivery y no tiene repartidor asignado. Asígnalo desde Entregas.',
+   'warning',0);
  }
  protected async openExistingFromUrl(id:string){
   const branch=this.context.branchId();if(!branch)return;
