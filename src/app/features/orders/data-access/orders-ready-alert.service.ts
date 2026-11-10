@@ -59,9 +59,7 @@ export class OrdersReadyAlertService{
  }
 
  constructor(){
-  console.log('[ready-alert] servicio arrancado, esperando KITCHEN_TICKET_UPDATED');
   this.realtime.listen<{comandaId?:string}>('KITCHEN_TICKET_UPDATED',payload=>{
-   console.log('[ready-alert] evento recibido',payload);
    const id=payload?.comandaId;
    if(id)void this.check(id);
   });
@@ -71,7 +69,6 @@ export class OrdersReadyAlertService{
   try{
    const ticket=await firstValueFrom(this.api.ticket(ticketId));
    const stage=kitchenStage(ticket).kind;
-   console.log('[ready-alert] ticket',ticketId,'stage=',stage,'ya anunciado=',this.announced.has(ticketId));
    // "Lista y entregada" (readyDeliver) jumps straight to 'delivered' in one step — it never passes
    // through 'ready' at all — but POS still needs to collect payment either way, so both stages
    // trigger the same alert. Only 'pending'/'working'/'cancelled' reset the dedup guard.
@@ -86,10 +83,9 @@ export class OrdersReadyAlertService{
     'success',8000,
     ticket.ordenId?{label:'Cobrar',path:['/orders/list',ticket.ordenId]}:undefined);
    playReadyChime();
-  }catch(e){
+  }catch{
    // A viewer without kitchen.read (or a transient network hiccup) just gets no alert this time;
    // the next event (or the existing Cocina poll) will catch up regardless.
-   console.log('[ready-alert] no se pudo consultar el ticket',ticketId,e);
   }
  }
 }

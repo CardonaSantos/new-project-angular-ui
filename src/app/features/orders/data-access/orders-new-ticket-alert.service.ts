@@ -55,9 +55,7 @@ export class OrdersNewTicketAlertService{
  private readonly announced=new Set<string>();
 
  constructor(){
-  console.log('[new-ticket-alert] servicio arrancado, esperando KITCHEN_TICKET_CREATED');
   this.realtime.listen<{comandaId?:string}>('KITCHEN_TICKET_CREATED',payload=>{
-   console.log('[new-ticket-alert] evento recibido',payload);
    const id=payload?.comandaId;
    if(id)void this.announce(id);
   });
@@ -78,10 +76,9 @@ export class OrdersNewTicketAlertService{
    const who=estacion?' para '+estacion:'';
    this.notices.show(
     'Nueva comanda'+who+(numero?' — pedido '+numero:'')+'.','info',8000);
-  }catch(e){
+  }catch{
    // Couldn't fetch details (permission gap or transient network hiccup) — still ring, since the
    // event itself confirms a ticket was created even if we can't name it right now.
-   console.log('[new-ticket-alert] no se pudo consultar el ticket',ticketId,e);
    this.notices.show('Nueva comanda enviada a cocina.','info',8000);
   }
   playNewTicketChime();

@@ -21,8 +21,8 @@ export class GcRealtimeService implements OnDestroy {
   // long-lived caller (a root singleton, or a component that hasn't been destroyed) never has to
   // notice that the underlying socket was torn down and recreated.
   private readonly registrations = new Map<string, Map<GcEventHandler<unknown>, (...data: unknown[]) => void>>();
-  private connected = (): void => { console.log('[realtime] conectado'); this.status.set('connected'); };
-  private disconnected = (): void => { console.log('[realtime] desconectado'); this.status.set('disconnected'); };
+  private connected = (): void => { this.status.set('connected'); };
+  private disconnected = (): void => { this.status.set('disconnected'); };
 
   attach(transport: GcRealtimeTransport): void {
     if (this.transport) this.teardownTransport();
@@ -33,7 +33,6 @@ export class GcRealtimeService implements OnDestroy {
       for (const handler of [...handlers.keys()]) this.wire(event, handler);
     }
     this.status.set('connecting');
-    console.log('[realtime] conectando...');
     transport.connect();
   }
 
@@ -51,7 +50,6 @@ export class GcRealtimeService implements OnDestroy {
 
   /** No-op while disconnected: callers don't need to guard every emit on connection status. */
   emit(event: string, ...args: unknown[]): void {
-    console.log('[realtime] emit ->', event, args);
     this.transport?.emit(event, ...args);
   }
 
@@ -74,7 +72,6 @@ export class GcRealtimeService implements OnDestroy {
   private wire(event: string, handler: GcEventHandler<unknown>): void {
     if (!this.transport) return;
     const wrapped = (...data: unknown[]): void => {
-      console.log('[realtime] evento recibido <-', event, data[0]);
       handler(data[0]);
     };
     this.registrations.get(event)!.set(handler, wrapped);
