@@ -29,6 +29,7 @@ import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
 import { OrdersReadyAlertService } from '../features/orders/data-access/orders-ready-alert.service';
+import { OrdersNewTicketAlertService } from '../features/orders/data-access/orders-new-ticket-alert.service';
 
 @Component({
   selector: 'gc-app-shell',
@@ -60,6 +61,8 @@ export class GcAppShell {
   private readonly realtime = inject(GcRealtimeService);
   // Only needs to exist: its constructor wires the "comanda lista" toast/chime app-wide.
   private readonly ordersReadyAlert = inject(OrdersReadyAlertService);
+  // Only needs to exist: its constructor wires the "comanda nueva en cocina" toast/chime app-wide.
+  private readonly ordersNewTicketAlert = inject(OrdersNewTicketAlertService);
   private readonly router = inject(Router);
   protected readonly items = computed<readonly GcNavigationItem[]>(() =>
     this.session.authenticated()
