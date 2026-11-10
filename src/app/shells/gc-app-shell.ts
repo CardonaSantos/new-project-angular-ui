@@ -119,11 +119,18 @@ export class GcAppShell {
         this.avatar.clear();
       }
     });
-    // Invalidate connections on identity/branch changes; rejoin rooms after real backend integration.
+    // Reconnect and rejoin the active sucursal's room whenever login state or branch changes.
+    // A fresh connection on every change is simplest and keeps the handshake token current.
     effect(() => {
-      this.auth.identity();
-      this.auth.branchId();
+      const authenticated = this.session.authenticated();
+      const branch = this.context.branchId();
+      const token = this.session.accessToken();
       this.realtime.disconnect();
+      if (authenticated && branch && token && typeof window !== 'undefined') {
+        void this.realtime.connectSocketIo(window.location.origin + '/realtime', { token })
+          .then(() => this.realtime.emit('join:sucursal', branch))
+          .catch(() => undefined);
+      }
     });
     this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd), takeUntilDestroyed()).subscribe(() => this.closeMobile());
   }

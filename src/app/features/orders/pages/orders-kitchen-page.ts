@@ -1,4 +1,4 @@
-import {Component,computed,effect,HostListener,inject,signal,untracked} from '@angular/core';
+import {Component,computed,DestroyRef,effect,HostListener,inject,signal,untracked} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
@@ -6,6 +6,7 @@ import {firstValueFrom,interval} from 'rxjs';
 import {parseApiDecimal} from '../../../shared/formatting';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
+import {GcRealtimeService} from '../../../core/realtime/gc-realtime.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {GcOrdersNav} from '../orders-nav';
@@ -168,6 +169,8 @@ export class GcOrdersKitchenPage{
  private readonly confirm=inject(ConfirmDialogService);
  private readonly notices=inject(GcNotificationService);
  private readonly branch=inject(GcBranchContext);
+ private readonly realtime=inject(GcRealtimeService);
+ private readonly destroyRef=inject(DestroyRef);
  protected readonly access=inject(OrdersAccess);
  protected readonly branches=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
  protected readonly stationOptions=computed(()=>this.stations().filter(x=>x.activa).map(s=>({id:s.id,label:s.nombre})));
@@ -210,6 +213,12 @@ export class GcOrdersKitchenPage{
    if(this.autoRefresh()&&typeof document!=='undefined'&&!document.hidden&&
     this.branchId()&&!this.busy())void this.poll();
   });
+  // Socket event is a push hint, not a data source: reuse the same incremental poll the
+  // 7s timer already calls, so a missed/duplicate event is harmless either way.
+  const unlisten=this.realtime.listen('KITCHEN_TICKET_UPDATED',()=>{
+   if(this.branchId()&&!this.busy())void this.poll();
+  });
+  this.destroyRef.onDestroy(unlisten);
  }
  protected setView(v:'active'|'ready'|'delivered'|'cancelled'|'all'){
   if(v===this.view())return;

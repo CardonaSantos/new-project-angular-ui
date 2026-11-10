@@ -9,6 +9,7 @@ export interface GcRealtimeTransport {
   disconnect(): void;
   on(event: string, handler: (...data: unknown[]) => void): void;
   off(event: string, handler: (...data: unknown[]) => void): void;
+  emit(event: string, ...args: unknown[]): void;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -38,6 +39,11 @@ export class GcRealtimeService implements OnDestroy {
       auth,
     });
     this.attach(socket as unknown as GcRealtimeTransport);
+  }
+
+  /** No-op while disconnected: callers don't need to guard every emit on connection status. */
+  emit(event: string, ...args: unknown[]): void {
+    this.transport?.emit(event, ...args);
   }
 
   listen<T>(event: string, handler: GcEventHandler<T>): () => void {
