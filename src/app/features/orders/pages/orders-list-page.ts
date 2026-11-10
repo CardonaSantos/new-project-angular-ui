@@ -68,7 +68,8 @@ import {money,modeText} from '../data-access/orders.helpers';
         <strong [title]="item.numero">{{item.numero}}</strong>
         <span class="ord-ticket-badge">Abierta</span>
        </div>
-       <p class="ord-note">{{item.mesa?'Mesa '+item.mesa.numero+' · '+item.mesa.sala.nombre:modeText(item.modalidad)}}</p>
+       <p class="ord-note">{{item.mesa?'Mesa '+item.mesa.numero+' · '+item.mesa.sala.nombre:modeText(item.modalidad)}}
+        @if(item.cliente){ · {{item.cliente.nombre}}}</p>
        <div class="ord-worklist-money">
         <div><span>Total</span><strong>{{money(item.total)}}</strong></div>
         <div><span>Pendiente</span><strong>{{money(item.saldo)}}</strong></div>
@@ -96,12 +97,13 @@ import {money,modeText} from '../data-access/orders.helpers';
    }
    @if(!busy()&&!error()&&view()==='history'){
     <div class="ord-table-wrap ord-order-list-table"><table class="ord-table">
-     <thead><tr><th>Número</th><th>Tipo</th><th>Fecha</th><th>Importe</th><th>Estado</th><th>Acción</th></tr></thead>
+     <thead><tr><th>Número</th><th>Tipo</th><th>Cliente</th><th>Fecha</th><th>Importe</th><th>Estado</th><th>Acción</th></tr></thead>
      <tbody>
      @for(item of items();track item.id){
       <tr class="ord-order-data-row">
        <td data-label="Número"><strong class="ord-order-number" [title]="item.numero">{{item.numero}}</strong></td>
        <td data-label="Tipo">{{modeText(item.modalidad)}}</td>
+       <td data-label="Cliente">{{item.cliente?.nombre??'—'}}</td>
        <td data-label="Fecha">{{item.abiertaEn|date:'dd/MM/yyyy HH:mm'}}</td>
        <td data-label="Importe" class="ord-order-total">{{money(item.total)}}</td>
        <td data-label="Estado"><gc-order-status [state]="item.estado"/></td>
@@ -112,7 +114,7 @@ import {money,modeText} from '../data-access/orders.helpers';
         }
        </div></td>
       </tr>
-     } @empty {<tr><td colspan="6" class="ord-order-empty">
+     } @empty {<tr><td colspan="7" class="ord-order-empty">
        {{hasFilters()?'No hay órdenes con estos filtros.':'No hay órdenes registradas en esta sucursal.'}}
       </td></tr>}
      </tbody>

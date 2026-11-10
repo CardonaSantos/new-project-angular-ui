@@ -50,6 +50,10 @@ import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-prin
        <div><span>Sala</span><span>{{data.ocupacionMesa?.mesa?.sala?.nombre}}</span></div>
       }
      }
+     @if(data.cliente){
+      <div><span>Cliente</span><strong>{{data.cliente.nombre}}</strong></div>
+      @if(data.cliente.telefono){<div><span>Teléfono</span><span>{{data.cliente.telefono}}</span></div>}
+     }
      <div><span>Registrado</span><span>{{time(data.abiertaEn)}}</span></div>
      <div><span>Estado</span><strong>{{data.estado}}</strong></div>
     </section>

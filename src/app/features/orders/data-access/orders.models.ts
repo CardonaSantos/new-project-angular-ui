@@ -22,9 +22,11 @@ export interface CreateOrderInput{
 }
 export interface AddLinesInput{lineas:OrderLineInput[];enviarCocina?:boolean;claveOperacion:string}
 export interface EditLineInput extends Partial<Omit<OrderLineInput,'varianteId'>>{claveOperacion:string}
+export interface OrderCustomer{id:string;nombre:string;telefono?:string|null}
 export interface OrderSummary{
  id:string;numero:string;modalidad:OrderMode;origen:OrderOrigin;estado:OrderState;
  version:number;total:string;abiertaEn:string;ocupacionMesaId:string|null;
+ clienteId:string|null;cliente:OrderCustomer|null;
 }
 export interface OrderLineModifier {id:string;modificadorId:string;nombreSnapshot:string;cantidad:number;recargoUnitario:string}
 export interface OrderLine{
@@ -37,7 +39,7 @@ export interface OrderLine{
 }
 export interface Account{ id:string;estado:string;total:string;pagado:string }
 export interface OrderDetail extends OrderSummary{
- sucursalId:string;clienteId:string|null;observaciones:string|null;
+ sucursalId:string;observaciones:string|null;
  subtotal:string;descuentoTotal:string;
  ordenLineasComoOrden:OrderLine[];
  cuentasComoOrden:Account[];
@@ -45,7 +47,9 @@ export interface OrderDetail extends OrderSummary{
  comandasComoOrden?:{id:string;numero:string;estado:TicketState;estacionId:string;enviadaEn:string}[];
 }
 export interface Room{id:string;sucursalId:string;nombre:string;activa:boolean;orden:number;mesasComoSala?:{id:string;numero:string;capacidad:number;activa:boolean}[]}
-export interface Occupancy{id:string;mesaId:string;cerradaEn:string|null;ordenesComoOcupacionMesa?:{id:string;numero:string;estado:OrderState;total:string;cerradaEn:string|null}[]}
+export interface Occupancy{id:string;mesaId:string;cerradaEn:string|null;ordenesComoOcupacionMesa?:{
+ id:string;numero:string;estado:OrderState;total:string;cerradaEn:string|null;
+ clienteId:string|null;cliente:OrderCustomer|null}[]}
 export interface TableRecord{id:string;numero:string;capacidad:number;activa:boolean;sala:{id:string;nombre:string};ocupacion:Occupancy|null}
 export interface Station{id:string;sucursalId:string;nombre:string;activa:boolean;ubicacionConsumoId:string|null;ubicacionConsumo?:{id:string;nombre:string;codigo:string}|null}
 export interface KitchenRoute{id:string;estacionId:string;varianteId:string|null;categoriaId:string|null;prioridad:number;
@@ -58,7 +62,8 @@ export interface KitchenLine{
 export interface KitchenTicket{
  id:string;numero:string;estado:TicketState;estacionId:string;ordenId:string;enviadaEn:string;
  estacion?:{id:string;nombre:string;ubicacionConsumoId:string|null};
- orden?:{id:string;numero:string;modalidad:OrderMode;estado:OrderState;observaciones:string|null;ocupacionMesa?:{mesa:{numero:string}}|null};
+ orden?:{id:string;numero:string;modalidad:OrderMode;estado:OrderState;observaciones:string|null;
+  ocupacionMesa?:{mesa:{numero:string}}|null;cliente?:OrderCustomer|null};
  comandaLineasComoComanda:KitchenLine[];
 }
 export interface OrderListQuery{sucursalId:string;estado?:OrderState;modalidad?:OrderMode;search?:string;page?:number;limit?:number}
@@ -90,6 +95,7 @@ export interface PayAndSendResult{
 export interface WorkOrder{
  id:string;numero:string;modalidad:OrderMode;estado:OrderState;version:number;abiertaEn:string;
  ocupacionMesaId:string|null;mesa:{id:string;numero:string;sala:{nombre:string}}|null;
+ cliente:OrderCustomer|null;
  total:string;pagado:string;saldo:string;needsProcessing:boolean;
  kitchen:{pending:number;preparing:number;toDeliver:number};
 }
