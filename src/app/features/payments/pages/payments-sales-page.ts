@@ -73,13 +73,14 @@ import {parseApiDecimal} from '../../../shared/formatting';
    @if(!error()){
     <div class="ord-table-wrap pay-sales-table">
      <table class="ord-table">
-      <thead><tr><th>Fecha</th><th>Venta</th><th>Pedido</th><th>Total</th><th>Acción</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Venta</th><th>Pedido</th><th>Cliente</th><th>Total</th><th>Acción</th></tr></thead>
       <tbody>
        @for(s of sales();track s.id){
         <tr class="pay-sales-data-row">
          <td data-label="Fecha">{{s.cerradaEn|date:'dd/MM/yyyy HH:mm'}}</td>
          <td data-label="Venta"><strong class="pay-sales-number" [title]="s.numero">{{s.numero}}</strong></td>
          <td data-label="Pedido"><span [title]="s.cuenta?.orden?.numero??''">{{s.cuenta?.orden?.numero??'—'}}</span></td>
+         <td data-label="Cliente">{{s.cuenta?.orden?.cliente?.nombre??'—'}}</td>
          <td data-label="Total" class="pay-sales-money">{{money(s.total)}}</td>
          <td data-label="Detalle">
           <div class="ord-actions">
@@ -93,7 +94,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
         </tr>
        } @empty {
         @if(!busy()){
-         <tr><td colspan="5" class="pay-sales-empty">
+         <tr><td colspan="6" class="pay-sales-empty">
           {{hasFilters()?'No hay ventas con esos filtros.':'No hay ventas registradas en esta sucursal.'}}
          </td></tr>
         }

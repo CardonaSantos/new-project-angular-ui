@@ -38,6 +38,9 @@ import {thermalAmount,saleForBranch} from '../../orders/printing/thermal-print.h
      @if(item.cuenta?.orden?.numero){
       <div><span>Orden</span><span>{{item.cuenta?.orden?.numero}}</span></div>
      }
+     @if(item.cuenta?.orden?.cliente){
+      <div><span>Cliente</span><strong>{{item.cuenta?.orden?.cliente?.nombre}}</strong></div>
+     }
      <div><span>Fecha</span><span>{{time(item.cerradaEn)}}</span></div>
      @if(!currency()){
       <p class="gc-thermal-notice">No se pudo verificar la moneda de la sucursal. Valores sin símbolo.</p>

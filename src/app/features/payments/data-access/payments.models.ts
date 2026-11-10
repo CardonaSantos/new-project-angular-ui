@@ -29,7 +29,8 @@ export interface SaleRecord{
  cerradaEn:string;descuentoTotal:string;
  ventaLineasComoVenta?:{id:string;descripcion:string;cantidad:string;subtotal:string;
   precioUnitario:string;descuento:string}[];
- cuenta?:{id:string;orden?:{id:string;numero:string;modalidad:string;estado:string}};
+ cuenta?:{id:string;orden?:{id:string;numero:string;modalidad:string;estado:string;
+  cliente?:{id:string;nombre:string}|null}};
 }
 export interface SalesFilters{
  search?:string;desde?:string;hasta?:string;minTotal?:string;maxTotal?:string;

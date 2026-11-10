@@ -25,6 +25,9 @@ import type {SaleRecord} from '../data-access/payments.models';
    @if(data.cuenta?.orden?.numero){
     <p class="pay-sale-order">Pedido asociado: <strong>{{data.cuenta?.orden?.numero}}</strong></p>
    }
+   @if(data.cuenta?.orden?.cliente){
+    <p class="pay-sale-order">Cliente: <strong>{{data.cuenta?.orden?.cliente?.nombre}}</strong></p>
+   }
    <h3>Productos vendidos</h3>
    <div class="pay-sale-lines">
     @for(line of data.ventaLineasComoVenta??[];track line.id){
