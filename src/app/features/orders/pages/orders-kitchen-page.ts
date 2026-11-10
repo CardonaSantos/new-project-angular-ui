@@ -13,7 +13,7 @@ import {GcKitchenTicket,GcKitchenModifiers} from '../components/orders-ui';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
 import type {KitchenTicket,Station} from '../data-access/orders.models';
-import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../data-access/orders.helpers';
+import {ingredientShortageMarker,kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../data-access/orders.helpers';
 @Component({
  selector:'gc-orders-kitchen-page',imports:[RouterLink,GcOrdersNav,GcSearchSelect,GcKitchenTicket,GcKitchenModifiers,CdkTrapFocus],
  template:`
@@ -52,7 +52,9 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../
    <button type="button" [class.active]="view()==='all'"
     [attr.aria-pressed]="view()==='all'" (click)="setView('all')">Todas</button>
   </div>
-  @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>}
+  @if(error()){<p role="alert" class="ord-alert">{{error()}}</p>
+   @if(error()?.includes(shortageMarker)){<a routerLink="/inventory/operations/movements/manual">Ingresar stock de inventario</a>}
+  }
   @if(busy()){<p role="status" class="ord-muted">Consultando cocina…</p>}
   @if(!busy()&&!error()&&view()!=='cancelled'){
    <div class="ord-kitchen-summary">
@@ -119,7 +121,9 @@ import {kitchenStage,modeText,operationKey,orderFriendlyError,qtyText} from '../
     <span><strong>Estación:</strong> {{ticket.estacion?.nombre??'Sin estación'}}</span>
    </div>
    @if(ticket.orden?.observaciones){<p class="ord-note">Nota del pedido: {{ticket.orden?.observaciones}}</p>}
-   @if(error()){<p class="ord-alert" role="alert">{{error()}}</p>}
+   @if(error()){<p class="ord-alert" role="alert">{{error()}}</p>
+    @if(error()?.includes(shortageMarker)){<a routerLink="/inventory/operations/movements/manual">Ingresar stock de inventario</a>}
+   }
    <div class="ord-kitchen-dialog-lines">
     @for(line of ticket.comandaLineasComoComanda;track line.id){
      <article class="ord-order-line">
@@ -173,6 +177,7 @@ export class GcOrdersKitchenPage{
  protected readonly tickets=signal<KitchenTicket[]>([]);protected readonly selected=signal<KitchenTicket|null>(null);
  protected readonly busy=signal(false);protected readonly actionBusy=signal(false);
  protected readonly error=signal<string|null>(null);
+ protected readonly shortageMarker=ingredientShortageMarker;
  protected readonly page=signal(1);protected readonly total=signal(0);protected readonly pages=signal(0);
  protected readonly limit=signal(30);protected readonly limitText=computed(()=>String(this.limit()));
  protected readonly pageSizes=[{id:'15',label:'15'},{id:'30',label:'30'},{id:'50',label:'50'}];

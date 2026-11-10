@@ -1,4 +1,4 @@
-import {gcErrorMessage} from '../../../core/http/api-error';
+import {GcApiError,gcErrorMessage} from '../../../core/http/api-error';
 import {formatCurrency,formatDecimal,parseApiDecimal} from '../../../shared/formatting';
 import type {KitchenTicket,OrderMode,OrderState,TableRecord,TicketState} from './orders.models';
 import {modeLabel,stateLabel} from './orders.models';
@@ -41,8 +41,33 @@ export const kitchenStage=(ticket:KitchenTicket):{label:string;kind:'pending'|'w
 export const pendingDeliveryLines=(ticket:KitchenTicket)=>
  ticket.comandaLineasComoComanda.filter(line=>!line.canceladaEn&&!!line.listaEn&&!line.entregadaEn);
 
+/** Raw shape of ConsumptionStore's "insuficientes" shortfall list (see consumption.store.ts). */
+interface InsufficientIngredient{
+ articuloId:string;requerido:string;disponible:string;faltante?:string;
+ articulo?:{id:string;codigo:string;nombre:string;unidadBase?:{id:string;codigo:string;nombre:string}|null}|null;
+}
+const readInsufficientIngredients=(error:unknown):InsufficientIngredient[]|null=>{
+ if(!(error instanceof GcApiError))return null;
+ const body=error.source?.error;
+ if(!body||typeof body!=='object')return null;
+ const list=(body as Record<string,unknown>)['insuficientes'];
+ return Array.isArray(list)&&list.length?list as InsufficientIngredient[]:null;
+};
+const ingredientShortageText=(item:InsufficientIngredient):string=>{
+ const nombre=item.articulo?.nombre??'Un ingrediente';
+ const unidad=item.articulo?.unidadBase?.nombre;
+ const sufijo=unidad?' '+unidad:'';
+ return `${nombre}: tienes ${qtyText(item.disponible)}${sufijo}, necesitas ${qtyText(item.requerido)}${sufijo}`;
+};
+/** Marker substring the kitchen page checks for to show the "ir a inventario" link. */
+export const ingredientShortageMarker='Ingresa el producto en Inventario';
+
 export const orderFriendlyError=(error:unknown):string=>{
  const message=gcErrorMessage(error);
+ const shortages=readInsufficientIngredients(error);
+ if(shortages)
+  return `Ingredientes insuficientes para preparar esta comanda: ${shortages.map(ingredientShortageText).join(' · ')}. `
+   +`${ingredientShortageMarker} para registrar el stock que falta y vuelve a intentar.`;
  if(/Variante preparada sin receta publicada/i.test(message))
   return 'Este producto todavía no tiene una receta publicada. Publícala en Recetas y vuelve a intentar; tu pedido sigue aquí.';
  if(/Variante sin precio vigente en sucursal/i.test(message))
