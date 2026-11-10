@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, firstValueFrom } from 'rxjs';
@@ -28,6 +28,8 @@ import { DeliveryAccess } from '../features/delivery/data-access/delivery-access
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
+import { OrdersReadyAlertService } from '../features/orders/data-access/orders-ready-alert.service';
+import { OrdersNewTicketAlertService } from '../features/orders/data-access/orders-new-ticket-alert.service';
 
 @Component({
   selector: 'gc-app-shell',
@@ -57,6 +59,10 @@ export class GcAppShell {
   private readonly avatar=inject(GcCurrentAvatarStore);
   private readonly usersApi=inject(UsersApi);
   private readonly realtime = inject(GcRealtimeService);
+  // Only needs to exist: its constructor wires the "comanda lista" toast/chime app-wide.
+  private readonly ordersReadyAlert = inject(OrdersReadyAlertService);
+  // Only needs to exist: its constructor wires the "comanda nueva en cocina" toast/chime app-wide.
+  private readonly ordersNewTicketAlert = inject(OrdersNewTicketAlertService);
   private readonly router = inject(Router);
   protected readonly items = computed<readonly GcNavigationItem[]>(() =>
     this.session.authenticated()
@@ -119,11 +125,24 @@ export class GcAppShell {
         this.avatar.clear();
       }
     });
-    // Invalidate connections on identity/branch changes; rejoin rooms after real backend integration.
+    // Connect once per login and just rejoin the room when the active sucursal changes — no
+    // need to tear down and re-handshake the whole socket for that. Only logging out (or never
+    // having logged in) disconnects; GcRealtimeService itself keeps `listen()` registrations
+    // (Cocina, the ready alert) alive across any disconnect/reconnect, so those never need to
+    // notice this effect running again.
     effect(() => {
-      this.auth.identity();
-      this.auth.branchId();
-      this.realtime.disconnect();
+      const authenticated = this.session.authenticated();
+      const branch = this.context.branchId();
+      const token = this.session.accessToken();
+      if (!authenticated || !token) { this.realtime.disconnect(); return; }
+      const alreadyConnected = untracked(() => this.realtime.status() !== 'disconnected');
+      if (!alreadyConnected && typeof window !== 'undefined') {
+        void this.realtime.connectSocketIo(window.location.origin + '/realtime', { token })
+          .then(() => { if (branch) this.realtime.emit('join:sucursal', branch); })
+          .catch(() => undefined);
+      } else if (branch) {
+        this.realtime.emit('join:sucursal', branch);
+      }
     });
     this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd), takeUntilDestroyed()).subscribe(() => this.closeMobile());
   }
