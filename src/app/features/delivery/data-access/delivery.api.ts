@@ -28,7 +28,8 @@ function deliveryParams(query:object):HttpParams{
 const silent={context:gcSilentRequest()};
 const params=(query:object)=>({...silent,params:deliveryParams(query)});
 export interface DeliveryListQuery{
- sucursalId:string;page?:number;limit?:number;estado?:DeliveryState;repartidorId?:string;search?:string;
+ sucursalId:string;page?:number;limit?:number;estado?:DeliveryState;repartidorId?:string;
+ ordenId?:string;search?:string;
 }
 @Injectable({providedIn:'root'})
 export class DeliveryApi{
