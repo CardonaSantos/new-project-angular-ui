@@ -1,0 +1,73 @@
+import {Injectable,inject} from '@angular/core';
+import {firstValueFrom} from 'rxjs';
+import {GcRealtimeService} from '../../../core/realtime/gc-realtime.service';
+import {GcNotificationService} from '../../../core/ux/gc-notification.service';
+import {OrdersApi} from './orders.api';
+import {kitchenStage} from './orders.helpers';
+
+/** Short two-note chime via Web Audio — no asset file to ship, works offline. Browsers that
+ * block audio without a prior user gesture simply stay silent; the toast still shows either way. */
+function playReadyChime():void{
+ if(typeof window==='undefined')return;
+ try{
+  const Ctx=window.AudioContext??(window as unknown as {webkitAudioContext?:typeof AudioContext}).webkitAudioContext;
+  if(!Ctx)return;
+  const ctx=new Ctx();
+  void ctx.resume();
+  const now=ctx.currentTime;
+  for(const [i,freq] of [880,1320].entries()){
+   const osc=ctx.createOscillator(),gain=ctx.createGain();
+   osc.type='sine';osc.frequency.value=freq;
+   const start=now+i*0.18;
+   gain.gain.setValueAtTime(0.0001,start);
+   gain.gain.exponentialRampToValueAtTime(0.3,start+0.02);
+   gain.gain.exponentialRampToValueAtTime(0.0001,start+0.35);
+   osc.connect(gain).connect(ctx.destination);
+   osc.start(start);osc.stop(start+0.4);
+  }
+  setTimeout(()=>void ctx.close(),800);
+ }catch{
+  // Best-effort: a failed chime must never break the toast that carries the actual information.
+ }
+}
+
+/**
+ * App-wide "comanda lista" alert. A KITCHEN_TICKET_UPDATED socket event only carries a ticket id
+ * (see RealtimeGateway) — this fetches that ticket, and if it just became ready to deliver, shows
+ * a toast (and a short chime) so staff on Órdenes or POS notice without having to be on Cocina.
+ * Boot this once by injecting it somewhere always-alive (GcAppShell); it has no public API of its
+ * own, it only needs to exist for its constructor to wire the listener.
+ */
+@Injectable({providedIn:'root'})
+export class OrdersReadyAlertService{
+ private readonly realtime=inject(GcRealtimeService);
+ private readonly notices=inject(GcNotificationService);
+ private readonly api=inject(OrdersApi);
+ /** Tickets currently known "ready" — avoids re-announcing the same ticket on every follow-up
+  * event (e.g. a second line on the same comanda becoming ready too). */
+ private readonly announced=new Set<string>();
+
+ constructor(){
+  this.realtime.listen<{comandaId?:string}>('KITCHEN_TICKET_UPDATED',payload=>{
+   const id=payload?.comandaId;
+   if(id)void this.check(id);
+  });
+ }
+
+ private async check(ticketId:string):Promise<void>{
+  try{
+   const ticket=await firstValueFrom(this.api.ticket(ticketId));
+   const stage=kitchenStage(ticket).kind;
+   if(stage!=='ready'){this.announced.delete(ticketId);return}
+   if(this.announced.has(ticketId))return;
+   this.announced.add(ticketId);
+   const numero=ticket.orden?.numero;
+   this.notices.show(
+    (numero?'Pedido '+numero:'Una comanda')+' ya está lista para entregar.','success',8000);
+   playReadyChime();
+  }catch{
+   // A viewer without kitchen.read (or a transient network hiccup) just gets no alert this time;
+   // the next event (or the existing Cocina poll) will catch up regardless.
+  }
+ }
+}
