@@ -57,6 +57,8 @@ export const orderFriendlyError=(error:unknown):string=>{
   return 'Otra persona modificó el pedido. Actualiza su detalle antes de guardar cambios.';
  if(/clave.+reutilizada|solicitudHash|hashSolicitud/i.test(message))
   return 'Esta solicitud ya se utilizó con otros datos. Revisa el pedido antes de volver a confirmar.';
+ if(/No puede gestionar entregas en esta sucursal/i.test(message))
+  return 'Tu usuario no tiene permiso para crear entregas en esta sucursal. Pide que te asignen el permiso de Entregas, o guarda el pedido sin enviarlo a reparto.';
  return message;
 };
 

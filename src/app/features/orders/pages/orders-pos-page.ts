@@ -235,6 +235,27 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
        [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()"
        placeholder="Seleccionar mesa" (valueChange)="selectTableId($event)"/>
      }
+     @if(mode()==='DELIVERY'){
+      <div class="ord-pos-delivery">
+       <label>Dirección de entrega
+        <input type="text" maxlength="500" [value]="direccionTexto()" [disabled]="submitting()"
+         placeholder="Calle, número, zona, ciudad…"
+         (input)="direccionTexto.set($any($event.target).value);invalidateKey()"/>
+       </label>
+       <label>Referencia (opcional)
+        <input type="text" maxlength="500" [value]="referenciaDireccion()" [disabled]="submitting()"
+         placeholder="Casa de dos niveles, portón negro…"
+         (input)="referenciaDireccion.set($any($event.target).value);invalidateKey()"/>
+       </label>
+       <label>Teléfono de contacto (opcional)
+        <input type="tel" maxlength="45" [value]="telefonoContacto()" [disabled]="submitting()"
+         (input)="telefonoContacto.set($any($event.target).value);invalidateKey()"/>
+       </label>
+       <p class="ord-note">
+        La entrega se crea junto con el pedido. Podrás asignar repartidor desde Entregas.
+       </p>
+      </div>
+     }
     }
     <details class="ord-pos-more">
      <summary>Observaciones {{observations().trim()?'(añadidas)':'(opcional)'}}</summary>
@@ -289,7 +310,9 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
       (click)="submit()">Guardar sin cobrar</button>
     }@else{
      <button class="ord-primary ord-confirm" type="button"
-      [disabled]="submitting()||tableBusy()||!access.canCreate()||cart().length===0||(mode()==='MESA'&&(!selectedTable()||!tableOrderReady()))"
+      [disabled]="submitting()||tableBusy()||!access.canCreate()||cart().length===0||
+       (mode()==='MESA'&&(!selectedTable()||!tableOrderReady()))||
+       (mode()==='DELIVERY'&&!existingOrder()&&direccionTexto().trim().length<5)"
       (click)="submit()">{{submitting()?'Guardando…':existingOrder()?'Agregar productos al pedido':'Confirmar pedido · '+money(total(),currency())}}</button>
     }
    </div>
@@ -387,6 +410,9 @@ export class GcOrdersPosPage{
  protected readonly observations=signal('');
  protected readonly mode=signal<OrderMode>('MOSTRADOR');
  protected readonly selectedTable=signal<TableRecord|null>(null);
+ protected readonly direccionTexto=signal('');
+ protected readonly referenciaDireccion=signal('');
+ protected readonly telefonoContacto=signal('');
  protected readonly sendKitchen=signal(true);
  protected readonly productTypes=computed(()=>new Map(
   (this.menu()?.menus??[]).flatMap(menu=>menu.secciones.flatMap(section=>
@@ -453,6 +479,7 @@ export class GcOrdersPosPage{
   if(branch){
    this.selectedTable.set(null);this.existingOrder.set(null);this.quickDraft.set(null);
    this.expressSale.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);
+   this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
    this.invalidateKey();void this.reload();
   }
  })}
@@ -490,6 +517,9 @@ export class GcOrdersPosPage{
   if(this.submitting()||this.existingOrder())return;
   const v=ORDER_MODES.find(x=>x.id===value)?.id??'MOSTRADOR';
   this.mode.set(v);if(v!=='MESA'){this.selectedTable.set(null);this.existingOrder.set(null)}
+  if(v!=='DELIVERY'){
+   this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
+  }
   if(v==='MESA'&&!this.tables().length)void this.loadTables();
   this.invalidateKey();
  }
@@ -649,6 +679,9 @@ export class GcOrdersPosPage{
   if(this.mode()==='MESA'&&(!this.selectedTable()||!this.tableOrderReady())){
    this.submitError.set('Espera a cargar el pedido de la mesa antes de agregar productos.');return;
   }
+  if(this.mode()==='DELIVERY'&&!this.existingOrder()&&this.direccionTexto().trim().length<5){
+   this.submitError.set('Indica la dirección de entrega (mínimo 5 caracteres).');return;
+  }
   if(!this.operationId)this.operationId=operationKey('pos');
   // Direct products MUST be sent through the server processing step:
   // INVENTARIABLE -> inventory consumption, SERVICIO -> sent flag, neither creates KDS tickets.
@@ -657,6 +690,11 @@ export class GcOrdersPosPage{
    sucursalId:branch,modalidad:this.mode(),origen:this.mode()==='MESA'?'MESERO' as const:'CAJA' as const,
    ...(this.mode()==='MESA'&&this.selectedTable()?{mesaId:this.selectedTable()!.id}:{}),
    ...(this.observations().trim()?{observaciones:this.observations().trim()}:{}),
+   ...(this.mode()==='DELIVERY'&&!this.existingOrder()?{
+    direccionTexto:this.direccionTexto().trim(),
+    ...(this.referenciaDireccion().trim()?{referenciaDireccion:this.referenciaDireccion().trim()}:{}),
+    ...(this.telefonoContacto().trim()?{telefonoContacto:this.telefonoContacto().trim()}:{}),
+   }:{}),
    lineas:this.cart().map(asOrderLine),enviarCocina:shouldProcess,claveOperacion:this.operationId
   };
   this.submitting.set(true);this.submitError.set('');
@@ -689,6 +727,7 @@ export class GcOrdersPosPage{
    }else{
     this.selectedTable.set(null);this.existingOrder.set(null);
     this.mode.set('MOSTRADOR');
+    this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
     this.showTablePicker.set(this.prefs.view()==='tables');
    }
    if(this.prefs.view()==='tables')void this.loadTables();
