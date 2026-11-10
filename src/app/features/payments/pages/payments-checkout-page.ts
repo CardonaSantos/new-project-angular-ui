@@ -34,6 +34,7 @@ import {parseApiDecimal} from '../../../shared/formatting';
     <div class="ord-heading"><h2>Cuenta de {{o.modalidad==='MESA'?'mesa '+(o.ocupacionMesa?.mesa?.numero??''):'pedido'}}</h2>
      <span class="ord-status">{{o.estado==='ABIERTA'?'Abierta':o.estado==='CERRADA'?'Finalizada':'Cancelada'}}</span>
     </div>
+    @if(o.cliente){<p class="ord-muted">Cliente: <strong>{{o.cliente.nombre}}</strong></p>}
     <div class="pay-summary">
      <div><small>Total del pedido</small><strong>{{money(o.total)}}</strong></div>
      <div><small>Por cobrar</small><strong>{{money(totalPending())}}</strong></div>

@@ -53,6 +53,7 @@ import {money,operationKey,qtyText,safeQuantity,statusText,orderFriendlyError} f
      <div><small>Fecha</small><strong>{{o.abiertaEn|date:'dd/MM/yyyy HH:mm'}}</strong></div>
     </div>
     @if(o.ocupacionMesa?.mesa){<p class="ord-muted">Mesa {{o.ocupacionMesa?.mesa?.numero}} · {{o.ocupacionMesa?.mesa?.sala?.nombre}}</p>}
+    @if(o.cliente){<p class="ord-muted">Cliente: <strong>{{o.cliente.nombre}}</strong>{{o.cliente.telefono?' · '+o.cliente.telefono:''}}</p>}
     @if(o.cuentasComoOrden.length){
      <p class="ord-note">
       @if(hasPendingPayment()){<strong>Falta cobrar {{money(unpaidAmount())}}</strong>}

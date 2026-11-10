@@ -52,7 +52,8 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
      @if(table.ocupacion){
       @for(o of openOrders(table);track o.id){
        <div class="ord-actions">
-        <a [routerLink]="['/orders/list',o.id]">{{o.numero}} · {{money(o.total)}}</a>
+        <a [routerLink]="['/orders/list',o.id]">{{o.numero}} · {{money(o.total)}}
+         {{o.cliente?' · '+o.cliente.nombre:''}}</a>
        </div>
       }
       @if(openOrders(table).length){

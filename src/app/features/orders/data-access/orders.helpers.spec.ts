@@ -77,7 +77,8 @@ describe('Bloqueo de liberación de mesas',()=>{
  const table=(orders: {id:string;estado:'ABIERTA'|'CERRADA'|'CANCELADA'}[]):TableRecord=>({
   id:'m1',numero:'1',capacidad:4,activa:true,sala:{id:'s1',nombre:'Principal'},
   ocupacion:{id:'occ1',mesaId:'m1',cerradaEn:null,
-   ordenesComoOcupacionMesa:orders.map(o=>({...o,numero:o.id,total:'20.00',cerradaEn:null}))}
+   ordenesComoOcupacionMesa:orders.map(o=>({...o,numero:o.id,total:'20.00',cerradaEn:null,
+    clienteId:null,cliente:null}))}
  });
  it('una orden pagada pero ABIERTA sigue impidiendo liberar su ocupación',()=>{
   expect(openTableOrders(table([{id:'o1',estado:'ABIERTA'}])).map(x=>x.id)).toEqual(['o1']);

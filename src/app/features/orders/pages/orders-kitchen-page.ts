@@ -119,6 +119,7 @@ import {ingredientShortageMarker,kitchenStage,modeText,operationKey,orderFriendl
      {{ticket.orden?modeText(ticket.orden.modalidad):'Sin definir'}}
      @if(ticket.orden?.ocupacionMesa?.mesa?.numero){· Mesa {{ticket.orden?.ocupacionMesa?.mesa?.numero}}
     }</span>
+    @if(ticket.orden?.cliente){<span><strong>Cliente:</strong> {{ticket.orden?.cliente?.nombre}}</span>}
     <span><strong>Estación:</strong> {{ticket.estacion?.nombre??'Sin estación'}}</span>
    </div>
    @if(ticket.orden?.observaciones){<p class="ord-note">Nota del pedido: {{ticket.orden?.observaciones}}</p>}

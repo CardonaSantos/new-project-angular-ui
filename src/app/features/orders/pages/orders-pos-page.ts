@@ -1,8 +1,8 @@
 import {Component,computed,effect,ElementRef,HostListener,inject,signal,viewChild} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {CdkTrapFocus} from '@angular/cdk/a11y';
 import {Subject,debounceTime,distinctUntilChanged,firstValueFrom} from 'rxjs';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {GcSearchSelect,type GcSelectOption} from '../../../design-system/forms/gc-search-select';
@@ -19,6 +19,7 @@ import {GcPosProduct,GcPosCart} from '../components/orders-ui';
 import {GcPosExpressCheckout} from '../components/pos-express-checkout';
 import {addOrMergeCartEntry,asOrderLine,type PosCartEntry} from '../components/pos-cart.models';
 import {OrdersApi} from '../data-access/orders.api';
+import {OrdersCustomerLookup} from '../data-access/orders-customer-lookup';
 import {OrdersAccess} from '../data-access/orders-access';
 import {PaymentsAccess} from '../../payments/data-access/payments-access';
 import {OrdersPreferences} from '../data-access/orders-preferences';
@@ -100,6 +101,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
        <span [class.ord-occupied]="!!table.ocupacion">
         {{!table.activa?'Inactiva':table.ocupacion?'Ocupada · continuar':'Disponible'}}
        </span>
+       @if(tableClient(table);as nombre){<small class="ord-pos-table-client">{{nombre}}</small>}
       </button>
      } @empty {<p class="ord-note">No hay mesas con estos filtros.</p>}
     </div>
@@ -109,7 +111,8 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
  @if(prefs.view()==='counter'&&existingOrder();as current){
   <div class="ord-pos-table-context">
    <div><strong>Ampliando {{current.numero}}</strong>
-    <span>Pedido abierto · Total anterior {{money(current.total,currency())}}</span></div>
+    <span>Pedido abierto · Total anterior {{money(current.total,currency())}}
+     {{current.cliente?' · '+current.cliente.nombre:''}}</span></div>
    <div class="ord-actions">
     <a class="ord-pos-context-button" [routerLink]="['/orders/list',current.id]">Ver detalles</a>
     @if(paymentsAccess.canRead()){
@@ -132,7 +135,8 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
    <div><strong>Mesa {{selectedTable()?.numero}} · {{selectedTable()?.sala?.nombre}}</strong>
     @if(existingOrder();as current){
      <span>Orden {{current.numero}} · Total {{money(current.total,currency())}} ·
-      {{current.ordenLineasComoOrden.length}} productos registrados</span>
+      {{current.ordenLineasComoOrden.length}} productos registrados
+      {{current.cliente?' · '+current.cliente.nombre:''}}</span>
     }@else{<span>Pedido nuevo</span>}
    </div>
    <div class="ord-actions">
@@ -233,6 +237,10 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes()"
       [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()"
       (valueChange)="chooseMode($event)"/>
+     <gc-search-select id="pos-cliente" label="Cliente (opcional)" [items]="customerChoices()"
+      [value]="clienteId()" [remote]="true" [loading]="customerBusy()" [disabled]="submitting()"
+      placeholder="Buscar cliente por nombre…" (valueChange)="selectCustomer($event)"
+      (searchChange)="searchCustomers($event)" (opened)="searchCustomers('')"/>
      @if(mode()==='MESA'){
       <gc-search-select id="pos-table" label="Mesa" [items]="tableChoices()"
        [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()"
@@ -377,6 +385,7 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
 })
 export class GcOrdersPosPage{
  private readonly api=inject(OrdersApi);
+ private readonly customerLookup=inject(OrdersCustomerLookup);
  private readonly catalog=inject(CatalogApi);
  private readonly branchesApi=inject(BranchesApi);
  private readonly confirm=inject(ConfirmDialogService);
@@ -427,6 +436,10 @@ export class GcOrdersPosPage{
  protected readonly courierChoices=signal<GcSelectOption[]>([]);
  protected readonly courierBusy=signal(false);
  private readonly courierSearch=new Subject<string>();
+ protected readonly clienteId=signal('');
+ protected readonly customerChoices=signal<{id:string;label:string}[]>([]);
+ protected readonly customerBusy=signal(false);
+ private readonly customerSearch=new Subject<string>();
  protected readonly sendKitchen=signal(true);
  protected readonly productTypes=computed(()=>new Map(
   (this.menu()?.menus??[]).flatMap(menu=>menu.secciones.flatMap(section=>
@@ -482,26 +495,32 @@ export class GcOrdersPosPage{
  protected readonly tableChoices=computed(()=>this.tables().filter(x=>x.activa).map(t=>({
   id:t.id,label:t.sala.nombre+' · Mesa '+t.numero+(t.ocupacion?' (ocupada)':'')
  })));
+ protected tableClient(table:TableRecord){
+  return table.ocupacion?.ordenesComoOcupacionMesa?.find(x=>x.estado==='ABIERTA')?.cliente?.nombre??null;
+ }
  protected readonly total=computed(()=>{
   const amounts=this.cart().map(line=>parseApiDecimal(line.price).mul(line.quantity).minus(line.discount||'0').toFixed());
   return sumDecimals(amounts);
  });
  protected readonly currency=computed(()=>this.cart()[0]?.currency??this.config()?.moneda??'GTQ');
  constructor(){
-  this.courierSearch.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed()).subscribe(term=>{
-   void this.loadCouriers(term);
-  });
   effect(()=>{
-  const branch=this.context.branchId();
-  this.prefs.load();
-  if(branch){
-   this.selectedTable.set(null);this.existingOrder.set(null);this.quickDraft.set(null);
-   this.expressSale.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);
-   this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
-   this.repartidorId.set('');this.courierChoices.set([]);
-   this.invalidateKey();void this.reload();
-  }
- })}
+   const branch=this.context.branchId();
+   this.prefs.load();
+   if(branch){
+    this.selectedTable.set(null);this.existingOrder.set(null);this.quickDraft.set(null);
+    this.expressSale.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);
+    this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
+    this.repartidorId.set('');this.courierChoices.set([]);
+    this.clienteId.set('');this.customerChoices.set([]);
+    this.invalidateKey();void this.reload();
+   }
+  });
+  this.courierSearch.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{void this.loadCouriers(term)});
+  this.customerSearch.pipe(debounceTime(300),distinctUntilChanged(),takeUntilDestroyed())
+   .subscribe(term=>{void this.loadCustomers(term)});
+ }
  hasUnsavedChanges():boolean{return this.cart().length>0}
  @HostListener('document:keydown',['$event'])
  protected keydown(event:KeyboardEvent){
@@ -619,6 +638,20 @@ export class GcOrdersPosPage{
   this.showTablePicker.set(this.prefs.view()==='tables');
   this.invalidateKey();
  }
+ protected searchCustomers(term:string){this.customerSearch.next(term)}
+ private async loadCustomers(term:string){
+  const branch=this.context.branchId();if(!branch)return;
+  this.customerBusy.set(true);
+  try{
+   const result=await firstValueFrom(this.customerLookup.options({sucursalId:branch,search:term||undefined,limit:20}));
+   this.customerChoices.set(result.data.map(c=>({id:c.id,label:c.nombre})));
+  }catch{this.customerChoices.set([])}
+  finally{this.customerBusy.set(false)}
+ }
+ protected selectCustomer(id:string){
+  if(this.submitting())return;
+  this.clienteId.set(id);this.invalidateKey();
+ }
  protected pick(item:CatalogProjectedItem){
   if(this.submitting())return;
   this.success.set('');this.createdId.set('');this.expressSale.set(null);
@@ -724,6 +757,7 @@ export class GcOrdersPosPage{
   const dto={
    sucursalId:branch,modalidad:this.mode(),origen:this.mode()==='MESA'?'MESERO' as const:'CAJA' as const,
    ...(this.mode()==='MESA'&&this.selectedTable()?{mesaId:this.selectedTable()!.id}:{}),
+   ...(!this.existingOrder()&&this.clienteId()?{clienteId:this.clienteId()}:{}),
    ...(this.observations().trim()?{observaciones:this.observations().trim()}:{}),
    ...(this.mode()==='DELIVERY'&&!this.existingOrder()?{
     direccionTexto:this.direccionTexto().trim(),
@@ -766,6 +800,7 @@ export class GcOrdersPosPage{
     this.mode.set('MOSTRADOR');
     this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
     this.repartidorId.set('');this.courierChoices.set([]);
+    this.clienteId.set('');this.customerChoices.set([]);
     this.showTablePicker.set(this.prefs.view()==='tables');
     if(wasDeliveryWithoutCourier)void this.notifyMissingCourier(branch,data.id,data.numero);
    }
@@ -830,6 +865,7 @@ export class GcOrdersPosPage{
   this.quickDraft.set({
    sucursalId:branch,modalidad:this.mode(),origen:'CAJA',
    lineas:this.cart().map(asOrderLine),
+   ...(this.clienteId()?{clienteId:this.clienteId()}:{}),
    ...(this.observations().trim()?{observaciones:this.observations().trim()}:{}),
    enviarCocina:true,claveOperacion:operationKey('pos-express')
   });
@@ -839,6 +875,7 @@ export class GcOrdersPosPage{
   this.createdId.set(result.ordenId);this.createdTickets.set([]);
   this.success.set('Venta '+result.numero+' cobrada y cerrada por '+money(result.total,this.currency())+'.');
   this.cart.set([]);this.observations.set('');this.operationId='';
+  this.clienteId.set('');this.customerChoices.set([]);
   this.cartOpen.set(false);
  }
  protected newSale(){
