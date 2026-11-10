@@ -1,4 +1,5 @@
 import {Injectable,inject} from '@angular/core';
+import {Router} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcRealtimeService} from '../../../core/realtime/gc-realtime.service';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
@@ -32,9 +33,13 @@ function playReadyChime():void{
 }
 
 /**
- * App-wide "comanda lista" alert. A KITCHEN_TICKET_UPDATED socket event only carries a ticket id
- * (see RealtimeGateway) — this fetches that ticket, and if it just became ready to deliver, shows
- * a toast (and a short chime) so staff on Órdenes or POS notice without having to be on Cocina.
+ * "Comanda lista" alert for Órdenes/POS — NOT Cocina, which already sees its own tickets update
+ * live and gets its own local "marcada lista" confirmation when someone there presses the button.
+ * A KITCHEN_TICKET_UPDATED socket event only carries a ticket id (see RealtimeGateway) — this
+ * fetches that ticket, and if it just became ready to deliver, shows a toast (with a short chime
+ * and a direct "Cobrar" link to that order) so cashiers notice and can act without hunting for the
+ * order themselves. The listener stays wired app-wide; the route check below gates the actual
+ * toast/chime to Órdenes/POS screens.
  * Boot this once by injecting it somewhere always-alive (GcAppShell); it has no public API of its
  * own, it only needs to exist for its constructor to wire the listener.
  */
@@ -43,9 +48,15 @@ export class OrdersReadyAlertService{
  private readonly realtime=inject(GcRealtimeService);
  private readonly notices=inject(GcNotificationService);
  private readonly api=inject(OrdersApi);
+ private readonly router=inject(Router);
  /** Tickets currently known "ready" — avoids re-announcing the same ticket on every follow-up
   * event (e.g. a second line on the same comanda becoming ready too). */
  private readonly announced=new Set<string>();
+ /** Screens where a cashier actually acts on this; Cocina is deliberately excluded. */
+ private onRelevantScreen():boolean{
+  const url=this.router.url;
+  return url.startsWith('/orders/pos')||url.startsWith('/orders/list')||url==='/orders';
+ }
 
  constructor(){
   console.log('[ready-alert] servicio arrancado, esperando KITCHEN_TICKET_UPDATED');
@@ -64,9 +75,11 @@ export class OrdersReadyAlertService{
    if(stage!=='ready'){this.announced.delete(ticketId);return}
    if(this.announced.has(ticketId))return;
    this.announced.add(ticketId);
+   if(!this.onRelevantScreen())return;
    const numero=ticket.orden?.numero;
    this.notices.show(
-    (numero?'Pedido '+numero:'Una comanda')+' ya está lista para entregar.','success',8000);
+    (numero?'Pedido '+numero:'Una comanda')+' ya está lista para entregar.','success',8000,
+    ticket.ordenId?{label:'Cobrar',path:['/orders/list',ticket.ordenId]}:undefined);
    playReadyChime();
   }catch(e){
    // A viewer without kitchen.read (or a transient network hiccup) just gets no alert this time;
