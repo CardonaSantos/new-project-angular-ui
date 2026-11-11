@@ -1202,15 +1202,17 @@ gc-kitchen-ticket{display:block;min-width:0}
 
 /* ORD UX: five-up visual POS (where space permits), prominent confirmations and photos. */
 .ord-pos .ord-pos-confirmed{display:flex;align-items:center;justify-content:space-between;
- gap:.85rem;flex-wrap:wrap;border:1px solid var(--gc-primary);
- background:var(--gc-surface-container);border-radius:.75rem;padding:.85rem 1rem}
-.ord-pos-confirmed-content{display:grid;gap:.28rem;min-width:0;flex:1}
-.ord-pos-confirmed-content strong{font-size:1.05rem}
-.ord-pos-confirmed-content span{font-size:.9rem;overflow-wrap:anywhere}
-.ord-pos-confirmed-actions{margin-left:auto}
-.ord-pos-confirmed-actions a{min-height:42px;display:inline-flex;align-items:center;
- justify-content:center;padding:.5rem .75rem;border:1px solid var(--gc-outline);
- border-radius:.55rem;text-decoration:none;font-weight:650}
+ gap:.5rem;flex-wrap:wrap;border:1px solid var(--gc-primary);
+ background:var(--gc-surface-container);border-radius:.55rem;padding:.4rem .6rem}
+.ord-pos-confirmed-content{display:grid;gap:.1rem;min-width:0;flex:1}
+.ord-pos-confirmed-content strong{font-size:.86rem}
+.ord-pos-confirmed-content span{font-size:.76rem;overflow-wrap:anywhere;
+ color:var(--gc-on-surface-variant)}
+.ord-pos-confirmed-actions{margin-left:auto;gap:.3rem}
+.ord-pos-confirmed-actions a,.ord-pos-confirmed-actions button{min-height:30px;
+ display:inline-flex;align-items:center;justify-content:center;padding:.28rem .55rem;
+ border:1px solid var(--gc-outline);border-radius:.45rem;text-decoration:none;
+ font-weight:650;font-size:.74rem}
 .ord-pos .ord-products:not(.ord-products--compact){
  grid-template-columns:repeat(auto-fill,minmax(min(100%,7.35rem),1fr));gap:.5rem}
 .ord-pos .ord-product:not(.ord-product--compact){padding:.48rem;min-height:7.3rem;gap:.25rem}
@@ -1233,7 +1235,7 @@ gc-kitchen-ticket{display:block;min-width:0}
 .ord-detail-add-preview small{color:var(--gc-on-surface-variant)}
 @media(max-width:600px){
  .ord-pos-confirmed-actions{width:100%;margin-left:0}
- .ord-pos-confirmed-actions a{flex:1}
+ .ord-pos-confirmed-actions a,.ord-pos-confirmed-actions button{flex:1}
  .ord-pos .ord-products:not(.ord-products--compact){
   grid-template-columns:repeat(auto-fill,minmax(min(100%,7rem),1fr))}
  .ord-detail-order-item{padding-left:4.9rem;min-height:5rem}
@@ -1609,30 +1611,30 @@ gc-kitchen-ticket{display:block;min-width:0}
 
 /* Gastro Core UX: compact order operations, fast table selection and cashier flow. */
 .ord-pos .ord-pos-table-picker{
- padding:.55rem .72rem;display:grid;gap:.45rem;min-height:0
+ padding:.4rem .55rem;display:grid;gap:.3rem;min-height:0
 }
 .ord-pos-table-picker-head{display:flex;align-items:center;justify-content:space-between;
  gap:.5rem;flex-wrap:wrap}
-.ord-pos-table-picker-title{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;min-width:0}
-.ord-pos .ord-pos-table-picker h2{font-size:.92rem;margin:0}
-.ord-pos-table-picker-title small{font-size:.75rem;color:var(--gc-on-surface-variant)}
-.ord-pos-table-picker-tools{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;min-width:0}
-.ord-pos-table-picker-tools .ord-pos-table-picker-search{width:clamp(8rem,18vw,14rem);min-width:0}
-.ord-pos-table-picker-tools input{min-height:34px;padding:.35rem .55rem;font-size:.79rem}
-.ord-pos .ord-pos-table-picker-tools button{min-height:34px;padding:.3rem .55rem;font-size:.78rem}
-.ord-pos-table-picker-tools>a{font-size:.78rem;padding:.32rem .3rem}
+.ord-pos-table-picker-title{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;min-width:0}
+.ord-pos .ord-pos-table-picker h2{font-size:.82rem;margin:0}
+.ord-pos-table-picker-title small{font-size:.71rem;color:var(--gc-on-surface-variant)}
+.ord-pos-table-picker-tools{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap;min-width:0}
+.ord-pos-table-picker-tools .ord-pos-table-picker-search{width:clamp(7rem,16vw,12rem);min-width:0}
+.ord-pos-table-picker-tools input{min-height:28px;padding:.25rem .5rem;font-size:.75rem}
+.ord-pos .ord-pos-table-picker-tools button{min-height:28px;padding:.22rem .5rem;font-size:.74rem}
+.ord-pos-table-picker-tools>a{font-size:.74rem;padding:.24rem .3rem}
 .ord-pos-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.ord-pos-table-picker-strip{display:flex;gap:.42rem;overflow-x:auto;min-width:0;
- padding:.1rem 0 .2rem;scrollbar-width:thin;align-items:stretch}
-.ord-pos .ord-pos-table-pill{flex:0 0 auto;width:clamp(9.5rem,15vw,12rem);
- display:grid;justify-items:start;align-content:center;gap:.07rem;
- padding:.4rem .55rem!important;min-height:58px!important;text-align:left;
- border:1px solid var(--gc-outline-variant);border-radius:.55rem}
-.ord-pos-table-pill strong{font-size:.84rem}
-.ord-pos-table-pill small{font-size:.69rem;max-width:100%;overflow:hidden;
+.ord-pos-table-picker-strip{display:flex;gap:.35rem;overflow-x:auto;min-width:0;
+ padding:.05rem 0 .15rem;scrollbar-width:thin;align-items:stretch}
+.ord-pos .ord-pos-table-pill{flex:0 0 auto;width:clamp(8rem,13vw,10.5rem);
+ display:grid;justify-items:start;align-content:center;gap:.04rem;
+ padding:.26rem .45rem!important;min-height:42px!important;text-align:left;
+ border:1px solid var(--gc-outline-variant);border-radius:.45rem}
+.ord-pos-table-pill strong{font-size:.76rem}
+.ord-pos-table-pill small{font-size:.63rem;max-width:100%;overflow:hidden;
  text-overflow:ellipsis;white-space:nowrap}
-.ord-pos-table-pill span{font-size:.72rem;line-height:1.25}
+.ord-pos-table-pill span{font-size:.65rem;line-height:1.2}
 .ord-pos .ord-pos-print-link,.ord-detail-page .ord-detail-print{
  display:inline-flex;align-items:center;justify-content:center;min-height:36px;
  padding:.38rem .68rem;border:1px solid var(--gc-primary);border-radius:.48rem;
@@ -1730,11 +1732,11 @@ gc-kitchen-ticket{display:block;min-width:0}
 .pay-checkout-compact .pay-checkout-aside-head>strong{font-size:.98rem;white-space:nowrap}
 .pay-checkout-compact .pay-checkout-items .pay-detail-row{padding:.35rem 0;font-size:.75rem}
 @media(max-width:680px){
- .ord-pos .ord-pos-table-picker{padding:.5rem}
+ .ord-pos .ord-pos-table-picker{padding:.4rem}
  .ord-pos-table-picker-head{align-items:stretch}
  .ord-pos-table-picker-tools{width:100%}
  .ord-pos-table-picker-tools .ord-pos-table-picker-search{flex:1 1 8rem;width:auto}
- .ord-pos .ord-pos-table-pill{width:9.7rem;min-height:60px!important}
+ .ord-pos .ord-pos-table-pill{width:8.5rem;min-height:46px!important}
  .ord-detail-page .ord-detail-summary .ord-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .ord-detail-page>.ord-heading .ord-actions{width:100%;justify-content:flex-start}
  .pay-checkout-compact .pay-methods button{min-height:44px}
