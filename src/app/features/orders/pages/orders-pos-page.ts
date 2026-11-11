@@ -227,12 +227,10 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <span class="ord-note">El importe definitivo lo calcula el servidor.</span>
      <button type="button" class="ord-danger" [disabled]="submitting()" (click)="clearCart()">Vaciar carrito</button>
     </div>}
-    @if(!existingOrder()){
-     <gc-search-select id="pos-cliente" label="Cliente (opcional)" [items]="customerChoices()"
-      [value]="clienteId()" [remote]="true" [loading]="customerBusy()" [disabled]="submitting()"
-      placeholder="Buscar cliente por nombre…" (valueChange)="selectCustomer($event)"
-      (searchChange)="searchCustomers($event)" (opened)="searchCustomers('')"/>
-    }
+    <gc-search-select id="pos-cliente" label="Cliente (opcional)" [items]="customerChoices()"
+     [value]="clienteId()" [remote]="true" [loading]="customerBusy()" [disabled]="submitting()"
+     placeholder="Buscar cliente por nombre…" (valueChange)="selectCustomer($event)"
+     (searchChange)="searchCustomers($event)" (opened)="searchCustomers('')"/>
     @if(selectedTable();as table){
      <div class="ord-pos-selection-summary">
       <strong>Mesa {{table.numero}}</strong><small>{{table.sala.nombre}} · {{existingOrder()?'Añadiendo a la orden':'Pedido nuevo'}}</small>
@@ -761,7 +759,12 @@ export class GcOrdersPosPage{
   };
   this.submitting.set(true);this.submitError.set('');
   try{
-   const existing=this.existingOrder();
+   let existing=this.existingOrder();
+   if(existing&&this.clienteId()&&this.clienteId()!==(existing.clienteId??'')){
+    existing=await firstValueFrom(this.api.edit(existing.id,
+     {version:existing.version,clienteId:this.clienteId()}));
+    this.existingOrder.set(existing);
+   }
    const data=existing
     ?await firstValueFrom(this.api.addLines(existing.id,{
       lineas:dto.lineas,enviarCocina:dto.enviarCocina,claveOperacion:dto.claveOperacion
@@ -834,6 +837,8 @@ export class GcOrdersPosPage{
    this.prefs.setView('counter');this.showTablePicker.set(false);
    this.selectedTable.set(null);this.mode.set(order.modalidad);
    this.existingOrder.set(order);
+   this.clienteId.set(order.clienteId??'');
+   this.customerChoices.set(order.cliente?[{id:order.cliente.id,label:order.cliente.nombre}]:[]);
   }catch(e){if(this.context.branchId()===branch)this.submitError.set(orderFriendlyError(e))}
   finally{if(this.context.branchId()===branch)this.tableBusy.set(false)}
  }
@@ -848,6 +853,8 @@ export class GcOrdersPosPage{
     return;
    }
    this.existingOrder.set(order);
+   this.clienteId.set(order.clienteId??'');
+   this.customerChoices.set(order.cliente?[{id:order.cliente.id,label:order.cliente.nombre}]:[]);
   }catch(e){this.submitError.set(orderFriendlyError(e))}
   finally{if(this.context.branchId()===branch)this.tableBusy.set(false)}
  }
