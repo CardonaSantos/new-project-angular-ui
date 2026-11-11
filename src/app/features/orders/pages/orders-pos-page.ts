@@ -225,6 +225,12 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <span class="ord-note">El importe definitivo lo calcula el servidor.</span>
      <button type="button" class="ord-danger" [disabled]="submitting()" (click)="clearCart()">Vaciar carrito</button>
     </div>}
+    @if(!existingOrder()){
+     <gc-search-select id="pos-cliente" label="Cliente (opcional)" [items]="customerChoices()"
+      [value]="clienteId()" [remote]="true" [loading]="customerBusy()" [disabled]="submitting()"
+      placeholder="Buscar cliente por nombre…" (valueChange)="selectCustomer($event)"
+      (searchChange)="searchCustomers($event)" (opened)="searchCustomers('')"/>
+    }
     @if(selectedTable();as table){
      <div class="ord-pos-selection-summary">
       <strong>Mesa {{table.numero}}</strong><small>{{table.sala.nombre}} · {{existingOrder()?'Añadiendo a la orden':'Pedido nuevo'}}</small>
@@ -237,10 +243,6 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes()"
       [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()"
       (valueChange)="chooseMode($event)"/>
-     <gc-search-select id="pos-cliente" label="Cliente (opcional)" [items]="customerChoices()"
-      [value]="clienteId()" [remote]="true" [loading]="customerBusy()" [disabled]="submitting()"
-      placeholder="Buscar cliente por nombre…" (valueChange)="selectCustomer($event)"
-      (searchChange)="searchCustomers($event)" (opened)="searchCustomers('')"/>
      @if(mode()==='MESA'){
       <gc-search-select id="pos-table" label="Mesa" [items]="tableChoices()"
        [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()"
@@ -285,16 +287,6 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
       Venta sin preparación: estos productos no generan comandas.
       El servidor registrará sus movimientos de inventario al procesarlos.
      </p>
-    }@else{
-     <label class="ord-check-row">
-      <input type="checkbox" [checked]="sendKitchen()" [disabled]="submitting()"
-       (change)="sendKitchen.set($any($event.target).checked);invalidateKey()"/>
-      Procesar al confirmar (enviar preparados a Cocina y registrar salidas de stock)
-     </label>
-     @if(!sendKitchen()){
-      <p class="ord-note" role="status">Quedarán pendientes de procesar.
-       Para cerrar y registrar la venta, deberás procesarlos desde el detalle del pedido.</p>
-     }
     }
     @if(config()?.exigeCobroAntesPreparar){
      <p class="ord-note">Esta sucursal exige cobrar antes de preparar. La orden quedará pendiente hasta registrar el pago.</p>
@@ -440,7 +432,6 @@ export class GcOrdersPosPage{
  protected readonly customerChoices=signal<{id:string;label:string}[]>([]);
  protected readonly customerBusy=signal(false);
  private readonly customerSearch=new Subject<string>();
- protected readonly sendKitchen=signal(true);
  protected readonly productTypes=computed(()=>new Map(
   (this.menu()?.menus??[]).flatMap(menu=>menu.secciones.flatMap(section=>
    section.items.map(item=>[item.variante.id,item.variante.producto?.tipo] as const)
@@ -751,9 +742,6 @@ export class GcOrdersPosPage{
    this.submitError.set('Indica la dirección de entrega (mínimo 5 caracteres).');return;
   }
   if(!this.operationId)this.operationId=operationKey('pos');
-  // Direct products MUST be sent through the server processing step:
-  // INVENTARIABLE -> inventory consumption, SERVICIO -> sent flag, neither creates KDS tickets.
-  const shouldProcess=this.directOnly()?true:this.sendKitchen();
   const dto={
    sucursalId:branch,modalidad:this.mode(),origen:this.mode()==='MESA'?'MESERO' as const:'CAJA' as const,
    ...(this.mode()==='MESA'&&this.selectedTable()?{mesaId:this.selectedTable()!.id}:{}),
@@ -765,7 +753,7 @@ export class GcOrdersPosPage{
     ...(this.telefonoContacto().trim()?{telefonoContacto:this.telefonoContacto().trim()}:{}),
     ...(this.repartidorId()?{repartidorId:this.repartidorId()}:{}),
    }:{}),
-   lineas:this.cart().map(asOrderLine),enviarCocina:shouldProcess,claveOperacion:this.operationId
+   lineas:this.cart().map(asOrderLine),enviarCocina:true,claveOperacion:this.operationId
   };
   this.submitting.set(true);this.submitError.set('');
   try{
