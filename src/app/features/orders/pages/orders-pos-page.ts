@@ -225,6 +225,12 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <span class="ord-note">El importe definitivo lo calcula el servidor.</span>
      <button type="button" class="ord-danger" [disabled]="submitting()" (click)="clearCart()">Vaciar carrito</button>
     </div>}
+    @if(!existingOrder()){
+     <gc-search-select id="pos-cliente" label="Cliente (opcional)" [items]="customerChoices()"
+      [value]="clienteId()" [remote]="true" [loading]="customerBusy()" [disabled]="submitting()"
+      placeholder="Buscar cliente por nombre…" (valueChange)="selectCustomer($event)"
+      (searchChange)="searchCustomers($event)" (opened)="searchCustomers('')"/>
+    }
     @if(selectedTable();as table){
      <div class="ord-pos-selection-summary">
       <strong>Mesa {{table.numero}}</strong><small>{{table.sala.nombre}} · {{existingOrder()?'Añadiendo a la orden':'Pedido nuevo'}}</small>
@@ -237,10 +243,6 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      <gc-search-select id="pos-modality" label="Tipo de pedido" [items]="modes()"
       [value]="mode()" [clearable]="false" [searchable]="false" [disabled]="submitting()"
       (valueChange)="chooseMode($event)"/>
-     <gc-search-select id="pos-cliente" label="Cliente (opcional)" [items]="customerChoices()"
-      [value]="clienteId()" [remote]="true" [loading]="customerBusy()" [disabled]="submitting()"
-      placeholder="Buscar cliente por nombre…" (valueChange)="selectCustomer($event)"
-      (searchChange)="searchCustomers($event)" (opened)="searchCustomers('')"/>
      @if(mode()==='MESA'){
       <gc-search-select id="pos-table" label="Mesa" [items]="tableChoices()"
        [value]="selectedTable()?.id??''" [disabled]="!access.canTablesRead()||submitting()"
