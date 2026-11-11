@@ -1530,16 +1530,17 @@ gc-kitchen-ticket{display:block;min-width:0}
  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin
 }
 .ord-pos .ord-checkout-actions{
- flex:0 0 auto;padding:.65rem .75rem .75rem;display:grid;gap:.45rem;
+ flex:0 0 auto;padding:.45rem .65rem .55rem;display:grid;gap:.32rem;
  max-height:46dvh;overflow-y:auto;position:relative;z-index:1;
  background:var(--gc-surface-container-low);border-top:1px solid var(--gc-outline);
  box-shadow:0 -.35rem 1rem rgb(0 0 0 / .09)
 }
 .ord-pos .ord-checkout-total{
  display:flex;align-items:center;justify-content:space-between;gap:.65rem;
- font-size:.84rem;font-variant-numeric:tabular-nums
+ font-size:.78rem;font-variant-numeric:tabular-nums
 }
-.ord-pos .ord-checkout-total strong{font-size:1.05rem;white-space:nowrap}
+.ord-pos .ord-checkout-total strong{font-size:.94rem;white-space:nowrap}
+.ord-pos button.ord-confirm{min-height:44px}
 .ord-pos gc-pos-cart{display:block;min-width:0}
 .ord-pos .ord-cart{min-height:0;display:block;overflow:visible;padding:.6rem .75rem .25rem}
 .ord-pos .ord-cart h2{
@@ -1558,8 +1559,13 @@ gc-kitchen-ticket{display:block;min-width:0}
 .ord-pos .ord-cart-buttons button{min-width:35px;min-height:32px;padding:.22rem .4rem}
 .ord-pos .ord-cart-buttons .ord-link{font-size:.78rem;min-width:0}
 .ord-pos .ord-checkout-options{
- overflow:visible;padding:.35rem .75rem .65rem;gap:.45rem;border:0
+ overflow:visible;padding:.35rem .75rem .65rem;gap:.4rem;border:0;
+ --gc-control-height:2.05rem
 }
+.ord-pos .ord-checkout-options .gc-select-field{gap:.16rem}
+.ord-pos .ord-checkout-options .gc-select-field>label{font-size:.72rem}
+.ord-pos .ord-checkout-options>label{font-size:.75rem;gap:.2rem}
+.ord-pos .ord-checkout-options :is(input,textarea){padding:.38rem .55rem}
 .ord-pos .ord-pos-cart-tools{margin:0;gap:.3rem;align-items:center}
 .ord-pos .ord-pos-cart-tools .ord-note{font-size:.72rem}
 .ord-pos .ord-pos-cart-tools .ord-danger{font-size:.74rem;min-height:32px}
