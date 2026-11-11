@@ -156,6 +156,8 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
      }
     }
     <button type="button" [disabled]="submitting()||tableBusy()" (click)="showTablePicker.set(true)">Cambiar mesa</button>
+    <button type="button" class="ord-danger" [disabled]="submitting()||tableBusy()"
+     (click)="clearSelectedTable()">Quitar mesa</button>
    </div>
   </div>
  }
@@ -234,6 +236,8 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
     @if(selectedTable();as table){
      <div class="ord-pos-selection-summary">
       <strong>Mesa {{table.numero}}</strong><small>{{table.sala.nombre}} · {{existingOrder()?'Añadiendo a la orden':'Pedido nuevo'}}</small>
+      <button type="button" class="ord-danger" [disabled]="submitting()||tableBusy()"
+       (click)="clearSelectedTable()">Quitar mesa</button>
      </div>
     }@else if(existingOrder();as current){
      <div class="ord-pos-selection-summary">
