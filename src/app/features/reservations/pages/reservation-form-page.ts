@@ -84,8 +84,12 @@ const operationKey=(kind:string)=>kind+':'+crypto.randomUUID();
     @if(!manual()){<p class="rsv-muted">Se asignará automáticamente la mesa más pequeña disponible con capacidad suficiente.</p>}
     @else{
      @if(availabilityBusy()){<p class="rsv-muted">Consultando disponibilidad…</p>}
-     @else if(!windowReady()){<p class="rsv-muted">Completa fecha, horario y personas para ver mesas disponibles.</p>}
-     @else if(availability().length===0){<p class="rsv-muted">No hay mesas registradas en esta sucursal.</p>}
+     @else if(!windowReady()){<p class="rsv-muted">Completa fecha, horario y personas (mínimo 1) para ver mesas disponibles.</p>}
+     @else if(availabilityError()){
+      <p class="rsv-alert" role="alert">{{availabilityError()}}</p>
+      <div class="rsv-actions"><button type="button" gcButton variant="outline" (click)="loadAvailability()">Reintentar</button></div>
+     }
+     @else if(availability().length===0){<p class="rsv-muted">No hay mesas registradas en esta sucursal (o ninguna activa). Verifica Mesas y Salas en Configuración.</p>}
      @else{
       <div class="rsv-table-chips">
        @for(t of availability();track t.id){
@@ -149,6 +153,7 @@ export class GcReservationFormPage implements OnInit {
  protected readonly selectedMesaIds=signal<string[]>([]);
  protected readonly availability=signal<AvailableTable[]>([]);
  protected readonly availabilityBusy=signal(false);
+ protected readonly availabilityError=signal<string|null>(null);
 
  private dirty=false;
  private key=operationKey('RESERVATION_CREATE');
@@ -220,9 +225,9 @@ export class GcReservationFormPage implements OnInit {
   }catch(e){this.windowError.set(e instanceof Error?e.message:'Horario inválido.')}
  }
 
- private async loadAvailability(){
+ protected async loadAvailability(){
   if(!this.windowReady()||this.windowError())return;
-  const gen=++this.availabilityGeneration;this.availabilityBusy.set(true);
+  const gen=++this.availabilityGeneration;this.availabilityBusy.set(true);this.availabilityError.set(null);
   try{
    const inicio=zonedInstantFrom(this.fecha(),this.horaInicio(),this.zone);
    const fin=zonedInstantFrom(this.fecha(),this.horaFin(),this.zone);
@@ -230,7 +235,7 @@ export class GcReservationFormPage implements OnInit {
     personas:Number(this.personas())||1}));
    if(gen!==this.availabilityGeneration)return;
    this.availability.set(rows);
-  }catch(e){if(gen===this.availabilityGeneration)this.error.set(gcErrorMessage(e))}
+  }catch(e){if(gen===this.availabilityGeneration)this.availabilityError.set(gcErrorMessage(e))}
   finally{if(gen===this.availabilityGeneration)this.availabilityBusy.set(false)}
  }
 
