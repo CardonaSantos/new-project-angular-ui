@@ -26,3 +26,14 @@ export interface AvailableTable{
  disponible:boolean;motivo:'RESERVADA'|'OCUPADA'|null;
  reservaConflictoId:string|null;ocupacionId:string|null;
 }
+
+export type ReminderState='PENDIENTE'|'ENVIADO'|'FALLIDO'|'CANCELADO';
+export type ReminderChannel='EMAIL'|'SMS'|'WHATSAPP';
+
+// Internal "remember to call/confirm" checklist item, not a real SMS/email send.
+export interface ReservationReminder{
+ id:string;reservaId:string;canal:ReminderChannel;destino:string;textoSnapshot:string;
+ programadoPara:string;estado:ReminderState;enviadoEn:string|null;
+ reserva:{id:string;nombreContacto:string;telefonoContacto:string|null;emailContacto:string|null;
+  personas:number;inicio:string;fin:string;estado:ReservationState};
+}
