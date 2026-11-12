@@ -1316,6 +1316,15 @@ gc-kitchen-ticket{display:block;min-width:0}
 .rep-operational-secondary-link span{text-decoration:underline;text-decoration-color:var(--gc-outline-variant);text-underline-offset:.15rem}
 .rep-operational-secondary-link:hover{background:var(--gc-surface-container)}
 .rep-operational-secondary-link:hover span{text-decoration-color:currentColor}
+.rep-upcoming-reservations{margin-top:.7rem}
+.rep-upcoming-reservations h3{font-size:.85rem;margin:0 0 .4rem;color:var(--gc-on-surface-variant);font-weight:600}
+.rep-upcoming-reservations ul{list-style:none;margin:0;padding:0;display:grid;gap:.4rem}
+.rep-upcoming-reservations li a{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+ border:1px solid var(--gc-outline-variant);border-radius:.6rem;padding:.5rem .7rem;
+ color:inherit;text-decoration:none;transition:border-color .15s ease,background-color .15s ease}
+.rep-upcoming-reservations li a:hover{border-color:var(--gc-primary);background:var(--gc-surface-container)}
+.rep-upcoming-reservations .rep-tag{margin-left:auto}
+.rep-upcoming-reservations .rep-tag-muted{color:var(--gc-on-surface-variant);border-style:dashed}
 .rep-analytics-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
 .rep-insight{border-left:3px solid var(--gc-primary);padding:.75rem .85rem;display:grid;gap:.3rem;
  background:var(--gc-surface-container-low);border-radius:0 .5rem .5rem 0}

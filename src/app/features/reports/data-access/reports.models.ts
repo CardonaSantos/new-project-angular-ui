@@ -5,13 +5,18 @@ export interface ReportFilters {
 }
 export interface ReportPageFilters extends ReportFilters {page?:number;limit?:number;}
 export interface ReportBranch {id:string;nombre:string;codigo?:string;zonaHoraria?:string;moneda?:string;corte?:string}
+export interface OperationalUpcomingReservation {
+ id:string;nombreContacto:string;personas:number;inicio:string;estado:'CONFIRMADA'|'PENDIENTE';
+}
 export interface OperationalDashboard {
  sucursal:ReportBranch;generatedAt:string;freshness:'LIVE_READ';horizonMinutes:number;
+ reservationLookaheadHours?:number;
  kpis:{
   pedidosAbiertos:number;comandasPendientes:number;comandasPreparando:number;
   mesasOcupadas:number;entregasEnReparto:number;reservasConfirmadasProximas:number;
   reservasPendientesProximas:number;turnosCajaAbiertos:number;
  };
+ proximasReservas?:OperationalUpcomingReservation[];
 }
 export interface DailyReport {
  fechaOperativa:string;ventasNetas:string;descuentos:string;
