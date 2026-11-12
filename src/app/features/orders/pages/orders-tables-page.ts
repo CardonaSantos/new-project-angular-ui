@@ -79,7 +79,8 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
       <span class="ord-ticket-badge" [class.ord-ticket-badge--ready]="!table.ocupacion"
        [class.ord-ticket-badge--working]="!!table.ocupacion">
        {{!table.activa?'Inactiva':table.ocupacion?'Ocupada':'Disponible'}}</span></div>
-     <small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
+     <small>{{table.sala.nombre}} · {{table.capacidad}} personas
+      @if(table.ocupacion?.personas){ · {{table.ocupacion!.personas}} sentadas}</small>
      @if(reservationFor(table.id);as conflict){
       <p class="ord-note ord-table-reserved">
        Reservada{{conflict.reservaConflictoInicio?' '+clockTimeAtBranch(conflict.reservaConflictoInicio,zone()):''}}

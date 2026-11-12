@@ -237,6 +237,12 @@ import {money,operationKey,orderFriendlyError} from '../data-access/orders.helpe
       <button type="button" class="ord-danger" [disabled]="submitting()||tableBusy()"
        (click)="clearSelectedTable()">Quitar mesa</button>
      </div>
+     @if(!existingOrder()){
+      <label class="ord-pos-personas">Personas (opcional)
+       <input type="number" min="1" max="100" [value]="mesaPersonas()" [disabled]="submitting()"
+        placeholder="Ej. 4" (input)="mesaPersonas.set($any($event.target).value)"/>
+      </label>
+     }
     }@else if(existingOrder();as current){
      <div class="ord-pos-selection-summary">
       <strong>Ampliando {{current.numero}}</strong><small>Modalidad {{mode()}} · sin nueva orden</small>
@@ -431,6 +437,9 @@ export class GcOrdersPosPage{
  protected readonly courierBusy=signal(false);
  private readonly courierSearch=new Subject<string>();
  protected readonly clienteId=signal('');
+ // Solo aplica al abrir una mesa nueva (selectedTable sin existingOrder); el backend
+ // lo ignora si la mesa ya estaba ocupada.
+ protected readonly mesaPersonas=signal('');
  protected readonly customerChoices=signal<{id:string;label:string}[]>([]);
  protected readonly customerBusy=signal(false);
  private readonly customerSearch=new Subject<string>();
@@ -505,7 +514,7 @@ export class GcOrdersPosPage{
     this.expressSale.set(null);this.mode.set('MOSTRADOR');this.cart.set([]);
     this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
     this.repartidorId.set('');this.courierChoices.set([]);
-    this.clienteId.set('');this.customerChoices.set([]);
+    this.clienteId.set('');this.customerChoices.set([]);this.mesaPersonas.set('');
     this.invalidateKey();void this.reload();
    }
   });
@@ -547,7 +556,7 @@ export class GcOrdersPosPage{
  protected chooseMode(value:string){
   if(this.submitting()||this.existingOrder())return;
   const v=ORDER_MODES.find(x=>x.id===value)?.id??'MOSTRADOR';
-  this.mode.set(v);if(v!=='MESA'){this.selectedTable.set(null);this.existingOrder.set(null)}
+  this.mode.set(v);if(v!=='MESA'){this.selectedTable.set(null);this.existingOrder.set(null);this.mesaPersonas.set('')}
   if(v!=='DELIVERY'){
    this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
    this.repartidorId.set('');this.courierChoices.set([]);
@@ -626,7 +635,7 @@ export class GcOrdersPosPage{
    if(!okay)return;
    this.cart.set([]);this.invalidateKey();
   }
-  this.selectedTable.set(null);this.existingOrder.set(null);
+  this.selectedTable.set(null);this.existingOrder.set(null);this.mesaPersonas.set('');
   this.mode.set(this.prefs.view()==='tables'?'MESA':'MOSTRADOR');
   this.showTablePicker.set(this.prefs.view()==='tables');
   this.invalidateKey();
@@ -747,6 +756,8 @@ export class GcOrdersPosPage{
   const dto={
    sucursalId:branch,modalidad:this.mode(),origen:this.mode()==='MESA'?'MESERO' as const:'CAJA' as const,
    ...(this.mode()==='MESA'&&this.selectedTable()?{mesaId:this.selectedTable()!.id}:{}),
+   ...(this.mode()==='MESA'&&this.selectedTable()&&!this.existingOrder()&&this.mesaPersonas()?
+    {personas:Number(this.mesaPersonas())}:{}),
    ...(!this.existingOrder()&&this.clienteId()?{clienteId:this.clienteId()}:{}),
    ...(this.observations().trim()?{observaciones:this.observations().trim()}:{}),
    ...(this.mode()==='DELIVERY'&&!this.existingOrder()?{
@@ -795,7 +806,7 @@ export class GcOrdersPosPage{
     this.mode.set('MOSTRADOR');
     this.direccionTexto.set('');this.referenciaDireccion.set('');this.telefonoContacto.set('');
     this.repartidorId.set('');this.courierChoices.set([]);
-    this.clienteId.set('');this.customerChoices.set([]);
+    this.clienteId.set('');this.customerChoices.set([]);this.mesaPersonas.set('');
     this.showTablePicker.set(this.prefs.view()==='tables');
     if(wasDeliveryWithoutCourier)void this.notifyMissingCourier(branch,data.id,data.numero);
    }
