@@ -6,9 +6,13 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
+import {OrganizationAccess} from '../../organization/data-access/organization-access';
+import {calendarDateAtBranch,clockTimeAtBranch,zonedInstantFrom} from '../../../shared/formatting';
 import {GcOrdersNav} from '../orders-nav';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
+import {OrdersTableReservations,type OrdersTableConflict} from '../data-access/orders-table-reservations';
+import {OrdersTodayReservations,type OrdersReservationSummary} from '../data-access/orders-today-reservations';
 import type {Room,TableRecord} from '../data-access/orders.models';
 import {money,openTableOrders} from '../data-access/orders.helpers';
 @Component({
@@ -25,6 +29,33 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
   </div>
  </div>
  @if(error()){<p class="ord-alert" role="alert">{{error()}}</p>}
+ @if(!managing&&todayReservations().length){
+ <section class="ord-card ord-today-reservations">
+  <div class="ord-heading"><h2>Reservas de hoy</h2>
+   <a [routerLink]="['/reservations']" [queryParams]="{sucursalId:branch.branchId()}">Ver todas</a></div>
+  <div class="ord-stat-grid">
+   <div><small>Por llegar</small><strong>{{pendingReservations().length}}</strong></div>
+   <div><small>Llegaron</small><strong>{{arrivedReservations().length}}</strong></div>
+   <div><small>No asistió</small><strong>{{noShowReservations().length}}</strong></div>
+  </div>
+  @if(overdueReservations().length){
+   <p class="ord-alert" role="alert">
+    {{overdueReservations().length===1?'Hay 1 reservación confirmada vencida sin registrar llegada:':
+      'Hay '+overdueReservations().length+' reservaciones confirmadas vencidas sin registrar llegada:'}}
+    @for(r of overdueReservations();track r.id){
+     <a [routerLink]="['/reservations',r.id]">{{r.nombreContacto}} ({{clockTimeAtBranch(r.inicio,zone())}})</a>
+    }
+   </p>
+  }
+  @if(nextArrivals().length){
+   <ul class="ord-today-reservations-list">
+    @for(r of nextArrivals();track r.id){
+     <li>{{clockTimeAtBranch(r.inicio,zone())}} — {{r.nombreContacto}} ({{r.personas}})</li>
+    }
+   </ul>
+  }
+ </section>
+ }
  @if(!managing){
  <section class="ord-card">
   <div class="ord-stat-grid ord-table-stats">
@@ -48,7 +79,14 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
       <span class="ord-ticket-badge" [class.ord-ticket-badge--ready]="!table.ocupacion"
        [class.ord-ticket-badge--working]="!!table.ocupacion">
        {{!table.activa?'Inactiva':table.ocupacion?'Ocupada':'Disponible'}}</span></div>
-     <small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
+     <small>{{table.sala.nombre}} · {{table.capacidad}} personas
+      @if(table.ocupacion?.personas){ · {{table.ocupacion!.personas}} sentadas}</small>
+     @if(reservationFor(table.id);as conflict){
+      <p class="ord-note ord-table-reserved">
+       Reservada{{conflict.reservaConflictoInicio?' '+clockTimeAtBranch(conflict.reservaConflictoInicio,zone()):''}}
+       {{conflict.reservaConflictoContacto?'— '+conflict.reservaConflictoContacto:''}}
+      </p>
+     }
      @if(table.ocupacion){
       @for(o of openOrders(table);track o.id){
        <div class="ord-actions">
@@ -171,9 +209,31 @@ export class GcOrdersTablesPage{
  protected readonly managing=Boolean(this.route.snapshot.data['manage']);
  private readonly confirm=inject(ConfirmDialogService);
  private readonly notices=inject(GcNotificationService);
+ private readonly reservations=inject(OrdersTableReservations);
+ private readonly todayApi=inject(OrdersTodayReservations);
+ private readonly organization=inject(OrganizationAccess);
+ protected readonly todayReservations=signal<OrdersReservationSummary[]>([]);
+ protected readonly pendingReservations=computed(()=>
+  this.todayReservations().filter(r=>r.estado==='PENDIENTE'||r.estado==='CONFIRMADA'));
+ protected readonly arrivedReservations=computed(()=>
+  this.todayReservations().filter(r=>r.estado==='COMPLETADA'));
+ protected readonly noShowReservations=computed(()=>
+  this.todayReservations().filter(r=>r.estado==='NO_ASISTIO'));
+ protected readonly overdueReservations=computed(()=>{
+  const now=Date.now();
+  return this.todayReservations().filter(r=>r.estado==='CONFIRMADA'&&new Date(r.fin).getTime()<now)
+   .sort((a,b)=>new Date(a.fin).getTime()-new Date(b.fin).getTime());
+ });
+ protected readonly nextArrivals=computed(()=>{
+  const now=Date.now();
+  return this.pendingReservations().filter(r=>new Date(r.inicio).getTime()>=now-15*60000)
+   .sort((a,b)=>new Date(a.inicio).getTime()-new Date(b.inicio).getTime()).slice(0,3);
+ });
  protected readonly branch=inject(GcBranchContext);protected readonly access=inject(OrdersAccess);
  protected readonly money=money;protected readonly openOrders=openTableOrders;
+ protected readonly clockTimeAtBranch=clockTimeAtBranch;
  protected readonly rooms=signal<Room[]>([]);protected readonly tables=signal<TableRecord[]>([]);
+ private readonly reservationConflicts=signal<Map<string,OrdersTableConflict>>(new Map());
  protected readonly selectedRoom=signal('');protected readonly busy=signal(false);
  protected readonly manageTab=signal<'rooms'|'tables'>('rooms');
  protected readonly actionBusy=signal(false);protected readonly error=signal<string|null>(null);
@@ -201,6 +261,12 @@ export class GcOrdersTablesPage{
   const id=this.branch.branchId();
   if(id){this.selectedRoom.set('');void this.load()}
  })}
+ protected zone(){return this.branch.active()?.zonaHoraria??'America/Guatemala'}
+ protected reservationFor(mesaId:string){
+  const c=this.reservationConflicts().get(mesaId);
+  return c&&c.motivo==='RESERVADA'?c:undefined;
+ }
+ private canSeeReservations(){return this.branch.has('reservations.read')||this.organization.canGlobal('reservations.read')}
  protected async load(){
   const id=this.branch.branchId();if(!id||!this.access.canTablesRead())return;
   const gen=++this.generation;this.busy.set(true);this.error.set(null);
@@ -210,6 +276,27 @@ export class GcOrdersTablesPage{
    this.rooms.set(rooms);this.tables.set(tables);
   }catch(e){if(gen===this.generation)this.error.set(gcErrorMessage(e))}
   finally{if(gen===this.generation)this.busy.set(false)}
+  void this.loadReservationOverlay(id,gen);
+ }
+ /** Best-effort overlay: never blocks or errors the tables board if it fails. */
+ private async loadReservationOverlay(sucursalId:string,gen:number){
+  if(!this.canSeeReservations()){this.reservationConflicts.set(new Map());this.todayReservations.set([]);return}
+  const zone=this.zone();
+  try{
+   const now=new Date();
+   const endOfDay=new Date(now);endOfDay.setHours(23,59,59,999);
+   const rows=await firstValueFrom(this.reservations.upcoming(
+    {sucursalId,inicio:now.toISOString(),fin:endOfDay.toISOString()}));
+   if(gen!==this.generation)return;
+   this.reservationConflicts.set(new Map(rows.map(r=>[r.id,r])));
+  }catch{/* reservation badges are a convenience overlay, not core table data */}
+  try{
+   const today=calendarDateAtBranch(new Date().toISOString(),zone);
+   const page=await firstValueFrom(this.todayApi.list({sucursalId,
+    desde:zonedInstantFrom(today,'00:00',zone),hasta:zonedInstantFrom(today,'23:59',zone)}));
+   if(gen!==this.generation)return;
+   this.todayReservations.set(page.data);
+  }catch{/* same: convenience widget, never blocks the tables board */}
  }
  protected openTable(table:TableRecord){
   void this.router.navigate(['/orders/pos'],{queryParams:{mesaId:table.id}});

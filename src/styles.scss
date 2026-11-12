@@ -1055,6 +1055,19 @@ gc-kitchen-ticket{display:block;min-width:0}
  overflow-wrap:anywhere
 }
 .ord-table-card .ord-table-kitchen-link{font-size:.82rem;justify-self:start}
+/* Upcoming reservation overlay: a hint for staff, not a blocker — stays visually lighter than occupancy warnings. */
+.ord-table-card .ord-table-reserved{
+ font-size:.78rem;line-height:1.4;color:var(--gc-warning);
+ border-left:2px solid var(--gc-warning);padding-left:.6rem;margin:.1rem 0;
+ overflow-wrap:anywhere
+}
+.ord-today-reservations-list{
+ display:grid;gap:.3rem;margin:.5rem 0 0;padding:0;list-style:none;font-size:.82rem
+}
+.ord-today-reservations-list li{
+ border-left:2px solid var(--gc-outline-variant);padding-left:.6rem;overflow-wrap:anywhere
+}
+.ord-today-reservations .ord-alert a{display:inline-block;margin:.2rem .5rem 0 0;font-weight:600}
 .ord-table-card .ord-actions button:disabled{opacity:.6}
 
 /* Gastro Core — purchases shared global styles, constrained to pur-* classes. */

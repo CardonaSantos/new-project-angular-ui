@@ -12,7 +12,7 @@ import {GcErrorState} from '../../../design-system/feedback/gc-error-state';
 import {GcPageState} from '../../../core/ux/gc-page-state';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
-import {formatInstant,zonedInstantFrom} from '../../../shared/formatting';
+import {calendarDateAtBranch,formatInstant,zonedInstantFrom} from '../../../shared/formatting';
 import {ReservationsUrlState} from '../data-access/reservations-url-state';
 import {ReservationsApi} from '../data-access/reservations.api';
 import {ReservationsAccess} from '../data-access/reservations-access';
@@ -79,6 +79,7 @@ const ESTADO_CHOICES=[
      <input id="rsv-hasta" type="date" [value]="url.filters().hasta"
       (change)="changeHasta($any($event.target).value)"/>
     </div>
+    <button gcButton variant="outline" type="button" (click)="filterToday()">Hoy</button>
     <form class="rsv-toolbar" (submit)="applySearch($event)">
      <div class="rsv-field"><label for="rsv-search">Buscar</label>
       <input id="rsv-search" [value]="search()" (input)="search.set($any($event.target).value)"
@@ -154,6 +155,11 @@ export class GcReservationsListPage {
  protected async changeEstado(id:string){await this.url.patch({estado:id||null,page:1})}
  protected async changeDesde(v:string){await this.url.patch({desde:v||null,page:1})}
  protected async changeHasta(v:string){await this.url.patch({hasta:v||null,page:1})}
+ protected async filterToday(){
+  const zone=this.branch.branches().find(b=>b.id===this.url.filters().sucursalId)?.zonaHoraria??'America/Guatemala';
+  const today=calendarDateAtBranch(new Date().toISOString(),zone);
+  await this.url.patch({desde:today,hasta:today,page:1});
+ }
  protected applySearch(e:Event){e.preventDefault();void this.url.patch({search:this.search().trim()||null,page:1})}
  protected async onPage(e:GcPageChange){await this.url.patch({page:e.index+1,limit:e.size})}
  protected create(){void this.router.navigate(['/reservations/new'],{queryParams:{sucursalId:this.url.filters().sucursalId}})}
@@ -166,10 +172,12 @@ export class GcReservationsListPage {
     search:f.search||undefined,estado:(f.estado||undefined) as ReservationState|undefined,
     desde:f.desde?zonedInstantFrom(f.desde,'00:00',zone):undefined,
     hasta:f.hasta?zonedInstantFrom(f.hasta,'23:59',zone):undefined}));
+   const now=Date.now();
    return {total:r.meta.total,rows:r.data.map(x=>({id:x.id,nombreContacto:x.nombreContacto,
     telefonoContacto:x.telefonoContacto??'—',personas:x.personas,
     inicio:formatInstant(x.inicio,zone,'DD/MM/YYYY HH:mm'),
-    fin:formatInstant(x.fin,zone,'DD/MM/YYYY HH:mm'),estado:estadoLabel(x.estado),
+    fin:formatInstant(x.fin,zone,'DD/MM/YYYY HH:mm'),
+    estado:estadoLabel(x.estado)+(x.estado==='CONFIRMADA'&&new Date(x.fin).getTime()<now?' ⚠ vencida':''),
     actions:x.id}))};
   });
  }

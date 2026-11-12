@@ -1,9 +1,10 @@
 
 import {HttpClient,HttpParams} from '@angular/common/http';
 import {inject,Injectable} from '@angular/core';
+import {map} from 'rxjs';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
- ReservationPage,ReservationSummary,ReservationDetail,AvailableTable,ReservationState,
+ ReservationPage,ReservationSummary,ReservationDetail,AvailableTable,ReservationState,AvailabilityResult,
  ReservationReminder,ReminderState
 } from './reservations.models';
 
@@ -30,7 +31,9 @@ const query=(filters:Record<string,string|number|boolean|undefined>)=>{
 export class ReservationsApi{
  private readonly http=inject(HttpClient);
  availability(q:{sucursalId:string;inicio:string;fin:string;personas:number}){
-  return this.http.get<AvailableTable[]>(reservationPaths.availability,query(q));
+  // The endpoint returns an envelope ({mesas, sugerencias, totalDisponibles, ...}), not a bare array.
+  return this.http.get<AvailabilityResult>(reservationPaths.availability,query(q))
+   .pipe(map(r=>r.mesas));
  }
  list(q:{sucursalId:string;desde?:string;hasta?:string;estado?:ReservationState|'';
   search?:string;page?:number;limit?:number}){

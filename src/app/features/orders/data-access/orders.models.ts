@@ -14,6 +14,9 @@ export interface OrderLineInput{
 }
 export interface CreateOrderInput{
  sucursalId:string;modalidad:OrderMode;origen?:OrderOrigin;mesaId?:string;
+ // Solo leído por el backend cuando modalidad==='MESA' y mesaId abre una ocupación
+ // nueva; se ignora si la mesa ya está ocupada (no sobreescribe el valor existente).
+ personas?:number;
  clienteId?:string;observaciones?:string;lineas:OrderLineInput[];
  enviarCocina?:boolean;claveOperacion:string;
  // Solo leídos por el backend cuando modalidad==='DELIVERY'; encadena la creación
@@ -47,7 +50,7 @@ export interface OrderDetail extends OrderSummary{
  comandasComoOrden?:{id:string;numero:string;estado:TicketState;estacionId:string;enviadaEn:string}[];
 }
 export interface Room{id:string;sucursalId:string;nombre:string;activa:boolean;orden:number;mesasComoSala?:{id:string;numero:string;capacidad:number;activa:boolean}[]}
-export interface Occupancy{id:string;mesaId:string;cerradaEn:string|null;ordenesComoOcupacionMesa?:{
+export interface Occupancy{id:string;mesaId:string;cerradaEn:string|null;personas?:number|null;ordenesComoOcupacionMesa?:{
  id:string;numero:string;estado:OrderState;total:string;cerradaEn:string|null;
  clienteId:string|null;cliente:OrderCustomer|null}[]}
 export interface TableRecord{id:string;numero:string;capacidad:number;activa:boolean;sala:{id:string;nombre:string};ocupacion:Occupancy|null}

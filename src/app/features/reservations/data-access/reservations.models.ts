@@ -24,7 +24,13 @@ export interface ReservationDetail{
 export interface AvailableTable{
  id:string;numero:string;capacidad:number;sala:{id:string;nombre:string};
  disponible:boolean;motivo:'RESERVADA'|'OCUPADA'|null;
- reservaConflictoId:string|null;ocupacionId:string|null;
+ reservaConflictoId:string|null;reservaConflictoInicio:string|null;reservaConflictoContacto:string|null;
+ ocupacionId:string|null;
+}
+
+export interface AvailabilityResult{
+ sucursalId:string;inicio:string;fin:string;personas:number;
+ mesas:AvailableTable[];sugerencias:string[];totalDisponibles:number;
 }
 
 export type ReminderState='PENDIENTE'|'ENVIADO'|'FALLIDO'|'CANCELADO';
