@@ -4,17 +4,20 @@ import {inject,Injectable} from '@angular/core';
 import {map} from 'rxjs';
 import {gcSilentRequest} from '../../../core/http/api-context';
 import type {
- ReservationPage,ReservationSummary,ReservationDetail,AvailableTable,ReservationState,AvailabilityResult
+ ReservationPage,ReservationSummary,ReservationDetail,AvailableTable,ReservationState,AvailabilityResult,
+ ReservationReminder,ReminderState
 } from './reservations.models';
 
 const safe=(id:string)=>encodeURIComponent(id);
 export const reservationPaths={
  base:'/api/reservations',availability:'/api/reservations/availability',
+ reminders:'/api/reservations/reminders',
  one:(id:string)=>'/api/reservations/'+safe(id),
  confirm:(id:string)=>'/api/reservations/'+safe(id)+'/confirm',
  cancel:(id:string)=>'/api/reservations/'+safe(id)+'/cancel',
  noShow:(id:string)=>'/api/reservations/'+safe(id)+'/no-show',
  checkIn:(id:string)=>'/api/reservations/'+safe(id)+'/check-in',
+ reminder:(id:string)=>'/api/reservations/reminders/'+safe(id),
 } as const;
 const readOptions={context:gcSilentRequest()};
 const query=(filters:Record<string,string|number|boolean|undefined>)=>{
@@ -61,5 +64,13 @@ export class ReservationsApi{
  }
  checkIn(id:string){
   return this.http.post<ReservationDetail>(reservationPaths.checkIn(id),{});
+ }
+ reminders(q:{sucursalId:string;estado?:ReminderState;desde?:string;hasta?:string}){
+  return this.http.get<ReservationReminder[]>(reservationPaths.reminders,query(q));
+ }
+ // Internal checklist action only — ENVIADO means "staff contacted the customer",
+ // never triggers a real SMS/email send.
+ markReminder(id:string,estado:'ENVIADO'|'CANCELADO'){
+  return this.http.patch<ReservationReminder>(reservationPaths.reminder(id),{estado});
  }
 }

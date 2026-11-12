@@ -39,3 +39,17 @@
 /* Audit-event timeline on the reservation detail page. */
 .rsv-timeline{display:grid;gap:.5rem;list-style:none;margin:0;padding:0}
 .rsv-timeline li{border-left:2px solid var(--gc-outline-variant);padding-left:.75rem}
+
+/* Internal "remember to call/confirm" reminders checklist on the list page. */
+.rsv-reminders-card{background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius);padding:clamp(.7rem,1.5vw,1rem);display:grid;gap:.6rem;min-width:0}
+.rsv-reminders-header{display:flex;align-items:center;justify-content:space-between;gap:.65rem}
+.rsv-reminders-header h2{font-size:1.05rem;margin:0}
+.rsv-reminders-empty{margin:0;color:var(--gc-on-surface-variant);font-size:.9rem}
+.rsv-reminders-list{display:grid;gap:.5rem;list-style:none;margin:0;padding:0}
+.rsv-reminders-list li{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;border:1px solid var(--gc-outline-variant);border-radius:.6rem;padding:.55rem .75rem}
+.rsv-reminder-info{display:grid;gap:.2rem;min-width:0}
+.rsv-reminder-meta{display:block;font-size:.82rem;color:var(--gc-on-surface-variant)}
+.rsv-reminder-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.rsv-reminder-overdue{border-color:var(--gc-warning)}
+.rsv-reminder-overdue .rsv-reminder-meta{color:var(--gc-warning);font-weight:600}
+@media(max-width:640px){.rsv-reminders-list li{flex-direction:column;align-items:stretch}.rsv-reminder-actions{align-items:stretch}.rsv-reminder-actions button{width:100%}}

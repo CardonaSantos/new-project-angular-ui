@@ -16,7 +16,7 @@ import {calendarDateAtBranch,formatInstant,zonedInstantFrom} from '../../../shar
 import {ReservationsUrlState} from '../data-access/reservations-url-state';
 import {ReservationsApi} from '../data-access/reservations.api';
 import {ReservationsAccess} from '../data-access/reservations-access';
-import type {ReservationState} from '../data-access/reservations.models';
+import type {ReservationReminder,ReservationState} from '../data-access/reservations.models';
 
 const ESTADO_CHOICES=[
  {id:'PENDIENTE',label:'Pendiente'},{id:'CONFIRMADA',label:'Confirmada'},
@@ -33,6 +33,38 @@ const ESTADO_CHOICES=[
  <div class="rsv-page">
   <gc-page-header title="Reservaciones"
    description="Reservas de mesa registradas en esta sucursal."/>
+  @if(canRead()){
+   <section class="rsv-reminders-card">
+    <header class="rsv-reminders-header">
+     <h2>Recordatorios pendientes</h2>
+     <button type="button" gcButton variant="outline" (click)="reloadReminders()">Actualizar</button>
+    </header>
+    @if(remindersError()){<gc-error-state [message]="remindersError()!" (retry)="reloadReminders()"/>}
+    @else if(!remindersBusy()&&reminders().length===0){
+     <p class="rsv-reminders-empty">No hay recordatorios pendientes para esta sucursal.</p>
+    }
+    @else{
+     <ul class="rsv-reminders-list">
+      @for(r of reminders();track r.id){
+       <li [class.rsv-reminder-overdue]="isOverdue(r)">
+        <div class="rsv-reminder-info">
+         <strong>{{r.reserva.nombreContacto}}</strong> · {{r.reserva.personas}} personas ·
+         reserva {{formatWhen(r.reserva.inicio)}}
+         <span class="rsv-reminder-meta">Llamar antes de {{formatWhen(r.programadoPara)}}
+          ({{r.canal}}: {{r.destino}})</span>
+        </div>
+        @if(canManage()){
+         <div class="rsv-reminder-actions">
+          <button type="button" gcButton variant="outline" (click)="markReminder(r.id,'ENVIADO')">Contactado</button>
+          <button type="button" gcButton variant="secondary" (click)="markReminder(r.id,'CANCELADO')">Descartar</button>
+         </div>
+        }
+       </li>
+      }
+     </ul>
+    }
+   </section>
+  }
   <section class="rsv-card">
    <div class="rsv-toolbar gc-filter-grid">
     <gc-search-select id="rsv-branch" label="Sucursal" [items]="branchChoices()"
@@ -81,6 +113,9 @@ export class GcReservationsListPage {
  private readonly router=inject(Router);
  protected readonly page=new GcPageState<{rows:GcTableRow[];total:number}>();
  protected readonly search=signal('');
+ protected readonly reminders=signal<ReservationReminder[]>([]);
+ protected readonly remindersBusy=signal(false);
+ protected readonly remindersError=signal<string|null>(null);
  protected readonly columns:GcTableColumn[]=[
   {key:'nombreContacto',label:'Contacto'},{key:'telefonoContacto',label:'Teléfono'},
   {key:'personas',label:'Personas'},{key:'inicio',label:'Inicio'},{key:'fin',label:'Fin'},
@@ -88,12 +123,34 @@ export class GcReservationsListPage {
  constructor(){
   effect(()=>{
    const f=this.url.filters();this.search.set(f.search);
-   if(f.sucursalId)void this.load();
+   if(f.sucursalId){void this.load();void this.loadReminders();}
   });
  }
  protected canManage(){return this.access.canManage()}
+ protected canRead(){return this.access.canRead()}
  protected errorMessage(){return gcErrorMessage(this.page.error())}
  protected reload(){void this.load()}
+ protected reloadReminders(){void this.loadReminders()}
+ protected isOverdue(r:ReservationReminder){return new Date(r.programadoPara).getTime()<=Date.now()}
+ protected formatWhen(iso:string){return formatInstant(iso,this.zone(),'DD/MM/YYYY HH:mm')}
+ protected async markReminder(id:string,estado:'ENVIADO'|'CANCELADO'){
+  try{
+   await firstValueFrom(this.api.markReminder(id,estado));
+   this.reminders.update(list=>list.filter(r=>r.id!==id));
+  }catch(e){this.remindersError.set(gcErrorMessage(e))}
+ }
+ private zone(){
+  return this.branch.branches().find(b=>b.id===this.url.filters().sucursalId)?.zonaHoraria??'America/Guatemala';
+ }
+ private async loadReminders(){
+  const sucursalId=this.url.filters().sucursalId;
+  this.remindersBusy.set(true);this.remindersError.set(null);
+  try{
+   const rows=await firstValueFrom(this.api.reminders({sucursalId}));
+   this.reminders.set(rows);
+  }catch(e){this.remindersError.set(gcErrorMessage(e))}
+  finally{this.remindersBusy.set(false)}
+ }
  protected async changeBranch(id:string){await this.url.patch({sucursalId:id,page:1})}
  protected async changeEstado(id:string){await this.url.patch({estado:id||null,page:1})}
  protected async changeDesde(v:string){await this.url.patch({desde:v||null,page:1})}
