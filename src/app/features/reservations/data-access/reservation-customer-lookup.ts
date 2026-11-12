@@ -11,6 +11,11 @@ import {gcSilentRequest} from '../../../core/http/api-context';
  */
 export interface ReservationCustomerOption{id:string;nombre:string}
 export interface ReservationCustomerOptionsPage{data:ReservationCustomerOption[];nextCursor:string|null}
+// /options only returns id+nombre (it's a shared lightweight picker endpoint used across
+// features); this detail shape is only what the reservation form needs to prefill contact fields.
+export interface ReservationCustomerDetail{
+ id:string;nombre:string;telefono:string|null;email:string|null;activo:boolean;
+}
 
 @Injectable({providedIn:'root'})
 export class ReservationCustomerLookup{
@@ -19,6 +24,11 @@ export class ReservationCustomerLookup{
   let params=new HttpParams().set('sucursalId',q.sucursalId).set('limit',String(q.limit??50));
   if(q.search)params=params.set('search',q.search);
   return this.http.get<ReservationCustomerOptionsPage>('/api/customers/options',
+   {params,context:gcSilentRequest()});
+ }
+ detail(id:string,sucursalId:string){
+  const params=new HttpParams().set('sucursalId',sucursalId);
+  return this.http.get<ReservationCustomerDetail>('/api/customers/'+encodeURIComponent(id),
    {params,context:gcSilentRequest()});
  }
 }

@@ -263,7 +263,25 @@ export class GcReservationFormPage implements OnInit {
   }catch(e){if(gen===this.customerGeneration)this.error.set(gcErrorMessage(e))}
   finally{if(gen===this.customerGeneration)this.customerBusy.set(false)}
  }
- protected chooseCustomer(id:string){this.clienteId.set(id);this.markDirty()}
+ // Selecting a client doesn't exempt the reservation from needing a contact name — the
+ // backend always stores nombreContacto as its own field (whoever calls to book might not
+ // be the client on file). So prefill it (and phone/email) from the client record instead
+ // of leaving the staff to retype what they just picked; only fields still empty are
+ // touched, so manual edits are never clobbered.
+ protected async chooseCustomer(id:string){
+  this.clienteId.set(id);this.markDirty();
+  if(!id||!this.sucursalId)return;
+  const gen=++this.customerGeneration;
+  try{
+   const c=await firstValueFrom(this.customers.detail(id,this.sucursalId));
+   if(gen!==this.customerGeneration)return;
+   if(!this.nombreContacto().trim())this.nombreContacto.set(c.nombre);
+   if(!this.telefonoContacto().trim()&&c.telefono)this.telefonoContacto.set(c.telefono);
+   if(!this.emailContacto().trim()&&c.email)this.emailContacto.set(c.email);
+  }catch{
+   // Best-effort prefill only; the picker still works even if the detail lookup fails.
+  }
+ }
 
  protected async save(){
   if(!this.valid()||this.action.busy()||!this.sucursalId)return;
