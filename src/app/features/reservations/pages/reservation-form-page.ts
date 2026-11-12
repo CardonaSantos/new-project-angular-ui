@@ -138,7 +138,10 @@ export class GcReservationFormPage implements OnInit {
  protected readonly horaInicio=signal('');
  protected readonly horaFin=signal('');
  protected readonly notas=signal('');
- protected readonly estadoInicial=signal<'PENDIENTE'|'CONFIRMADA'>('PENDIENTE');
+ // A reservation taken directly (phone call, walk-up booking) is already a commitment,
+ // not a maybe — CONFIRMADA is the sensible default; staff can still switch to PENDIENTE
+ // for a tentative hold that needs follow-up confirmation.
+ protected readonly estadoInicial=signal<'PENDIENTE'|'CONFIRMADA'>('CONFIRMADA');
  protected readonly clienteId=signal('');
  protected readonly customerOptions=signal<{id:string;label:string}[]>([]);
  protected readonly customerChoices=computed(()=>this.customerOptions());
