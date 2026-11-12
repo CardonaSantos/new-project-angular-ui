@@ -35,10 +35,7 @@ const ESTADO_CHOICES=[
    description="Reservas de mesa registradas en esta sucursal."/>
   @if(canRead()){
    <section class="rsv-reminders-card">
-    <header class="rsv-reminders-header">
-     <h2>Recordatorios pendientes</h2>
-     <button type="button" gcButton variant="outline" (click)="reloadReminders()">Actualizar</button>
-    </header>
+    <h2 class="rsv-reminders-title">Recordatorios pendientes</h2>
     @if(remindersError()){<gc-error-state [message]="remindersError()!" (retry)="reloadReminders()"/>}
     @else if(!remindersBusy()&&reminders().length===0){
      <p class="rsv-reminders-empty">No hay recordatorios pendientes para esta sucursal.</p>
