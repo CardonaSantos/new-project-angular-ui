@@ -95,6 +95,23 @@ import {GcReportsDailyChart} from '../../reports/components/reports-charts';
        <div><strong>{{live.kpis.reservasPendientesProximas}}</strong><span>Reservas pendientes próximas</span></div>
       }
      </div>
+     @if(reservations.canEnter()&&live.proximasReservas?.length){
+      <div class="rep-upcoming-reservations">
+       <h3>Próximas reservas</h3>
+       <ul>
+        @for(r of live.proximasReservas!;track r.id){
+         <li>
+          <a [routerLink]="['/reservations',r.id]">
+           <strong>{{r.nombreContacto}}</strong>
+           <span class="rep-muted">{{r.personas}} personas · {{time(r.inicio,live.sucursal.zonaHoraria)}}</span>
+           <span class="rep-tag" [class.rep-tag-muted]="r.estado==='PENDIENTE'">
+            {{r.estado==='CONFIRMADA'?'Confirmada':'Pendiente'}}</span>
+          </a>
+         </li>
+        }
+       </ul>
+      </div>
+     }
     </section>
    }
 
