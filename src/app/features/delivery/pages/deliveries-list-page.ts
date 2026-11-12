@@ -14,6 +14,7 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {formatInstant} from '../../../shared/formatting';
 import {DeliveryApi} from '../data-access/delivery.api';
+import {DeliveryAccess} from '../data-access/delivery-access';
 import {DELIVERY_STATE_LABEL,type DeliveryState} from '../data-access/delivery.models';
 import {DeliveriesUrlState} from '../data-access/deliveries-url-state';
 
@@ -27,11 +28,18 @@ const ESTADO_CHOICES=(Object.keys(DELIVERY_STATE_LABEL) as DeliveryState[]).map(
   GcPagination,GcErrorState,GcSearchSelect],
  template:`
  <main class="del-page">
-  <gc-page-header title="Entregas" description="Tablero de pedidos a domicilio y de plataformas externas."/>
+  <gc-page-header [title]="onlyCourier()?'Mis entregas':'Entregas'"
+   [description]="onlyCourier()?'Tus pedidos asignados para repartir.':'Tablero de pedidos a domicilio y de plataformas externas.'">
+   @if(access.canSettlementsRead()||access.canSettlementsManage()){
+    <a gcPageActions gcButton variant="outline" routerLink="/delivery/settlements">Liquidar repartidor</a>
+   }
+  </gc-page-header>
   <section class="del-card">
    <div class="del-toolbar gc-filter-grid">
-    <gc-search-select id="del-branch" label="Sucursal" [items]="branchChoices()"
-     [value]="url.filters().sucursalId" [clearable]="false" (valueChange)="changeBranch($event)"/>
+    @if(!onlyCourier()){
+     <gc-search-select id="del-branch" label="Sucursal" [items]="branchChoices()"
+      [value]="url.filters().sucursalId" [clearable]="false" (valueChange)="changeBranch($event)"/>
+    }
     <gc-search-select id="del-estado" label="Estado" [items]="estadoChoices" [searchable]="false"
      [value]="url.filters().estado" placeholder="Todos" (valueChange)="changeEstado($event)"/>
     <form class="del-toolbar" (submit)="applySearch($event)">
@@ -44,7 +52,7 @@ const ESTADO_CHOICES=(Object.keys(DELIVERY_STATE_LABEL) as DeliveryState[]).map(
    </div>
    @if(page.status()==='error'){<gc-error-state [message]="errorMessage()" (retry)="reload()"/>}
    @else{
-    <gc-data-table [columns]="columns" [rows]="page.data()?.rows??[]" [loading]="page.busy()">
+    <gc-data-table [columns]="columns()" [rows]="page.data()?.rows??[]" [loading]="page.busy()">
      <ng-template gcTableCell="estado" let-row>
       <span class="del-state-badge" [class]="badgeClass(row['estadoRaw'])">{{row['estado']}}</span>
      </ng-template>
@@ -60,6 +68,7 @@ const ESTADO_CHOICES=(Object.keys(DELIVERY_STATE_LABEL) as DeliveryState[]).map(
  styleUrl:'../delivery.scss'
 })
 export class GcDeliveriesListPage {
+ protected readonly access=inject(DeliveryAccess);
  protected readonly url=inject(DeliveriesUrlState);
  protected readonly branch=inject(GcBranchContext);
  protected readonly branchChoices=computed(()=>this.branch.branches().map(b=>({id:b.id,label:b.nombre})));
@@ -67,10 +76,17 @@ export class GcDeliveriesListPage {
  private readonly api=inject(DeliveryApi);
  protected readonly page=new GcPageState<{rows:GcTableRow[];total:number}>();
  protected readonly search=signal('');
- protected readonly columns:GcTableColumn[]=[
-  {key:'numero',label:'Orden'},{key:'origen',label:'Origen'},{key:'direccion',label:'Dirección'},
-  {key:'repartidor',label:'Repartidor'},{key:'estado',label:'Estado'},
-  {key:'fecha',label:'Actualizado'},{key:'actions',label:'Acciones'}];
+ /** A pure courier only ever sees their own deliveries (enforced server-side), so the
+  * "Repartidor" column and branch picker would just repeat what they already know. */
+ protected readonly onlyCourier=computed(()=>
+  this.access.canCourier()&&!this.access.canManage()&&!this.access.canRead());
+ protected readonly columns=computed<GcTableColumn[]>(()=>{
+  const base:GcTableColumn[]=[{key:'numero',label:'Orden'},{key:'origen',label:'Origen'},
+   {key:'direccion',label:'Dirección'}];
+  if(!this.onlyCourier())base.push({key:'repartidor',label:'Repartidor'});
+  base.push({key:'estado',label:'Estado'},{key:'fecha',label:'Actualizado'},{key:'actions',label:'Acciones'});
+  return base;
+ });
  constructor(){
   effect(()=>{
    const f=this.url.filters();this.search.set(f.search);
