@@ -10,7 +10,7 @@ import {gcSilentRequest} from '../../../core/http/api-context';
  */
 export type OrdersReservationState='PENDIENTE'|'CONFIRMADA'|'CANCELADA'|'COMPLETADA'|'NO_ASISTIO';
 export interface OrdersReservationSummary{
- id:string;nombreContacto:string;personas:number;inicio:string;estado:OrdersReservationState;
+ id:string;nombreContacto:string;personas:number;inicio:string;fin:string;estado:OrdersReservationState;
 }
 
 @Injectable({providedIn:'root'})

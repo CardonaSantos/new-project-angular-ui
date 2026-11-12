@@ -38,6 +38,15 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
    <div><small>Llegaron</small><strong>{{arrivedReservations().length}}</strong></div>
    <div><small>No asistió</small><strong>{{noShowReservations().length}}</strong></div>
   </div>
+  @if(overdueReservations().length){
+   <p class="ord-alert" role="alert">
+    {{overdueReservations().length===1?'Hay 1 reservación confirmada vencida sin registrar llegada:':
+      'Hay '+overdueReservations().length+' reservaciones confirmadas vencidas sin registrar llegada:'}}
+    @for(r of overdueReservations();track r.id){
+     <a [routerLink]="['/reservations',r.id]">{{r.nombreContacto}} ({{clockTimeAtBranch(r.inicio,zone())}})</a>
+    }
+   </p>
+  }
   @if(nextArrivals().length){
    <ul class="ord-today-reservations-list">
     @for(r of nextArrivals();track r.id){
@@ -209,6 +218,11 @@ export class GcOrdersTablesPage{
   this.todayReservations().filter(r=>r.estado==='COMPLETADA'));
  protected readonly noShowReservations=computed(()=>
   this.todayReservations().filter(r=>r.estado==='NO_ASISTIO'));
+ protected readonly overdueReservations=computed(()=>{
+  const now=Date.now();
+  return this.todayReservations().filter(r=>r.estado==='CONFIRMADA'&&new Date(r.fin).getTime()<now)
+   .sort((a,b)=>new Date(a.fin).getTime()-new Date(b.fin).getTime());
+ });
  protected readonly nextArrivals=computed(()=>{
   const now=Date.now();
   return this.pendingReservations().filter(r=>new Date(r.inicio).getTime()>=now-15*60000)
