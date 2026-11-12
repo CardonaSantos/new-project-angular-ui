@@ -7,6 +7,7 @@ import {formatInstant} from '../../../shared/formatting';
 import {OrdersAccess} from '../../orders/data-access/orders-access';
 import {PaymentsAccess} from '../../payments/data-access/payments-access';
 import {PurchasesAccess} from '../../purchases/data-access/purchases-access';
+import {ReservationsAccess} from '../../reservations/data-access/reservations-access';
 import {ReportsAccess} from '../../reports/data-access/reports-access';
 import {ReportsApi} from '../../reports/data-access/reports.api';
 import type {OperationalDashboard,ReportsOverview} from '../../reports/data-access/reports.models';
@@ -84,10 +85,16 @@ import {GcReportsDailyChart} from '../../reports/components/reports-charts';
      </div>
      <div class="rep-operational-secondary">
       <div><strong>{{live.kpis.entregasEnReparto}}</strong><span>Entregas en reparto</span></div>
-      <div><strong>{{live.kpis.reservasConfirmadasProximas}}</strong><span>Reservas confirmadas próximas</span></div>
-      <div><strong>{{live.kpis.reservasPendientesProximas}}</strong><span>Reservas pendientes próximas</span></div>
+      @if(reservations.canEnter()){
+       <a class="rep-operational-secondary-link" routerLink="/reservations" [queryParams]="{estado:'CONFIRMADA'}">
+        <strong>{{live.kpis.reservasConfirmadasProximas}}</strong><span>Reservas confirmadas próximas</span></a>
+       <a class="rep-operational-secondary-link" routerLink="/reservations" [queryParams]="{estado:'PENDIENTE'}">
+        <strong>{{live.kpis.reservasPendientesProximas}}</strong><span>Reservas pendientes próximas</span></a>
+      }@else{
+       <div><strong>{{live.kpis.reservasConfirmadasProximas}}</strong><span>Reservas confirmadas próximas</span></div>
+       <div><strong>{{live.kpis.reservasPendientesProximas}}</strong><span>Reservas pendientes próximas</span></div>
+      }
      </div>
-     <p class="rep-footnote">Las reservas próximas corresponden a los siguientes {{live.horizonMinutes}} minutos.</p>
     </section>
    }
 
@@ -135,6 +142,7 @@ export class GcWorkspacePage {
  private readonly orders=inject(OrdersAccess);
  private readonly payments=inject(PaymentsAccess);
  private readonly purchases=inject(PurchasesAccess);
+ protected readonly reservations=inject(ReservationsAccess);
  protected readonly operational=signal<OperationalDashboard|null>(null);
  protected readonly today=signal<ReportsOverview|null>(null);
  protected readonly opError=signal('');
@@ -151,6 +159,7 @@ export class GcWorkspacePage {
   if(this.payments.canSalesRead())results.push({path:'/payments/sales',title:'Ventas',detail:'Historial de ventas'});
   if(this.purchases.canQuickEntry())results.push({path:'/purchases/quick',title:'Entrada de stock',detail:'Ingresar insumos'});
   if(this.branch.has('inventory.read'))results.push({path:'/inventory',title:'Inventario',detail:'Revisar existencias'});
+  if(this.reservations.canEnter())results.push({path:'/reservations',title:'Reservaciones',detail:'Ver y gestionar reservas'});
   return results;
  });
  constructor(){
