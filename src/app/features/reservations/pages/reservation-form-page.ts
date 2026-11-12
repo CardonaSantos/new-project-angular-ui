@@ -224,6 +224,15 @@ export class GcReservationFormPage implements OnInit {
    const fin=zonedInstantFrom(this.fecha(),this.horaFin(),this.zone);
    if(new Date(fin).getTime()<=new Date(inicio).getTime()){
     this.windowError.set('La hora de fin debe ser posterior a la hora de inicio.');
+    return;
+   }
+   // Mirrors the backend's own 5-minute grace window (validateWindow in
+   // reservation.policy.ts, applied on every create AND update — even one that only
+   // touches notes revalidates the full window) so this surfaces here, next to
+   // Horario, instead of as a 409 from the availability lookup that only shows up
+   // buried in the Mesas box.
+   if(new Date(inicio).getTime()<Date.now()-5*60000){
+    this.windowError.set('No se aceptan reservas en el pasado; elige una hora futura.');
    }
   }catch(e){this.windowError.set(e instanceof Error?e.message:'Horario inválido.')}
  }
