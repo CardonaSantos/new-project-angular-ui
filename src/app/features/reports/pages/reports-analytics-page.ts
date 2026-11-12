@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { GcBranchContext } from '../../../core/organization/gc-branch-context';
 import { gcErrorMessage } from '../../../core/http/api-error';
-import { GcNotificationService } from '../../../core/ux/gc-notification.service';
 import { formatCalendarDate, formatInstant } from '../../../shared/formatting';
 import { ReportsApi } from '../data-access/reports.api';
 import { ReportsAccess } from '../data-access/reports-access';
@@ -457,37 +456,7 @@ type Tab = 'overview' | 'tickets' | 'cash' | 'sources';
                 }
               </select>
             </div>
-            <div class="rep-actions">
-              <button
-                type="button"
-                [disabled]="exporting() || !source() || busy()"
-                (click)="download('CSV')"
-              >
-                CSV
-              </button>
-              <button
-                type="button"
-                [disabled]="exporting() || !source() || busy()"
-                (click)="download('XLSX')"
-              >
-                Excel
-              </button>
-              <button
-                type="button"
-                [disabled]="exporting() || !source() || busy()"
-                (click)="download('PDF')"
-              >
-                PDF
-              </button>
-            </div>
           </div>
-          <p class="rep-footnote">
-            Se exporta un conjunto completo de hasta 1,000 registros desde PostgreSQL. Para períodos
-            extensos, reduce las fechas.
-          </p>
-          @if (exportError()) {
-            <p role="alert" class="rep-alert">{{ exportError() }}</p>
-          }
           @if (sourceData(); as report) {
             @if (report.source === 'SALES_LINES' && report.porProducto?.length) {
               <h3>Productos más vendidos</h3>
@@ -579,7 +548,6 @@ export class GcReportsAnalyticsPage {
   protected readonly branch = inject(GcBranchContext);
   protected readonly access = inject(ReportsAccess);
   private readonly api = inject(ReportsApi);
-  private readonly notice = inject(GcNotificationService);
   protected readonly period = signal<ReportPeriod>('MES');
   protected readonly date = signal('');
   protected readonly from = signal('');
@@ -596,8 +564,6 @@ export class GcReportsAnalyticsPage {
   protected readonly error = signal('');
   protected readonly methodError = signal('');
   protected readonly expenseError = signal('');
-  protected readonly exportError = signal('');
-  protected readonly exporting = signal(false);
   protected readonly busy = signal(false);
   protected readonly money = reportMoney;
   protected readonly labels = REPORT_LABELS;
@@ -822,35 +788,6 @@ export class GcReportsAnalyticsPage {
       if (gen === this.generation) this.error.set(gcErrorMessage(e));
     } finally {
       if (gen === this.generation) this.busy.set(false);
-    }
-  }
-  protected async download(format: 'CSV' | 'XLSX' | 'PDF') {
-    if (!this.valid() || !this.access.canSource(this.source()) || this.exporting()) return;
-    this.exporting.set(true);
-    this.exportError.set('');
-    try {
-      const response = await firstValueFrom(
-        this.api.export(this.source(), asReportQuery(this.form()), format),
-      );
-      const blob = response.body;
-      if (!blob || blob.size === 0) throw new Error('El servidor devolvió un archivo vacío.');
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download =
-        'Gastro_Core_' + this.source() + '_' + this.period() + '.' + format.toLowerCase();
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      // Firefox may still be starting the file transfer after click() returns.
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      this.notice.show('Reporte generado: ' + format + '.', 'success');
-    } catch (e) {
-      this.exportError.set(gcErrorMessage(e));
-      this.notice.show(gcErrorMessage(e), 'error', 0);
-    } finally {
-      this.exporting.set(false);
     }
   }
 }
