@@ -61,6 +61,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/reports/reports.routes').then(m=>m.REPORTS_ROUTES),
       },
       {
+        path: 'reporting', canActivate: [gcSessionGuard], data: {breadcrumb:'Reportería'},
+        loadChildren: () => import('./features/reporting/reporting.routes').then(m=>m.REPORTING_ROUTES),
+      },
+      {
         path: 'inventory', canActivate: [gcSessionGuard], data: { breadcrumb: 'Inventario' },
         loadChildren: () => import('./features/inventory/inventory.routes').then(m => m.INVENTORY_ROUTES),
       },
