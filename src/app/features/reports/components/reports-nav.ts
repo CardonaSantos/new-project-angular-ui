@@ -6,6 +6,7 @@ import {RouterLink,RouterLinkActive} from '@angular/router';
  template:`<nav class="rep-nav" aria-label="Secciones de reportes">
   <a routerLink="/workspace" routerLinkActive="rep-nav-active" [routerLinkActiveOptions]="{exact:true}">Panel operativo</a>
   <a routerLink="/reports" routerLinkActive="rep-nav-active" [routerLinkActiveOptions]="{exact:true}">Analítica</a>
+  <a routerLink="/reporting" routerLinkActive="rep-nav-active" [routerLinkActiveOptions]="{exact:true}">Reportería</a>
  </nav>`
 })
 export class GcReportsNav{}

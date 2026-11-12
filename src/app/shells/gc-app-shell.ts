@@ -21,6 +21,7 @@ import { OrdersAccess } from '../features/orders/data-access/orders-access';
 import { PaymentsAccess } from '../features/payments/data-access/payments-access';
 import { PurchasesAccess } from '../features/purchases/data-access/purchases-access';
 import { ReportsAccess } from '../features/reports/data-access/reports-access';
+import { ReportingAccess } from '../features/reporting/data-access/reporting-access';
 import { FinanceAccess } from '../features/finance/data-access/finance-access';
 import { CustomersAccess } from '../features/customers/data-access/customers-access';
 import { ReservationsAccess } from '../features/reservations/data-access/reservations-access';
@@ -52,6 +53,7 @@ export class GcAppShell {
   protected readonly paymentsAccess = inject(PaymentsAccess);
   protected readonly purchasesAccess = inject(PurchasesAccess);
   protected readonly reportsAccess = inject(ReportsAccess);
+  protected readonly reportingAccess = inject(ReportingAccess);
   protected readonly financeAccess = inject(FinanceAccess);
   protected readonly customersAccess = inject(CustomersAccess);
   protected readonly reservationsAccess = inject(ReservationsAccess);
@@ -80,6 +82,8 @@ export class GcAppShell {
           ? [{label:'Compras',path:'/purchases',initials:'CP',icon:'purchases',exact:false}]:[]),
         ...(this.reportsAccess.canRead()
           ? [{label:'Analítica',path:'/reports',initials:'AN',icon:'reports',exact:false}]:[]),
+        ...(this.reportingAccess.canRead()
+          ? [{label:'Reportería',path:'/reporting',initials:'RP',icon:'reporting',exact:false}]:[]),
         ...((this.orgAccess.canGlobal('inventory.read')||this.context.has('inventory.read'))
          ? [{label:'Inventario',path:'/inventory',initials:'IV',icon:'inventory',exact:false}]:[]),
         ...(this.financeAccess.canEnter()
