@@ -2,12 +2,16 @@ import { Routes } from '@angular/router';
 import { gcAuthGuard, gcPermissionGuard } from './core/auth/gc-auth.guards';
 import { gcGuestGuard, gcPasswordChangeGuard, gcSessionGuard } from './core/auth/gc-real.guards';
 import { gcUnsavedChangesGuard } from './core/ux/gc-unsaved-changes.guard';
+import { SELF_SERVICE_ROUTES } from './features/self-service/self-service.routes';
 
 export const routes: Routes = [
   {
     path: 'login', title: 'Iniciar sesión — Gastro Core', canActivate: [gcGuestGuard],
     loadComponent: () => import('./features/auth/login/gc-login-page').then(m => m.GcLoginPage),
   },
+  // Customer self-service (QR de mesa): no login, no staff shell/sidebar.
+  // Path matches the url the backend returns from POST /self-service/tables/:mesaId/qr.
+  ...SELF_SERVICE_ROUTES,
   {
     path: 'change-password', title: 'Cambiar contraseña — Gastro Core',
     canActivate: [gcPasswordChangeGuard],
