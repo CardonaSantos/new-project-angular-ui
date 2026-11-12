@@ -3,6 +3,7 @@ import {computed,effect,inject,Injectable} from '@angular/core';
 import {ActivatedRoute,Router} from '@angular/router';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
+import {calendarDateAtBranch} from '../../../shared/formatting';
 
 const limits=[5,10,20,25,50] as const;
 export interface ReservationFilters{
@@ -25,10 +26,23 @@ export class ReservationsUrlState{
   const branchId=requested&&authorized.some(b=>b.id===requested)?requested:
    (this.branch.branchId()??authorized[0]?.id??'');
   const rawLimit=sanitizePage(p.get('limit'),20,50);
+  // With no date range given at all, default "Desde" to today instead of showing
+  // every reservation ever made oldest-first — otherwise a branch with months of
+  // history buries tomorrow's booking dozens of pages deep behind completed ones.
+  // Only kicks in when BOTH bounds are absent; an explicit "Hasta" alone (an
+  // open-started historical range) is left alone.
+  const zone=authorized.find(b=>b.id===branchId)?.zonaHoraria??'America/Guatemala';
+  const rawHasta=p.get('hasta');
+  const rawDesde=p.get('desde');
+  // ?desde=ALL is the explicit escape hatch for "show everything, including the past"
+  // (see showAllHistory() on the list page) — distinct from an absent param, which
+  // gets today's date filled in instead.
+  const defaultDesde=rawHasta?'':calendarDateAtBranch(new Date().toISOString(),zone);
+  const desde=rawDesde==='ALL'?'':rawDesde??defaultDesde;
   return {
    page:sanitizePage(p.get('page'),1,100000),
    limit:limits.includes(rawLimit as typeof limits[number])?rawLimit:20,
-   sucursalId:branchId,desde:p.get('desde')??'',hasta:p.get('hasta')??'',
+   sucursalId:branchId,desde,hasta:rawHasta??'',
    estado:p.get('estado')??'',search:(p.get('search')??'').slice(0,100),
   };
  });
