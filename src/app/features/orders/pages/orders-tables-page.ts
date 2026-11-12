@@ -6,9 +6,12 @@ import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
+import {OrganizationAccess} from '../../organization/data-access/organization-access';
+import {clockTimeAtBranch} from '../../../shared/formatting';
 import {GcOrdersNav} from '../orders-nav';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
+import {OrdersTableReservations,type OrdersTableConflict} from '../data-access/orders-table-reservations';
 import type {Room,TableRecord} from '../data-access/orders.models';
 import {money,openTableOrders} from '../data-access/orders.helpers';
 @Component({
@@ -49,6 +52,12 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
        [class.ord-ticket-badge--working]="!!table.ocupacion">
        {{!table.activa?'Inactiva':table.ocupacion?'Ocupada':'Disponible'}}</span></div>
      <small>{{table.sala.nombre}} · {{table.capacidad}} personas</small>
+     @if(reservationFor(table.id);as conflict){
+      <p class="ord-note ord-table-reserved">
+       Reservada{{conflict.reservaConflictoInicio?' '+clockTimeAtBranch(conflict.reservaConflictoInicio,zone()):''}}
+       {{conflict.reservaConflictoContacto?'— '+conflict.reservaConflictoContacto:''}}
+      </p>
+     }
      @if(table.ocupacion){
       @for(o of openOrders(table);track o.id){
        <div class="ord-actions">
@@ -171,9 +180,13 @@ export class GcOrdersTablesPage{
  protected readonly managing=Boolean(this.route.snapshot.data['manage']);
  private readonly confirm=inject(ConfirmDialogService);
  private readonly notices=inject(GcNotificationService);
+ private readonly reservations=inject(OrdersTableReservations);
+ private readonly organization=inject(OrganizationAccess);
  protected readonly branch=inject(GcBranchContext);protected readonly access=inject(OrdersAccess);
  protected readonly money=money;protected readonly openOrders=openTableOrders;
+ protected readonly clockTimeAtBranch=clockTimeAtBranch;
  protected readonly rooms=signal<Room[]>([]);protected readonly tables=signal<TableRecord[]>([]);
+ private readonly reservationConflicts=signal<Map<string,OrdersTableConflict>>(new Map());
  protected readonly selectedRoom=signal('');protected readonly busy=signal(false);
  protected readonly manageTab=signal<'rooms'|'tables'>('rooms');
  protected readonly actionBusy=signal(false);protected readonly error=signal<string|null>(null);
@@ -201,6 +214,12 @@ export class GcOrdersTablesPage{
   const id=this.branch.branchId();
   if(id){this.selectedRoom.set('');void this.load()}
  })}
+ protected zone(){return this.branch.active()?.zonaHoraria??'America/Guatemala'}
+ protected reservationFor(mesaId:string){
+  const c=this.reservationConflicts().get(mesaId);
+  return c&&c.motivo==='RESERVADA'?c:undefined;
+ }
+ private canSeeReservations(){return this.branch.has('reservations.read')||this.organization.canGlobal('reservations.read')}
  protected async load(){
   const id=this.branch.branchId();if(!id||!this.access.canTablesRead())return;
   const gen=++this.generation;this.busy.set(true);this.error.set(null);
@@ -210,6 +229,19 @@ export class GcOrdersTablesPage{
    this.rooms.set(rooms);this.tables.set(tables);
   }catch(e){if(gen===this.generation)this.error.set(gcErrorMessage(e))}
   finally{if(gen===this.generation)this.busy.set(false)}
+  void this.loadReservationOverlay(id,gen);
+ }
+ /** Best-effort overlay: never blocks or errors the tables board if it fails. */
+ private async loadReservationOverlay(sucursalId:string,gen:number){
+  if(!this.canSeeReservations()){this.reservationConflicts.set(new Map());return}
+  try{
+   const now=new Date();
+   const endOfDay=new Date(now);endOfDay.setHours(23,59,59,999);
+   const rows=await firstValueFrom(this.reservations.upcoming(
+    {sucursalId,inicio:now.toISOString(),fin:endOfDay.toISOString()}));
+   if(gen!==this.generation)return;
+   this.reservationConflicts.set(new Map(rows.map(r=>[r.id,r])));
+  }catch{/* reservation badges are a convenience overlay, not core table data */}
  }
  protected openTable(table:TableRecord){
   void this.router.navigate(['/orders/pos'],{queryParams:{mesaId:table.id}});
