@@ -80,6 +80,7 @@ const ESTADO_CHOICES=[
       (change)="changeHasta($any($event.target).value)"/>
     </div>
     <button gcButton variant="outline" type="button" (click)="filterToday()">Hoy</button>
+    <button gcButton variant="outline" type="button" (click)="showAllHistory()">Ver todo el historial</button>
     <form class="rsv-toolbar" (submit)="applySearch($event)">
      <div class="rsv-field"><label for="rsv-search">Buscar</label>
       <input id="rsv-search" [value]="search()" (input)="search.set($any($event.target).value)"
@@ -160,6 +161,7 @@ export class GcReservationsListPage {
   const today=calendarDateAtBranch(new Date().toISOString(),zone);
   await this.url.patch({desde:today,hasta:today,page:1});
  }
+ protected async showAllHistory(){await this.url.patch({desde:'ALL',hasta:null,page:1})}
  protected applySearch(e:Event){e.preventDefault();void this.url.patch({search:this.search().trim()||null,page:1})}
  protected async onPage(e:GcPageChange){await this.url.patch({page:e.index+1,limit:e.size})}
  protected create(){void this.router.navigate(['/reservations/new'],{queryParams:{sucursalId:this.url.filters().sucursalId}})}
