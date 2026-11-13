@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { GcRealtimeService, GcRealtimeTransport } from './gc-realtime.service';
 
 class MockTransport implements GcRealtimeTransport {
-  readonly emitted: Array<{ event: string; args: unknown[] }> = [];
+  readonly emitted: { event: string; args: unknown[] }[] = [];
   private callbacks = new Map<string, Set<(...values: unknown[]) => void>>();
   connect(): void { this.fire('connect'); }
   disconnect(): void { this.fire('disconnect'); }

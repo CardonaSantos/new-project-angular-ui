@@ -261,7 +261,9 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
           </section>
         </div>
 
-        <footer class="ss-bar" [class.ss-bar--bump]="cartBump()" (click)="cartOpen.set(true)">
+        <footer class="ss-bar" [class.ss-bar--bump]="cartBump()" role="button" tabindex="0"
+          (click)="cartOpen.set(true)" (keydown.enter)="cartOpen.set(true)"
+          (keydown.space)="cartOpen.set(true); $event.preventDefault()">
           <span class="ss-bar-count">
             <span class="ss-bar-badge">{{ cartCount() }}</span>
             Ver mi pedido
@@ -340,8 +342,8 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
       }
 
       @if (cartOpen()) {
-        <div class="ss-cart-overlay" (click)="closeCart()"></div>
-        <aside class="ss-cart-drawer" (click)="$event.stopPropagation()">
+        <div class="ss-cart-overlay" role="presentation" (click)="closeCart()"></div>
+        <aside class="ss-cart-drawer" role="presentation" (click)="$event.stopPropagation()">
           <div class="ss-cart-head">
             <h2>Tu pedido</h2>
             <button class="ss-cart-close" type="button" (click)="closeCart()" aria-label="Cerrar">✕</button>

@@ -10,7 +10,7 @@ const BASE = '/api/self-service';
 export interface SelfServiceLineInput {
   varianteId: string;
   cantidad: string;
-  modificadores?: Array<{ modificadorId: string }>;
+  modificadores?: { modificadorId: string }[];
   notasCocina?: string;
 }
 
