@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   HostListener,
@@ -14,6 +15,7 @@ import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { Subject, debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 import { GcBranchContext } from '../../../core/organization/gc-branch-context';
 import { GcNotificationService } from '../../../core/ux/gc-notification.service';
+import { GcRealtimeService } from '../../../core/realtime/gc-realtime.service';
 import { GcSearchSelect, type GcSelectOption } from '../../../design-system/forms/gc-search-select';
 import { ConfirmDialogService } from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import { CatalogApi } from '../../catalog/data-access/catalog.api';
@@ -95,7 +97,11 @@ import { money, operationKey, orderFriendlyError } from '../data-access/orders.h
       <section class="ord-pos-confirmed" role="status" aria-live="polite">
         <div class="ord-pos-confirmed-content">
           <strong>{{
-            expressSale() ? 'Venta cobrada correctamente' : 'Pedido registrado correctamente'
+            expressSale()
+              ? 'Venta cobrada correctamente'
+              : fromSelfService()
+                ? 'Pedido recibido desde autoservicio'
+                : 'Pedido registrado correctamente'
           }}</strong>
           <span>{{ success() }}</span>
         </div>
@@ -745,6 +751,8 @@ export class GcOrdersPosPage {
   private readonly branchesApi = inject(BranchesApi);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly notices = inject(GcNotificationService);
+  private readonly realtime = inject(GcRealtimeService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly usersApi = inject(UsersApi);
   private readonly deliveryApi = inject(DeliveryApi);
@@ -770,6 +778,10 @@ export class GcOrdersPosPage {
   protected readonly success = signal('');
   protected readonly createdId = signal('');
   protected readonly createdTickets = signal<{ id: string; numero: string }[]>([]);
+  /** True while the confirmation panel above is showing a QR/self-service order that just
+   * arrived (SELF_SERVICE_ORDER_PLACED), not an order staff entered manually here — only
+   * changes the panel's heading so staff can tell the two apart at a glance. */
+  protected readonly fromSelfService = signal(false);
   protected readonly expressSale = signal<QuickCheckoutResult | null>(null);
   protected readonly quickDraft = signal<CreateOrderInput | null>(null);
   protected readonly existingOrder = signal<OrderDetail | null>(null);
@@ -946,6 +958,28 @@ export class GcOrdersPosPage {
       .subscribe((term) => {
         void this.loadCustomers(term);
       });
+    // A customer sending an order from self-service today only shows up as a toast on the
+    // Cocina screen (KITCHEN_TICKET_CREATED) — nothing told staff here, where orders are
+    // actually taken and managed, that one had arrived except refreshing. Reuse the exact
+    // same confirmation panel shown for a manually-entered order so staff can act on it
+    // (cobrar, imprimir) right from this screen.
+    const unlisten = this.realtime.listen<{
+      ordenId: string;
+      numero: string;
+      mesaNumero: string | null;
+      sala: string | null;
+      tickets: { id: string; numero: string }[];
+    }>('SELF_SERVICE_ORDER_PLACED', (payload) => {
+      this.expressSale.set(null);
+      this.createdId.set(payload.ordenId);
+      this.createdTickets.set(payload.tickets);
+      this.fromSelfService.set(true);
+      const where = payload.mesaNumero
+        ? ` · Mesa ${payload.mesaNumero}${payload.sala ? ' (' + payload.sala + ')' : ''}`
+        : '';
+      this.success.set('Pedido ' + payload.numero + where + ' · Enviado a Cocina.');
+    });
+    this.destroyRef.onDestroy(unlisten);
   }
   hasUnsavedChanges(): boolean {
     return this.cart().length > 0;
@@ -1152,6 +1186,7 @@ export class GcOrdersPosPage {
     this.success.set('');
     this.createdId.set('');
     this.expressSale.set(null);
+    this.fromSelfService.set(false);
     this.configError.set('');
     if (item.gruposModificadores.length) {
       this.configuring.set(item);
@@ -1413,6 +1448,7 @@ export class GcOrdersPosPage {
           '.'
         : 'Orden ' + data.numero + ' creada' + status + '.';
       this.success.set(message);
+      this.fromSelfService.set(false);
       this.notices.show(message, 'success', 7000);
       this.cart.set([]);
       this.observations.set('');
@@ -1546,6 +1582,7 @@ export class GcOrdersPosPage {
     this.expressSale.set(result);
     this.createdId.set(result.ordenId);
     this.createdTickets.set([]);
+    this.fromSelfService.set(false);
     this.success.set(
       'Venta ' +
         result.numero +
@@ -1564,6 +1601,7 @@ export class GcOrdersPosPage {
     this.success.set('');
     this.createdId.set('');
     this.expressSale.set(null);
+    this.fromSelfService.set(false);
     this.query.set('');
     this.category.set('');
     this.searchInput()?.nativeElement.focus();
