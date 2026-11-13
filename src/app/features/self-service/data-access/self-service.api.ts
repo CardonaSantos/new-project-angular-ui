@@ -43,8 +43,24 @@ export class SelfServiceApi {
     return this.http.post<SelfServiceCart>(`${BASE}/order/items`, { lineas }, this.authed(sessionToken));
   }
 
+  updateLineQuantity(sessionToken: string, lineaId: string, cantidad: string) {
+    return this.http.patch<SelfServiceCart>(
+      `${BASE}/order/items/${encodeURIComponent(lineaId)}`, { cantidad }, this.authed(sessionToken),
+    );
+  }
+
+  removeLine(sessionToken: string, lineaId: string) {
+    return this.http.post<SelfServiceCart>(
+      `${BASE}/order/items/${encodeURIComponent(lineaId)}/remove`, {}, this.authed(sessionToken),
+    );
+  }
+
   send(sessionToken: string) {
     return this.http.post<SelfServiceCart>(`${BASE}/order/send`, {}, this.authed(sessionToken));
+  }
+
+  callWaiter(sessionToken: string) {
+    return this.http.post<void>(`${BASE}/call-waiter`, {}, this.authed(sessionToken));
   }
 
   closeSession(sessionToken: string) {
