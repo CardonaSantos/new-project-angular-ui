@@ -65,24 +65,34 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
     .ss-item .ss-name{font-weight:600;font-size:.92rem;line-height:1.25}
     .ss-item .ss-price{color:var(--gc-primary);font-weight:600;font-size:.9rem}
 
-    /* Floating cart trigger: bumps + briefly rings when an item is added. */
+    /* Floating cart trigger: tall, easy to tap; bumps + briefly rings when an item is added. */
     .ss-bar{position:fixed;bottom:0;left:0;right:0;background:var(--gc-primary);color:var(--gc-on-primary);
-      padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between;
+      padding:1.25rem 1.2rem;min-height:3.6rem;display:flex;align-items:center;justify-content:space-between;
       border-top-left-radius:var(--gc-radius);border-top-right-radius:var(--gc-radius);
-      box-shadow:0 -4px 16px rgba(0,0,0,.18);cursor:pointer;z-index:8}
+      box-shadow:0 -4px 16px rgba(0,0,0,.18);cursor:pointer;z-index:8;font-size:1.05rem}
     .ss-bar--bump{animation:ss-bump .38s ease}
-    .ss-bar .ss-bar-count{display:flex;align-items:center;gap:.5rem;font-weight:600}
+    .ss-bar .ss-bar-count{display:flex;align-items:center;gap:.6rem;font-weight:700}
     .ss-bar .ss-bar-badge{background:var(--gc-on-primary);color:var(--gc-primary);border-radius:999px;
-      min-width:1.5rem;height:1.5rem;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700}
+      min-width:1.7rem;height:1.7rem;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:700}
 
-    /* Centered item-detail dialog with image carousel. */
+    /* Centered item-detail dialog with image carousel. Deliberately NOT closed by a backdrop tap —
+       on a tablet/kiosk a thumb brushing the edge while scrolling toppings must never silently
+       discard the customer's picks; closing is only ever the explicit ✕ / Cancelar buttons. */
     .ss-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;
       justify-content:center;z-index:20;padding:1rem;animation:ss-fade-in .15s ease}
-    .ss-dialog{background:var(--gc-surface);width:100%;max-width:520px;border-radius:20px;
-      max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;gap:.9rem;
+    .ss-dialog{position:relative;background:var(--gc-surface);width:100%;max-width:520px;border-radius:20px;
+      max-height:92vh;overflow:hidden;display:flex;flex-direction:column;
       animation:ss-pop-in .2s cubic-bezier(.2,.9,.3,1.2)}
-    .ss-dialog .ss-dialog-body{padding:0 1.15rem 1.15rem;display:flex;flex-direction:column;gap:.9rem}
-    .ss-dialog h2{margin:0;font-size:1.2rem}
+    .ss-dialog-close{position:absolute;top:.6rem;right:.6rem;z-index:3;width:2.3rem;height:2.3rem;
+      border-radius:999px;border:none;background:rgba(0,0,0,.48);color:#fff;font-size:1.05rem;
+      cursor:pointer;display:flex;align-items:center;justify-content:center}
+    /* Fixed head + scrollable middle (grows with many toppings) + fixed action footer, so a long
+       modifier list never pushes the Agregar/Cancelar buttons out of reach. */
+    .ss-dialog-scroll{flex:1;min-height:0;overflow-y:auto;padding:1rem 1.15rem;
+      display:flex;flex-direction:column;gap:.9rem}
+    .ss-dialog-actions{flex-shrink:0;padding:.9rem 1.15rem;border-top:1px solid var(--gc-outline-variant);
+      display:flex;gap:.75rem}
+    .ss-dialog h2{margin:0;font-size:1.2rem;padding-right:2.2rem}
 
     .ss-carousel{position:relative;width:100%;aspect-ratio:4/3;background:var(--gc-surface-container);
       border-radius:20px 20px 0 0;overflow:hidden;flex-shrink:0}
@@ -99,27 +109,31 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
     .ss-carousel .ss-dot--active{background:#fff;width:.65rem}
 
     .ss-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem}
-    .ss-qty{display:flex;align-items:center;gap:.6rem}
-    .ss-qty button{width:2.3rem;height:2.3rem;border-radius:999px;border:1px solid var(--gc-outline-variant);
-      background:var(--gc-surface-container-low);font-size:1.1rem;cursor:pointer;transition:transform .1s}
+    .ss-qty{display:flex;align-items:center;gap:.7rem}
+    .ss-qty button{width:2.6rem;height:2.6rem;border-radius:999px;border:1px solid var(--gc-outline-variant);
+      background:var(--gc-surface-container-low);font-size:1.25rem;cursor:pointer;transition:transform .1s}
     .ss-qty button:active{transform:scale(.88)}
     .ss-qty button:disabled{opacity:.4;cursor:not-allowed}
     .ss-group{display:flex;flex-direction:column;gap:.4rem}
     .ss-group .ss-group-title{font-weight:600;font-size:.9rem}
     .ss-group .ss-group-hint{font-size:.78rem;color:var(--gc-on-surface-variant)}
-    .ss-opt{display:flex;align-items:center;gap:.6rem;padding:.55rem .35rem;border-bottom:1px solid var(--gc-outline-variant);
-      border-radius:10px;transition:background .15s}
+    .ss-opt{display:flex;align-items:center;gap:.65rem;padding:.75rem .45rem;border-bottom:1px solid var(--gc-outline-variant);
+      border-radius:10px;transition:background .15s;min-height:2.6rem}
     .ss-opt--on{background:var(--gc-primary-container)}
-    .ss-opt .ss-opt-check{width:1.3rem;height:1.3rem;flex-shrink:0}
+    .ss-opt .ss-opt-check{width:1.5rem;height:1.5rem;flex-shrink:0}
     .ss-opt--on .ss-opt-check{animation:ss-check-pop .22s ease}
     .ss-notes textarea{width:100%;border-radius:10px;border:1px solid var(--gc-outline-variant);
       padding:.6rem;font:inherit;resize:vertical;min-height:3rem}
     .ss-primary{background:var(--gc-primary);color:var(--gc-on-primary);border:none;border-radius:999px;
-      padding:.8rem 1.1rem;font-weight:600;font-size:1rem;cursor:pointer;transition:transform .1s}
+      padding:.95rem 1.2rem;font-weight:600;font-size:1.02rem;cursor:pointer;transition:transform .1s}
     .ss-primary:active{transform:scale(.97)}
     .ss-primary:disabled{opacity:.5;cursor:not-allowed}
     .ss-ghost{background:transparent;border:1px solid var(--gc-outline-variant);border-radius:999px;
-      padding:.6rem 1rem;font-size:.9rem;cursor:pointer;color:var(--gc-on-surface)}
+      padding:.8rem 1rem;font-size:.95rem;cursor:pointer;color:var(--gc-on-surface)}
+    /* Action rows (dialog footer, cart footer): both buttons share the row evenly and stay tall
+       enough to tap confidently — not the confirm screen, whose single button stays its own size. */
+    .ss-dialog-actions .ss-primary,.ss-dialog-actions .ss-ghost,
+    .ss-cart-foot .ss-row .ss-primary,.ss-cart-foot .ss-row .ss-ghost{flex:1}
     .ss-banner{background:var(--gc-primary-container);color:var(--gc-on-primary-container);
       border-radius:var(--gc-radius);padding:.7rem .9rem;font-size:.9rem}
     .ss-error{color:var(--gc-error)}
@@ -191,9 +205,9 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
           </div>
           <div class="ss-waiter">
             <button type="button" [disabled]="waiterBusy() || waiterCooldown()" (click)="callWaiter()">
-              🔔 {{ waiterBusy() ? 'Llamando…' : waiterCooldown() ? 'Mesero avisado' : 'Llamar a un mesero' }}
+              🔔 {{ waiterBusy() ? 'Llamando…' : waiterCooldown() ? 'Solicitud enviada' : 'Llamar a un mesero' }}
             </button>
-            @if (waiterSent()) { <span class="ss-waiter-note">Un mesero fue notificado</span> }
+            @if (waiterSent()) { <span class="ss-waiter-note">Solicitud enviada</span> }
             @if (waiterError()) { <span class="ss-waiter-note">{{ waiterError() }}</span> }
           </div>
         </header>
@@ -208,6 +222,11 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
         <div class="ss-layout">
           @if ((menu()?.menus ?? []).length > 1) {
             <nav class="ss-sidebar">
+              <button class="ss-cat" type="button" [class.ss-cat--active]="activeMenuId() === null"
+                (click)="selectMenu(null)">
+                <span class="ss-cat-dot">🍽</span>
+                <span class="ss-cat-label">Todos</span>
+              </button>
               @for (card of menu()!.menus; track card.id) {
                 <button class="ss-cat" type="button" [class.ss-cat--active]="card.id === activeMenuId()"
                   (click)="selectMenu(card.id)">
@@ -219,10 +238,10 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
           }
 
           <section class="ss-content">
-            @if (activeMenu(); as activeCard) {
-              <h2>{{ activeCard.nombre }}</h2>
-              @if (activeCard.descripcion) { <p class="ss-menu-desc">{{ activeCard.descripcion }}</p> }
-              @for (section of activeCard.secciones; track section.id) {
+            @for (card of visibleMenus(); track card.id) {
+              <h2>{{ card.nombre }}</h2>
+              @if (card.descripcion) { <p class="ss-menu-desc">{{ card.descripcion }}</p> }
+              @for (section of card.secciones; track section.id) {
                 <div class="ss-section">
                   <h3>{{ section.nombre }}</h3>
                   <div class="ss-grid">
@@ -236,7 +255,7 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
                   </div>
                 </div>
               }
-            } @else {
+            } @empty {
               <p>El menú no tiene artículos disponibles en este momento.</p>
             }
           </section>
@@ -252,8 +271,9 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
       </div>
 
       @if (selectedItem(); as item) {
-        <div class="ss-overlay" (click)="closeItem()">
-          <div class="ss-dialog" (click)="$event.stopPropagation()">
+        <div class="ss-overlay">
+          <div class="ss-dialog">
+            <button type="button" class="ss-dialog-close" (click)="closeItem()" aria-label="Cerrar">✕</button>
             @if (carouselImages(item).length) {
               <div class="ss-carousel">
                 <img [src]="carouselImages(item)[carouselIndex()]" [alt]="item.nombre">
@@ -269,7 +289,7 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
                 }
               </div>
             }
-            <div class="ss-dialog-body">
+            <div class="ss-dialog-scroll">
               <h2>{{ item.nombre }}</h2>
               @if (item.descripcion) { <p>{{ item.descripcion }}</p> }
 
@@ -308,13 +328,12 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
               </div>
 
               @if (pickerError()) { <p class="ss-error">{{ pickerError() }}</p> }
-
-              <div class="ss-row">
-                <button class="ss-ghost" type="button" (click)="closeItem()">Cancelar</button>
-                <button class="ss-primary" type="button" [disabled]="adding()" (click)="confirmAdd(item)">
-                  {{ adding() ? 'Agregando…' : 'Agregar al pedido' }}
-                </button>
-              </div>
+            </div>
+            <div class="ss-dialog-actions">
+              <button class="ss-ghost" type="button" (click)="closeItem()">Cancelar</button>
+              <button class="ss-primary" type="button" [disabled]="adding()" (click)="confirmAdd(item)">
+                {{ adding() ? 'Agregando…' : 'Agregar al pedido' }}
+              </button>
             </div>
           </div>
         </div>
@@ -401,11 +420,13 @@ export class GcSelfServicePage {
   protected readonly cart = signal<SelfServiceCart | null>(null);
   protected readonly actionError = signal<string | null>(null);
 
+  /** null = "Todos" (every menu, scrollable) — the default, so nothing is hidden behind a
+   * category tap unless the customer picks one. */
   protected readonly activeMenuId = signal<string | null>(null);
-  protected readonly activeMenu = computed<SelfServiceMenuCard | null>(() => {
+  protected readonly visibleMenus = computed<SelfServiceMenuCard[]>(() => {
     const menus = this.menu()?.menus ?? [];
-    if (!menus.length) return null;
-    return menus.find(m => m.id === this.activeMenuId()) ?? menus[0];
+    const id = this.activeMenuId();
+    return id === null ? menus : menus.filter(m => m.id === id);
   });
 
   protected readonly selectedItem = signal<SelfServiceMenuItem | null>(null);
@@ -474,7 +495,6 @@ export class GcSelfServicePage {
       ]);
       this.menu.set(menu);
       this.cart.set(cart);
-      if (!this.activeMenuId() && menu.menus.length) this.activeMenuId.set(menu.menus[0].id);
     } catch (e) {
       this.actionError.set(gcErrorMessage(e));
     }
@@ -482,7 +502,7 @@ export class GcSelfServicePage {
 
   protected retryLoad(): void { void this.loadMenuAndCart(); }
 
-  protected selectMenu(id: string): void { this.activeMenuId.set(id); }
+  protected selectMenu(id: string | null): void { this.activeMenuId.set(id); }
 
   protected initials(nombre: string): string {
     const words = nombre.trim().split(/\s+/).filter(Boolean);

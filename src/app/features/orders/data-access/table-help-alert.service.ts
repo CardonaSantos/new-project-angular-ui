@@ -43,15 +43,18 @@ export class TableHelpAlertService{
  private readonly notices=inject(GcNotificationService);
 
  constructor(){
-  this.realtime.listen<{mesaId?:string;mesaNumero?:string|null;sala?:string|null}>(
+  this.realtime.listen<{mesaId?:string;mesaNumero?:string|null;sala?:string|null;ordenId?:string|null}>(
    'TABLE_HELP_REQUESTED',payload=>this.announce(payload));
  }
 
- private announce(payload:{mesaId?:string;mesaNumero?:string|null;sala?:string|null}):void{
+ private announce(payload:{mesaId?:string;mesaNumero?:string|null;sala?:string|null;ordenId?:string|null}):void{
   const where=[payload.mesaNumero?'Mesa '+payload.mesaNumero:null,payload.sala].filter(Boolean).join(' · ');
-  this.notices.show(
-   (where||'Una mesa')+' solicita un mesero.','warning',10000,
-   {label:'Ver mesas',path:['/orders/tables/manage']});
+  // The table may not have an open order yet (e.g. it's calling before ordering at all) — only
+  // deep-link into it when there's actually something there to act on; otherwise fall back to the
+  // table-admin screen, which at least lets staff find and walk over to the right table.
+  const link=payload.ordenId?{label:'Ver pedido',path:['/orders/list',payload.ordenId]}
+   :{label:'Ver mesas',path:['/orders/tables/manage']};
+  this.notices.show((where||'Una mesa')+' solicita un mesero.','warning',10000,link);
   playHelpChime();
  }
 }
