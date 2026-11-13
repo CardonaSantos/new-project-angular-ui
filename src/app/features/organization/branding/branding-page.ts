@@ -10,14 +10,16 @@ import { GcErrorState } from '../../../design-system/feedback/gc-error-state';
 import { GcFileUpload } from '../../../design-system/forms/gc-file-upload';
 import { GcBrandLogo } from '../../../design-system/branding/gc-brand-logo';
 import { ConfirmDialogService } from '../../../design-system/confirm-dialog/confirm-dialog.service';
+import { ThemeManagerService } from '../../../design-system/themes/theme-manager.service';
+import { generateThemeColors, isValidHexColor } from '../../../design-system/themes/theme-palette';
 import { OrganizationAccess } from '../data-access/organization-access';
 import { CompanyApi } from '../data-access/organization-api';
 import { MediaApi } from '../../users/data-access/users.api';
 import type { Company } from '../data-access/organization.models';
 import { GcOrganizationNav } from '../organization-nav';
 import { GcBrandingService } from '../../../core/branding/gc-branding.service';
-import { deriveBrandPalette, isValidHexColor } from '../../../core/branding/color-derivation';
 
+/** Matches the Cappuccino preset, which is what the app falls back to. */
 const DEFAULT_COLOR = '#604535';
 
 @Component({
@@ -35,8 +37,8 @@ const DEFAULT_COLOR = '#604535';
         <section class="gc-org-card gc-org-narrow">
           <h2>Color de marca</h2>
           <p class="gc-org-muted">
-            Elige un color y el sistema calcula automáticamente las variantes necesarias
-            (texto, fondos suaves) para mantener buen contraste en toda la aplicación.
+            Define la identidad del negocio: la verán todos los usuarios. A partir de este color se
+            genera la paleta completa (fondos, bordes, contenedores) para modo claro y oscuro.
           </p>
           <div class="gc-org-brand-row">
             <input type="color" aria-label="Color de marca" [value]="colorInput()"
@@ -44,13 +46,41 @@ const DEFAULT_COLOR = '#604535';
             <input type="text" class="gc-org-hex-input" maxlength="7" placeholder="#604535"
               [value]="colorInput()" (input)="onColorTyped($event)" [disabled]="!canManage()"
               [attr.aria-invalid]="!!colorError()" />
-            <div class="gc-org-swatches" aria-hidden="true">
-              <span class="gc-org-swatch" [style.background]="preview().primary" [style.color]="preview().onPrimary">Aa</span>
-              <span class="gc-org-swatch" [style.background]="preview().primaryContainer" [style.color]="preview().onPrimaryContainer">Aa</span>
-            </div>
+            @if (!canManage()) { <span class="gc-org-muted">Solo lectura</span> }
           </div>
           @if (colorError()) { <p class="gc-org-error" role="alert">{{ colorError() }}</p> }
-          @if (!canManage()) { <p class="gc-org-muted">Solo lectura</p> }
+
+          <div class="gc-org-preview-grid">
+            @for (sample of previews(); track sample.mode) {
+              <div class="gc-org-preview" [style.background]="sample.colors.surface"
+                [style.color]="sample.colors.onSurface"
+                [style.border-color]="sample.colors.outlineVariant">
+                <strong>{{ sample.label }}</strong>
+                <div class="gc-org-preview-card" [style.background]="sample.colors.surfaceContainer"
+                  [style.border-color]="sample.colors.outlineVariant">
+                  <span [style.color]="sample.colors.onSurface">Texto principal</span>
+                  <span [style.color]="sample.colors.onSurfaceVariant">Texto atenuado</span>
+                </div>
+                <div class="gc-org-preview-chips">
+                  <span [style.background]="sample.colors.primary" [style.color]="sample.colors.onPrimary">
+                    Botón
+                  </span>
+                  <span [style.background]="sample.colors.primaryContainer"
+                    [style.color]="sample.colors.onPrimaryContainer">
+                    Hover
+                  </span>
+                  <span [style.color]="sample.colors.primary">Enlace</span>
+                </div>
+              </div>
+            }
+          </div>
+          @if (adjustedModes().length) {
+            <p class="gc-org-muted">
+              En modo {{ adjustedModes().join(' y ') }} el color se ajusta un poco para que siga
+              siendo legible como texto y enlaces sobre el fondo. El resto de la paleta sí parte
+              de tu color exacto.
+            </p>
+          }
           <div class="gc-org-actions">
             <button gcButton type="button" [disabled]="!canManage() || !colorDirty() || color.busy()"
               (click)="saveColor()">
@@ -64,6 +94,7 @@ const DEFAULT_COLOR = '#604535';
             }
           </div>
         </section>
+
         <section class="gc-org-card gc-org-narrow">
           <h2>Logo</h2>
           <p class="gc-org-muted">Aparece en la barra lateral de la aplicación.</p>
@@ -91,6 +122,45 @@ const DEFAULT_COLOR = '#604535';
           }
         </section>
       }
+
+      <section class="gc-org-card gc-org-narrow">
+        <h2>Mis preferencias</h2>
+        <p class="gc-org-muted">
+          Solo afectan a tu usuario en este dispositivo; no cambian lo que ven los demás.
+        </p>
+        <div class="gc-org-grid">
+          <div class="gc-org-field">
+            <label for="ap-mode">Modo</label>
+            <select id="ap-mode" [value]="theme.mode()" (change)="onMode($event)">
+              <option value="system">Según el sistema</option>
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+            </select>
+          </div>
+          <div class="gc-org-field">
+            <label for="ap-density">Densidad</label>
+            <select id="ap-density" [value]="theme.density()" (change)="onDensity($event)">
+              <option value="comfortable">Cómoda</option>
+              <option value="compact">Compacta</option>
+            </select>
+          </div>
+          <div class="gc-org-field">
+            <label for="ap-font">Tamaño de texto ({{ fontPercent() }}%)</label>
+            <input id="ap-font" type="range" min="1" max="1.25" step="0.05"
+              [value]="theme.fontScale()" (input)="onFontScale($event)" />
+          </div>
+          <div class="gc-org-field">
+            <label for="ap-radius">Redondeo ({{ theme.cornerRadius() }}px)</label>
+            <input id="ap-radius" type="range" min="4" max="24" step="1"
+              [value]="theme.cornerRadius()" (input)="onRadius($event)" />
+          </div>
+        </div>
+        <div class="gc-org-actions">
+          <button gcButton variant="outline" type="button" (click)="resetPreferences()">
+            Restablecer mis preferencias
+          </button>
+        </div>
+      </section>
     </div>
   `,
   styleUrl: '../organization.scss',
@@ -99,6 +169,7 @@ export class GcBrandingPage implements OnInit {
   private readonly api = inject(CompanyApi);
   private readonly media = inject(MediaApi);
   private readonly branding = inject(GcBrandingService);
+  protected readonly theme = inject(ThemeManagerService);
   protected readonly access = inject(OrganizationAccess);
   private readonly notifications = inject(GcNotificationService);
   private readonly dialogs = inject(ConfirmDialogService);
@@ -116,12 +187,27 @@ export class GcBrandingPage implements OnInit {
 
   protected readonly canManage = computed(() => this.access.canGlobal('organization.manage'));
   protected readonly canPublishMedia = computed(() => this.access.canGlobal('media.publish'));
-  protected readonly preview = computed(() => {
-    try {
-      return deriveBrandPalette(this.colorInput());
-    } catch {
-      return deriveBrandPalette(DEFAULT_COLOR);
-    }
+  protected readonly fontPercent = computed(() => Math.round(this.theme.fontScale() * 100));
+
+  /** Both modes are previewed, since the saved color applies to whichever each user picks. */
+  protected readonly previews = computed(() => {
+    const hex = isValidHexColor(this.colorInput()) ? this.colorInput() : DEFAULT_COLOR;
+    return [
+      { mode: 'light' as const, label: 'Claro', colors: generateThemeColors(hex, 'light') },
+      { mode: 'dark' as const, label: 'Oscuro', colors: generateThemeColors(hex, 'dark') },
+    ];
+  });
+  /**
+   * `--gc-primary` doubles as a text color throughout the app, so a color too
+   * close to the background gets nudged. Saying so beats the user wondering
+   * why the saved color looks slightly off.
+   */
+  protected readonly adjustedModes = computed(() => {
+    const hex = this.colorInput().toLowerCase();
+    if (!isValidHexColor(hex)) return [];
+    return this.previews()
+      .filter(sample => sample.colors.primary.toLowerCase() !== hex)
+      .map(sample => sample.label.toLowerCase());
   });
   protected readonly colorDirty = computed(() => {
     const current = this.page.data()?.colorPrimario ?? DEFAULT_COLOR;
@@ -146,9 +232,8 @@ export class GcBrandingPage implements OnInit {
   }
 
   protected onColorPicked(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
     this.colorError.set(null);
-    this.colorInput.set(value.toUpperCase());
+    this.colorInput.set((event.target as HTMLInputElement).value.toUpperCase());
   }
   protected onColorTyped(event: Event): void {
     const value = (event.target as HTMLInputElement).value.trim();
@@ -159,12 +244,13 @@ export class GcBrandingPage implements OnInit {
     if (!this.canManage() || this.color.busy()) return;
     const value = this.colorInput();
     if (!isValidHexColor(value)) { this.colorError.set('Usa el formato #RRGGBB.'); return; }
-    await this.applyColor(value, 'Guardar color de marca', '¿Guardar este color de marca?');
+    await this.applyColor(value, 'Guardar color de marca',
+      'Este color lo verán todos los usuarios del negocio. ¿Guardarlo?');
   }
   protected async resetColor(): Promise<void> {
     if (!this.canManage() || this.color.busy()) return;
     await this.applyColor(null, 'Restablecer color de marca',
-      '¿Restablecer el color de marca predeterminado?');
+      '¿Volver al color predeterminado de la aplicación?');
   }
   private async applyColor(
     colorPrimario: string | null, title: string, message: string,
@@ -179,7 +265,7 @@ export class GcBrandingPage implements OnInit {
     }
     this.page.data.set(result.value);
     this.colorInput.set((result.value.colorPrimario ?? DEFAULT_COLOR).toUpperCase());
-    this.branding.setColor(result.value.colorPrimario);
+    this.theme.setBrandColor(result.value.colorPrimario);
     this.notifications.show('Color de marca actualizado.', 'success');
   }
 
@@ -227,5 +313,25 @@ export class GcBrandingPage implements OnInit {
     this.branding.clearLogo();
     this.notifications.show('Logo eliminado.', 'success');
   }
+
+  protected onMode(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value === 'light' || value === 'dark' || value === 'system') this.theme.setMode(value);
+  }
+  protected onDensity(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value === 'comfortable' || value === 'compact') this.theme.setDensity(value);
+  }
+  protected onFontScale(event: Event): void {
+    this.theme.setFontScale(Number((event.target as HTMLInputElement).value));
+  }
+  protected onRadius(event: Event): void {
+    this.theme.setCornerRadius(Number((event.target as HTMLInputElement).value));
+  }
+  protected resetPreferences(): void {
+    this.theme.reset();
+    this.notifications.show('Preferencias restablecidas.', 'success');
+  }
+
   hasUnsavedChanges(): boolean { return this.colorDirty() || !!this.selectedLogo(); }
 }
