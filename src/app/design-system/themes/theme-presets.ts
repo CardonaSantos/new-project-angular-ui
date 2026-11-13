@@ -4,6 +4,9 @@ export interface ThemeColors {
   onPrimary: string;
   primaryContainer: string;
   onPrimaryContainer: string;
+  /** Background painted under the pointer, with its own readable text color. */
+  hover: string;
+  onHover: string;
   surface: string;
   surfaceContainer: string;
   surfaceContainerLow: string;
@@ -19,8 +22,64 @@ export interface ThemeColors {
   onError: string;
 }
 
+/**
+ * Token order for the hand-editing UI, grouped the way someone thinks about a
+ * screen rather than alphabetically. Mirrors THEME_TOKENS in the API's
+ * organization/domain/theme.ts, which validates what gets stored.
+ */
+export const THEME_TOKEN_GROUPS = [
+  { label: 'Fondos', tokens: ['surface', 'surfaceContainerLow', 'surfaceContainer'] },
+  { label: 'Texto', tokens: ['onSurface', 'onSurfaceVariant'] },
+  { label: 'Marca y botones', tokens: ['primary', 'onPrimary', 'primaryContainer', 'onPrimaryContainer'] },
+  { label: 'Hover', tokens: ['hover', 'onHover'] },
+  { label: 'Bordes', tokens: ['outline', 'outlineVariant'] },
+  { label: 'Estados', tokens: ['success', 'onSuccess', 'warning', 'onWarning', 'error', 'onError'] },
+] as const satisfies readonly { label: string; tokens: readonly (keyof ThemeColors)[] }[];
+
+/** Human labels for each token, so the editor doesn't show camelCase keys. */
+export const THEME_TOKEN_LABELS: Record<keyof ThemeColors, string> = {
+  primary: 'Color de marca',
+  onPrimary: 'Texto sobre el color de marca',
+  primaryContainer: 'Fondo suave de marca',
+  onPrimaryContainer: 'Texto sobre el fondo suave',
+  hover: 'Fondo al pasar el mouse',
+  onHover: 'Texto al pasar el mouse',
+  surface: 'Fondo general',
+  surfaceContainerLow: 'Fondo de tarjetas',
+  surfaceContainer: 'Fondo de secciones',
+  onSurface: 'Texto principal',
+  onSurfaceVariant: 'Texto secundario',
+  outline: 'Bordes',
+  outlineVariant: 'Bordes suaves',
+  success: 'Éxito',
+  onSuccess: 'Texto sobre éxito',
+  warning: 'Advertencia',
+  onWarning: 'Texto sobre advertencia',
+  error: 'Error',
+  onError: 'Texto sobre error',
+};
+
+/** Pairs that end up on top of each other, used to report contrast. */
+export const THEME_CONTRAST_PAIRS: readonly [keyof ThemeColors, keyof ThemeColors][] = [
+  ['onSurface', 'surface'],
+  ['onSurfaceVariant', 'surface'],
+  ['onSurface', 'surfaceContainer'],
+  ['onSurfaceVariant', 'surfaceContainer'],
+  ['onSurface', 'surfaceContainerLow'],
+  ['primary', 'surface'],
+  ['primary', 'surfaceContainer'],
+  ['onPrimary', 'primary'],
+  ['onPrimaryContainer', 'primaryContainer'],
+  ['onHover', 'hover'],
+  ['onSuccess', 'success'],
+  ['onWarning', 'warning'],
+  ['onError', 'error'],
+];
+
 export type ThemePresetId = 'cappuccino' | 'ocean';
 export type ResolvedMode = 'light' | 'dark';
+/** A full hand-edited palette for both modes, as stored by the API. */
+export type ThemeDocument = Record<ResolvedMode, ThemeColors>;
 export type ThemePreference = ResolvedMode | 'system';
 export type DensityPreference = 'comfortable' | 'compact';
 
@@ -41,6 +100,8 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
       onPrimary: '#ffffff',
       primaryContainer: '#ead9c4',
       onPrimaryContainer: '#332317',
+      hover: '#ead9c4',
+      onHover: '#332317',
       surface: '#faf7f2',
       surfaceContainer: '#f0e8dc',
       surfaceContainerLow: '#f6f0e8',
@@ -60,6 +121,8 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
       onPrimary: '#352418',
       primaryContainer: '#644634',
       onPrimaryContainer: '#fff0e1',
+      hover: '#644634',
+      onHover: '#fff0e1',
       surface: '#191512',
       surfaceContainer: '#302822',
       surfaceContainerLow: '#241e1a',
@@ -83,6 +146,8 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
       onPrimary: '#ffffff',
       primaryContainer: '#d8e9fd',
       onPrimaryContainer: '#183958',
+      hover: '#d8e9fd',
+      onHover: '#183958',
       surface: '#f7faff',
       surfaceContainer: '#e6eef7',
       surfaceContainerLow: '#eef4fc',
@@ -102,6 +167,8 @@ export const THEME_PRESETS: Record<ThemePresetId, ThemePreset> = {
       onPrimary: '#123958',
       primaryContainer: '#254f77',
       onPrimaryContainer: '#e3f1ff',
+      hover: '#254f77',
+      onHover: '#e3f1ff',
       surface: '#141c25',
       surfaceContainer: '#263543',
       surfaceContainerLow: '#1d2935',

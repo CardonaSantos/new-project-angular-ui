@@ -13,6 +13,9 @@ const MODES: ResolvedMode[] = ['light', 'dark'];
 const PAIRS: [keyof ReturnType<typeof generateThemeColors>, keyof ReturnType<typeof generateThemeColors>][] = [
   ['onPrimary', 'primary'],
   ['onPrimaryContainer', 'primaryContainer'],
+  ['onHover', 'hover'],
+  ['onSurface', 'hover'],
+  ['onSurfaceVariant', 'hover'],
   ['onSurface', 'surface'],
   ['onSurfaceVariant', 'surface'],
   ['onSurface', 'surfaceContainer'],

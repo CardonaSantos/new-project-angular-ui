@@ -5,6 +5,7 @@ import {
   ResolvedMode,
   THEME_PRESETS,
   ThemeColors,
+  ThemeDocument,
   ThemePreference,
   ThemePresetId,
 } from './theme-presets';
@@ -59,6 +60,10 @@ export class ThemeManagerService {
   readonly customPrimary = signal<string | null>(null);
   /** The business's saved brand color (from the server), if it has one. */
   readonly brandColor = signal<string | null>(null);
+  /** A hand-edited palette for both modes, which outranks everything else. */
+  readonly brandTheme = signal<ThemeDocument | null>(null);
+  /** Forces a mode regardless of preference, for the customer-facing QR menu. */
+  private readonly lockedMode = signal<ResolvedMode | null>(null);
   /**
    * Who the stored preferences belong to. The caller supplies it rather than
    * this service reading the session, keeping the design system free of auth
@@ -67,20 +72,31 @@ export class ThemeManagerService {
   private readonly scope = signal('anon');
   private readonly loadedFor = signal('');
 
-  readonly resolvedMode = computed<ResolvedMode>(() =>
-    this.mode() === 'system' ? (this.systemIsDark() ? 'dark' : 'light') : this.mode() as ResolvedMode,
-  );
+  readonly resolvedMode = computed<ResolvedMode>(() => {
+    const locked = this.lockedMode();
+    if (locked) return locked;
+    return this.mode() === 'system'
+      ? (this.systemIsDark() ? 'dark' : 'light')
+      : this.mode() as ResolvedMode;
+  });
   /**
-   * A brand color replaces the preset outright, because a palette generated
-   * from it covers the same 17 tokens for this mode. An unsaved local accent
-   * wins over the saved one so the appearance page can preview live.
+   * An unsaved local accent wins over the saved one so the appearance page can
+   * preview live.
    */
   readonly accent = computed(() => this.customPrimary() ?? this.brandColor());
+  /**
+   * Precedence, strongest first: a hand-edited theme is used verbatim — the
+   * whole point of editing it by hand — then a brand color seeds a generated
+   * palette, and otherwise the built-in preset applies.
+   */
   readonly colors = computed<ThemeColors>(() => {
+    const mode = this.resolvedMode();
+    const manual = this.brandTheme();
+    if (manual) return manual[mode];
     const accent = this.accent();
     return accent
-      ? generateThemeColors(accent, this.resolvedMode())
-      : THEME_PRESETS[this.preset()][this.resolvedMode()];
+      ? generateThemeColors(accent, mode)
+      : THEME_PRESETS[this.preset()][mode];
   });
 
   private readonly handleSystemChange = (event: MediaQueryListEvent): void =>
@@ -231,6 +247,20 @@ export class ThemeManagerService {
    * The brand color stored for the business. Null restores the preset, which
    * is what "restablecer al predeterminado" means.
    */
+  /** The business's hand-edited palette, applied exactly as given. */
+  setBrandTheme(value: ThemeDocument | null | undefined): void {
+    this.brandTheme.set(value ?? null);
+  }
+
+  /**
+   * Pins the mode for surfaces that must look the same to everyone, such as
+   * the QR menu a diner opens on a phone that may be in dark mode. Not
+   * persisted: it describes the screen, not the person.
+   */
+  lockMode(mode: ResolvedMode | null): void {
+    this.lockedMode.set(mode);
+  }
+
   setBrandColor(value: string | null | undefined): boolean {
     if (!value) {
       this.brandColor.set(null);

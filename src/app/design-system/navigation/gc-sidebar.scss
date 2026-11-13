@@ -18,7 +18,7 @@ nav a {
   white-space:nowrap; overflow:hidden; font-size:.9rem;
   transition:background-color var(--gc-motion-fast,140ms) ease, color var(--gc-motion-fast,140ms) ease;
 }
-nav a:hover { background:var(--gc-surface-container-low); color:var(--gc-on-surface); }
+nav a:hover { background:var(--gc-hover); color:var(--gc-on-hover); }
 nav a.gc-active { background:var(--gc-primary-container); color:var(--gc-on-primary-container); font-weight:650; }
 .gc-initials { flex:none; display:grid; place-items:center; width:2rem; font-size:.75rem; letter-spacing:.03em; font-weight:700; }
 .gc-nav-label { overflow:hidden; text-overflow:ellipsis; }

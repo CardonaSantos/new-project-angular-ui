@@ -104,20 +104,47 @@
 }
 .gc-org-hex-input[aria-invalid="true"]{border-color:var(--gc-error)}
 .gc-org-field input[type="range"]{border:0;padding:0;background:none;accent-color:var(--gc-primary)}
-/* Previews paint themselves with the generated palette, so they must not
-   inherit the active theme's tokens — every color here is bound inline. */
-.gc-org-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;min-width:0}
+/* The preview paints itself with the palette being edited, so it must not
+   inherit the active theme's tokens — every color in it is bound inline. */
+.gc-org-preview-wrap{display:grid;gap:.4rem;min-width:0}
 .gc-org-preview{
- display:grid;gap:.55rem;align-content:start;padding:.75rem;min-width:0;
+ display:grid;gap:.6rem;align-content:start;padding:.85rem;min-width:0;
  border:1px solid;border-radius:calc(var(--gc-radius)*.7);
 }
-.gc-org-preview>strong{font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
 .gc-org-preview-card{
- display:grid;gap:.25rem;padding:.6rem;font-size:.86rem;
+ display:grid;gap:.35rem;padding:.7rem;font-size:.88rem;
  border:1px solid;border-radius:calc(var(--gc-radius)*.55);min-width:0;
+}
+.gc-org-preview-row{
+ display:flex;justify-content:space-between;gap:.75rem;padding:.4rem .5rem;
+ border:1px solid transparent;border-radius:calc(var(--gc-radius)*.45);
+ border-bottom-style:solid;font-size:.86rem;
 }
 .gc-org-preview-chips{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
 .gc-org-preview-chips>span{
- padding:.3rem .6rem;border-radius:calc(var(--gc-radius)*.5);font-size:.82rem;font-weight:650;
+ padding:.32rem .65rem;border-radius:calc(var(--gc-radius)*.5);font-size:.82rem;font-weight:650;
 }
-@media(max-width:640px){.gc-org-preview-grid{grid-template-columns:minmax(0,1fr)}}
+.gc-org-preview-input{
+ padding:.45rem .65rem;border:1px solid;border-radius:calc(var(--gc-radius)*.5);font-size:.86rem;
+}
+
+/* Mode switch for the editor. */
+.gc-org-mode-tabs{display:flex;gap:.3rem;flex-wrap:wrap}
+.gc-org-mode-tabs button{
+ min-height:40px;padding:.4rem .9rem;border:1px solid var(--gc-outline);
+ background:var(--gc-surface);color:var(--gc-on-surface);
+ border-radius:calc(var(--gc-radius)*.55);font-weight:600;cursor:pointer;
+}
+.gc-org-mode-tabs button.active{
+ background:var(--gc-primary);color:var(--gc-on-primary);border-color:var(--gc-primary);
+}
+
+/* Measured contrast per pair: reported, not enforced. */
+.gc-org-contrast{list-style:none;margin:0;padding:0;display:grid;gap:.25rem;min-width:0}
+.gc-org-contrast li{
+ display:flex;justify-content:space-between;gap:.75rem;align-items:baseline;
+ font-size:.84rem;padding:.3rem .45rem;border-radius:calc(var(--gc-radius)*.4);
+ background:var(--gc-surface-container-low);
+}
+.gc-org-contrast li strong{font-variant-numeric:tabular-nums}
+.gc-org-contrast li.bad{color:var(--gc-error);border:1px solid var(--gc-error)}

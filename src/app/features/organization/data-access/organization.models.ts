@@ -1,3 +1,4 @@
+import type { ThemeDocument } from '../../../design-system/themes/theme-presets';
 export type ValuationMethod = 'PROMEDIO_PONDERADO' | 'FIFO';
 export type DeviceType = 'POS' | 'KDS' | 'QUIOSCO' | 'PANTALLA_TURNOS' | 'IMPRESORA' | 'OTRO';
 
@@ -10,6 +11,7 @@ export interface Company {
   zonaHoraria: string;
   metodoValoracion: ValuationMethod;
   colorPrimario: string | null;
+  tema: ThemeDocument | null;
   logoMediaId: string | null;
   logoUrl: string | null;
   creadoEn: string;
@@ -17,12 +19,13 @@ export interface Company {
 }
 export type CompanyUpdate = Partial<Pick<Company,
   | 'nombreComercial' | 'razonSocial' | 'nit' | 'moneda' | 'zonaHoraria' | 'metodoValoracion'
-  | 'colorPrimario' | 'logoMediaId'>>;
+  | 'colorPrimario' | 'tema' | 'logoMediaId'>>;
 
 /** Branding subset visible to every authenticated role, regardless of permissions. */
 export interface Branding {
   nombreComercial: string;
   colorPrimario: string | null;
+  tema: ThemeDocument | null;
   logoUrl: string | null;
 }
 

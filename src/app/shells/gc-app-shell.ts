@@ -129,6 +129,7 @@ export class GcAppShell {
         void firstValueFrom(this.companyApi.branding()).then(branding => {
           this.branding.setName(branding.nombreComercial);
           this.theme.setBrandColor(branding.colorPrimario);
+          this.theme.setBrandTheme(branding.tema);
           if (branding.logoUrl) this.branding.setLogo(branding.logoUrl);
         }).catch(() => undefined);
         void this.usersAccess.load().catch(() => undefined);
@@ -137,6 +138,7 @@ export class GcAppShell {
         this.usersAccess.clear();
         this.branding.reset();
         this.theme.setBrandColor(null);
+        this.theme.setBrandTheme(null);
         this.theme.forgetPreferences();
       }
     });

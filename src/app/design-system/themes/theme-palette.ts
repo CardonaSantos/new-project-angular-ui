@@ -237,6 +237,10 @@ export function generateThemeColors(brandHex: string, mode: ResolvedMode): Theme
       onPrimary: ensureContrast(brandTone(100), primary, brandChroma, hue, 100),
       primaryContainer,
       onPrimaryContainer: ensureContrast(brandTone(10), primaryContainer, brandChroma, hue, 10),
+      // Hover starts out matching the container pair, which is what the
+      // curated presets do; businesses retune it from the appearance page.
+      hover: primaryContainer,
+      onHover: ensureContrast(brandTone(10), primaryContainer, brandChroma, hue, 10),
       surface,
       surfaceContainer,
       surfaceContainerLow,
@@ -255,6 +259,8 @@ export function generateThemeColors(brandHex: string, mode: ResolvedMode): Theme
     onPrimary: ensureContrast(brandTone(20), primary, brandChroma, hue, 20),
     primaryContainer,
     onPrimaryContainer: ensureContrast(brandTone(90), primaryContainer, brandChroma, hue, 90),
+    hover: primaryContainer,
+    onHover: ensureContrast(brandTone(90), primaryContainer, brandChroma, hue, 90),
     surface,
     surfaceContainer,
     surfaceContainerLow,
