@@ -597,6 +597,9 @@ gc-kitchen-ticket{display:block;min-width:0}
  padding:clamp(.8rem,1.8vw,1.25rem);gap:.7rem}
 .ord-kitchen-dialog .ord-heading h2{margin:0 0 .3rem}
 .ord-kitchen-dialog-lines{display:grid;gap:.55rem;min-width:0}
+.ord-kitchen-also-deliver{border:1px dashed var(--gc-outline);border-radius:.6rem;
+ padding:.6rem .75rem;font-size:.86rem;display:grid;gap:.3rem}
+.ord-kitchen-also-deliver ul{margin:0;padding-left:1.1rem;display:grid;gap:.15rem}
 .ord-ticket-detail-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
  gap:.4rem .85rem;border:1px solid var(--gc-outline-variant);border-radius:.65rem;
  padding:.65rem;font-size:.87rem}

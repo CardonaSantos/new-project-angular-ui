@@ -73,6 +73,14 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
       </article>
      }@empty{<p>No hay líneas activas en esta comanda.</p>}
     </section>
+    @if(data.tambienEntregar?.length){
+     <section class="gc-thermal-note">
+      <strong>TAMBIÉN INCLUIR</strong>
+      @for(extra of data.tambienEntregar;track extra.id){
+       <p>{{quantity(extra.cantidad)}} × {{extra.nombreSnapshot}}</p>
+      }
+     </section>
+    }
    </article>
   }
  </main>`
