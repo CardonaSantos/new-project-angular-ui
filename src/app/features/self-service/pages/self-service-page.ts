@@ -363,7 +363,7 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
                   <div class="ss-cart-line-foot">
                     @if (line.enviada) {
                       <span class="ss-cart-line-sent">✓ Enviado a cocina</span>
-                    } @else {
+                    } @else if (orderMutable()) {
                       <div class="ss-cart-qty">
                         <button type="button" [disabled]="isLineBusy(line.id)"
                           (click)="changeLineQty(line, -1)">−</button>
@@ -372,8 +372,10 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
                           (click)="changeLineQty(line, 1)">+</button>
                       </div>
                     }
-                    <button class="ss-cart-remove" type="button" [disabled]="isLineBusy(line.id)"
-                      (click)="removeLine(line)">🗑 Quitar</button>
+                    @if (orderMutable()) {
+                      <button class="ss-cart-remove" type="button" [disabled]="isLineBusy(line.id)"
+                        (click)="removeLine(line)">🗑 Quitar</button>
+                    }
                   </div>
                 </div>
               </div>
@@ -387,7 +389,8 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
             @if (sendError()) { <p class="ss-error">{{ sendError() }}</p> }
             <div class="ss-row">
               <button class="ss-ghost" type="button" (click)="closeCart()">Seguir viendo el menú</button>
-              <button class="ss-primary" type="button" [disabled]="sending() || !cart()?.ordenId" (click)="sendOrder()">
+              <button class="ss-primary" type="button"
+                [disabled]="sending() || !cart()?.ordenId || !orderMutable()" (click)="sendOrder()">
                 {{ sending() ? 'Enviando…' : 'Enviar pedido a cocina' }}
               </button>
             </div>
@@ -402,6 +405,22 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
           <p>Pedido {{ cart()?.orden?.numero }} · Total {{ cartTotal() }}</p>
           <p>Puedes seguir agregando más artículos si quieres — se enviarán por separado.</p>
           <button class="ss-primary" type="button" (click)="dismissConfirm()">Seguir viendo el menú</button>
+        </div>
+      }
+
+      @if (closedNotice(); as notice) {
+        <div class="ss-confirm">
+          <div class="ss-confirm-check">{{ notice.estado === 'CERRADA' ? '✓' : '✕' }}</div>
+          @if (notice.estado === 'CERRADA') {
+            <h1>¡Gracias por tu visita!</h1>
+            <p>Pedido {{ notice.numero }} · Total {{ notice.total }}</p>
+            <p>Tu pedido fue cobrado y cerrado por el personal.</p>
+          } @else {
+            <h1>Pedido cancelado</h1>
+            <p>Pedido {{ notice.numero }}</p>
+            <p>El personal canceló este pedido. Si fue un error, avísale a un mesero.</p>
+          }
+          <button class="ss-primary" type="button" (click)="dismissClosedNotice()">Hacer un nuevo pedido</button>
         </div>
       }
     }
@@ -442,6 +461,16 @@ export class GcSelfServicePage {
   protected readonly sending = signal(false);
   protected readonly sendError = signal<string | null>(null);
   protected readonly orderSentConfirm = signal(false);
+
+  /** Set when loadMenuAndCart() finds the table's order already CERRADA (paid/closed by staff)
+   * or CANCELADA (voided) — a customer refreshing must always see the true current state of their
+   * order rather than a stale "open" cart, and once acknowledged the table is free to start a new
+   * one (addItems() on the backend already starts a fresh Orden once the old one isn't ABIERTA). */
+  protected readonly closedNotice = signal<{ numero: string; total: string; estado: 'CERRADA' | 'CANCELADA' } | null>(null);
+  protected readonly orderMutable = computed(() => {
+    const estado = this.cart()?.orden?.estado;
+    return estado === undefined || estado === null || estado === 'ABIERTA';
+  });
 
   protected readonly lineBusyIds = signal<ReadonlySet<string>>(new Set());
   protected readonly lineError = signal<string | null>(null);
@@ -495,6 +524,10 @@ export class GcSelfServicePage {
       ]);
       this.menu.set(menu);
       this.cart.set(cart);
+      const estado = cart.orden?.estado;
+      if (estado === 'CERRADA' || estado === 'CANCELADA') {
+        this.closedNotice.set({ numero: cart.orden!.numero, total: cart.orden!.total, estado });
+      }
     } catch (e) {
       this.actionError.set(gcErrorMessage(e));
     }
@@ -648,6 +681,15 @@ export class GcSelfServicePage {
     }
   }
   protected dismissConfirm(): void { this.orderSentConfirm.set(false); }
+
+  /** Acknowledging a closed/cancelled order clears the local cart view too (not just the
+   * notice) — the next item they add will transparently start a brand-new Orden server-side
+   * (see addItems()'s self-heal in self-service.store.ts), so the UI should look like a fresh
+   * table, not keep showing the old receipt's total on the "Ver mi pedido" bar. */
+  protected dismissClosedNotice(): void {
+    this.closedNotice.set(null);
+    this.cart.set({ ordenId: null, orden: null });
+  }
 
   protected async callWaiter(): Promise<void> {
     if (this.waiterBusy() || this.waiterCooldown()) return;
