@@ -63,6 +63,10 @@ export class OrdersApi{
  list(q:OrderListQuery){return this.http.get<Page<OrderSummary>>(orderPaths.orders,params(q))}
  create(dto:CreateOrderInput){return this.http.post<OrderDetail>(orderPaths.orders,dto,mutationOptions)}
  detail(id:string){return this.http.get<OrderDetail>(orderPaths.order(id),options)}
+ receiptPdf(id:string){
+  return this.http.get(orderPaths.order(id)+'/receipt.pdf',
+   {context:gcSilentRequest(),responseType:'blob' as const});
+ }
  edit(id:string,dto:{version:number;observaciones?:string;clienteId?:string}){
   return this.http.patch<OrderDetail>(orderPaths.order(id),dto,mutationOptions);
  }
@@ -117,6 +121,10 @@ export class OrdersApi{
  }
  tickets(q:TicketListQuery){return this.http.get<Page<KitchenTicket>>(orderPaths.tickets,params(q))}
  ticket(id:string){return this.http.get<KitchenTicket>(orderPaths.ticket(id),options)}
+ ticketReceiptPdf(id:string){
+  return this.http.get(orderPaths.ticket(id)+'/receipt.pdf',
+   {context:gcSilentRequest(),responseType:'blob' as const});
+ }
  startTicket(id:string){return this.http.post<KitchenTicket>(orderPaths.ticket(id)+'/start',{},mutationOptions)}
  readyTicket(id:string){return this.http.post<KitchenTicket>(orderPaths.ticket(id)+'/ready',{},mutationOptions)}
  startLine(id:string,claveOperacion:string,cantidad?:string){

@@ -9,6 +9,7 @@ import {OrdersApi} from '../data-access/orders.api';
 import type {OrderDetail} from '../data-access/orders.models';
 import {modeText,qtyText,orderFriendlyError} from '../data-access/orders.helpers';
 import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-print.helpers';
+import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
 
 /** Complete non-fiscal service slip. Unlike kitchen tickets, includes INVENTARIABLE/SERVICIO. */
 @Component({
@@ -31,7 +32,10 @@ import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-prin
       title="Todos los productos, incluidos los de venta directa">Comanda completa</span>
     </nav>
     <button type="button" [disabled]="busy()||!order()" (click)="print()">Imprimir completa</button>
+    <button type="button" [disabled]="busy()||!order()||sharing()" (click)="share()">
+     {{sharing()?'Enviando…':shareLabel()}}</button>
    </div>
+   @if(shareError()){<p role="alert" class="gc-thermal-error">{{shareError()}}</p>}
   </header>
   @if(busy()){<p role="status">Cargando pedido completo…</p>}
   @if(error()){<p role="alert" class="gc-thermal-error">{{error()}}</p>}
@@ -92,6 +96,9 @@ export class GcOrdersOrderPrintPage{
    .sort((a,b)=>b.enviadaEn.localeCompare(a.enviadaEn))[0]??null);
  protected readonly busy=signal(false);
  protected readonly error=signal('');
+ protected readonly sharing=signal(false);
+ protected readonly shareError=signal('');
+ protected readonly shareLabel=computed(()=>canShareFiles()?'Enviar por WhatsApp':'Descargar PDF');
  protected readonly printable=printableOrderLines;
  protected readonly modifiers=kitchenModifierNames;
  protected readonly quantity=qtyText;
@@ -130,4 +137,20 @@ export class GcOrdersOrderPrintPage{
   }
  }
  protected print(){if(this.order())window.print()}
+ protected async share(){
+  const data=this.order();
+  if(!data||this.sharing())return;
+  this.sharing.set(true);this.shareError.set('');
+  try{
+   const blob=await firstValueFrom(this.api.receiptPdf(data.id));
+   const outcome=await sharePdf(blob,'pedido-'+data.numero+'.pdf','Pedido '+data.numero,
+    'Comprobante de '+this.branding.name()+' — pedido '+data.numero+'.');
+   if(outcome==='downloaded')
+    this.shareError.set('Se descargó el PDF — adjúntalo manualmente en WhatsApp.');
+  }catch(e){
+   this.shareError.set(orderFriendlyError(e));
+  }finally{
+   this.sharing.set(false);
+  }
+ }
 }
