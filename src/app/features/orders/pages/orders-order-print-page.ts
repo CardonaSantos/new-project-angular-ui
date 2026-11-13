@@ -7,7 +7,7 @@ import {formatInstant} from '../../../shared/formatting';
 import {OrdersAccess} from '../data-access/orders-access';
 import {OrdersApi} from '../data-access/orders.api';
 import type {OrderDetail} from '../data-access/orders.models';
-import {modeText,qtyText,orderFriendlyError} from '../data-access/orders.helpers';
+import {qtyText,orderFriendlyError} from '../data-access/orders.helpers';
 import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-print.helpers';
 import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
 
@@ -45,9 +45,9 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
      <strong class="gc-thermal-brand">{{branding.name()}}</strong>
      <strong>PEDIDO</strong>
      <strong class="gc-thermal-number">{{data.numero}}</strong>
+     <span class="gc-thermal-muted">{{time(data.abiertaEn)}}</span>
     </header>
     <section class="gc-thermal-divider">
-     <div><span>Atención</span><strong>{{mode(data.modalidad)}}</strong></div>
      @if(data.ocupacionMesa?.mesa?.numero){
       <div><span>Mesa</span><strong>{{data.ocupacionMesa?.mesa?.numero}}</strong></div>
       @if(data.ocupacionMesa?.mesa?.sala?.nombre){
@@ -56,10 +56,7 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
      }
      @if(data.cliente){
       <div><span>Cliente</span><strong>{{data.cliente.nombre}}</strong></div>
-      @if(data.cliente.telefono){<div><span>Teléfono</span><span>{{data.cliente.telefono}}</span></div>}
      }
-     <div><span>Registrado</span><span>{{time(data.abiertaEn)}}</span></div>
-     <div><span>Estado</span><strong>{{data.estado}}</strong></div>
     </section>
     @if(data.observaciones){
      <section class="gc-thermal-note"><strong>Observaciones</strong>
@@ -78,7 +75,6 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
     </section>
     <footer class="gc-thermal-foot">
      <p>¡Gracias por tu visita! Esperamos verte pronto.</p>
-     <p>Documento no fiscal.</p>
     </footer>
    </article>
   }
@@ -103,7 +99,6 @@ export class GcOrdersOrderPrintPage{
  protected readonly printable=printableOrderLines;
  protected readonly modifiers=kitchenModifierNames;
  protected readonly quantity=qtyText;
- protected readonly mode=modeText;
  private generation=0;
  constructor(){
   effect(()=>{

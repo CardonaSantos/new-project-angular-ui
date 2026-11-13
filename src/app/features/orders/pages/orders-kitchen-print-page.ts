@@ -39,8 +39,9 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
   @if(ticket();as data){
    <article class="gc-thermal-paper" aria-label="Comanda interna para preparar">
     <header class="gc-thermal-head">
-     <strong>COMANDA DE PREPARACIÓN</strong>
+     <strong>COMANDA</strong>
      <strong class="gc-thermal-number">{{data.numero}}</strong>
+     <span class="gc-thermal-muted">{{time(data.enviadaEn)}}</span>
     </header>
     <section class="gc-thermal-divider">
      <div><span>Orden</span><strong>{{data.orden?.numero??'—'}}</strong></div>
@@ -53,8 +54,6 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
      @if(data.orden?.cliente){
       <div><span>Cliente</span><strong>{{data.orden?.cliente?.nombre}}</strong></div>
      }
-     <div><span>Recibida</span><span>{{time(data.enviadaEn)}}</span></div>
-     <div><span>Estado</span><strong>{{data.estado}}</strong></div>
     </section>
     @if(data.orden?.observaciones){
      <section class="gc-thermal-note"><strong>Nota de pedido</strong>
