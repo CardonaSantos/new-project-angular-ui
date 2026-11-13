@@ -346,6 +346,16 @@ import {
             </article>
           }
         </div>
+        @if (ticket.tambienEntregar?.length) {
+          <div class="ord-kitchen-also-deliver">
+            <strong>También incluir (venta directa, sin preparación):</strong>
+            <ul>
+              @for (extra of ticket.tambienEntregar; track extra.id) {
+                <li>{{ qtyText(extra.cantidad) }} × {{ extra.nombreSnapshot }}</li>
+              }
+            </ul>
+          </div>
+        }
         <p class="ord-note">Lista = preparada para servir. La entrega se registra por separado.</p>
       </section>
     }

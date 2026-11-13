@@ -1,4 +1,4 @@
-import {Component,effect,inject,signal,untracked} from '@angular/core';
+import {Component,computed,effect,inject,signal,untracked} from '@angular/core';
 import {ActivatedRoute,RouterLink} from '@angular/router';
 import {firstValueFrom} from 'rxjs';
 import {GcBrandingService} from '../../../core/branding/gc-branding.service';
@@ -9,6 +9,7 @@ import {OrdersApi} from '../data-access/orders.api';
 import type {KitchenTicket} from '../data-access/orders.models';
 import {modeText,qtyText,orderFriendlyError} from '../data-access/orders.helpers';
 import {printableKitchenLines,kitchenModifierNames} from '../printing/thermal-print.helpers';
+import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
 @Component({
  selector:'gc-orders-kitchen-print-page',
  imports:[RouterLink],
@@ -23,34 +24,36 @@ import {printableKitchenLines,kitchenModifierNames} from '../printing/thermal-pr
      @if(access.canViewDetail()){
       @if(ticket()?.orden?.id;as orderId){
        <a class="gc-print-mode" [routerLink]="['/orders/print',orderId]"
-        title="Todos los productos, incluidos los de venta directa">Comanda completa</a>
+        title="Comprobante para el cliente, con todos los productos">Pedido</a>
       }
      }
     </nav>
     <button type="button" [disabled]="busy()||!ticket()" (click)="print()">Imprimir preparación</button>
+    <button type="button" [disabled]="busy()||!ticket()||sharing()" (click)="share()">
+     {{sharing()?'Enviando…':shareLabel()}}</button>
    </div>
+   @if(shareError()){<p role="alert" class="gc-thermal-error">{{shareError()}}</p>}
   </header>
   @if(busy()){<p role="status">Cargando comanda…</p>}
   @if(error()){<p role="alert" class="gc-thermal-error">{{error()}}</p>}
   @if(ticket();as data){
    <article class="gc-thermal-paper" aria-label="Comanda interna para preparar">
     <header class="gc-thermal-head">
-     <strong class="gc-thermal-brand">{{branding.name()}}</strong>
-     <strong>COMANDA DE PREPARACIÓN</strong>
+     <strong>COMANDA</strong>
      <strong class="gc-thermal-number">{{data.numero}}</strong>
+     <span class="gc-thermal-muted">{{time(data.enviadaEn)}}</span>
     </header>
     <section class="gc-thermal-divider">
      <div><span>Orden</span><strong>{{data.orden?.numero??'—'}}</strong></div>
      <div><span>Estación</span><span>{{data.estacion?.nombre??'—'}}</span></div>
-     <div><span>Atención</span><span>{{data.orden?mode(data.orden.modalidad):'—'}}</span></div>
      @if(data.orden?.ocupacionMesa?.mesa?.numero){
       <div><span>Mesa</span><strong>{{data.orden?.ocupacionMesa?.mesa?.numero}}</strong></div>
+     }@else if(data.orden){
+      <div><span>Atención</span><span>{{mode(data.orden.modalidad)}}</span></div>
      }
      @if(data.orden?.cliente){
       <div><span>Cliente</span><strong>{{data.orden?.cliente?.nombre}}</strong></div>
      }
-     <div><span>Recibida</span><span>{{time(data.enviadaEn)}}</span></div>
-     <div><span>Estado</span><strong>{{data.estado}}</strong></div>
     </section>
     @if(data.orden?.observaciones){
      <section class="gc-thermal-note"><strong>Nota de pedido</strong>
@@ -70,9 +73,14 @@ import {printableKitchenLines,kitchenModifierNames} from '../printing/thermal-pr
       </article>
      }@empty{<p>No hay líneas activas en esta comanda.</p>}
     </section>
-    <footer class="gc-thermal-foot">
-     <p>Documento interno para cocina. No es comprobante de pago ni factura.</p>
-    </footer>
+    @if(data.tambienEntregar?.length){
+     <section class="gc-thermal-note">
+      <strong>TAMBIÉN INCLUIR</strong>
+      @for(extra of data.tambienEntregar;track extra.id){
+       <p>{{quantity(extra.cantidad)}} × {{extra.nombreSnapshot}}</p>
+      }
+     </section>
+    }
    </article>
   }
  </main>`
@@ -86,6 +94,9 @@ export class GcOrdersKitchenPrintPage{
  protected readonly ticket=signal<KitchenTicket|null>(null);
  protected readonly busy=signal(false);
  protected readonly error=signal('');
+ protected readonly sharing=signal(false);
+ protected readonly shareError=signal('');
+ protected readonly shareLabel=computed(()=>canShareFiles()?'Enviar por WhatsApp':'Descargar PDF');
  protected readonly activeLines=printableKitchenLines;
  protected readonly modifiers=kitchenModifierNames;
  protected readonly quantity=qtyText;
@@ -117,4 +128,20 @@ export class GcOrdersKitchenPrintPage{
   finally{if(gen===this.generation)this.busy.set(false)}
  }
  protected print(){if(this.ticket())window.print()}
+ protected async share(){
+  const data=this.ticket();
+  if(!data||this.sharing())return;
+  this.sharing.set(true);this.shareError.set('');
+  try{
+   const blob=await firstValueFrom(this.api.ticketReceiptPdf(data.id));
+   const outcome=await sharePdf(blob,'comanda-'+data.numero+'.pdf','Comanda '+data.numero,
+    'Comanda de preparación '+this.branding.name()+' — '+data.numero+'.');
+   if(outcome==='downloaded')
+    this.shareError.set('Se descargó el PDF — adjúntalo manualmente en WhatsApp.');
+  }catch(e){
+   this.shareError.set(orderFriendlyError(e));
+  }finally{
+   this.sharing.set(false);
+  }
+ }
 }

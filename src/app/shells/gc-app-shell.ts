@@ -13,6 +13,7 @@ import { GcAccountMenu } from '../design-system/profile/gc-account-menu';
 import { GcNavigationItem } from '../design-system/navigation/navigation.model';
 import { GcSessionService } from '../core/auth/gc-session.service';
 import { GcBranchContext } from '../core/organization/gc-branch-context';
+import { CompanyApi } from '../features/organization/data-access/organization-api';
 import { OrganizationAccess } from '../features/organization/data-access/organization-access';
 import { UsersAccess } from '../features/users/data-access/users-access';
 import { CatalogAccess } from '../features/catalog/data-access/catalog-access';
@@ -61,6 +62,7 @@ export class GcAppShell {
   protected readonly deliveryAccess = inject(DeliveryAccess);
   private readonly avatar=inject(GcCurrentAvatarStore);
   private readonly usersApi=inject(UsersApi);
+  private readonly companyApi=inject(CompanyApi);
   private readonly realtime = inject(GcRealtimeService);
   // Only needs to exist: its constructor wires the "comanda lista" toast/chime app-wide.
   private readonly ordersReadyAlert = inject(OrdersReadyAlertService);
@@ -117,11 +119,19 @@ export class GcAppShell {
   constructor() {
     effect(() => {
       if (this.session.authenticated()) {
-        void this.orgAccess.load().catch(() => undefined);
+        // Branding's default ("Gastro Core") is the product's own name, not this business's —
+        // replace it with the real one wherever the viewer can read it (organization.read;
+        // most roles can't, and simply keep seeing the default, same as before this existed).
+        void this.orgAccess.load().then(() => {
+          if (!this.orgAccess.canGlobal('organization.read')) return;
+          return firstValueFrom(this.companyApi.get())
+            .then(company => this.branding.setName(company.nombreComercial));
+        }).catch(() => undefined);
         void this.usersAccess.load().catch(() => undefined);
       } else {
         this.orgAccess.reset();
         this.usersAccess.clear();
+        this.branding.reset();
       }
     });
     effect(() => {

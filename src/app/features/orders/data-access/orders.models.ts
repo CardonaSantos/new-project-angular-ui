@@ -68,6 +68,9 @@ export interface KitchenTicket{
  orden?:{id:string;numero:string;modalidad:OrderMode;estado:OrderState;observaciones:string|null;
   ocupacionMesa?:{mesa:{numero:string}}|null;cliente?:OrderCustomer|null};
  comandaLineasComoComanda:KitchenLine[];
+ // Direct-sale lines on the same order (no prep needed) — only present on the single-ticket
+ // detail() response, not on list()/queue() rows, so it's optional here.
+ tambienEntregar?:{id:string;nombreSnapshot:string;cantidad:string}[];
 }
 export interface OrderListQuery{sucursalId:string;estado?:OrderState;modalidad?:OrderMode;search?:string;
  clienteId?:string;page?:number;limit?:number}

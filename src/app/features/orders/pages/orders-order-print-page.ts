@@ -7,8 +7,9 @@ import {formatInstant} from '../../../shared/formatting';
 import {OrdersAccess} from '../data-access/orders-access';
 import {OrdersApi} from '../data-access/orders.api';
 import type {OrderDetail} from '../data-access/orders.models';
-import {modeText,qtyText,orderFriendlyError} from '../data-access/orders.helpers';
+import {qtyText,orderFriendlyError} from '../data-access/orders.helpers';
 import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-print.helpers';
+import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
 
 /** Complete non-fiscal service slip. Unlike kitchen tickets, includes INVENTARIABLE/SERVICIO. */
 @Component({
@@ -28,10 +29,13 @@ import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-prin
        title="No hay comanda de preparación disponible">Comanda de preparación</span>
      }
      <span class="gc-print-mode gc-print-mode--active" aria-current="page"
-      title="Todos los productos, incluidos los de venta directa">Comanda completa</span>
+      title="Comprobante para el cliente, con todos los productos">Pedido</span>
     </nav>
-    <button type="button" [disabled]="busy()||!order()" (click)="print()">Imprimir completa</button>
+    <button type="button" [disabled]="busy()||!order()" (click)="print()">Imprimir pedido</button>
+    <button type="button" [disabled]="busy()||!order()||sharing()" (click)="share()">
+     {{sharing()?'Enviando…':shareLabel()}}</button>
    </div>
+   @if(shareError()){<p role="alert" class="gc-thermal-error">{{shareError()}}</p>}
   </header>
   @if(busy()){<p role="status">Cargando pedido completo…</p>}
   @if(error()){<p role="alert" class="gc-thermal-error">{{error()}}</p>}
@@ -39,11 +43,11 @@ import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-prin
    <article class="gc-thermal-paper" aria-label="Pedido completo con todos los productos">
     <header class="gc-thermal-head">
      <strong class="gc-thermal-brand">{{branding.name()}}</strong>
-     <strong>COMANDA COMPLETA</strong>
+     <strong>PEDIDO</strong>
      <strong class="gc-thermal-number">{{data.numero}}</strong>
+     <span class="gc-thermal-muted">{{time(data.abiertaEn)}}</span>
     </header>
     <section class="gc-thermal-divider">
-     <div><span>Atención</span><strong>{{mode(data.modalidad)}}</strong></div>
      @if(data.ocupacionMesa?.mesa?.numero){
       <div><span>Mesa</span><strong>{{data.ocupacionMesa?.mesa?.numero}}</strong></div>
       @if(data.ocupacionMesa?.mesa?.sala?.nombre){
@@ -52,10 +56,7 @@ import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-prin
      }
      @if(data.cliente){
       <div><span>Cliente</span><strong>{{data.cliente.nombre}}</strong></div>
-      @if(data.cliente.telefono){<div><span>Teléfono</span><span>{{data.cliente.telefono}}</span></div>}
      }
-     <div><span>Registrado</span><span>{{time(data.abiertaEn)}}</span></div>
-     <div><span>Estado</span><strong>{{data.estado}}</strong></div>
     </section>
     @if(data.observaciones){
      <section class="gc-thermal-note"><strong>Observaciones</strong>
@@ -73,7 +74,7 @@ import {printableOrderLines,kitchenModifierNames} from '../printing/thermal-prin
      }@empty{<p>No hay productos activos en esta orden.</p>}
     </section>
     <footer class="gc-thermal-foot">
-     <p>Preparación y venta directa. Documento interno, no fiscal.</p>
+     <p>¡Gracias por tu visita! Esperamos verte pronto.</p>
     </footer>
    </article>
   }
@@ -92,10 +93,12 @@ export class GcOrdersOrderPrintPage{
    .sort((a,b)=>b.enviadaEn.localeCompare(a.enviadaEn))[0]??null);
  protected readonly busy=signal(false);
  protected readonly error=signal('');
+ protected readonly sharing=signal(false);
+ protected readonly shareError=signal('');
+ protected readonly shareLabel=computed(()=>canShareFiles()?'Enviar por WhatsApp':'Descargar PDF');
  protected readonly printable=printableOrderLines;
  protected readonly modifiers=kitchenModifierNames;
  protected readonly quantity=qtyText;
- protected readonly mode=modeText;
  private generation=0;
  constructor(){
   effect(()=>{
@@ -130,4 +133,20 @@ export class GcOrdersOrderPrintPage{
   }
  }
  protected print(){if(this.order())window.print()}
+ protected async share(){
+  const data=this.order();
+  if(!data||this.sharing())return;
+  this.sharing.set(true);this.shareError.set('');
+  try{
+   const blob=await firstValueFrom(this.api.receiptPdf(data.id));
+   const outcome=await sharePdf(blob,'pedido-'+data.numero+'.pdf','Pedido '+data.numero,
+    'Comprobante de '+this.branding.name()+' — pedido '+data.numero+'.');
+   if(outcome==='downloaded')
+    this.shareError.set('Se descargó el PDF — adjúntalo manualmente en WhatsApp.');
+  }catch(e){
+   this.shareError.set(orderFriendlyError(e));
+  }finally{
+   this.sharing.set(false);
+  }
+ }
 }
