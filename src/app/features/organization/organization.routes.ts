@@ -30,6 +30,12 @@ export const ORGANIZATION_ROUTES: Routes = [
     loadComponent:()=>import('./company/company-page').then(m=>m.GcCompanyPage),
   },
   {
+    path:'branding', title:'Apariencia — Gastro Core', canActivate:[gcSessionGuard],
+    data:{breadcrumb:'Apariencia'},
+    canDeactivate:[gcUnsavedChangesGuard],
+    loadComponent:()=>import('./branding/branding-page').then(m=>m.GcBrandingPage),
+  },
+  {
     // Componentless parents provide the breadcrumb level for both list and detail.
     path: 'branches',
     data: { breadcrumb: 'Sucursales' },

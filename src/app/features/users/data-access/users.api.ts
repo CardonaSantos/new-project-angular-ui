@@ -92,11 +92,11 @@ export class MediaApi {
   private readonly http=inject(HttpClient);
   private readonly e=API_ENDPOINTS.media;
   /** FormData is essential: the server expects Multer's file field, not JSON. */
-  upload(file:File,contexto='PERFIL',sucursalId?:string) {
+  upload(file:File,contexto='PERFIL',sucursalId?:string,publico=false) {
     const body=new FormData();
     body.append('file',file,file.name);
     body.append('contexto',contexto);
-    body.append('publico','false');
+    body.append('publico',String(publico));
     if(sucursalId)body.append('sucursalId',sucursalId);
     return this.http.post<MediaRecord>(this.e.upload,body,silent);
   }

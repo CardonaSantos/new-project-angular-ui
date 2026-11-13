@@ -119,13 +119,15 @@ export class GcAppShell {
   constructor() {
     effect(() => {
       if (this.session.authenticated()) {
-        // Branding's default ("Gastro Core") is the product's own name, not this business's —
-        // replace it with the real one wherever the viewer can read it (organization.read;
-        // most roles can't, and simply keep seeing the default, same as before this existed).
-        void this.orgAccess.load().then(() => {
-          if (!this.orgAccess.canGlobal('organization.read')) return;
-          return firstValueFrom(this.companyApi.get())
-            .then(company => this.branding.setName(company.nombreComercial));
+        void this.orgAccess.load().catch(() => undefined);
+        // Branding's default ("Gastro Core") is the product's own name, not this business's.
+        // /organization/branding carries only the safe subset (name, logo, brand color) and
+        // has no permission gate beyond being logged in, so every role sees the real branding —
+        // unlike /organization itself, which also exposes nit/razonSocial behind organization.read.
+        void firstValueFrom(this.companyApi.branding()).then(branding => {
+          this.branding.setName(branding.nombreComercial);
+          this.branding.setColor(branding.colorPrimario);
+          if (branding.logoUrl) this.branding.setLogo(branding.logoUrl);
         }).catch(() => undefined);
         void this.usersAccess.load().catch(() => undefined);
       } else {

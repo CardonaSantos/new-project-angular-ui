@@ -90,3 +90,21 @@
  .gc-org-inline-action>button{justify-self:start}
  .gc-org-section{padding:.65rem}
 }
+
+/* Branding (Apariencia): color picker + swatches, logo preview. */
+.gc-org-brand-row{display:flex;align-items:center;gap:.85rem;flex-wrap:wrap;min-width:0}
+.gc-org-brand-row input[type="color"]{
+ flex:none;width:2.75rem;height:2.75rem;padding:0;border:1px solid var(--gc-outline);
+ border-radius:calc(var(--gc-radius)*.5);background:var(--gc-surface);cursor:pointer;
+}
+.gc-org-hex-input{
+ flex:0 1 9rem;min-width:0;min-height:44px;border:1px solid var(--gc-outline);
+ background:var(--gc-surface);color:var(--gc-on-surface);border-radius:calc(var(--gc-radius)*.65);
+ padding:.43rem .65rem;font-family:'Courier New',monospace;text-transform:uppercase;
+}
+.gc-org-hex-input[aria-invalid="true"]{border-color:var(--gc-error)}
+.gc-org-swatches{display:flex;gap:.5rem}
+.gc-org-swatch{
+ display:grid;place-items:center;width:2.75rem;height:2.75rem;border-radius:calc(var(--gc-radius)*.5);
+ font-weight:700;font-size:.8rem;border:1px solid var(--gc-outline-variant);
+}

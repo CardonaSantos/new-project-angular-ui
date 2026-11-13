@@ -9,11 +9,22 @@ export interface Company {
   moneda: string;
   zonaHoraria: string;
   metodoValoracion: ValuationMethod;
+  colorPrimario: string | null;
+  logoMediaId: string | null;
+  logoUrl: string | null;
   creadoEn: string;
   actualizadoEn: string;
 }
 export type CompanyUpdate = Partial<Pick<Company,
-  'nombreComercial' | 'razonSocial' | 'nit' | 'moneda' | 'zonaHoraria' | 'metodoValoracion'>>;
+  | 'nombreComercial' | 'razonSocial' | 'nit' | 'moneda' | 'zonaHoraria' | 'metodoValoracion'
+  | 'colorPrimario' | 'logoMediaId'>>;
+
+/** Branding subset visible to every authenticated role, regardless of permissions. */
+export interface Branding {
+  nombreComercial: string;
+  colorPrimario: string | null;
+  logoUrl: string | null;
+}
 
 export interface CompanyCapabilities {
   companyId: string;
