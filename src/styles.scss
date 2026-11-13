@@ -1007,8 +1007,30 @@ gc-kitchen-ticket{display:block;min-width:0}
 .ord-tables-admin{display:grid;gap:.9rem}
 .ord-tables-admin>.ord-heading{margin-bottom:.2rem}
 .ord-tables-admin>.ord-heading h2{margin:0}
-.ord-tables-admin .ord-setting-row{border-bottom:1px solid var(--gc-outline-variant);padding:.65rem 0}
+.ord-tables-admin .ord-setting-row{border-bottom:1px solid var(--gc-outline-variant);padding:.65rem .85rem}
 .ord-tables-admin .ord-setting-row button{min-width:70px}
+.ord-qr-result{margin-top:.75rem;border:1px solid var(--gc-outline-variant);border-radius:var(--gc-radius,.75rem);
+ padding:.9rem;background:var(--gc-surface-container-low);display:grid;gap:.65rem}
+.ord-qr-warning{margin:0}
+.ord-qr-result-body{display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap}
+.ord-qr-image{width:160px;height:160px;border-radius:.5rem;border:1px solid var(--gc-outline-variant);
+ background:#fff;padding:.4rem;flex:0 0 auto}
+.ord-qr-link-col{display:grid;gap:.45rem;min-width:0;flex:1 1 14rem}
+.ord-qr-link{display:block;word-break:break-all;font-size:.82rem;color:var(--gc-on-surface-variant);
+ background:var(--gc-surface-container,var(--gc-surface));border-radius:.4rem;padding:.4rem .55rem}
+.ord-qr-history{margin-top:.5rem}
+.ord-qr-history summary{cursor:pointer;font-weight:650;padding:.3rem 0}
+/* Printing a table's QR: hide the whole app shell, show only the result card
+ * (same technique as .pay-cash-receipt's print rule above), and drop the
+ * on-screen-only action buttons so the printed page is just the QR + mesa. */
+@media print{
+ body *{visibility:hidden!important}
+ .ord-qr-print,.ord-qr-print *{visibility:visible!important}
+ .ord-qr-print{position:absolute!important;top:0!important;left:0!important;
+  width:100%!important;max-width:100%!important;background:#fff!important;
+  color:#111!important;border:0!important;box-shadow:none!important}
+ .ord-qr-print .ord-qr-no-print{display:none!important}
+}
 .ord-kitchen-summary{display:flex;align-items:center;gap:.45rem .85rem;flex-wrap:wrap;
  border-bottom:1px solid var(--gc-outline-variant);padding:.5rem 0 .7rem}
 .ord-kitchen-summary span{font-size:.82rem;display:inline-flex;gap:.3rem}
@@ -1034,6 +1056,9 @@ gc-kitchen-ticket{display:block;min-width:0}
  .ord-tables-admin>.ord-heading{align-items:stretch}
  .ord-tables-admin>.ord-heading .ord-view-switch{width:100%}
  .ord-tables-admin>.ord-heading .ord-view-switch button{flex:1}
+ .ord-qr-result-body{justify-content:center;text-align:center}
+ .ord-qr-image{width:140px;height:140px}
+ .ord-qr-link-col{text-align:left}
  .ord-detail-dialog{width:min(100%,calc(100vw - 1rem));padding:.8rem}
  .ord-detail-dialog .ord-actions>button{flex:1 1 8rem}
  .ord-kitchen-summary{gap:.5rem}

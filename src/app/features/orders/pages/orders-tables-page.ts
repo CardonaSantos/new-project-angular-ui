@@ -1,13 +1,20 @@
 import {Component,computed,effect,ElementRef,inject,signal,viewChild} from '@angular/core';
 import {ActivatedRoute,Router,RouterLink} from '@angular/router';
+import {Clipboard} from '@angular/cdk/clipboard';
 import {firstValueFrom} from 'rxjs';
+// Namespace import (not a default import): avoids depending on esModuleInterop,
+// which this project's tsconfig does not set, for this CJS-only package.
+import * as QRCode from 'qrcode';
 import {GcBranchContext} from '../../../core/organization/gc-branch-context';
 import {gcErrorMessage} from '../../../core/http/api-error';
 import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcSearchSelect} from '../../../design-system/forms/gc-search-select';
 import {OrganizationAccess} from '../../organization/data-access/organization-access';
-import {calendarDateAtBranch,clockTimeAtBranch,zonedInstantFrom} from '../../../shared/formatting';
+import {BranchesApi} from '../../organization/data-access/organization-api';
+import {calendarDateAtBranch,clockTimeAtBranch,formatInstant,zonedInstantFrom} from '../../../shared/formatting';
+import {SelfServiceAdminApi} from '../../self-service/data-access/self-service-admin.api';
+import type {TableQrIssued,TableQrSummary} from '../../self-service/data-access/self-service-admin.models';
 import {GcOrdersNav} from '../orders-nav';
 import {OrdersApi} from '../data-access/orders.api';
 import {OrdersAccess} from '../data-access/orders-access';
@@ -133,6 +140,8 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
      [attr.aria-pressed]="manageTab()==='rooms'" (click)="manageTab.set('rooms')">Salas</button>
     <button type="button" [class.active]="manageTab()==='tables'"
      [attr.aria-pressed]="manageTab()==='tables'" (click)="manageTab.set('tables')">Mesas</button>
+    <button type="button" [class.active]="manageTab()==='qr'"
+     [attr.aria-pressed]="manageTab()==='qr'" (click)="openQrTab()">Autoservicio (QR)</button>
    </div>
   </div>
   @if(manageTab()==='rooms'){
@@ -196,6 +205,87 @@ import {money,openTableOrders} from '../data-access/orders.helpers';
    </div>
   </fieldset>
   }
+  @if(manageTab()==='qr'){
+  <h3>Autoservicio por QR</h3>
+  @if(qrEnabled()===false){
+   <p class="ord-alert" role="alert">El autoservicio por QR está <strong>desactivado</strong> para esta
+    sucursal: ningún código funcionará hasta activarlo.
+    <a [routerLink]="['/organization/branches',branch.branchId()]">Activarlo en Configuración</a></p>
+  } @else if(qrEnabled()===true){
+   <p class="ord-note">Autoservicio por QR está <strong>activado</strong> para esta sucursal.</p>
+  }
+  <p class="ord-note">Genera un código por mesa: el cliente lo escanea (o abre el enlace) y entra directo
+   al menú de esa mesa, sin mesero. Un código nuevo invalida el anterior de la misma mesa.</p>
+  <div class="ord-small-list">
+   @for(t of tables();track t.id){
+    <div class="ord-setting-row" [class.ord-setting-row--active]="qrTable()?.id===t.id">
+     <div><strong>Mesa {{t.numero}}</strong><small>{{t.sala.nombre}}</small></div>
+     <button type="button" (click)="selectQrTable(t)" [disabled]="qrBusy()"
+      [attr.aria-label]="'Gestionar código QR de la mesa '+t.numero">Gestionar QR</button>
+    </div>
+   } @empty {<p>No hay mesas configuradas.</p>}
+  </div>
+  @if(qrTable();as t){
+  <fieldset class="ord-section">
+   <legend #qrPanelHeading tabindex="-1">Mesa {{t.numero}} · {{t.sala.nombre}}</legend>
+   @if(qrError()){<p class="ord-alert" role="alert">{{qrError()}}</p>}
+   @if(qrLoading()){<p role="status">Consultando código QR…</p>}
+   @else {
+    @if(activeQr();as active){
+     <div class="ord-setting-row">
+      <div><strong>Código activo</strong>
+       <small>{{active.expiraEn?('Expira '+formatInstant(active.expiraEn,zone())):'No expira'}}
+        · creado {{formatInstant(active.creadoEn,zone())}}</small></div>
+      <button type="button" (click)="revokeQr(active.id)" [disabled]="qrBusy()">Revocar</button>
+     </div>
+    } @else {
+     <p class="ord-note">Esta mesa no tiene un código QR activo en este momento.</p>
+    }
+    <div class="ord-actions">
+     <button type="button" class="ord-primary" [disabled]="qrBusy()" (click)="issueQr()">
+      {{qrBusy()?'Generando…':(activeQr()?'Generar nuevo código':'Generar código QR')}}
+     </button>
+    </div>
+   }
+   @if(qrIssued();as issued){
+    <div class="ord-qr-result ord-qr-print">
+     <p class="ord-alert ord-qr-warning" role="alert">
+      Este código se muestra una sola vez: guárdalo, cópialo o imprímelo ahora.</p>
+     <div class="ord-qr-result-body">
+      @if(qrImage();as img){
+       <img [src]="img" class="ord-qr-image" [alt]="'Código QR de la mesa '+t.numero"/>
+      }
+      <div class="ord-qr-link-col">
+       <strong>Mesa {{t.numero}} · {{branch.active()?.nombre}}</strong>
+       <code class="ord-qr-link">{{clientUrl(issued.url)}}</code>
+       <div class="ord-actions ord-qr-no-print">
+        <button type="button" (click)="copyLink(issued.url)">Copiar enlace</button>
+        <a [href]="clientUrl(issued.url)" target="_blank" rel="noopener">Abrir vista de cliente</a>
+        @if(qrImage();as img){
+         <button type="button" (click)="printQr()">Imprimir</button>
+         <a [href]="img" [download]="'mesa-'+t.numero+'-qr.png'">Descargar PNG</a>
+        }
+       </div>
+      </div>
+     </div>
+    </div>
+   }
+   @if(qrHistory().length>1){
+    <details class="ord-qr-history">
+     <summary>Historial de códigos de esta mesa ({{qrHistory().length}})</summary>
+     <div class="ord-small-list">
+      @for(h of qrHistory();track h.id){
+       <div class="ord-setting-row">
+        <small>{{h.activo?'Activo':'Revocado o reemplazado'}} · creado {{formatInstant(h.creadoEn,zone())}}
+         {{h.expiraEn?(' · expira '+formatInstant(h.expiraEn,zone())):''}}</small>
+       </div>
+      }
+     </div>
+    </details>
+   }
+  </fieldset>
+  }
+  }
  </section>
  }
  @if(managing&&!access.canTablesManage()){
@@ -212,6 +302,9 @@ export class GcOrdersTablesPage{
  private readonly reservations=inject(OrdersTableReservations);
  private readonly todayApi=inject(OrdersTodayReservations);
  private readonly organization=inject(OrganizationAccess);
+ private readonly branchesApi=inject(BranchesApi);
+ private readonly selfServiceApi=inject(SelfServiceAdminApi);
+ private readonly clipboard=inject(Clipboard);
  protected readonly todayReservations=signal<OrdersReservationSummary[]>([]);
  protected readonly pendingReservations=computed(()=>
   this.todayReservations().filter(r=>r.estado==='PENDIENTE'||r.estado==='CONFIRMADA'));
@@ -231,15 +324,27 @@ export class GcOrdersTablesPage{
  });
  protected readonly branch=inject(GcBranchContext);protected readonly access=inject(OrdersAccess);
  protected readonly money=money;protected readonly openOrders=openTableOrders;
- protected readonly clockTimeAtBranch=clockTimeAtBranch;
+ protected readonly clockTimeAtBranch=clockTimeAtBranch;protected readonly formatInstant=formatInstant;
  protected readonly rooms=signal<Room[]>([]);protected readonly tables=signal<TableRecord[]>([]);
  private readonly reservationConflicts=signal<Map<string,OrdersTableConflict>>(new Map());
  protected readonly selectedRoom=signal('');protected readonly busy=signal(false);
- protected readonly manageTab=signal<'rooms'|'tables'>('rooms');
+ protected readonly manageTab=signal<'rooms'|'tables'|'qr'>('rooms');
  protected readonly actionBusy=signal(false);protected readonly error=signal<string|null>(null);
  protected readonly roomId=signal('');protected readonly roomName=signal('');
  protected readonly tableId=signal('');protected readonly tableRoom=signal('');
  protected readonly tableNumber=signal('');protected readonly capacity=signal(2);
+ // Autoservicio por QR (ver self-service/data-access/self-service-admin.*): qrEnabled
+ // is best-effort (null = desconocido/sin permiso para leer la config) and never
+ // blocks the QR tools themselves, same spirit as loadReservationOverlay() above.
+ protected readonly qrEnabled=signal<boolean|null>(null);
+ protected readonly qrTable=signal<TableRecord|null>(null);
+ protected readonly qrHistory=signal<TableQrSummary[]>([]);
+ protected readonly qrLoading=signal(false);protected readonly qrBusy=signal(false);
+ protected readonly qrError=signal<string|null>(null);
+ protected readonly qrIssued=signal<TableQrIssued|null>(null);
+ protected readonly qrImage=signal<string|null>(null);
+ protected readonly activeQr=computed(()=>this.qrHistory().find(q=>q.activo)??null);
+ private readonly qrPanelHeading=viewChild<ElementRef<HTMLElement>>('qrPanelHeading');
  protected readonly visibleTables=computed(()=>this.tables().filter(x=>!this.selectedRoom()||x.sala.id===this.selectedRoom()));
  protected readonly availableCount=computed(()=>this.tables().filter(t=>t.activa&&!t.ocupacion).length);
  protected readonly occupiedCount=computed(()=>this.tables().filter(t=>t.activa&&t.ocupacion).length);
@@ -359,4 +464,63 @@ export class GcOrdersTablesPage{
   }catch(e){this.error.set(gcErrorMessage(e))}
   finally{this.actionBusy.set(false)}
  }
+ protected openQrTab(){
+  this.manageTab.set('qr');
+  if(this.qrEnabled()===null)void this.loadQrConfig();
+ }
+ private async loadQrConfig(){
+  const id=this.branch.branchId();if(!id)return;
+  try{this.qrEnabled.set((await firstValueFrom(this.branchesApi.config(id))).permiteOrdenesQR)}
+  catch{/* best-effort: a mesa manager without branches.read still gets the QR tools, just no banner */}
+ }
+ protected selectQrTable(table:TableRecord){
+  this.qrTable.set(table);this.qrIssued.set(null);this.qrImage.set(null);this.qrError.set(null);
+  this.focusHeading(()=>this.qrPanelHeading());
+  void this.loadQrHistory(table.id);
+ }
+ private async loadQrHistory(mesaId:string){
+  this.qrLoading.set(true);this.qrError.set(null);
+  try{this.qrHistory.set(await firstValueFrom(this.selfServiceApi.list(mesaId)))}
+  catch(e){this.qrError.set(gcErrorMessage(e))}
+  finally{this.qrLoading.set(false)}
+ }
+ protected async issueQr(){
+  const table=this.qrTable();if(!table||this.qrBusy())return;
+  if(this.activeQr()&&!await this.confirm.confirm({title:'Generar nuevo código QR',
+   message:'Esto invalida de inmediato el código QR actual de la mesa '+table.numero+
+    '. Cualquier cliente que lo tenga abierto perderá el acceso al instante.',
+   confirmText:'Generar nuevo código',danger:true}))return;
+  this.qrBusy.set(true);this.qrError.set(null);
+  try{
+   const issued=await firstValueFrom(this.selfServiceApi.issue(table.id));
+   this.qrIssued.set(issued);
+   await this.renderQrImage(issued.url);
+   await this.loadQrHistory(table.id);
+  }catch(e){this.qrError.set(gcErrorMessage(e))}
+  finally{this.qrBusy.set(false)}
+ }
+ protected async revokeQr(id:string){
+  const table=this.qrTable();if(!table||this.qrBusy())return;
+  if(!await this.confirm.confirm({title:'Revocar código QR',
+   message:'Los clientes que tengan este código dejarán de poder acceder al menú de la mesa '+table.numero+'.',
+   confirmText:'Revocar',danger:true}))return;
+  this.qrBusy.set(true);this.qrError.set(null);
+  try{
+   await firstValueFrom(this.selfServiceApi.revoke(id));
+   if(this.qrIssued()?.id===id){this.qrIssued.set(null);this.qrImage.set(null)}
+   await this.loadQrHistory(table.id);
+   this.notices.show('Código QR revocado.','success');
+  }catch(e){this.qrError.set(gcErrorMessage(e))}
+  finally{this.qrBusy.set(false)}
+ }
+ protected clientUrl(path:string){return window.location.origin+path}
+ private async renderQrImage(path:string){
+  try{this.qrImage.set(await QRCode.toDataURL(this.clientUrl(path),{width:360,margin:1}))}
+  catch{this.qrImage.set(null)}
+ }
+ protected copyLink(path:string){
+  this.clipboard.copy(this.clientUrl(path));
+  this.notices.show('Enlace copiado.','success');
+ }
+ protected printQr(){window.print()}
 }
