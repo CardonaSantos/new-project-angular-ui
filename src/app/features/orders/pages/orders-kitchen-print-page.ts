@@ -24,7 +24,7 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
      @if(access.canViewDetail()){
       @if(ticket()?.orden?.id;as orderId){
        <a class="gc-print-mode" [routerLink]="['/orders/print',orderId]"
-        title="Todos los productos, incluidos los de venta directa">Comanda completa</a>
+        title="Comprobante para el cliente, con todos los productos">Pedido</a>
       }
      }
     </nav>
@@ -39,16 +39,16 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
   @if(ticket();as data){
    <article class="gc-thermal-paper" aria-label="Comanda interna para preparar">
     <header class="gc-thermal-head">
-     <strong class="gc-thermal-brand">{{branding.name()}}</strong>
      <strong>COMANDA DE PREPARACIÓN</strong>
      <strong class="gc-thermal-number">{{data.numero}}</strong>
     </header>
     <section class="gc-thermal-divider">
      <div><span>Orden</span><strong>{{data.orden?.numero??'—'}}</strong></div>
      <div><span>Estación</span><span>{{data.estacion?.nombre??'—'}}</span></div>
-     <div><span>Atención</span><span>{{data.orden?mode(data.orden.modalidad):'—'}}</span></div>
      @if(data.orden?.ocupacionMesa?.mesa?.numero){
       <div><span>Mesa</span><strong>{{data.orden?.ocupacionMesa?.mesa?.numero}}</strong></div>
+     }@else if(data.orden){
+      <div><span>Atención</span><span>{{mode(data.orden.modalidad)}}</span></div>
      }
      @if(data.orden?.cliente){
       <div><span>Cliente</span><strong>{{data.orden?.cliente?.nombre}}</strong></div>
@@ -74,9 +74,6 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
       </article>
      }@empty{<p>No hay líneas activas en esta comanda.</p>}
     </section>
-    <footer class="gc-thermal-foot">
-     <p>Documento interno para cocina. No es comprobante de pago ni factura.</p>
-    </footer>
    </article>
   }
  </main>`

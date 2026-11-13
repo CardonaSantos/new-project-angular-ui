@@ -29,9 +29,9 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
        title="No hay comanda de preparación disponible">Comanda de preparación</span>
      }
      <span class="gc-print-mode gc-print-mode--active" aria-current="page"
-      title="Todos los productos, incluidos los de venta directa">Comanda completa</span>
+      title="Comprobante para el cliente, con todos los productos">Pedido</span>
     </nav>
-    <button type="button" [disabled]="busy()||!order()" (click)="print()">Imprimir completa</button>
+    <button type="button" [disabled]="busy()||!order()" (click)="print()">Imprimir pedido</button>
     <button type="button" [disabled]="busy()||!order()||sharing()" (click)="share()">
      {{sharing()?'Enviando…':shareLabel()}}</button>
    </div>
@@ -43,7 +43,7 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
    <article class="gc-thermal-paper" aria-label="Pedido completo con todos los productos">
     <header class="gc-thermal-head">
      <strong class="gc-thermal-brand">{{branding.name()}}</strong>
-     <strong>COMANDA COMPLETA</strong>
+     <strong>PEDIDO</strong>
      <strong class="gc-thermal-number">{{data.numero}}</strong>
     </header>
     <section class="gc-thermal-divider">
@@ -77,7 +77,8 @@ import {canShareFiles,sharePdf} from '../printing/share-pdf.helpers';
      }@empty{<p>No hay productos activos en esta orden.</p>}
     </section>
     <footer class="gc-thermal-foot">
-     <p>Preparación y venta directa. Documento interno, no fiscal.</p>
+     <p>¡Gracias por tu visita! Esperamos verte pronto.</p>
+     <p>Documento no fiscal.</p>
     </footer>
    </article>
   }
