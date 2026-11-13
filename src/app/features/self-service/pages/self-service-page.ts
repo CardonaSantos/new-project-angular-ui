@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { gcErrorMessage } from '../../../core/http/api-error';
@@ -10,10 +10,6 @@ import type {
 } from '../data-access/self-service.models';
 
 type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
-
-/** How often the open cart is re-checked in the background so a staff-side close/charge or
- * cancellation surfaces without the customer having to refresh (see pollCart() below). */
-const SELF_SERVICE_POLL_MS = 15000;
 
 @Component({
   selector: 'gc-self-service-page',
@@ -434,7 +430,6 @@ export class GcSelfServicePage {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(SelfServiceApi);
   private readonly sessionStore = inject(SelfServiceSessionStore);
-  private readonly destroyRef = inject(DestroyRef);
   protected readonly Math = Math;
 
   protected readonly loading = signal(true);
@@ -498,32 +493,6 @@ export class GcSelfServicePage {
   constructor() {
     this.token = this.route.snapshot.paramMap.get('token') ?? '';
     void this.bootstrap();
-    // Staff can close/charge or cancel the table's order from Órdenes while this page stays
-    // open — nothing pushes that live (the realtime gateway only authenticates staff JWTs, not
-    // anonymous self-service sessions), so a light poll of the cart is how the customer finds
-    // out without having to refresh manually and see a blank cart in between.
-    const pollId = setInterval(() => void this.pollCart(), SELF_SERVICE_POLL_MS);
-    this.destroyRef.onDestroy(() => clearInterval(pollId));
-  }
-
-  /** Re-checks the order's live state in the background. Silent on failure — a transient
-   * network hiccup shouldn't surface an error over the customer's screen — and a no-op once
-   * there's nothing open to watch or the closure notice is already showing. */
-  private async pollCart(): Promise<void> {
-    if (this.closedNotice()) return;
-    const access = this.access();
-    const ordenId = this.cart()?.ordenId;
-    if (!access || !ordenId) return;
-    try {
-      const cart = await firstValueFrom(this.api.cart(access.sessionToken));
-      this.cart.set(cart);
-      const estado = cart.orden?.estado;
-      if (estado === 'CERRADA' || estado === 'CANCELADA') {
-        this.closedNotice.set({ numero: cart.orden!.numero, total: cart.orden!.total, estado });
-      }
-    } catch {
-      // Ignored — the next tick or a manual retry will catch up.
-    }
   }
 
   private async bootstrap() {
