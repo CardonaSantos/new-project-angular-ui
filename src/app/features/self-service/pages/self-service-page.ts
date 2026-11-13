@@ -312,7 +312,8 @@ type PickerSelection = Record<string, string[]>; // grupoId -> opcionId[]
                   }
                   @for (opt of group.opciones; track opt.id) {
                     <label class="ss-opt" [class.ss-opt--on]="isChecked(group.grupoId, opt.id)">
-                      <input class="ss-opt-check" [type]="group.maximo === 1 ? 'radio' : 'checkbox'"
+                      <input class="ss-opt-check"
+                        [type]="group.maximo === 1 && group.minimo > 0 ? 'radio' : 'checkbox'"
                         [name]="group.grupoId"
                         [checked]="isChecked(group.grupoId, opt.id)"
                         (change)="toggleOption(group, opt.id)">
@@ -576,7 +577,13 @@ export class GcSelfServicePage {
     const current = this.picks();
     const have = current[group.grupoId] ?? [];
     if (group.maximo === 1) {
-      this.picks.set({ ...current, [group.grupoId]: [opcionId] });
+      // An optional single-pick group (minimo 0, e.g. "¿porta vasos?") can legitimately end
+      // with nothing chosen, so clicking its already-selected option clears it back to that —
+      // a required one (minimo > 0) always needs exactly one, so there's nothing valid to
+      // clear it to. The template only uses a real (unclearable-by-click) radio input for the
+      // required case; this optional case renders as a checkbox so the click always fires.
+      const next = group.minimo === 0 && have.includes(opcionId) ? [] : [opcionId];
+      this.picks.set({ ...current, [group.grupoId]: next });
       return;
     }
     const exists = have.includes(opcionId);
