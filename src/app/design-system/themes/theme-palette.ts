@@ -164,12 +164,11 @@ function ensureContrast(
 ): string {
   if (contrastRatio(foreground, background) >= target) return foreground;
   const towardsLight = luminance(background) < 0.18;
-  let candidate = foreground;
   for (let step = 1; step <= 20; step++) {
     const tone = towardsLight
       ? Math.min(100, startTone + step * 5)
       : Math.max(0, startTone - step * 5);
-    candidate = toneToHex(toneToLightness(tone), chroma, hue);
+    const candidate = toneToHex(toneToLightness(tone), chroma, hue);
     if (contrastRatio(candidate, background) >= target) return candidate;
     if (tone === 0 || tone === 100) break;
   }

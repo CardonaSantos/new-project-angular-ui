@@ -167,12 +167,7 @@ export class ThemeManagerService {
     this.scope.set(scope);
     this.loadedFor.set(scope);
     this.applyDefaults();
-    let saved: string | null = null;
-    try {
-      saved = this.document.defaultView?.localStorage?.getItem(this.key()) ?? null;
-    } catch {
-      return; // Storage disabled; defaults are already in place.
-    }
+    const saved = this.readStored();
     if (!saved) return;
     try {
       const values = JSON.parse(saved) as StoredPreferences;
@@ -209,6 +204,15 @@ export class ThemeManagerService {
 
   private key(): string {
     return 'gc:appearance:v1:' + this.scope();
+  }
+
+  /** Null covers both "nothing saved" and "storage disabled": same outcome. */
+  private readStored(): string | null {
+    try {
+      return this.document.defaultView?.localStorage?.getItem(this.key()) ?? null;
+    } catch {
+      return null;
+    }
   }
 
   private savePreferences(): void {
