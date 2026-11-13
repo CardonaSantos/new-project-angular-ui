@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from '../../../core/http/api-endpoints';
 import { gcSilentRequest } from '../../../core/http/api-context';
 import type {
   Branch, BranchConfig, BranchCreate, BranchOption, BranchOverview, BranchUpdate,
-  Company, CompanyCapabilities, CompanyUpdate, ConfigUpdate, Device, DeviceCreate,
+  Branding, Company, CompanyCapabilities, CompanyUpdate, ConfigUpdate, Device, DeviceCreate,
   DeviceOption, DeviceQuery, DeviceUpdate, ListQuery, Options, Paged, DeviceType,
 } from './organization.models';
 
@@ -25,6 +25,7 @@ const root = API_ENDPOINTS.organization;
 export class CompanyApi {
   private readonly http = inject(HttpClient);
   get() { return this.http.get<Company>(root.company); }
+  branding() { return this.http.get<Branding>(root.branding); }
   capabilities() { return this.http.get<CompanyCapabilities>(root.capabilities); }
   update(data: CompanyUpdate) {
     return this.http.patch<Company>(root.company, data, { context: gcSilentRequest() });

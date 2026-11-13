@@ -12,6 +12,9 @@ import { OrganizationAccess } from './data-access/organization-access';
         <a routerLink="/organization/company" routerLinkActive="active" ariaCurrentWhenActive="page">
           Empresa
         </a>
+        <a routerLink="/organization/branding" routerLinkActive="active" ariaCurrentWhenActive="page">
+          Apariencia
+        </a>
       }
       @if (branch.has('branches.read')) {
         <a routerLink="/organization/branches" routerLinkActive="active"

@@ -1,7 +1,9 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { gcErrorMessage } from '../../../core/http/api-error';
+import { CompanyApi } from '../../organization/data-access/organization-api';
+import { ThemeManagerService } from '../../../design-system/themes/theme-manager.service';
 import { SelfServiceApi } from '../data-access/self-service.api';
 import { SelfServiceSessionStore } from '../data-access/self-service-session.store';
 import type {
@@ -433,6 +435,9 @@ export class GcSelfServicePage {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(SelfServiceApi);
   private readonly sessionStore = inject(SelfServiceSessionStore);
+  private readonly companyApi = inject(CompanyApi);
+  private readonly theme = inject(ThemeManagerService);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly Math = Math;
 
   protected readonly loading = signal(true);
@@ -495,7 +500,25 @@ export class GcSelfServicePage {
 
   constructor() {
     this.token = this.route.snapshot.paramMap.get('token') ?? '';
+    // This page lives outside the staff shell, so nothing else here applies the
+    // business's palette. The mode is pinned to light: the diner's phone may be
+    // set to dark, and the menu should look the way the establishment designed
+    // it rather than following a preference it never accounted for.
+    this.theme.lockMode('light');
+    this.destroyRef.onDestroy(() => this.theme.lockMode(null));
+    void this.loadBranding();
     void this.bootstrap();
+  }
+
+  /** Branding is public: a diner scanning the QR has no session. */
+  private async loadBranding(): Promise<void> {
+    try {
+      const branding = await firstValueFrom(this.companyApi.branding());
+      this.theme.setBrandTheme(branding.tema);
+      this.theme.setBrandColor(branding.colorPrimario);
+    } catch {
+      /* The menu still works with the built-in palette. */
+    }
   }
 
   private async bootstrap() {

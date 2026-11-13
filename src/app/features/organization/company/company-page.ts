@@ -147,7 +147,7 @@ export class GcCompanyPage implements OnInit {
     const original = this.page.data(); if (!original) return;
     const values = this.form.getRawValue();
     const changes: CompanyUpdate = {};
-    for (const key of Object.keys(values) as (keyof CompanyUpdate)[]) {
+    for (const key of Object.keys(values) as (keyof typeof values)[]) {
       const value = values[key];
       const normalized = key === 'moneda' ? String(value).trim().toUpperCase() :
         key === 'razonSocial' || key === 'nit' ? (String(value ?? '').trim() || null) :

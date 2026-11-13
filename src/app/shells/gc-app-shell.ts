@@ -29,6 +29,7 @@ import { ReservationsAccess } from '../features/reservations/data-access/reserva
 import { DeliveryAccess } from '../features/delivery/data-access/delivery-access';
 import { GcAuthFacade } from '../core/auth/demo-auth.facade';
 import { GcBrandingService } from '../core/branding/gc-branding.service';
+import { ThemeManagerService } from '../design-system/themes/theme-manager.service';
 import { GcRealtimeService } from '../core/realtime/gc-realtime.service';
 import { OrdersReadyAlertService } from '../features/orders/data-access/orders-ready-alert.service';
 import { OrdersNewTicketAlertService } from '../features/orders/data-access/orders-new-ticket-alert.service';
@@ -44,6 +45,7 @@ export class GcAppShell {
   protected readonly collapsed = signal(false);
   protected readonly mobileOpen = signal(false);
   protected readonly branding = inject(GcBrandingService);
+  private readonly theme = inject(ThemeManagerService);
   protected readonly session = inject(GcSessionService);
   private readonly auth = inject(GcAuthFacade);
   protected readonly context = inject(GcBranchContext);
@@ -119,20 +121,32 @@ export class GcAppShell {
   constructor() {
     effect(() => {
       if (this.session.authenticated()) {
-        // Branding's default ("Gastro Core") is the product's own name, not this business's —
-        // replace it with the real one wherever the viewer can read it (organization.read;
-        // most roles can't, and simply keep seeing the default, same as before this existed).
-        void this.orgAccess.load().then(() => {
-          if (!this.orgAccess.canGlobal('organization.read')) return;
-          return firstValueFrom(this.companyApi.get())
-            .then(company => this.branding.setName(company.nombreComercial));
+        void this.orgAccess.load().catch(() => undefined);
+        // Branding's default ("Gastro Core") is the product's own name, not this business's.
+        // /organization/branding carries only the safe subset (name, logo, brand color) and
+        // has no permission gate beyond being logged in, so every role sees the real branding —
+        // unlike /organization itself, which also exposes nit/razonSocial behind organization.read.
+        void firstValueFrom(this.companyApi.branding()).then(branding => {
+          this.branding.setName(branding.nombreComercial);
+          this.theme.setBrandColor(branding.colorPrimario);
+          this.theme.setBrandTheme(branding.tema);
+          if (branding.logoUrl) this.branding.setLogo(branding.logoUrl);
         }).catch(() => undefined);
         void this.usersAccess.load().catch(() => undefined);
       } else {
         this.orgAccess.reset();
         this.usersAccess.clear();
         this.branding.reset();
+        this.theme.setBrandColor(null);
+        this.theme.setBrandTheme(null);
+        this.theme.forgetPreferences();
       }
+    });
+    // Keyed by user id, so it waits for the session to carry one — the shell
+    // can be authenticated for a tick before `user()` is populated.
+    effect(() => {
+      const userId = this.session.user()?.id;
+      if (this.session.authenticated() && userId) this.theme.loadPreferences(userId);
     });
     effect(() => {
       const user=this.session.user();

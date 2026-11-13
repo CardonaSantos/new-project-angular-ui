@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   },
   organization: {
     company: '/api/organization',
+    branding: '/api/organization/branding',
     capabilities: '/api/organization/capabilities',
     branches: '/api/branches',
     myAccess: '/api/branches/my-access',
