@@ -47,6 +47,16 @@ export class InventoryUrlState {
  }
  async patch(patch:Record<string,string|number|null>):Promise<boolean>{
   const params:Record<string,string|null>={};
+  // Cambiar de sucursal invalida todo filtro que pertenecía a la anterior:
+  // sin esto, la consulta pedía «el almacén de la sucursal A dentro de la
+  // sucursal B» y el inventario respondía vacío al cambiar de sucursal. Se
+  // resuelve aquí, una vez, porque todas las páginas de inventario (lista,
+  // resumen, reportes, operación, documentos) patchean por este camino.
+  const nextBranch=patch['sucursalId'];
+  if(typeof nextBranch==='string'&&nextBranch&&nextBranch!==this.filters().sucursalId){
+   params['almacenId']=null;params['ubicacionId']=null;
+   params['articuloId']=null;params['loteId']=null;params['page']=null;
+  }
   for(const [key,value] of Object.entries(patch)){
    params[key]=value===null||value===''||value===1&&key==='page'?null:String(value);
   }

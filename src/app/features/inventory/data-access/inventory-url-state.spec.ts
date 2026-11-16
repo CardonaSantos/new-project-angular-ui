@@ -48,9 +48,19 @@ describe('Inventory URL state — reload and history contract',()=>{
    queryParams:{estado:'CONFIRMADO',page:null},
    queryParamsHandling:'merge',replaceUrl:false
   }));
+  // Cambiar de sucursal limpia los filtros que pertenecían a la anterior:
+  // dejarlos puestos pedía «el almacén de A dentro de B» y la lista venía
+  // vacía.
   await state.patch({section:'locations',sucursalId:'b2'});
   expect(navigate).toHaveBeenCalledWith([],expect.objectContaining({
-   queryParams:{section:'locations',sucursalId:'b2'}
+   queryParams:{section:'locations',sucursalId:'b2',
+    almacenId:null,ubicacionId:null,articuloId:null,loteId:null,page:null}
+  }));
+ });
+ it('keeps dependent filters when the branch does not change',async()=>{
+  await state.patch({sucursalId:'b1'});
+  expect(navigate).toHaveBeenCalledWith([],expect.objectContaining({
+   queryParams:{sucursalId:'b1'}
   }));
  });
  it('bounds page and size and does not trust unauthorized URL branch IDs',()=>{
