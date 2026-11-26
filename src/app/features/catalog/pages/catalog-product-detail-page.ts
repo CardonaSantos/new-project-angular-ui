@@ -157,7 +157,8 @@ import type {GcDirtyAware} from '../../../core/ux/gc-unsaved-changes.guard';
          (searchChange)="queueGroupSearch($event)" (valueChange)="groupId.set($event)"/>
         <div class="cat-actions">
          <button type="button" [disabled]="!access.canManage()||!groupId()" (click)="addGroup()">Agregar grupo</button>
-         <button type="button" class="cat-primary" [disabled]="!access.canManage()||busy()" (click)="saveGroups()">
+         <button type="button" class="cat-primary"
+          [disabled]="!access.canManage()||busy()||!linksDirty()&&!pendingGroup()" (click)="saveGroups()">
           Guardar extras</button>
         </div>
        </div>
@@ -482,12 +483,18 @@ export class GcCatalogProductDetailPage implements OnInit,GcDirtyAware {
  }
  protected groupName(id:string){return this.groups().find(g=>g.id===id)?.nombre??'Grupo no disponible'}
  protected linked(id:string){return this.links().some(x=>x.grupoId===id)}
+ /** Group chosen in the selector that is not in the list yet. */
+ protected pendingGroup(){const id=this.groupId();return !!id&&!this.linked(id)}
  protected addGroup(){const id=this.groupId();if(!id||this.linked(id)||this.links().length>=20)return;
   this.links.update(a=>[...a,{grupoId:id,orden:a.length,obligatorio:false}]);this.groupId.set('')}
  protected removeGroup(id:string){this.links.update(a=>a.filter(v=>v.grupoId!==id).map((v,orden)=>({...v,orden})))}
  protected toggleRequired(id:string,required:boolean){this.links.update(a=>a.map(x=>x.grupoId===id?{...x,obligatorio:required}:x))}
  protected async saveGroups(){
   const v=this.editVariant();if(!v||!this.access.canManage()||this.busy())return;
+  // A group picked in the selector but not yet added with «Agregar grupo» is
+  // what the person means to save: without this, the save went out without it
+  // and still reported success.
+  if(this.pendingGroup())this.addGroup();
   this.saving.set(true);this.variantError.set(null);
   try{await firstValueFrom(this.api.attachVariantGroups(v.id,this.links()));
    await this.refreshVariant(v.id);this.notice.show('Extras asociados.','success');
