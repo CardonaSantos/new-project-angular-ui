@@ -12,7 +12,7 @@ import { GcPasswordChangeForm } from '../gc-password-change-form';
     <main class="gc-auth-screen">
       <div class="gc-auth-wrap">
         <div class="gc-auth-brand">
-          <gc-brand-logo [name]="branding.name()" [logoUrl]="branding.logoUrl()" />
+          <gc-brand-logo [name]="branding.tabName()" [logoUrl]="branding.deviceLogo()" />
         </div>
         <section class="gc-auth-card" aria-labelledby="gc-password-title">
           <h1 id="gc-password-title">Cambiar contraseña</h1>

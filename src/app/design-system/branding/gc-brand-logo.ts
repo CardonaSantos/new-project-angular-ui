@@ -1,4 +1,4 @@
-import { Component, effect, input, signal } from '@angular/core';
+import { Component, computed, effect, input, signal } from '@angular/core';
 
 @Component({
   selector: 'gc-brand-logo',
@@ -6,7 +6,7 @@ import { Component, effect, input, signal } from '@angular/core';
     @if (logoUrl() && !broken()) {
       <img [src]="logoUrl()" alt="" (error)="broken.set(true)" />
     } @else {
-      <span class="fallback" aria-hidden="true">GC</span>
+      <span class="fallback" aria-hidden="true">{{ initials() }}</span>
     }
     @if (showName()) { <strong>{{ name() }}</strong> }
   `,
@@ -22,6 +22,9 @@ export class GcBrandLogo {
   readonly name = input('Gastro Core');
   readonly showName = input(true);
   readonly broken = signal(false);
+  /** Without a logo: the first letters of the name's first two words. */
+  readonly initials = computed(() =>
+    this.name().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'GC');
 
   constructor() {
     effect(() => {
