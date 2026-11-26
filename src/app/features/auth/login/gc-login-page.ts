@@ -17,7 +17,7 @@ import { GcPasswordField } from '../../../design-system/forms/gc-password-field'
     <main class="gc-auth-screen">
       <div class="gc-auth-wrap">
         <div class="gc-auth-brand">
-          <gc-brand-logo [name]="branding.name()" [logoUrl]="branding.logoUrl()" />
+          <gc-brand-logo [name]="branding.tabName()" [logoUrl]="branding.deviceLogo()" />
         </div>
         <section class="gc-auth-card" aria-labelledby="gc-login-title">
           <h1 id="gc-login-title">Iniciar sesión</h1>
