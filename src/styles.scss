@@ -912,10 +912,13 @@ gc-kitchen-ticket{display:block;min-width:0}
  .pay-sale-detail mat-dialog-actions{justify-content:stretch}
  .pay-sale-detail mat-dialog-actions>*{flex:1 1 auto}
 }
+/* Scoped with :has() — unscoped, «body *{visibility:hidden}» hid every other printable
+ * page (kitchen ticket, order, sale receipt): they printed blank while their PDF was fine.
+ * The «visible» rule carries the same :has() so it still outranks the hiding one. */
 @media print{
  @page{size:auto;margin:13mm}
- body *{visibility:hidden!important}
- .pay-cash-receipt,.pay-cash-receipt *{visibility:visible!important}
+ body:has(.pay-cash-receipt) *{visibility:hidden!important}
+ body:has(.pay-cash-receipt) :is(.pay-cash-receipt,.pay-cash-receipt *){visibility:visible!important}
  .pay-cash-receipt{position:absolute!important;top:0!important;left:0!important;
   width:100%!important;max-width:100%!important;background:#fff!important;
   color:#111!important;border:0!important;box-shadow:none!important}
@@ -1029,8 +1032,8 @@ gc-kitchen-ticket{display:block;min-width:0}
  * (same technique as .pay-cash-receipt's print rule above), and drop the
  * on-screen-only action buttons so the printed page is just the QR + mesa. */
 @media print{
- body *{visibility:hidden!important}
- .ord-qr-print,.ord-qr-print *{visibility:visible!important}
+ body:has(.ord-qr-print) *{visibility:hidden!important}
+ body:has(.ord-qr-print) :is(.ord-qr-print,.ord-qr-print *){visibility:visible!important}
  .ord-qr-print{position:absolute!important;top:0!important;left:0!important;
   width:100%!important;max-width:100%!important;background:#fff!important;
   color:#111!important;border:0!important;box-shadow:none!important}
