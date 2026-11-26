@@ -10,6 +10,7 @@ import {paymentError} from '../data-access/payments.helpers';
 import type {SaleRecord} from '../data-access/payments.models';
 import {formatInstant} from '../../../shared/formatting';
 import {thermalAmount,saleForBranch} from '../../orders/printing/thermal-print.helpers';
+import {qtyText} from '../../orders/data-access/orders.helpers';
 @Component({
  selector:'gc-payments-sale-receipt-page',
  imports:[RouterLink],
@@ -17,8 +18,7 @@ import {thermalAmount,saleForBranch} from '../../orders/printing/thermal-print.h
  <main class="gc-thermal-page">
   <header class="gc-thermal-controls">
    <a routerLink="/payments/sales">← Ventas</a>
-   <div class="gc-thermal-toolbar">
-    <span>Rollo térmico · 80 mm</span>
+   <div class="gc-thermal-toolbar gc-print-toolbar">
     <button type="button" [disabled]="busy()||!sale()"
      (click)="print()">Imprimir comprobante</button>
    </div>
@@ -26,48 +26,45 @@ import {thermalAmount,saleForBranch} from '../../orders/printing/thermal-print.h
   @if(busy()){<p role="status">Cargando venta cerrada…</p>}
   @if(error()){<p role="alert" class="gc-thermal-error">{{error()}}</p>}
   @if(sale();as item){
-   <article class="gc-thermal-paper" aria-label="Comprobante interno de venta">
+   <!-- Same layout as the order slip and kitchen ticket: brand, document, number, time. -->
+   <article class="gc-thermal-paper" aria-label="Comprobante de venta">
     <header class="gc-thermal-head">
      <strong class="gc-thermal-brand">{{branding.name()}}</strong>
-     <span>{{branch.active()?.nombre??'Sucursal'}}</span>
-     <span>COMPROBANTE DE VENTA</span>
-     <span class="gc-thermal-muted">Documento interno · No fiscal</span>
+     <strong>VENTA</strong>
+     <strong class="gc-thermal-number">{{item.numero}}</strong>
+     <span class="gc-thermal-muted">{{time(item.cerradaEn)}}</span>
     </header>
-    <section class="gc-thermal-divider">
-     <div><span>Venta</span><strong>{{item.numero}}</strong></div>
-     @if(item.cuenta?.orden?.numero){
-      <div><span>Orden</span><span>{{item.cuenta?.orden?.numero}}</span></div>
-     }
-     @if(item.cuenta?.orden?.cliente){
-      <div><span>Cliente</span><strong>{{item.cuenta?.orden?.cliente?.nombre}}</strong></div>
-     }
-     <div><span>Fecha</span><span>{{time(item.cerradaEn)}}</span></div>
-     @if(!currency()){
-      <p class="gc-thermal-notice">No se pudo verificar la moneda de la sucursal. Valores sin símbolo.</p>
-     }
-    </section>
+    @if(item.cuenta?.orden?.numero||item.cuenta?.orden?.cliente||!currency()){
+     <section class="gc-thermal-divider">
+      @if(item.cuenta?.orden?.numero){
+       <div><span>Orden</span><span>{{item.cuenta?.orden?.numero}}</span></div>
+      }
+      @if(item.cuenta?.orden?.cliente){
+       <div><span>Cliente</span><strong>{{item.cuenta?.orden?.cliente?.nombre}}</strong></div>
+      }
+      @if(!currency()){
+       <p class="gc-thermal-notice">No se pudo verificar la moneda de la sucursal. Valores sin símbolo.</p>
+      }
+     </section>
+    }
     <section class="gc-thermal-lines" aria-label="Productos vendidos">
      @for(line of item.ventaLineasComoVenta??[];track line.id){
-      <div class="gc-thermal-line">
-       <strong>{{line.descripcion}}</strong>
-       <div><span>{{line.cantidad}} × {{money(line.precioUnitario)}}</span>
+      <article class="gc-thermal-line">
+       <div><strong>{{quantity(line.cantidad)}} × {{line.descripcion}}</strong>
         <strong>{{money(line.subtotal)}}</strong></div>
-       @if(line.descuento&&line.descuento!=='0.00'){
-        <small>Descuento: {{money(line.descuento)}}</small>
-       }
-      </div>
+       @if(isMany(line.cantidad)){<small>{{money(line.precioUnitario)}} c/u</small>}
+       @if(hasAmount(line.descuento)){<small>Descuento: {{money(line.descuento!)}}</small>}
+      </article>
      }@empty{<p>No se encontraron líneas de venta.</p>}
     </section>
     <section class="gc-thermal-total gc-thermal-divider">
-     @if(item.descuentoTotal!=='0.00'){
+     @if(hasAmount(item.descuentoTotal)){
       <div><span>Descuentos</span><strong>{{money(item.descuentoTotal)}}</strong></div>
      }
      <div class="gc-thermal-big"><strong>TOTAL</strong><strong>{{money(item.total)}}</strong></div>
     </section>
     <footer class="gc-thermal-foot">
-     <p>Gracias por su compra.</p>
-     <p>Este comprobante interno no es factura electrónica ni documento tributario.</p>
-     <p>Para devoluciones, indique el número de venta.</p>
+     <p>¡Gracias por tu compra! Esperamos verte pronto.</p>
     </footer>
    </article>
   }@else if(!busy()&&!error()){
@@ -87,6 +84,10 @@ export class GcPaymentsSaleReceiptPage{
  protected readonly busy=signal(false);
  protected readonly error=signal('');
  protected readonly money=(amount:string)=>thermalAmount(amount,this.currency());
+ protected readonly quantity=qtyText;
+ /** Amounts arrive as text ("0", "0.00", "5.50"): only a real, positive one is printed. */
+ protected hasAmount(value:string|null|undefined):boolean{return Number(value??0)>0}
+ protected isMany(value:string|number):boolean{return Number(value)>1}
  private generation=0;
  constructor(){
   effect(()=>{
