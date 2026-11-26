@@ -61,11 +61,20 @@ export interface TransferLine extends RecordId {articulo:{id:string;nombre:strin
 export interface TransferDetail extends RecordId {numero:string;estado:TransferStatus;nota:string|null;
  origen:{id:string;nombre:string;sucursal:string};destino:{id:string;nombre:string;sucursal:string};
  despachadaEn:string|null;recibidaEn:string|null;lineas:TransferLine[]}
-export interface ManualPosting {articuloId:string;ubicacionId:string;loteId?:string;cantidad:string;
- costoUnitario?:string;claveOperacion:string;motivo:string}
+/** Unit or purchase presentation an entry can be typed in; stock stays in the base unit. */
+export interface EntryUnit {unidadId?:string;presentacionId?:string}
+/** Cost per chosen unit, or the whole line's cost. */
+export interface EntryCost {costoUnitario?:string;costoTotal?:string}
+export interface ManualPosting extends EntryUnit,EntryCost {articuloId:string;ubicacionId:string;loteId?:string;
+ cantidad:string;claveOperacion:string;motivo:string}
 export interface BatchInboundInput {
  claveOperacion:string;motivo:string;
- lineas:{articuloId:string;ubicacionId:string;loteId?:string;cantidad:string;costoUnitario:string}[];
+ lineas:(EntryUnit&EntryCost&{articuloId:string;ubicacionId:string;loteId?:string;cantidad:string})[];
+}
+export interface EntryOption {
+ tipo:'BASE'|'UNIDAD'|'PRESENTACION';id:string;nombre:string;codigo:string|null;
+ /** Base units in one of these. */
+ factor:string;proveedor:string|null;
 }
 export interface BatchInboundResult {
  claveOperacion:string;sucursalId:string;numeroLineas:number;

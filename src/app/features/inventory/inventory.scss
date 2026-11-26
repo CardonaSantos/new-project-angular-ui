@@ -84,3 +84,9 @@
 @media(max-width:640px){
  .inv-toolbar.gc-filter-grid{grid-template-columns:minmax(0,1fr)}
 }
+/* Entry typed in a purchase unit: cost mode switch and conversion preview. */
+.inv-label{font-size:.88rem;font-weight:600}
+.inv-cost-mode label{display:flex;align-items:center;gap:.45rem;font-weight:500}
+.inv-cost-mode input{width:auto;min-height:0}
+.inv-hint{margin:0;padding:.5rem .7rem;border-radius:.55rem;font-size:.86rem;
+ background:var(--gc-surface-container-low);border:1px solid var(--gc-outline-variant)}

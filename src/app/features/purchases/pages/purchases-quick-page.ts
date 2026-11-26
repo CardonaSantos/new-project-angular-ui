@@ -7,7 +7,9 @@ import {GcNotificationService} from '../../../core/ux/gc-notification.service';
 import {ConfirmDialogService} from '../../../design-system/confirm-dialog/confirm-dialog.service';
 import {GcInventoryPicker} from '../../inventory/components/inventory-picker';
 import {InventoryApi} from '../../inventory/data-access/inventory.api';
-import type {Article} from '../../inventory/data-access/inventory.models';
+import type {Article,EntryOption} from '../../inventory/data-access/inventory.models';
+import {GcEntryUnitSelect} from '../../inventory/components/entry-unit-select';
+import {type CostMode,entryCostPayload,entryPreview,entryUnitName,entryUnitPayload} from '../../inventory/data-access/entry-units';
 import {parseApiDecimal,formatCurrency} from '../../../shared/formatting';
 import {GcPurchasesCreateArticle} from '../components/purchases-create-article';
 import {PurchasesAccess} from '../data-access/purchases-access';
@@ -17,15 +19,18 @@ import {GcPurchasesNav} from '../purchases-nav';
 interface InboundLine {
  key:string;articuloId:string;article:Article|null;cantidad:string;costoUnitario:string;
  loteId:string;newLotCode:string;newExpiry:string;loading:boolean;lotBusy:boolean;error:string;
+ /** «Se compra en» and how the cost is written; the server converts to the base unit. */
+ unit:EntryOption|null;base:EntryOption|null;costMode:CostMode;
 }
 const emptyLine=():InboundLine=>({
+ unit:null,base:null,costMode:'total',
  key:newKey(),articuloId:'',article:null,cantidad:'',costoUnitario:'',
  loteId:'',newLotCode:'',newExpiry:'',loading:false,lotBusy:false,error:''
 });
 const maxLines=25;
 @Component({
  selector:'gc-purchases-quick-page',
- imports:[RouterLink,GcPurchasesNav,GcInventoryPicker,GcPurchasesCreateArticle],
+ imports:[RouterLink,GcPurchasesNav,GcInventoryPicker,GcPurchasesCreateArticle,GcEntryUnitSelect],
  template:`
  <main class="pur-page pur-quick-page"><gc-purchases-nav/>
   <header class="pur-heading">
@@ -90,16 +95,30 @@ const maxLines=25;
        @if(line.article;as item){
         <p class="pur-muted">Unidad: {{item.unidadBase.nombre}} ({{item.unidadBase.codigo}})</p>
        }
+       @if(line.articuloId){
+        <div class="pur-grid">
+         <gc-entry-unit-select [id]="'pur-quick-unit-'+line.key" [branchId]="branchId()"
+          [articleId]="line.articuloId" [disabled]="busy()"
+          (optionChange)="patch(line.key,'unit',$event)" (baseChange)="patch(line.key,'base',$event)"/>
+         <div class="pur-field pur-cost-mode" role="radiogroup" [attr.aria-label]="'Cómo escribir el costo'">
+          <span class="pur-label">Costo</span>
+          <label><input type="radio" [name]="'pur-quick-mode-'+line.key" [checked]="line.costMode==='total'"
+           [disabled]="busy()" (change)="patch(line.key,'costMode','total')"/> Total pagado</label>
+          <label><input type="radio" [name]="'pur-quick-mode-'+line.key" [checked]="line.costMode==='unit'"
+           [disabled]="busy()" (change)="patch(line.key,'costMode','unit')"/> Por {{unitName(line)}}</label>
+         </div>
+        </div>
+       }
        <div class="pur-grid">
         <div class="pur-field">
-         <label [for]="'pur-quick-qty-'+line.key">Cantidad en unidad base</label>
+         <label [for]="'pur-quick-qty-'+line.key">Cantidad ({{unitName(line)}})</label>
          <input [id]="'pur-quick-qty-'+line.key" inputmode="decimal"
           [value]="line.cantidad" [disabled]="busy()" autocomplete="off"
           (input)="patch(line.key,'cantidad',$any($event.target).value)"
           placeholder="Ej. 12"/>
         </div>
         <div class="pur-field">
-         <label [for]="'pur-quick-cost-'+line.key">Costo por unidad (Q)</label>
+         <label [for]="'pur-quick-cost-'+line.key">{{line.costMode==='total'?'Costo total (Q)':'Costo por '+unitName(line)+' (Q)'}}</label>
          <input [id]="'pur-quick-cost-'+line.key" inputmode="decimal"
           [value]="line.costoUnitario" [disabled]="busy()" autocomplete="off"
           (input)="patch(line.key,'costoUnitario',$any($event.target).value)"
@@ -141,7 +160,8 @@ const maxLines=25;
        }
        @if(line.error){<p role="alert" class="pur-error">{{line.error}}</p>}
        @if(line.cantidad&&line.costoUnitario&&validLine(line)){
-        <p class="pur-quick-subtotal">Importe: <strong>{{lineTotal(line)}}</strong></p>
+        <p class="pur-quick-subtotal">Importe: <strong>{{lineTotal(line)}}</strong>
+         @if(preview(line);as text){<span class="pur-muted"> · {{text}}</span>}</p>
        }
       </fieldset>
      }
@@ -214,7 +234,8 @@ export class GcPurchasesQuickPage {
    const quantity=decimal(line.cantidad);
    const cost=decimal(line.costoUnitario,true);
    if(quantity&&cost!==null)
-    total=total.plus(parseApiDecimal(quantity).mul(parseApiDecimal(cost)));
+    total=total.plus(line.costMode==='total'?parseApiDecimal(cost)
+     :parseApiDecimal(quantity).mul(parseApiDecimal(cost)));
   }
   return formatCurrency(total.toFixed());
  });
@@ -242,8 +263,14 @@ export class GcPurchasesQuickPage {
  }
  protected lineTotal(line:InboundLine){
   const q=decimal(line.cantidad),p=decimal(line.costoUnitario,true);
-  return q&&p!==null
-   ?formatCurrency(parseApiDecimal(q).mul(parseApiDecimal(p)).toFixed()):'—';
+  if(!q||p===null)return '—';
+  return formatCurrency(line.costMode==='total'?parseApiDecimal(p).toFixed()
+   :parseApiDecimal(q).mul(parseApiDecimal(p)).toFixed());
+ }
+ protected unitName(line:InboundLine){return entryUnitName(line.unit,line.base)}
+ protected preview(line:InboundLine){
+  const q=decimal(line.cantidad),p=decimal(line.costoUnitario,true);
+  return q?entryPreview(line.unit,line.base,q,p??undefined,line.costMode):null;
  }
  private touch(){this.requestKey=newKey();this.dirty=true;this.error.set('')}
  protected chooseWarehouse(id:string){
@@ -277,7 +304,7 @@ export class GcPurchasesQuickPage {
   if(this.busy())return;
   const generation=++this.generation;
   this.lines.update(list=>list.map(l=>l.key===key
-   ?{...l,articuloId:id,article:null,loteId:'',loading:!!id,error:''}:l));
+   ?{...l,articuloId:id,article:null,loteId:'',loading:!!id,error:'',unit:null,base:null}:l));
   this.touch();
   if(!id)return;
   try{
@@ -331,7 +358,9 @@ export class GcPurchasesQuickPage {
    lineas:list.map(line=>({
     articuloId:line.articuloId,ubicacionId:location,
     ...(line.loteId?{loteId:line.loteId}:{}),
-    cantidad:decimal(line.cantidad)!,costoUnitario:decimal(line.costoUnitario,true)!
+    cantidad:decimal(line.cantidad)!,
+    ...entryUnitPayload(line.unit),
+    ...entryCostPayload(decimal(line.costoUnitario,true)!,line.costMode)
    }))
   };
   if(!await this.confirm.confirm({

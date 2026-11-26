@@ -17,12 +17,15 @@ import {GcInventoryPicker} from '../components/inventory-picker';
 import {InventoryUrlState} from '../data-access/inventory-url-state';
 import {InventoryApi} from '../data-access/inventory.api';
 import {parseApiDecimal,toApiDecimal} from '../../../shared/formatting';
+import {GcEntryUnitSelect} from '../components/entry-unit-select';
+import type {EntryOption} from '../data-access/inventory.models';
+import {type CostMode,entryCostPayload,entryPreview,entryUnitName,entryUnitPayload} from '../data-access/entry-units';
 type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
 @Component({
  selector:'gc-inventory-operation-page',
  providers:[InventoryUrlState],
  imports:[RouterLink,ReactiveFormsModule,GcPageHeader,GcButtonDirective,
-  GcInventoryNav,GcInventorySubnav,GcInventoryPicker,GcSearchSelect],
+  GcInventoryNav,GcInventorySubnav,GcInventoryPicker,GcSearchSelect,GcEntryUnitSelect],
  template:`
  <div class="inv-page inv-narrow">
   <gc-page-header title="Registrar movimiento"/>
@@ -58,16 +61,33 @@ type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
     </fieldset>
     <fieldset class="inv-section">
      <legend>3. Cantidades y justificación</legend>
+     @if(kind()!=='consume'){
+      <div class="inv-grid">
+       <gc-entry-unit-select id="manual-unit" [branchId]="url.filters().sucursalId"
+        [articleId]="articleId()" (optionChange)="unit.set($event);newRequestKey()"
+        (baseChange)="baseUnit.set($event)"/>
+       @if(kind()==='opening'||kind()==='inbound'){
+        <div class="inv-field inv-cost-mode" role="radiogroup" aria-label="Cómo escribir el costo">
+         <span class="inv-label">Costo</span>
+         <label><input type="radio" name="manual-cost-mode" [checked]="costMode()==='total'"
+          (change)="costMode.set('total');newRequestKey()"/> Total pagado</label>
+         <label><input type="radio" name="manual-cost-mode" [checked]="costMode()==='unit'"
+          (change)="costMode.set('unit');newRequestKey()"/> Por {{unitName()}}</label>
+        </div>
+       }
+      </div>
+     }
      <div class="inv-grid">
-      <div class="inv-field"><label for="manual-qty">Cantidad</label>
+      <div class="inv-field"><label for="manual-qty">Cantidad{{kind()==='consume'?'':' ('+unitName()+')'}}</label>
        <input id="manual-qty" formControlName="cantidad" inputmode="decimal"
         placeholder="Ej. 5.250000"
         [attr.aria-invalid]="form.controls.cantidad.invalid&&form.controls.cantidad.touched"/>
        @if(form.controls.cantidad.touched&&form.controls.cantidad.invalid){<small class="inv-error">Cantidad positiva con hasta seis decimales.</small>}
       </div>
       @if(kind()==='opening'||kind()==='inbound'){
-       <div class="inv-field"><label for="manual-cost">Costo unitario</label>
-        <input id="manual-cost" formControlName="costoUnitario" inputmode="decimal" placeholder="Ej. 1.250000"/>
+       <div class="inv-field"><label for="manual-cost">{{costMode()==='total'?'Costo total (Q)':'Costo por '+unitName()+' (Q)'}}</label>
+        <input id="manual-cost" formControlName="costoUnitario" inputmode="decimal"
+         [placeholder]="costMode()==='total'?'Ej. 40.00':'Ej. 20.00'"/>
         <small>Obligatorio para ingresos. Solo cuentas autorizadas para costos.</small>
        </div>
       }
@@ -77,6 +97,7 @@ type Operation='opening'|'inbound'|'outbound'|'waste'|'consume';
        </div>
       }
      </div>
+     @if(kind()!=='consume'&&preview()){<p class="inv-hint" aria-live="polite">{{preview()}}</p>}
      <div class="inv-field"><label for="manual-reason">Motivo</label>
       <textarea id="manual-reason" formControlName="motivo" rows="3" maxlength="500"
        placeholder="Describe el motivo del movimiento"></textarea>
@@ -114,6 +135,17 @@ export class GcInventoryOperationPage {
  protected readonly articleId=signal('');protected readonly warehouseId=signal('');
  protected readonly locationId=signal('');protected readonly lotId=signal('');
  protected readonly error=signal<string|null>(null);
+ /** «Se compra en»: null or the base unit keeps the entry in the article's own unit. */
+ protected readonly unit=signal<EntryOption|null>(null);
+ protected readonly baseUnit=signal<EntryOption|null>(null);
+ protected readonly costMode=signal<CostMode>('total');
+ protected readonly unitName=computed(()=>entryUnitName(this.unit(),this.baseUnit()));
+ private readonly values=signal({cantidad:'',costoUnitario:''});
+ protected readonly preview=computed(()=>{
+  const v=this.values(),entry=this.kind()==='opening'||this.kind()==='inbound';
+  return entryPreview(this.unit(),this.baseUnit(),v.cantidad,entry?v.costoUnitario||undefined:undefined,
+   entry?this.costMode():'unit');
+ });
  private key=crypto.randomUUID();
  protected newRequestKey(){this.key=crypto.randomUUID()}
  protected readonly form=new FormGroup({
@@ -123,7 +155,10 @@ export class GcInventoryOperationPage {
   destinoUso:new FormControl('',{nonNullable:true}),motivo:new FormControl('',{nonNullable:true,validators:Validators.required})
  });
  constructor(){
-  this.form.valueChanges.subscribe(()=>this.key=crypto.randomUUID());
+  this.form.valueChanges.subscribe(v=>{
+   this.key=crypto.randomUUID();
+   this.values.set({cantidad:v.cantidad??'',costoUnitario:v.costoUnitario??''});
+  });
  }
  protected canWrite(){
   const kind=this.kind();
@@ -147,23 +182,26 @@ export class GcInventoryOperationPage {
    cost=v.costoUnitario?toApiDecimal(v.costoUnitario):undefined;
   }catch(e){this.error.set(e instanceof Error?e.message:gcErrorMessage(e));return}
   if((this.kind()==='opening'||this.kind()==='inbound')&&!cost){
-   this.error.set('Indica el costo unitario de entrada.');return}
+   this.error.set('Indica el costo de la entrada.');return}
   if(this.kind()==='consume'&&(v.destinoUso.trim().length<3||v.motivo.trim().length<5)){
    this.error.set('El destino requiere 3 caracteres y el motivo al menos 5.');return}
   const dto={articuloId:this.articleId(),ubicacionId:this.locationId(),
    ...(this.lotId()?{loteId:this.lotId()}:{}),cantidad:amount,
    claveOperacion:this.key,motivo:v.motivo.trim()};
+  const unitPayload=entryUnitPayload(this.unit());
+  const what=amount+' '+this.unitName()+(this.preview()?' ('+this.preview()+')':'');
   const type=this.kind();this.error.set(null);
   const result=await this.action.runConfirmed(this.dialog,{
    title:'Registrar movimiento',
-   message:'Se contabilizará '+amount+' del artículo seleccionado. El movimiento será inmutable. ¿Continuar?',
+   message:'Se contabilizará '+what+' del artículo seleccionado. El movimiento será inmutable. ¿Continuar?',
    confirmText:'Registrar movimiento',danger:type==='waste'||type==='outbound'},
    ()=>firstValueFrom(type==='consume'
     ?this.api.internalConsumption({...dto,destinoUso:v.destinoUso.trim()})
-    :this.api.manual(type,{...dto,...(cost&&(type==='opening'||type==='inbound')?{costoUnitario:cost}:{})})));
+    :this.api.manual(type,{...dto,...unitPayload,
+      ...(type==='opening'||type==='inbound'?entryCostPayload(cost,this.costMode()):{})})));
   if(!result)return;
   if(!result.ok){if(result.reason==='error')this.error.set(gcErrorMessage(result.error));return}
-  this.form.reset();this.articleId.set('');this.warehouseId.set('');
+  this.form.reset();this.articleId.set('');this.warehouseId.set('');this.unit.set(null);
   this.locationId.set('');this.lotId.set('');
   this.notice.show('Movimiento contabilizado.','success');
   await this.router.navigate(['/inventory/operations/movements'],{queryParams:{sucursalId:this.url.filters().sucursalId}});

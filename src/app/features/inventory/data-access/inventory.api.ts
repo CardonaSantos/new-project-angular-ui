@@ -9,7 +9,7 @@ import type {
  InventoryPage,InventoryOptions,Article,ArticleCreate,ArticleUpdate,Unit,Dimension,Conversion,
  Warehouse,Location,InventoryLot,InventoryMovement,StockPosition,StockSummary,CountListItem,CountDetail,
  TransferListItem,TransferDetail,CountCreate,TransferCreate,ManualPosting,BranchFilters,InventoryKind,
- CountStatus,TransferStatus,BatchInboundInput,BatchInboundResult
+ CountStatus,TransferStatus,BatchInboundInput,BatchInboundResult,EntryOption
 } from './inventory.models';
 
 export function inventoryParams(input:object):HttpParams{
@@ -88,6 +88,9 @@ export class InventoryApi {
  movement(id:string){return this.http.get<InventoryMovement>(this.e.movement(id))}
  manual(kind:'opening'|'inbound'|'outbound'|'waste',dto:ManualPosting){
   return this.http.post<InventoryMovement>(this.e.manual(kind),dto,silent)}
+ /** Units and purchase presentations an entry for this article can be typed in. */
+ entryOptions(sucursalId:string,articuloId:string){
+  return this.http.get<EntryOption[]>(this.e.entryOptions,{params:{sucursalId,articuloId},...silent})}
  /** Posts all lines atomically; leave 4xx errors visible in the global notification center. */
  inboundBatch(dto:BatchInboundInput){
   return this.http.post<BatchInboundResult>(this.e.inboundBatch,dto);
